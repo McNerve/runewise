@@ -127,9 +127,12 @@ export default function QuestTracker({ hiscores }: Props) {
 
       <div className="space-y-1.5">
         {filtered.map(({ quest, met, missing }) => (
-          <div
+          <a
             key={quest.name}
-            className="bg-bg-secondary rounded-lg px-4 py-3"
+            href={`https://oldschool.runescape.wiki/w/${encodeURIComponent(quest.name.replace(/ /g, "_"))}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block bg-bg-secondary rounded-lg px-4 py-3 hover:bg-bg-tertiary transition-colors cursor-pointer"
           >
             <div className="flex items-center justify-between">
               <div>
@@ -187,7 +190,7 @@ export default function QuestTracker({ hiscores }: Props) {
                 </span>
               </div>
             )}
-          </div>
+          </a>
         ))}
       </div>
 
