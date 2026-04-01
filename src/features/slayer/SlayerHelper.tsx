@@ -2,12 +2,23 @@ import { useState, useMemo } from "react";
 import { SLAYER_MASTERS, type SlayerMaster } from "../../lib/data/slayer";
 import { useNavigation } from "../../lib/NavigationContext";
 
+const BLOCKED_KEY = "runewise_blocked_slayer";
+
+function loadBlocked(): Set<string> {
+  try {
+    const saved = localStorage.getItem(BLOCKED_KEY);
+    return saved ? new Set(JSON.parse(saved)) : new Set();
+  } catch {
+    return new Set();
+  }
+}
+
 export default function SlayerHelper() {
   const { navigate } = useNavigation();
   const [selectedMaster, setSelectedMaster] = useState<SlayerMaster>(
-    SLAYER_MASTERS[0]
+    SLAYER_MASTERS[SLAYER_MASTERS.length - 1] // Default to Duradel (highest level)
   );
-  const [blockedTasks, setBlockedTasks] = useState<Set<string>>(new Set());
+  const [blockedTasks, setBlockedTasks] = useState<Set<string>>(loadBlocked);
 
   const totalWeight = useMemo(() => {
     return selectedMaster.tasks
@@ -32,6 +43,7 @@ export default function SlayerHelper() {
       const next = new Set(prev);
       if (next.has(monster)) next.delete(monster);
       else next.add(monster);
+      localStorage.setItem(BLOCKED_KEY, JSON.stringify([...next]));
       return next;
     });
   };
@@ -44,10 +56,7 @@ export default function SlayerHelper() {
         {SLAYER_MASTERS.map((master) => (
           <button
             key={master.name}
-            onClick={() => {
-              setSelectedMaster(master);
-              setBlockedTasks(new Set());
-            }}
+            onClick={() => setSelectedMaster(master)}
             className={`px-3 py-1.5 rounded text-sm ${
               selectedMaster.name === master.name
                 ? "bg-accent text-white"
