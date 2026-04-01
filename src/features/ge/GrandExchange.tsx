@@ -64,9 +64,11 @@ export default function GrandExchange() {
     return gp.toLocaleString();
   };
 
+  // eslint-disable-next-line react-hooks/purity -- Date.now() for display-only relative timestamps
+  const now = Date.now();
   const timeAgo = (ts: number | null) => {
     if (!ts) return "";
-    const diff = Math.floor(Date.now() / 1000 - ts);
+    const diff = Math.floor(now / 1000 - ts);
     if (diff < 60) return `${diff}s ago`;
     if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
     return `${Math.floor(diff / 3600)}h ago`;

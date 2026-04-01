@@ -61,6 +61,7 @@ export default function XpTracker({ rsn }: Props) {
   useEffect(() => {
     if (!rsn) return;
     let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
 
     Promise.all([
