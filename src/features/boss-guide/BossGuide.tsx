@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { BOSSES, BOSS_CATEGORIES, type BossInfo } from "../../lib/data/bosses";
 import { apiFetch } from "../../lib/api/fetch";
 import { getCached, setCache } from "../../lib/api/cache";
 import { bossIcon } from "../../lib/sprites";
+import { isTauri } from "../../lib/env";
 
-const isTauri = "__TAURI_INTERNALS__" in window;
 const WIKI_API = isTauri
   ? "https://oldschool.runescape.wiki/api.php"
   : "/api/wiki-content";
@@ -34,42 +34,59 @@ async function fetchBossGuide(
       level: string;
     }[];
 
-    // Fetch key sections (requirements, equipment, strategy)
-    const targetSections = sections.filter((s) =>
-      [
-        "requirements",
-        "suggested skills",
-        "equipment",
-        "inventory setups",
-        "inventory",
-        "fight overview",
-        "strategy",
-        "the fight",
-        "mechanics",
-      ].some((t) => s.line.toLowerCase().includes(t))
-    );
+    const targetSections = sections.filter((s) => {
+      const line = s.line.toLowerCase();
+      return [
+        "requirements", "suggested skills", "recommended skills",
+        "equipment", "inventory", "inventory setups", "gear",
+        "recommended equipment", "suggested equipment",
+        "getting there", "location",
+        "fight overview", "strategy", "the fight", "mechanics",
+        "special attacks", "phases", "attacks",
+        "drops",
+      ].some((t) => line.includes(t));
+    });
 
-    const guide: GuideSection[] = [];
+    const guide: GuideSection[] = (await Promise.all(
+      targetSections.map(async (section) => {
+        const textUrl = `${WIKI_API}?action=parse&page=${wikiPage}&prop=text&section=${section.number}&format=json`;
+        const textRes = await apiFetch(textUrl);
+        const textData = await textRes.json();
+        const rawHtml = textData.parse?.text?.["*"] ?? "";
 
-    for (const section of targetSections.slice(0, 5)) {
-      const textUrl = `${WIKI_API}?action=parse&page=${wikiPage}&prop=text&section=${section.number}&format=json`;
-      const textRes = await apiFetch(textUrl);
-      const textData = await textRes.json();
-      const html = textData.parse?.text?.["*"] ?? "";
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(rawHtml, "text/html");
 
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, "text/html");
+        // Strip unwanted elements
+        const content = doc.querySelector(".mw-parser-output") || doc.body;
+        content.querySelectorAll("script, style, sup.reference, .mw-editsection, .navbox, .catlinks, .printfooter, .noprint, iframe, object, embed, form").forEach(el => el.remove());
 
-      // Extract text content, strip excessive whitespace
-      const text = (doc.body.textContent ?? "")
-        .replace(/\[edit.*?\]/g, "")
-        .replace(/\n{3,}/g, "\n\n")
-        .trim();
+        // Strip event handler attributes
+        content.querySelectorAll("*").forEach((el) => {
+          for (const attr of [...el.attributes]) {
+            if (attr.name.startsWith("on")) el.removeAttribute(attr.name);
+          }
+        });
 
-      if (text.length > 10) {
-        guide.push({ title: section.line, content: text });
-      }
-    }
+        // Rewrite relative image URLs to absolute
+        content.querySelectorAll("img").forEach(img => {
+          const src = img.getAttribute("src");
+          if (src && src.startsWith("/")) {
+            img.setAttribute("src", `https://oldschool.runescape.wiki${src}`);
+          }
+        });
+
+        // Strip links but keep text
+        content.querySelectorAll("a").forEach(a => {
+          const text = document.createTextNode(a.textContent ?? "");
+          a.replaceWith(text);
+        });
+
+        const html = content.innerHTML.trim();
+
+        return html.length > 20 ? { title: section.line, content: html } : null;
+      })
+    )).filter((s): s is GuideSection => s !== null);
 
     setCache(cacheKey, guide);
     return guide;
@@ -83,6 +100,7 @@ export default function BossGuide() {
   const [selectedBoss, setSelectedBoss] = useState<BossInfo | null>(null);
   const [guide, setGuide] = useState<GuideSection[]>([]);
   const [loading, setLoading] = useState(false);
+  const activeRequest = useRef(0);
 
   const filteredBosses =
     selectedCategory === "All"
@@ -92,9 +110,12 @@ export default function BossGuide() {
   const selectBoss = async (boss: BossInfo) => {
     setSelectedBoss(boss);
     setLoading(true);
+    const requestId = ++activeRequest.current;
     const data = await fetchBossGuide(boss.wikiPage);
-    setGuide(data);
-    setLoading(false);
+    if (requestId === activeRequest.current) {
+      setGuide(data);
+      setLoading(false);
+    }
   };
 
   return (
@@ -235,11 +256,10 @@ export default function BossGuide() {
                     <h4 className="text-sm font-medium text-accent mb-2">
                       {section.title}
                     </h4>
-                    <p className="text-sm text-text-secondary whitespace-pre-line leading-relaxed">
-                      {section.content.length > 1500
-                        ? section.content.slice(0, 1500) + "..."
-                        : section.content}
-                    </p>
+                    <div
+                      className="article-content text-sm text-text-secondary leading-relaxed"
+                      dangerouslySetInnerHTML={{ __html: section.content }}
+                    />
                   </div>
                 ))}
               </div>

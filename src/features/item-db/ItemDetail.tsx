@@ -1,17 +1,11 @@
 import type { ItemMapping, ItemPrice } from "../../lib/api/ge";
+import { formatGp } from "../../lib/format";
 
 interface ItemDetailProps {
   item: ItemMapping;
   price?: ItemPrice;
   onClose: () => void;
 }
-
-const formatGp = (gp: number | null) => {
-  if (gp == null) return "—";
-  if (gp >= 1_000_000) return `${(gp / 1_000_000).toFixed(1)}M`;
-  if (gp >= 1_000) return `${(gp / 1_000).toFixed(0)}K`;
-  return gp.toLocaleString();
-};
 
 export default function ItemDetail({ item, price, onClose }: ItemDetailProps) {
   const margin =
@@ -61,6 +55,7 @@ export default function ItemDetail({ item, price, onClose }: ItemDetailProps) {
           src={`https://oldschool.runescape.wiki/images/${item.icon}`}
           alt={item.name}
           className="w-8 h-8"
+          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
         />
         <h3 className="text-lg font-semibold">{item.name}</h3>
         {item.members && (

@@ -18,7 +18,7 @@ export function combatLevel(stats: CombatStats): number {
   return base + Math.max(melee, ranged, magic);
 }
 
-/** Melee max hit (simplified — no equipment bonuses yet) */
+/** Melee max hit (simplified — see dps.ts for full DPS calculator) */
 export function meleeMaxHit(
   strengthLevel: number,
   strengthBonus: number,
@@ -26,22 +26,20 @@ export function meleeMaxHit(
   otherMultiplier: number = 1
 ): number {
   const effectiveStrength = Math.floor(
-    (Math.floor(strengthLevel * prayerMultiplier) + 3) * otherMultiplier
+    (Math.floor(strengthLevel * prayerMultiplier) + 8) * otherMultiplier
   );
   return Math.floor(
     0.5 + effectiveStrength * (strengthBonus + 64) / 640
   );
 }
 
-/** Ranged max hit (simplified) */
+/** Ranged max hit (simplified — see dps.ts for full DPS calculator) */
 export function rangedMaxHit(
   rangedLevel: number,
   rangedStrengthBonus: number,
   prayerMultiplier: number = 1
 ): number {
-  const effectiveRanged = Math.floor(
-    Math.floor(rangedLevel * prayerMultiplier) + 3
-  );
+  const effectiveRanged = Math.floor(rangedLevel * prayerMultiplier) + 8;
   return Math.floor(
     0.5 + effectiveRanged * (rangedStrengthBonus + 64) / 640
   );

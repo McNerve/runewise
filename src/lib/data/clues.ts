@@ -1,0 +1,136 @@
+export type ClueTier = "Beginner" | "Easy" | "Medium" | "Hard" | "Elite" | "Master";
+export type ClueType = "Anagram" | "Cipher" | "Coordinate" | "Cryptic" | "Map" | "Emote";
+
+export interface ClueEntry {
+  clueText: string;
+  solution: string;
+  location: string;
+  tier: ClueTier;
+  type: ClueType;
+  npc?: string;
+  challengeAnswer?: string;
+}
+
+export const CLUE_ENTRIES: ClueEntry[] = [
+  // ─── ANAGRAMS ──────────────────────────────────────────────────────────────
+  { clueText: "A BAKER", solution: "Baraek", location: "Varrock Square", tier: "Easy", type: "Anagram", npc: "Baraek" },
+  { clueText: "A BASIC DRILL SERGEANT", solution: "Sergeant Abcdrills", location: "Shayzien", tier: "Medium", type: "Anagram" },
+  { clueText: "ACE MATCH ELM", solution: "Cam the Camel", location: "Duel Arena", tier: "Easy", type: "Anagram" },
+  { clueText: "ARC O LINE", solution: "Caroline", location: "North of Witchaven", tier: "Easy", type: "Anagram" },
+  { clueText: "ARE COL", solution: "Oracle", location: "Ice Mountain", tier: "Easy", type: "Anagram" },
+  { clueText: "BAIL TRIMS", solution: "Brimstail", location: "Gnome Stronghold cave", tier: "Medium", type: "Anagram" },
+  { clueText: "BY LOOK", solution: "Bolkoy", location: "Tree Gnome Village", tier: "Easy", type: "Anagram" },
+  { clueText: "CAR IF WOES", solution: "Wise Old Man", location: "Draynor Village", tier: "Medium", type: "Anagram" },
+  { clueText: "CAREER IN MOON", solution: "Oneiromancer", location: "Lunar Isle", tier: "Hard", type: "Anagram" },
+  { clueText: "CLASH ION", solution: "Nicholas", location: "Port Sarim fishing shop", tier: "Easy", type: "Anagram" },
+  { clueText: "COOL NERD", solution: "Old Crone", location: "East of Slayer Tower", tier: "Medium", type: "Anagram" },
+  { clueText: "DIM THICKOS", solution: "Mosol Rei", location: "Shilo Village", tier: "Medium", type: "Anagram" },
+  { clueText: "DO SAY MORE", solution: "Doomsayer", location: "Lumbridge", tier: "Easy", type: "Anagram" },
+  { clueText: "DR WARDEN FUNK", solution: "Drunken Dwarf", location: "Keldagrim", tier: "Hard", type: "Anagram" },
+  { clueText: "EEK ZERO OP", solution: "Zookeeper", location: "Ardougne Zoo", tier: "Medium", type: "Anagram" },
+  { clueText: "EL OW", solution: "Lowe", location: "Varrock archery shop", tier: "Easy", type: "Anagram" },
+  { clueText: "GOBLIN KERN", solution: "King Bolren", location: "Tree Gnome Village", tier: "Medium", type: "Anagram" },
+  { clueText: "GOT A BOY", solution: "Gabooty", location: "Tai Bwo Wannai", tier: "Medium", type: "Anagram" },
+  { clueText: "GULAG RUN", solution: "Uglug Nar", location: "Jiggig", tier: "Hard", type: "Anagram" },
+  { clueText: "HY PO ON GULL", solution: "Unholy Gull", location: "Port Piscarilius", tier: "Medium", type: "Anagram" },
+  { clueText: "I CORD", solution: "Doric", location: "North of Falador", tier: "Easy", type: "Anagram", npc: "Doric" },
+  { clueText: "ICY FE", solution: "Fycie", location: "Rantz cave", tier: "Medium", type: "Anagram" },
+  { clueText: "IN BAR", solution: "Brian", location: "Port Sarim battleaxe shop", tier: "Easy", type: "Anagram", npc: "Brian" },
+  { clueText: "LAND DULL", solution: "Dun Lull", location: "Lunar Isle", tier: "Hard", type: "Anagram" },
+  { clueText: "LARK IN DOG", solution: "King Roald", location: "Varrock Palace", tier: "Medium", type: "Anagram" },
+  { clueText: "LOW LAG", solution: "Gallow", location: "Vinery in Hosidius", tier: "Medium", type: "Anagram" },
+  { clueText: "ME IF", solution: "Femi", location: "Tree Gnome Stronghold entrance", tier: "Easy", type: "Anagram", npc: "Femi" },
+  { clueText: "MUS KIL READER", solution: "Muskiller Drae", location: "Hosidius mess hall", tier: "Medium", type: "Anagram" },
+  { clueText: "NOD MED", solution: "Edmond", location: "East Ardougne", tier: "Easy", type: "Anagram", npc: "Edmond" },
+  { clueText: "O BIRDZ A ZANY EN PC", solution: "Captain Barnaby", location: "Ardougne docks", tier: "Medium", type: "Anagram" },
+  { clueText: "OK CO", solution: "Cook", location: "Lumbridge Castle kitchen", tier: "Easy", type: "Anagram", npc: "Cook" },
+  { clueText: "OR ZINC FUMES WARD", solution: "Wizard Frumscone", location: "Basement of Zamorak church", tier: "Medium", type: "Anagram" },
+  { clueText: "PEAK REFLEX", solution: "Flax keeper", location: "Seers' Village flax field", tier: "Medium", type: "Anagram" },
+  { clueText: "QUE SIR", solution: "Squire", location: "White Knights' Castle", tier: "Easy", type: "Anagram", npc: "Squire" },
+  { clueText: "R AK MI", solution: "Karim", location: "Al Kharid kebab shop", tier: "Easy", type: "Anagram", npc: "Karim" },
+  { clueText: "RAT MAT WITHIN", solution: "Martin Thwait", location: "Rogues' Den", tier: "Medium", type: "Anagram" },
+  { clueText: "RED ART TANSEN", solution: "Trader Stan", location: "Port Sarim charter", tier: "Medium", type: "Anagram" },
+  { clueText: "SEQUIN DIRGE", solution: "Queen Sigrid", location: "Etceteria", tier: "Hard", type: "Anagram" },
+  { clueText: "SNAH", solution: "Hans", location: "Lumbridge Castle courtyard", tier: "Easy", type: "Anagram", npc: "Hans" },
+  { clueText: "TAKER GRAPE", solution: "Gatekeeper", location: "Piscarilius house", tier: "Medium", type: "Anagram" },
+
+  // ─── CIPHERS ───────────────────────────────────────────────────────────────
+  { clueText: "BMJE UYPS", solution: "KING TYPZ → King Tyras", location: "Tirannwn", tier: "Hard", type: "Cipher" },
+  { clueText: "GUHCHO", solution: "DRAGON → Oziach", location: "Edgeville", tier: "Hard", type: "Cipher" },
+  { clueText: "HQNM LZM STGQ", solution: "IRON MAN PATH → King Roald", location: "Varrock Palace", tier: "Hard", type: "Cipher" },
+  { clueText: "ZSBKDO ZODO", solution: "YRAJCN YNZN → Prabok Yoyo → Eudav", location: "Varrock rune shop", tier: "Hard", type: "Cipher" },
+  { clueText: "OVEXON", solution: "NUDWML → Wahisietel", location: "Nardah", tier: "Hard", type: "Cipher" },
+  { clueText: "UZZU MUJHRKYYKJ", solution: "TYYT LTIGOIXXI → Zyff Ltighqxxh → Ziff Pilfeather", location: "Ranging Guild", tier: "Hard", type: "Cipher" },
+  { clueText: "VTYR APTS EJXT", solution: "USER ZOOR DISC → Nurse Wooned", location: "Hosidius", tier: "Hard", type: "Cipher" },
+  { clueText: "GBJSV EHPP", solution: "FAIRY DOOG → Fairy Nuff", location: "Zanaris throne room", tier: "Hard", type: "Cipher" },
+  { clueText: "IWPPLQTP", solution: "HVOOKUOS → Gunnjorn", location: "Barbarian Outpost", tier: "Hard", type: "Cipher" },
+  { clueText: "BCTDJ QRGK TRNS", solution: "ABCSG PRFJ SQMR → Cabin Fever → Pirate Pete", location: "Braindeath Island", tier: "Hard", type: "Cipher" },
+
+  // ─── COORDINATES ───────────────────────────────────────────────────────────
+  { clueText: "00.05S, 01.13E", solution: "Falador farm", location: "South of Falador", tier: "Medium", type: "Coordinate" },
+  { clueText: "00.13S, 13.58E", solution: "NE of Yanille", location: "North-east Yanille", tier: "Medium", type: "Coordinate" },
+  { clueText: "01.24N, 08.05W", solution: "Grand Tree", location: "Grand Tree entrance", tier: "Medium", type: "Coordinate" },
+  { clueText: "01.35S, 07.28E", solution: "East Ardougne", location: "East of Clock Tower", tier: "Medium", type: "Coordinate" },
+  { clueText: "02.48N, 22.30E", solution: "Canifis", location: "East of Canifis", tier: "Medium", type: "Coordinate" },
+  { clueText: "03.35S, 13.35E", solution: "Yanille", location: "Near Yanille agility dungeon", tier: "Medium", type: "Coordinate" },
+  { clueText: "06.00S, 21.48E", solution: "Mort Myre", location: "South of Mort Myre Swamp", tier: "Hard", type: "Coordinate" },
+  { clueText: "07.05N, 30.56E", solution: "Wilderness", location: "Level 40+ Wilderness", tier: "Hard", type: "Coordinate" },
+  { clueText: "00.18S, 09.28E", solution: "West of Champions' Guild", location: "South of Varrock", tier: "Medium", type: "Coordinate" },
+  { clueText: "02.50N, 06.20E", solution: "McGrubor's Wood", location: "West of Seers' Village", tier: "Medium", type: "Coordinate" },
+  { clueText: "04.03S, 03.11E", solution: "Brimhaven dungeon", location: "North of Brimhaven", tier: "Hard", type: "Coordinate" },
+  { clueText: "05.37N, 31.15E", solution: "Frozen Waste Plateau", location: "Deep Wilderness", tier: "Hard", type: "Coordinate" },
+  { clueText: "04.41N, 03.09W", solution: "Gnome Stronghold", location: "South of Tree Gnome Stronghold", tier: "Medium", type: "Coordinate" },
+  { clueText: "07.33N, 15.00E", solution: "Forgotten Cemetery", location: "Level 31 Wilderness", tier: "Hard", type: "Coordinate" },
+  { clueText: "03.45S, 22.45E", solution: "Burgh de Rott", location: "South of Burgh de Rott", tier: "Hard", type: "Coordinate" },
+
+  // ─── CRYPTIC ───────────────────────────────────────────────────────────────
+  { clueText: "Come to the evil side.", solution: "Speak to the Evil Dave", location: "Edgeville dungeon", tier: "Easy", type: "Cryptic" },
+  { clueText: "Dig between some ominous stones in Falador.", solution: "Dig at dark wizards circle", location: "South of Falador", tier: "Easy", type: "Cryptic" },
+  { clueText: "Search a wardrobe in Draynor.", solution: "Aggie's wardrobe", location: "Draynor Village", tier: "Easy", type: "Cryptic" },
+  { clueText: "Speak to Ulizius.", solution: "Talk to Ulizius", location: "Mort Myre gate", tier: "Easy", type: "Cryptic" },
+  { clueText: "Search the drawers in the upstairs of a house in Rimmington.", solution: "Search drawers", location: "Rimmington house", tier: "Easy", type: "Cryptic" },
+  { clueText: "Speak to a Monk of Zamorak in the Chaos Temple.", solution: "Wilderness Chaos Temple", location: "Level 38 Wilderness", tier: "Hard", type: "Cryptic" },
+  { clueText: "I am a powerful and evil dwarf.", solution: "Chaos Dwarf Battlefield", location: "Under Ice Mountain", tier: "Elite", type: "Cryptic" },
+  { clueText: "The treasure is buried in a sandy area.", solution: "Desert Treasure area", location: "South of the Bandit Camp", tier: "Hard", type: "Cryptic" },
+  { clueText: "Always walking around the castle grounds and status of his kingdom.", solution: "Talk to King Roald", location: "Varrock Palace", tier: "Easy", type: "Cryptic" },
+  { clueText: "Search the boxes in the goblin house near Lumbridge.", solution: "Search boxes in goblin house", location: "East of Lumbridge River", tier: "Beginner", type: "Cryptic" },
+  { clueText: "The keeper of Melzars... Mazchna knows.", solution: "Speak to Oziach", location: "North of Edgeville", tier: "Easy", type: "Cryptic" },
+  { clueText: "Covered in shadows, the centre of the city holds the answer.", solution: "Dig at centre of Kourend Castle", location: "Great Kourend", tier: "Medium", type: "Cryptic" },
+  { clueText: "Probably the best person to ask about things of a magical nature.", solution: "Speak to Wizard Traiborn", location: "Wizards' Tower", tier: "Easy", type: "Cryptic" },
+  { clueText: "Search the crates near a cart in Varrock.", solution: "Search crates at Zaff's", location: "Varrock", tier: "Beginner", type: "Cryptic" },
+  { clueText: "In a village made of bamboo, look for some crates.", solution: "Search crates in Tai Bwo Wannai", location: "Karamja", tier: "Easy", type: "Cryptic" },
+  { clueText: "My name is like a tree, yet it is spelt with a 'filtered'.", solution: "Talk to Willow", location: "Draynor Village", tier: "Easy", type: "Cryptic" },
+  { clueText: "Talk to the barber in the Falador barber shop.", solution: "Speak to Hairdresser", location: "Falador", tier: "Beginner", type: "Cryptic" },
+  { clueText: "Talk to Charlie the Tramp in Varrock.", solution: "Speak to Charlie the Tramp", location: "Varrock south entrance", tier: "Beginner", type: "Cryptic" },
+  { clueText: "Speak to Morgan in his house at Draynor Village.", solution: "Talk to Morgan", location: "Draynor Village", tier: "Beginner", type: "Cryptic" },
+  { clueText: "Search the chest in the Duke of Lumbridge's room.", solution: "Search chest upstairs in Lumbridge Castle", location: "Lumbridge Castle", tier: "Beginner", type: "Cryptic" },
+
+  // ─── EMOTE ─────────────────────────────────────────────────────────────────
+  { clueText: "Bow at the top of the Lighthouse.", solution: "Equip blue d'hide vambraces, bow emote", location: "Lighthouse", tier: "Medium", type: "Emote" },
+  { clueText: "Cheer at the Druids' Circle.", solution: "Equip blue wizard hat, cheer emote", location: "Taverley Stone Circle", tier: "Medium", type: "Emote" },
+  { clueText: "Clap at the exam centre.", solution: "Equip white apron, clap emote", location: "Exam Centre", tier: "Easy", type: "Emote" },
+  { clueText: "Dance at the crossroads north of Draynor.", solution: "Equip iron chain, dance emote", location: "North of Draynor", tier: "Easy", type: "Emote" },
+  { clueText: "Spin at the bridge by the Barbarian Village.", solution: "Equip purple gloves, spin emote", location: "Barbarian Village bridge", tier: "Easy", type: "Emote" },
+  { clueText: "Yawn in the rogues' general store.", solution: "Equip iron dagger, leather body, gold ring, yawn emote", location: "Rogues' Den", tier: "Medium", type: "Emote" },
+  { clueText: "Laugh at the fountain of heroes.", solution: "Equip splitbark legs, dragon boots, rune longsword, laugh emote", location: "Heroes' Guild", tier: "Hard", type: "Emote" },
+  { clueText: "Cry on the shore of Catherby beach.", solution: "Equip mystic hat, bone spear, rune plateskirt, cry emote", location: "Catherby beach", tier: "Hard", type: "Emote" },
+  { clueText: "Bow in the Iorwerth camp.", solution: "Equip charged crystal bow, bow emote", location: "Iorwerth Camp, Tirannwn", tier: "Elite", type: "Emote" },
+  { clueText: "Jig at Jiggig.", solution: "Equip steel platebody, iron platelegs, Rune full helm, jig emote", location: "Jiggig", tier: "Medium", type: "Emote" },
+  { clueText: "Blow a kiss between the tables in Shilo Village bank.", solution: "Equip blue mystic gloves, blow kiss emote", location: "Shilo Village bank", tier: "Medium", type: "Emote" },
+  { clueText: "Panic on the pier at the Fishing Platform.", solution: "Equip steel full helm, leather top, bronze platelegs, panic emote", location: "Fishing Platform", tier: "Medium", type: "Emote" },
+  { clueText: "Wave on Mudskipper Point.", solution: "Equip black cape, blue wizard hat, bronze platelegs, wave emote", location: "Mudskipper Point", tier: "Easy", type: "Emote" },
+  { clueText: "Dance in the dark caves beneath Lumbridge Swamp.", solution: "Equip air staff, bronze sq shield, sapphire ring, dance emote", location: "Lumbridge Swamp caves", tier: "Medium", type: "Emote" },
+  { clueText: "Think in the middle of the wheat field by the Lumbridge windmill.", solution: "Equip blue gnome robe top, turquoise gnome robe bottom, oak shortbow, think emote", location: "Lumbridge windmill", tier: "Easy", type: "Emote" },
+
+  // ─── MAP ───────────────────────────────────────────────────────────────────
+  { clueText: "Map clue - X marks the spot near Lumbridge Swamp mine.", solution: "Dig at the X on the map", location: "Lumbridge Swamp mine", tier: "Beginner", type: "Map" },
+  { clueText: "Map clue - X marks the spot outside Varrock east mine.", solution: "Dig at the X on the map", location: "Varrock east mine", tier: "Beginner", type: "Map" },
+  { clueText: "Map clue - X marks the spot north of Falador.", solution: "Dig north of Falador", location: "North of Falador", tier: "Easy", type: "Map" },
+  { clueText: "Map clue - X marks the spot at Draynor Manor.", solution: "Dig near Draynor Manor", location: "Draynor Manor", tier: "Easy", type: "Map" },
+  { clueText: "Map clue - Dig at the bridge by Barbarian Village.", solution: "Dig near the bridge", location: "Barbarian Village", tier: "Easy", type: "Map" },
+  { clueText: "Map clue - Champions' Guild area.", solution: "Dig south of Champions' Guild", location: "South Varrock", tier: "Easy", type: "Map" },
+  { clueText: "Map clue - McGrubor's Wood.", solution: "Dig in McGrubor's Wood", location: "West of Seers' Village", tier: "Medium", type: "Map" },
+  { clueText: "Map clue - Mort Myre Swamp.", solution: "Dig in the swamp", location: "Mort Myre Swamp", tier: "Hard", type: "Map" },
+  { clueText: "Map clue - Crandor island.", solution: "Dig on Crandor", location: "Crandor", tier: "Medium", type: "Map" },
+  { clueText: "Map clue - West of the Crafting Guild.", solution: "Dig west of Crafting Guild", location: "West of Crafting Guild", tier: "Easy", type: "Map" },
+];

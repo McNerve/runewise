@@ -14,7 +14,20 @@ export type View =
   | "quests"
   | "diaries"
   | "slayer"
-  | "news";
+  | "news"
+  | "about"
+  | "price-charts"
+  | "alch-calc"
+  | "dps-calc"
+  | "watchlist"
+  | "boss-loot"
+  | "runelite"
+  | "timers"
+  | "stars"
+  | "clue-helper"
+  | "combat-tasks"
+  | "money-making"
+  | "pet-calc";
 
 interface NavState {
   view: View;

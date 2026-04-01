@@ -18,11 +18,24 @@ struct ProxyResponse {
     headers: HashMap<String, String>,
 }
 
+const ALLOWED_HOSTS: &[&str] = &[
+    "secure.runescape.com",
+    "prices.runescape.wiki",
+    "oldschool.runescape.wiki",
+    "api.wiseoldman.net",
+];
+
 #[tauri::command]
 async fn proxy_fetch(
     url: String,
     headers: Option<HashMap<String, String>>,
 ) -> Result<ProxyResponse, String> {
+    let parsed = url::Url::parse(&url).map_err(|e| e.to_string())?;
+    let host = parsed.host_str().unwrap_or("");
+    if !ALLOWED_HOSTS.iter().any(|&h| host == h) {
+        return Err(format!("Blocked request to unauthorized host: {}", host));
+    }
+
     let mut req = HTTP_CLIENT.get(&url);
 
     if let Some(hdrs) = headers {
@@ -55,6 +68,8 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_fs::init())
         .invoke_handler(tauri::generate_handler![proxy_fetch])
         .setup(|app| {
             if cfg!(debug_assertions) {
