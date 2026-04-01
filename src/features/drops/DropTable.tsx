@@ -132,7 +132,7 @@ export default function DropTable() {
                 {cat.drops.map((drop, i) => (
                   <tr
                     key={`${drop.name}-${i}`}
-                    className="border-b border-border/50 hover:bg-bg-tertiary transition-colors"
+                    className="border-b border-border/50 even:bg-bg-primary/30 hover:bg-bg-tertiary transition-colors"
                   >
                     <td className="px-4 py-1.5 font-medium">
                       <button

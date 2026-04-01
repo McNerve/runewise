@@ -37,7 +37,7 @@ export default function XpTable() {
             {filtered.map(({ level, xp, diff }) => (
               <tr
                 key={level}
-                className="border-b border-border/50 hover:bg-bg-tertiary transition-colors"
+                className="border-b border-border/50 even:bg-bg-primary/30 hover:bg-bg-tertiary transition-colors"
               >
                 <td className="px-4 py-1.5 font-medium">{level}</td>
                 <td className="px-4 py-1.5 text-right">
