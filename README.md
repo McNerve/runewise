@@ -1,5 +1,10 @@
 # RuneWise
 
+[![CI](https://github.com/McNerve/runewise/actions/workflows/ci.yml/badge.svg)](https://github.com/McNerve/runewise/actions/workflows/ci.yml)
+[![Release](https://github.com/McNerve/runewise/actions/workflows/release.yml/badge.svg)](https://github.com/McNerve/runewise/releases/latest)
+[![License: MIT](https://img.shields.io/github/license/McNerve/runewise)](LICENSE)
+[![Downloads](https://img.shields.io/github/downloads/McNerve/runewise/total)](https://github.com/McNerve/runewise/releases)
+
 A lightweight desktop companion app for Old School RuneScape. All the tools you need in one place — no browser tabs, no ads, no bloat.
 
 **8MB app. Native on macOS and Windows.**
