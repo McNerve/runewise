@@ -76,4 +76,14 @@ jobs:
       - name: Generate release notes
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release edit ${{ github.ref_name }} --generate-notes
+        run: |
+          PREV_TAG=$(gh release list --limit 2 --json tagName --jq '.[1].tagName // empty')
+          if [ -n "$PREV_TAG" ]; then
+            NOTES=$(gh api repos/${{ github.repository }}/releases/generate-notes \
+              -f tag_name=${{ github.ref_name }} \
+              -f previous_tag_name="$PREV_TAG" \
+              --jq '.body')
+          else
+            NOTES="Initial release"
+          fi
+          gh release edit ${{ github.ref_name }} --notes "$NOTES"
