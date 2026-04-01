@@ -1,10 +1,10 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { BOSSES, BOSS_CATEGORIES, type BossInfo } from "../../lib/data/bosses";
 import { apiFetch } from "../../lib/api/fetch";
 import { getCached, setCache } from "../../lib/api/cache";
-import ExternalLink from "../../components/ExternalLink";
+import { bossIcon } from "../../lib/sprites";
 
-import { isTauri } from "../../lib/env";
+const isTauri = "__TAURI_INTERNALS__" in window;
 const WIKI_API = isTauri
   ? "https://oldschool.runescape.wiki/api.php"
   : "/api/wiki-content";
@@ -49,31 +49,27 @@ async function fetchBossGuide(
       ].some((t) => s.line.toLowerCase().includes(t))
     );
 
-    const results = await Promise.all(
-      targetSections.slice(0, 5).map(async (section) => {
-        const textUrl = `${WIKI_API}?action=parse&page=${wikiPage}&prop=text&section=${section.number}&format=json`;
-        const textRes = await apiFetch(textUrl);
-        const textData = await textRes.json();
-        const html = textData.parse?.text?.["*"] ?? "";
+    const guide: GuideSection[] = [];
 
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, "text/html");
+    for (const section of targetSections.slice(0, 5)) {
+      const textUrl = `${WIKI_API}?action=parse&page=${wikiPage}&prop=text&section=${section.number}&format=json`;
+      const textRes = await apiFetch(textUrl);
+      const textData = await textRes.json();
+      const html = textData.parse?.text?.["*"] ?? "";
 
-        const text = (doc.body.textContent ?? "")
-          .replace(/\[edit.*?\]/g, "")
-          .replace(/\n{3,}/g, "\n\n")
-          .trim();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, "text/html");
 
-        if (text.length > 10) {
-          return { title: section.line, content: text };
-        }
-        return null;
-      })
-    );
+      // Extract text content, strip excessive whitespace
+      const text = (doc.body.textContent ?? "")
+        .replace(/\[edit.*?\]/g, "")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
 
-    const guide = results.filter(
-      (r): r is GuideSection => r !== null
-    );
+      if (text.length > 10) {
+        guide.push({ title: section.line, content: text });
+      }
+    }
 
     setCache(cacheKey, guide);
     return guide;
@@ -88,13 +84,10 @@ export default function BossGuide() {
   const [guide, setGuide] = useState<GuideSection[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const filteredBosses = useMemo(
-    () =>
-      selectedCategory === "All"
-        ? BOSSES
-        : BOSSES.filter((b) => b.category === selectedCategory),
-    [selectedCategory]
-  );
+  const filteredBosses =
+    selectedCategory === "All"
+      ? BOSSES
+      : BOSSES.filter((b) => b.category === selectedCategory);
 
   const selectBoss = async (boss: BossInfo) => {
     setSelectedBoss(boss);
@@ -142,12 +135,18 @@ export default function BossGuide() {
               <button
                 key={boss.name}
                 onClick={() => selectBoss(boss)}
-                className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
+                className={`w-full text-left px-3 py-2 rounded text-sm transition-colors flex items-center gap-2 ${
                   selectedBoss?.name === boss.name
                     ? "bg-accent/15 text-accent"
                     : "bg-bg-secondary hover:bg-bg-tertiary text-text-secondary"
                 }`}
               >
+                <img
+                  src={bossIcon(boss.name)}
+                  alt=""
+                  className="w-6 h-6 rounded"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
                 <div className="font-medium text-text-primary text-xs">
                   {boss.name}
                 </div>
@@ -170,13 +169,10 @@ export default function BossGuide() {
             </p>
           )}
 
-          {loading && (
-            <p className="text-sm text-text-secondary">Loading guide...</p>
-          )}
-
-          {selectedBoss && !loading && (
+          {loading && selectedBoss && (
             <div>
               <div className="flex items-center gap-3 mb-4">
+                <img src={bossIcon(selectedBoss.name)} alt="" className="w-10 h-10 rounded" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                 <h3 className="text-lg font-semibold">{selectedBoss.name}</h3>
                 {selectedBoss.combatLevel && (
                   <span className="text-xs bg-bg-secondary px-2 py-1 rounded text-text-secondary">
@@ -189,16 +185,46 @@ export default function BossGuide() {
                   </span>
                 )}
               </div>
+              <p className="text-sm text-text-secondary animate-pulse">Loading guide...</p>
+            </div>
+          )}
+
+          {selectedBoss && !loading && (
+            <div>
+              <div className="flex items-center gap-3 mb-4">
+                <img src={bossIcon(selectedBoss.name)} alt="" className="w-10 h-10 rounded" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                <h3 className="text-lg font-semibold">{selectedBoss.name}</h3>
+                {selectedBoss.combatLevel && (
+                  <span className="text-xs bg-bg-secondary px-2 py-1 rounded text-text-secondary">
+                    Combat {selectedBoss.combatLevel}
+                  </span>
+                )}
+                {selectedBoss.hitpoints && (
+                  <span className="text-xs bg-danger/20 px-2 py-1 rounded text-danger">
+                    {selectedBoss.hitpoints} HP
+                  </span>
+                )}
+                <a
+                  href={`https://oldschool.runescape.wiki/w/${selectedBoss.wikiPage}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-accent hover:text-accent-hover transition-colors ml-auto"
+                >
+                  Open Wiki →
+                </a>
+              </div>
 
               {guide.length === 0 && (
                 <p className="text-sm text-text-secondary">
                   No guide data found. Check the{" "}
-                  <ExternalLink
+                  <a
                     href={`https://oldschool.runescape.wiki/w/${selectedBoss.wikiPage}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-accent hover:underline"
                   >
                     Wiki page
-                  </ExternalLink>{" "}
+                  </a>{" "}
                   directly.
                 </p>
               )}
