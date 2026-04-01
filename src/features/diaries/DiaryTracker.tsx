@@ -177,6 +177,25 @@ export default function DiaryTracker({ hiscores }: Props) {
                       })}
                     </div>
 
+                    {/* Tasks */}
+                    {tier.tasks.length > 0 && (
+                      <>
+                        <div className="mb-1 mt-3">
+                          <span className="text-xs text-text-secondary uppercase tracking-wider">
+                            Tasks
+                          </span>
+                        </div>
+                        <ul className="text-xs text-text-secondary space-y-1 mb-3">
+                          {tier.tasks.map((task, j) => (
+                            <li key={j} className="flex items-start gap-1.5">
+                              <span className="text-text-secondary/50 mt-0.5">-</span>
+                              <span>{task}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
+
                     {/* Rewards */}
                     <div className="mb-1">
                       <span className="text-xs text-text-secondary uppercase tracking-wider">
