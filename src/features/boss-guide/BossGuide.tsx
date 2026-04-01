@@ -2,6 +2,7 @@ import { useState } from "react";
 import { BOSSES, BOSS_CATEGORIES, type BossInfo } from "../../lib/data/bosses";
 import { apiFetch } from "../../lib/api/fetch";
 import { getCached, setCache } from "../../lib/api/cache";
+import ExternalLink from "../../components/ExternalLink";
 
 const isTauri = "__TAURI_INTERNALS__" in window;
 const WIKI_API = isTauri
@@ -185,14 +186,12 @@ export default function BossGuide() {
               {guide.length === 0 && (
                 <p className="text-sm text-text-secondary">
                   No guide data found. Check the{" "}
-                  <a
+                  <ExternalLink
                     href={`https://oldschool.runescape.wiki/w/${selectedBoss.wikiPage}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
                     className="text-accent hover:underline"
                   >
                     Wiki page
-                  </a>{" "}
+                  </ExternalLink>{" "}
                   directly.
                 </p>
               )}

@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+declare const __APP_VERSION__: string;
+
 interface PlayerBarProps {
   rsn: string;
   loading: boolean;
@@ -60,7 +62,7 @@ export default function PlayerBar({
       )}
       {error && <span className="text-xs text-danger">{error}</span>}
       <div className="flex-1" />
-      <span className="text-[10px] text-text-secondary/40">RuneWise v0.1.0</span>
+      <span className="text-[10px] text-text-secondary/40">RuneWise v{__APP_VERSION__}</span>
     </div>
   );
 }
