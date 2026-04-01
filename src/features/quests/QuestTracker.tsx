@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { QUESTS, QUEST_DIFFICULTIES, type Quest } from "../../lib/data/quests";
 import { type HiscoreData } from "../../lib/api/hiscores";
 import { SKILL_ICONS } from "../../lib/sprites";
+import ExternalLink from "../../components/ExternalLink";
 
 interface Props {
   hiscores: HiscoreData | null;
@@ -127,11 +128,9 @@ export default function QuestTracker({ hiscores }: Props) {
 
       <div className="space-y-1.5">
         {filtered.map(({ quest, met, missing }) => (
-          <a
+          <ExternalLink
             key={quest.name}
             href={`https://oldschool.runescape.wiki/w/${encodeURIComponent(quest.name.replace(/ /g, "_"))}`}
-            target="_blank"
-            rel="noopener noreferrer"
             className="block bg-bg-secondary rounded-lg px-4 py-3 hover:bg-bg-tertiary transition-colors cursor-pointer"
           >
             <div className="flex items-center justify-between">
@@ -190,7 +189,7 @@ export default function QuestTracker({ hiscores }: Props) {
                 </span>
               </div>
             )}
-          </a>
+          </ExternalLink>
         ))}
       </div>
 

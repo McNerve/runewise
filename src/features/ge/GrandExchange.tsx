@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   searchItems,
   fetchLatestPrices,
@@ -16,7 +16,9 @@ export default function GrandExchange() {
   const [pricesLoaded, setPricesLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const loadPrices = useCallback(() => {
+    setPricesLoaded(false);
+    setError(null);
     let cancelled = false;
     fetchLatestPrices()
       .then((p) => {
@@ -33,6 +35,10 @@ export default function GrandExchange() {
       });
     return () => { cancelled = true; };
   }, []);
+
+  useEffect(() => {
+    return loadPrices();
+  }, [loadPrices]);
 
   useEffect(() => {
     if (debouncedQuery.length < 2) {
@@ -87,7 +93,15 @@ export default function GrandExchange() {
       />
 
       {error && (
-        <p className="text-xs text-danger mb-2">{error}</p>
+        <div className="flex items-center gap-2 mb-2">
+          <p className="text-xs text-danger">{error}</p>
+          <button
+            onClick={loadPrices}
+            className="text-xs text-accent hover:text-accent-hover transition-colors"
+          >
+            Retry
+          </button>
+        </div>
       )}
 
       {!pricesLoaded && (
