@@ -72,3 +72,27 @@ body {
 .article-content .wikitable {
   background: var(--color-bg-tertiary);
 }
+
+.article-content blockquote {
+  border-left: 3px solid var(--color-accent);
+  padding-left: 1rem;
+  margin: 0.75rem 0;
+  color: var(--color-text-secondary);
+}
+
+.article-content details {
+  margin: 0.5rem 0;
+}
+
+.article-content summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.article-content h4 {
+  color: var(--color-text-primary);
+  font-weight: 600;
+  font-size: 0.875rem;
+  margin-top: 0.75rem;
+}

@@ -99,10 +99,27 @@ function extractArticleHtml(html: string): string {
 
   if (!content) return "<p>Could not extract article content.</p>";
 
+  // Strip unwanted elements
   content
-    .querySelectorAll("script, style, nav, header, footer")
+    .querySelectorAll("script, style, nav, header, footer, iframe, object, embed, form, .noprint")
     .forEach((el) => el.remove());
 
+  // Strip event handlers
+  content.querySelectorAll("*").forEach((el) => {
+    for (const attr of [...el.attributes]) {
+      if (attr.name.startsWith("on")) el.removeAttribute(attr.name);
+    }
+  });
+
+  // Resolve relative image URLs
+  content.querySelectorAll("img").forEach((img) => {
+    const src = img.getAttribute("src");
+    if (src && src.startsWith("/")) {
+      img.setAttribute("src", `https://secure.runescape.com${src}`);
+    }
+  });
+
+  // Strip links but keep text
   content.querySelectorAll("a").forEach((a) => {
     const text = document.createTextNode(a.textContent ?? "");
     a.replaceWith(text);
