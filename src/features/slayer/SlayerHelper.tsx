@@ -88,7 +88,7 @@ export default function SlayerHelper() {
             {tasksWithProbability.map((task) => (
               <tr
                 key={task.monster}
-                className={`border-b border-border/50 transition-colors ${
+                className={`border-b border-border/50 even:bg-bg-primary/30 transition-colors ${
                   task.blocked
                     ? "opacity-40"
                     : "hover:bg-bg-tertiary"

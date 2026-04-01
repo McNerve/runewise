@@ -181,7 +181,7 @@ export default function XpTracker({ rsn }: Props) {
                     {skillGains.map(([key, data]) => (
                       <tr
                         key={key}
-                        className="border-b border-border/50 hover:bg-bg-tertiary"
+                        className="border-b border-border/50 even:bg-bg-primary/30 hover:bg-bg-tertiary"
                       >
                         <td className="px-4 py-1.5 font-medium">
                           <button
@@ -226,7 +226,7 @@ export default function XpTracker({ rsn }: Props) {
                     {bossGains.map(([key, data]) => (
                       <tr
                         key={key}
-                        className="border-b border-border/50 hover:bg-bg-tertiary"
+                        className="border-b border-border/50 even:bg-bg-primary/30 hover:bg-bg-tertiary"
                       >
                         <td className="px-4 py-1.5 font-medium">
                           {formatBossName(key)}
@@ -264,7 +264,7 @@ export default function XpTracker({ rsn }: Props) {
               {achievements.map((a, i) => (
                 <tr
                   key={i}
-                  className="border-b border-border/50 hover:bg-bg-tertiary"
+                  className="border-b border-border/50 even:bg-bg-primary/30 hover:bg-bg-tertiary"
                 >
                   <td className="px-4 py-1.5 font-medium">{a.name}</td>
                   <td className="px-4 py-1.5 text-text-secondary capitalize">
@@ -294,7 +294,7 @@ export default function XpTracker({ rsn }: Props) {
               {records.slice(0, 50).map((r, i) => (
                 <tr
                   key={i}
-                  className="border-b border-border/50 hover:bg-bg-tertiary"
+                  className="border-b border-border/50 even:bg-bg-primary/30 hover:bg-bg-tertiary"
                 >
                   <td className="px-4 py-1.5 font-medium capitalize">
                     {r.metric.replace(/_/g, " ")}
