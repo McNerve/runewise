@@ -1,5 +1,6 @@
 import { getCached, setCache } from "./cache";
 import { apiFetch } from "./fetch";
+import { isTauri } from "../env";
 
 export interface HiscoreSkill {
   id: number;
@@ -14,7 +15,6 @@ export interface HiscoreData {
   activities: { id: number; name: string; rank: number; score: number }[];
 }
 
-const isTauri = "__TAURI_INTERNALS__" in window;
 const BASE_URL = isTauri
   ? "https://secure.runescape.com/m=hiscore_oldschool"
   : "/api/hiscores";

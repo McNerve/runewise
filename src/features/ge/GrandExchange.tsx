@@ -6,6 +6,7 @@ import {
   type ItemPrice,
 } from "../../lib/api/ge";
 import { useDebounce } from "../../hooks/useDebounce";
+import { formatGp, timeAgo } from "../../lib/format";
 
 export default function GrandExchange() {
   const [query, setQuery] = useState("");
@@ -36,6 +37,7 @@ export default function GrandExchange() {
 
   useEffect(() => {
     if (debouncedQuery.length < 2) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- clear results when query is too short
       setResults([]);
       return;
     }
@@ -57,22 +59,6 @@ export default function GrandExchange() {
     return () => { cancelled = true; };
   }, [debouncedQuery]);
 
-  const formatGp = (gp: number | null) => {
-    if (gp == null) return "—";
-    if (gp >= 1_000_000) return `${(gp / 1_000_000).toFixed(1)}M`;
-    if (gp >= 1_000) return `${(gp / 1_000).toFixed(0)}K`;
-    return gp.toLocaleString();
-  };
-
-  // eslint-disable-next-line react-hooks/purity -- Date.now() for display-only relative timestamps
-  const now = Date.now();
-  const timeAgo = (ts: number | null) => {
-    if (!ts) return "";
-    const diff = Math.floor(now / 1000 - ts);
-    if (diff < 60) return `${diff}s ago`;
-    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-    return `${Math.floor(diff / 3600)}h ago`;
-  };
 
   return (
     <div className="max-w-2xl">

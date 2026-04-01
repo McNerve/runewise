@@ -3,7 +3,7 @@ import { BOSSES, BOSS_CATEGORIES, type BossInfo } from "../../lib/data/bosses";
 import { apiFetch } from "../../lib/api/fetch";
 import { getCached, setCache } from "../../lib/api/cache";
 
-const isTauri = "__TAURI_INTERNALS__" in window;
+import { isTauri } from "../../lib/env";
 const WIKI_API = isTauri
   ? "https://oldschool.runescape.wiki/api.php"
   : "/api/wiki-content";
