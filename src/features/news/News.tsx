@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { apiFetch } from "../../lib/api/fetch";
-import ExternalLink from "../../components/ExternalLink";
 
 interface NewsPost {
   title: string;
@@ -10,7 +9,7 @@ interface NewsPost {
   status: "shipped" | "proposed" | "upcoming" | "unknown";
 }
 
-import { isTauri } from "../../lib/env";
+const isTauri = "__TAURI_INTERNALS__" in window;
 
 function classifyPost(category: string, title: string): NewsPost["status"] {
   const t = title.toLowerCase();
@@ -72,6 +71,53 @@ async function fetchBlogPosts(): Promise<NewsPost[]> {
   }
 }
 
+function resolveArticleUrl(url: string): string {
+  if (url.startsWith("http")) return url;
+  if (isTauri) return `https://secure.runescape.com${url}`;
+  return `/api/news${url.replace(/^\/m=news/, "")}`;
+}
+
+function extractArticleHtml(html: string): string {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+
+  const selectors = [
+    ".news-article-content",
+    ".article-content",
+    "article .body",
+    "article",
+  ];
+
+  let content: Element | null = null;
+  for (const sel of selectors) {
+    const el = doc.querySelector(sel);
+    if (el && el.innerHTML.trim().length > 0) {
+      content = el;
+      break;
+    }
+  }
+
+  if (!content) return "<p>Could not extract article content.</p>";
+
+  content
+    .querySelectorAll("script, style, nav, header, footer")
+    .forEach((el) => el.remove());
+
+  content.querySelectorAll("a").forEach((a) => {
+    const text = document.createTextNode(a.textContent ?? "");
+    a.replaceWith(text);
+  });
+
+  return content.innerHTML;
+}
+
+async function fetchArticleContent(url: string): Promise<string> {
+  const fetchUrl = resolveArticleUrl(url);
+  const res = await apiFetch(fetchUrl);
+  const html = await res.text();
+  return extractArticleHtml(html);
+}
+
 type StatusFilter = "all" | "shipped" | "proposed" | "upcoming";
 
 const STATUS_CONFIG: Record<
@@ -87,6 +133,9 @@ export default function News() {
   const [posts, setPosts] = useState<NewsPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<StatusFilter>("all");
+  const [selectedPost, setSelectedPost] = useState<NewsPost | null>(null);
+  const [articleHtml, setArticleHtml] = useState<string | null>(null);
+  const [articleLoading, setArticleLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -100,6 +149,21 @@ export default function News() {
       cancelled = true;
     };
   }, []);
+
+  function handlePostClick(post: NewsPost) {
+    setSelectedPost(post);
+    setArticleHtml(null);
+    setArticleLoading(true);
+    fetchArticleContent(post.url)
+      .then((html) => setArticleHtml(html))
+      .catch(() => setArticleHtml("<p>Failed to load article.</p>"))
+      .finally(() => setArticleLoading(false));
+  }
+
+  function handleBack() {
+    setSelectedPost(null);
+    setArticleHtml(null);
+  }
 
   const filtered =
     filter === "all" ? posts : posts.filter((p) => p.status === filter);
@@ -131,69 +195,129 @@ export default function News() {
     }
   };
 
-  return (
-    <div className="max-w-2xl">
-      <h2 className="text-xl font-semibold mb-4">OSRS News</h2>
+  const postRow = (post: NewsPost, i: number) => (
+    <button
+      key={i}
+      onClick={() => handlePostClick(post)}
+      className={`block w-full text-left rounded-lg px-4 py-3 transition-colors ${
+        selectedPost?.url === post.url
+          ? "bg-accent/10 border border-accent/30"
+          : "bg-bg-secondary hover:bg-bg-tertiary"
+      }`}
+    >
+      <div className="text-sm font-medium">{post.title}</div>
+      <div className="flex items-center gap-2 mt-1.5">
+        <span className="text-xs text-text-secondary">{post.date}</span>
+        <span
+          className={`text-xs px-1.5 py-0.5 rounded ${categoryColor(post.category)}`}
+        >
+          {post.category}
+        </span>
+        {statusBadge(post.status)}
+      </div>
+    </button>
+  );
 
-      <div className="flex gap-1.5 mb-4">
-        {(["all", "shipped", "proposed", "upcoming"] as const).map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`px-3 py-1.5 rounded text-xs transition-colors ${
-              filter === f
-                ? f === "all"
-                  ? "bg-accent text-white"
-                  : f === "shipped"
-                    ? "bg-success/20 text-success"
-                    : f === "proposed"
-                      ? "bg-warning/20 text-warning"
-                      : "bg-purple-500/20 text-purple-400"
-                : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
-            }`}
-          >
-            {f === "all"
-              ? "All"
-              : f === "shipped"
-                ? "Shipped"
-                : f === "proposed"
-                  ? "Proposed / Poll"
-                  : "Upcoming"}
-          </button>
-        ))}
+  const filterButtons = (
+    <div className="flex gap-1.5 mb-4">
+      {(["all", "shipped", "proposed", "upcoming"] as const).map((f) => (
+        <button
+          key={f}
+          onClick={() => setFilter(f)}
+          className={`px-3 py-1.5 rounded text-xs transition-colors ${
+            filter === f
+              ? f === "all"
+                ? "bg-accent text-white"
+                : f === "shipped"
+                  ? "bg-success/20 text-success"
+                  : f === "proposed"
+                    ? "bg-warning/20 text-warning"
+                    : "bg-purple-500/20 text-purple-400"
+              : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+          }`}
+        >
+          {f === "all"
+            ? "All"
+            : f === "shipped"
+              ? "Shipped"
+              : f === "proposed"
+                ? "Proposed / Poll"
+                : "Upcoming"}
+        </button>
+      ))}
+    </div>
+  );
+
+  if (!selectedPost) {
+    return (
+      <div className="max-w-2xl">
+        <h2 className="text-xl font-semibold mb-4">OSRS News</h2>
+        {filterButtons}
+
+        {loading && (
+          <p className="text-sm text-text-secondary">Loading news...</p>
+        )}
+
+        {!loading && filtered.length === 0 && (
+          <p className="text-sm text-text-secondary">
+            {posts.length === 0
+              ? "Could not load news. Try again later."
+              : "No posts match this filter."}
+          </p>
+        )}
+
+        <div className="space-y-1.5">
+          {filtered.map((post, i) => postRow(post, i))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex gap-4" style={{ maxWidth: "900px" }}>
+      <div className="shrink-0" style={{ width: "250px" }}>
+        <h2 className="text-xl font-semibold mb-4">OSRS News</h2>
+        {filterButtons}
+        <div
+          className="space-y-1.5 overflow-y-auto"
+          style={{ maxHeight: "calc(100vh - 180px)" }}
+        >
+          {filtered.map((post, i) => postRow(post, i))}
+        </div>
       </div>
 
-      {loading && (
-        <p className="text-sm text-text-secondary">Loading news...</p>
-      )}
+      <div className="flex-1 min-w-0">
+        <button
+          onClick={handleBack}
+          className="text-sm text-accent hover:text-accent-hover mb-4 transition-colors"
+        >
+          ← Back to list
+        </button>
 
-      {!loading && filtered.length === 0 && (
-        <p className="text-sm text-text-secondary">
-          {posts.length === 0
-            ? "Could not load news. Try again later."
-            : "No posts match this filter."}
-        </p>
-      )}
+        <h3 className="text-lg font-semibold mb-2">{selectedPost.title}</h3>
 
-      <div className="space-y-1.5">
-        {filtered.map((post, i) => (
-          <ExternalLink
-            key={i}
-            href={post.url}
-            className="block bg-bg-secondary rounded-lg px-4 py-3 hover:bg-bg-tertiary transition-colors"
+        <div className="flex items-center gap-2 mb-4">
+          <span className="text-xs text-text-secondary">
+            {selectedPost.date}
+          </span>
+          <span
+            className={`text-xs px-1.5 py-0.5 rounded ${categoryColor(selectedPost.category)}`}
           >
-            <div className="text-sm font-medium">{post.title}</div>
-            <div className="flex items-center gap-2 mt-1.5">
-              <span className="text-xs text-text-secondary">{post.date}</span>
-              <span
-                className={`text-xs px-1.5 py-0.5 rounded ${categoryColor(post.category)}`}
-              >
-                {post.category}
-              </span>
-              {statusBadge(post.status)}
-            </div>
-          </ExternalLink>
-        ))}
+            {selectedPost.category}
+          </span>
+          {statusBadge(selectedPost.status)}
+        </div>
+
+        {articleLoading && (
+          <p className="text-sm text-text-secondary">Loading article...</p>
+        )}
+
+        {!articleLoading && articleHtml && (
+          <div
+            className="article-content text-sm text-text-secondary leading-relaxed space-y-3"
+            dangerouslySetInnerHTML={{ __html: articleHtml }}
+          />
+        )}
       </div>
     </div>
   );
