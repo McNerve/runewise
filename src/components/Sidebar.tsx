@@ -87,7 +87,19 @@ export default function Sidebar({ currentView, onNavigate }: SidebarProps) {
                 : "text-text-secondary hover:bg-bg-tertiary hover:text-text-primary"
             }`}
           >
-            <img src={NAV_ICONS[item.id]} alt="" className="w-4 h-4" />
+            <img
+              src={NAV_ICONS[item.id]}
+              alt=""
+              className="w-4 h-4"
+              onError={(e) => {
+                const el = e.currentTarget;
+                el.style.display = "none";
+                if (el.nextElementSibling) el.nextElementSibling.classList.remove("hidden");
+              }}
+            />
+            <span className="hidden w-4 h-4 rounded bg-bg-tertiary text-[9px] font-bold flex items-center justify-center text-text-secondary">
+              {item.label[0]}
+            </span>
             <span className="flex-1">{item.label}</span>
             <span className="text-[10px] text-text-secondary/30">{item.key}</span>
           </button>

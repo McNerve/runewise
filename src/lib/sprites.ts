@@ -17,14 +17,14 @@ export function bossIcon(bossName: string): string {
 
 export const NAV_ICONS: Record<string, string> = {
   overview: `${WIKI_IMG}/Stats_icon.png`,
-  "skill-calc": `${WIKI_IMG}/Antique_lamp_%28Normal%29.png`,
+  "skill-calc": `${WIKI_IMG}/Antique_lamp.png`,
   "combat-calc": `${WIKI_IMG}/Combat_icon.png`,
   "dry-calc": `${WIKI_IMG}/Ring_of_wealth.png`,
   ge: `${WIKI_IMG}/Coins_10000.png`,
-  "item-db": `${WIKI_IMG}/Bank_icon_%28empty%29.png`,
+  "item-db": `${WIKI_IMG}/Bank_icon.png`,
   "xp-table": `${WIKI_IMG}/Book_of_knowledge.png`,
   drops: `${WIKI_IMG}/Looting_bag.png`,
-  tracker: `${WIKI_IMG}/Adventure_Log_icon.png`,
+  tracker: `${WIKI_IMG}/Collection_log.png`,
   bosses: `${WIKI_IMG}/Slayer_helmet_%28i%29.png`,
   quests: `${WIKI_IMG}/Quest_point_icon.png`,
   diaries: `${WIKI_IMG}/Achievement_Diaries_icon.png`,

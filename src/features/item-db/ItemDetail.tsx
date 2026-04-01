@@ -61,6 +61,7 @@ export default function ItemDetail({ item, price, onClose }: ItemDetailProps) {
           src={`https://oldschool.runescape.wiki/images/${item.icon}`}
           alt={item.name}
           className="w-8 h-8"
+          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
         />
         <h3 className="text-lg font-semibold">{item.name}</h3>
         {item.members && (
