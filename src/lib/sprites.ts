@@ -30,6 +30,18 @@ export const NAV_ICONS: Record<string, string> = {
   diaries: `${WIKI_IMG}/Achievement_Diaries_icon.png`,
   slayer: `${WIKI_IMG}/Slayer_icon.png`,
   news: `${WIKI_IMG}/Newspaper.png`,
+  "price-charts": `${WIKI_IMG}/Grand_Exchange_icon.png`,
+  "alch-calc": `${WIKI_IMG}/High_Level_Alchemy_icon.png`,
+  "dps-calc": `${WIKI_IMG}/Dragon_claws_detail.png`,
+  watchlist: `${WIKI_IMG}/Platinum_token_detail.png`,
+  "boss-loot": `${WIKI_IMG}/Looting_bag_detail.png`,
+  runelite: `${WIKI_IMG}/RuneLite.png`,
+  timers: `${WIKI_IMG}/Farming_icon.png`,
+  stars: `${WIKI_IMG}/Stardust.png`,
+  "clue-helper": `${WIKI_IMG}/Clue_scroll_%28hard%29.png`,
+  "combat-tasks": `${WIKI_IMG}/Combat_Achievements_icon.png`,
+  "money-making": `${WIKI_IMG}/Coins_detail.png`,
+  "pet-calc": `${WIKI_IMG}/Heron.png`,
 };
 
 export const SKILL_ICONS: Record<string, string> = {

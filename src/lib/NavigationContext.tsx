@@ -15,7 +15,19 @@ export type View =
   | "diaries"
   | "slayer"
   | "news"
-  | "about";
+  | "about"
+  | "price-charts"
+  | "alch-calc"
+  | "dps-calc"
+  | "watchlist"
+  | "boss-loot"
+  | "runelite"
+  | "timers"
+  | "stars"
+  | "clue-helper"
+  | "combat-tasks"
+  | "money-making"
+  | "pet-calc";
 
 interface NavState {
   view: View;
