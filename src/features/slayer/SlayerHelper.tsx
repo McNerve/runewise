@@ -1,7 +1,9 @@
 import { useState, useMemo } from "react";
 import { SLAYER_MASTERS, type SlayerMaster } from "../../lib/data/slayer";
+import { useNavigation } from "../../lib/NavigationContext";
 
 export default function SlayerHelper() {
+  const { navigate } = useNavigation();
   const [selectedMaster, setSelectedMaster] = useState<SlayerMaster>(
     SLAYER_MASTERS[0]
   );
@@ -104,7 +106,14 @@ export default function SlayerHelper() {
                     {task.blocked ? "✕" : ""}
                   </button>
                 </td>
-                <td className="px-4 py-1.5 font-medium">{task.monster}</td>
+                <td className="px-4 py-1.5 font-medium">
+                  <button
+                    onClick={() => navigate("drops", { monster: task.monster })}
+                    className="hover:text-accent transition-colors text-left"
+                  >
+                    {task.monster}
+                  </button>
+                </td>
                 <td className="px-4 py-1.5 text-right text-text-secondary">
                   {task.amount}
                 </td>

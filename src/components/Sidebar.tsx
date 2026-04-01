@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { View } from "../App";
+import type { View } from "../lib/NavigationContext";
 
 import { isTauri } from "../lib/env";
 

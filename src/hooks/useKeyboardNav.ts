@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import type { View } from "../App";
+import type { View } from "../lib/NavigationContext";
 
 const SHORTCUTS: Record<string, View> = {
   "1": "overview",

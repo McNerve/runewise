@@ -1,4 +1,4 @@
-import { useState, lazy, Suspense } from "react";
+import { lazy, Suspense } from "react";
 import Sidebar from "./components/Sidebar";
 import PlayerBar from "./components/PlayerBar";
 
@@ -18,27 +18,12 @@ const DiaryTracker = lazy(() => import("./features/diaries/DiaryTracker"));
 const SlayerHelper = lazy(() => import("./features/slayer/SlayerHelper"));
 import { useHiscores } from "./hooks/useHiscores";
 import { useKeyboardNav } from "./hooks/useKeyboardNav";
+import { NavigationProvider, useNavigation } from "./lib/NavigationContext";
 
-export type View =
-  | "overview"
-  | "skill-calc"
-  | "combat-calc"
-  | "dry-calc"
-  | "ge"
-  | "item-db"
-  | "xp-table"
-  | "drops"
-  | "tracker"
-  | "bosses"
-  | "quests"
-  | "diaries"
-  | "slayer"
-  | "news";
-
-function App() {
-  const [view, setView] = useState<View>("overview");
+function AppContent() {
+  const { view, navigate } = useNavigation();
   const hiscores = useHiscores();
-  useKeyboardNav(setView);
+  useKeyboardNav(navigate);
 
   const renderView = () => {
     switch (view) {
@@ -81,7 +66,7 @@ function App() {
 
   return (
     <div className="flex h-screen">
-      <Sidebar currentView={view} onNavigate={setView} />
+      <Sidebar currentView={view} onNavigate={navigate} />
       <div className="flex-1 flex flex-col overflow-hidden">
         <PlayerBar
           rsn={hiscores.rsn}
@@ -97,6 +82,14 @@ function App() {
         </main>
       </div>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <NavigationProvider>
+      <AppContent />
+    </NavigationProvider>
   );
 }
 

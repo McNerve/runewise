@@ -2,6 +2,7 @@ import { type HiscoreData } from "../../lib/api/hiscores";
 import { xpForLevel } from "../../lib/formulas/xp";
 import { combatLevel } from "../../lib/formulas/combat";
 import { SKILL_ICONS } from "../../lib/sprites";
+import { useNavigation } from "../../lib/NavigationContext";
 
 interface Props {
   hiscores: HiscoreData;
@@ -20,6 +21,7 @@ const SKILL_ORDER = [
 ];
 
 export default function Overview({ hiscores, rsn }: Props) {
+  const { navigate } = useNavigation();
   const totalLevel = hiscores.skills
     .filter((s) => s.name !== "Overall")
     .reduce((sum, s) => sum + s.level, 0);
@@ -94,9 +96,10 @@ export default function Overview({ hiscores, rsn }: Props) {
               : 100;
 
           return (
-            <div
+            <button
               key={skillName}
-              className="bg-bg-secondary rounded px-3 py-2 flex items-center justify-between"
+              onClick={() => navigate("skill-calc", { skill: skillName })}
+              className="bg-bg-secondary rounded px-3 py-2 flex items-center justify-between hover:bg-bg-tertiary transition-colors cursor-pointer text-left"
             >
               <div className="flex items-center gap-2">
                 <img src={SKILL_ICONS[skillName]} alt="" className="w-4 h-4" />
@@ -121,7 +124,7 @@ export default function Overview({ hiscores, rsn }: Props) {
                   <span className="text-[10px] text-success">MAX</span>
                 )}
               </div>
-            </div>
+            </button>
           );
         })}
       </div>
