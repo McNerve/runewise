@@ -23,6 +23,7 @@ const ALLOWED_HOSTS: &[&str] = &[
     "prices.runescape.wiki",
     "oldschool.runescape.wiki",
     "api.wiseoldman.net",
+    "public.starminers.site",
 ];
 
 #[tauri::command]

@@ -1,7 +1,9 @@
+import { useState, useEffect } from "react";
 import { type HiscoreData } from "../../lib/api/hiscores";
+import { fetchWomPlayer, type WomPlayer } from "../../lib/api/wom";
 import { xpForLevel } from "../../lib/formulas/xp";
 import { combatLevel } from "../../lib/formulas/combat";
-import { SKILL_ICONS } from "../../lib/sprites";
+import { SKILL_ICONS, bossIconSmall, bossIcon } from "../../lib/sprites";
 import { useNavigation } from "../../lib/NavigationContext";
 
 interface Props {
@@ -22,6 +24,12 @@ const SKILL_ORDER = [
 
 export default function Overview({ hiscores, rsn }: Props) {
   const { navigate } = useNavigation();
+  const [womPlayer, setWomPlayer] = useState<WomPlayer | null>(null);
+
+  useEffect(() => {
+    if (!rsn) return;
+    fetchWomPlayer(rsn).then(setWomPlayer).catch(() => {});
+  }, [rsn]);
   const totalLevel = hiscores.skills
     .filter((s) => s.name !== "Overall")
     .reduce((sum, s) => sum + s.level, 0);
@@ -45,17 +53,35 @@ export default function Overview({ hiscores, rsn }: Props) {
     (s) => s.name !== "Overall" && s.level >= 99
   ).length;
 
-  const questPoints = hiscores.activities?.find(
-    (a) => a.name.toLowerCase().includes("quest") || a.name === "Quest Points"
-  )?.score ?? null;
-
-  const combatAchievements = hiscores.activities?.find(
-    (a) => a.name.toLowerCase().includes("combat achievement") || a.name === "Combat Achievements"
-  )?.score ?? null;
-
   const collectionLog = hiscores.activities?.find(
-    (a) => a.name.toLowerCase().includes("collection") || a.name === "Collection Log"
+    (a) => a.name === "Collections Logged"
   )?.score ?? null;
+
+  const clueScrollsAll = hiscores.activities?.find(
+    (a) => a.name === "Clue Scrolls (all)"
+  )?.score ?? null;
+
+  const colosseumGlory = hiscores.activities?.find(
+    (a) => a.name === "Colosseum Glory"
+  )?.score ?? null;
+
+  const clueTiers = ["beginner", "easy", "medium", "hard", "elite", "master"].map((tier) => ({
+    tier,
+    count: hiscores.activities?.find((a) => a.name.toLowerCase() === `clue scrolls (${tier})`)?.score ?? 0,
+  })).filter((c) => c.count > 0);
+
+  const NON_BOSS = ["Clue", "Points", "Rank", "Zeal", "Rifts", "Glory", "Collections", "Grid", "League", "Deadman", "Bounty", "LMS"];
+  const bossActivities = hiscores.activities?.filter((a) =>
+    a.score > 0 && a.id >= 20 && !NON_BOSS.some((k) => a.name.includes(k))
+  ) ?? [];
+  const totalBossKills = bossActivities.reduce((sum, a) => sum + a.score, 0);
+
+  // Minigames
+  const wintertodt = hiscores.activities?.find((a) => a.name === "Wintertodt")?.score ?? 0;
+  const tempoross = hiscores.activities?.find((a) => a.name === "Tempoross")?.score ?? 0;
+  const rifts = hiscores.activities?.find((a) => a.name === "Rifts closed")?.score ?? 0;
+  const gauntlet = hiscores.activities?.find((a) => a.name === "The Corrupted Gauntlet")?.score ?? 0;
+  const hasMinigames = wintertodt > 0 || tempoross > 0 || rifts > 0 || gauntlet > 0;
 
   return (
     <div className="max-w-3xl">
@@ -89,42 +115,85 @@ export default function Overview({ hiscores, rsn }: Props) {
         </div>
       </div>
 
-      {/* Activity stats */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
-        {questPoints != null && questPoints > 0 && (
-          <div className="bg-bg-secondary rounded-lg p-3 text-center">
-            <div className="flex items-center justify-center gap-1.5 mb-1">
-              <img src={`https://oldschool.runescape.wiki/images/Quest_point_icon.png`} alt="" className="w-4 h-4" />
-              <div className="text-lg font-bold">{questPoints}</div>
-            </div>
-            <div className="text-xs text-text-secondary">Quest Points</div>
-          </div>
-        )}
-        {combatAchievements != null && combatAchievements > 0 && (
-          <div className="bg-bg-secondary rounded-lg p-3 text-center">
-            <div className="flex items-center justify-center gap-1.5 mb-1">
-              <img src={`https://oldschool.runescape.wiki/images/Combat_icon.png`} alt="" className="w-4 h-4" />
-              <div className="text-lg font-bold">{combatAchievements}<span className="text-xs text-text-secondary font-normal">/637</span></div>
-            </div>
-            <div className="text-xs text-text-secondary">Combat Tasks</div>
-          </div>
-        )}
+      {/* Activity stats — sourced from hiscores activities */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         {collectionLog != null && collectionLog > 0 && (
           <div className="bg-bg-secondary rounded-lg p-3 text-center">
             <div className="flex items-center justify-center gap-1.5 mb-1">
-              <img src={`https://oldschool.runescape.wiki/images/Collection_log.png`} alt="" className="w-4 h-4" />
+              <img src="https://oldschool.runescape.wiki/images/Collection_log.png" alt="" className="w-4 h-4" />
               <div className="text-lg font-bold">{collectionLog}<span className="text-xs text-text-secondary font-normal">/1,699</span></div>
             </div>
             <div className="text-xs text-text-secondary">Collection Log</div>
           </div>
         )}
+        {totalBossKills > 0 && (
+          <button
+            onClick={() => navigate("boss-loot")}
+            className="bg-bg-secondary rounded-lg p-3 text-center hover:bg-bg-tertiary transition-colors"
+          >
+            <div className="flex items-center justify-center gap-1.5 mb-1">
+              <img src="https://oldschool.runescape.wiki/images/Slayer_helmet_%28i%29.png" alt="" className="w-4 h-4" />
+              <div className="text-lg font-bold">{totalBossKills.toLocaleString()}</div>
+            </div>
+            <div className="text-xs text-text-secondary">Boss Kills</div>
+          </button>
+        )}
+        {clueScrollsAll != null && clueScrollsAll > 0 && (
+          <button
+            onClick={() => navigate("clue-helper")}
+            className="bg-bg-secondary rounded-lg p-3 text-center hover:bg-bg-tertiary transition-colors"
+          >
+            <div className="flex items-center justify-center gap-1.5 mb-1">
+              <img src="https://oldschool.runescape.wiki/images/Clue_scroll_%28hard%29.png" alt="" className="w-4 h-4" />
+              <div className="text-lg font-bold">{clueScrollsAll}</div>
+            </div>
+            <div className="text-xs text-text-secondary">Clue Scrolls</div>
+          </button>
+        )}
+        {colosseumGlory != null && (
+          <div className="bg-bg-secondary rounded-lg p-3 text-center">
+            <div className="flex items-center justify-center gap-1.5 mb-1">
+              <img src="https://oldschool.runescape.wiki/images/Dizana%27s_quiver_%28uncharged%29.png" alt="" className="w-4 h-4" />
+              <div className="text-lg font-bold">{colosseumGlory.toLocaleString()}</div>
+            </div>
+            <div className="text-xs text-text-secondary">Colosseum Glory</div>
+          </div>
+        )}
       </div>
 
-      {overallRank > 0 && (
-        <p className="text-xs text-text-secondary mb-4">
-          Overall rank #{overallRank.toLocaleString()}
-        </p>
+      {/* Clue scroll breakdown */}
+      {clueTiers.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-4 justify-center">
+          {clueTiers.map((c) => (
+            <div key={c.tier} className="bg-bg-secondary rounded px-3 py-2 flex items-center gap-2">
+              <img
+                src={`https://oldschool.runescape.wiki/images/Clue_scroll_%28${c.tier}%29.png`}
+                alt=""
+                className="w-4 h-4"
+                onError={(e) => { e.currentTarget.style.display = "none"; }}
+              />
+              <div className="text-sm font-bold">{c.count}</div>
+              <div className="text-[10px] text-text-secondary capitalize">{c.tier}</div>
+            </div>
+          ))}
+        </div>
       )}
+
+      {/* WOM data: EHP, EHB, account type */}
+      <div className="flex items-center gap-3 mb-4 text-xs text-text-secondary">
+        {overallRank > 0 && <span>Overall rank #{overallRank.toLocaleString()}</span>}
+        {womPlayer?.type && womPlayer.type !== "regular" && (
+          <span className="bg-accent/15 text-accent px-1.5 py-0.5 rounded capitalize">
+            {womPlayer.type.replace("_", " ")}
+          </span>
+        )}
+        {womPlayer?.ehp != null && womPlayer.ehp > 0 && (
+          <span title="Efficient Hours Played">EHP: {womPlayer.ehp.toFixed(0)}</span>
+        )}
+        {womPlayer?.ehb != null && womPlayer.ehb > 0 && (
+          <span title="Efficient Hours Bossed">EHB: {womPlayer.ehb.toFixed(0)}</span>
+        )}
+      </div>
 
       {/* Skill grid — 3 columns, OSRS layout */}
       <div className="grid grid-cols-3 gap-1.5">
@@ -171,6 +240,87 @@ export default function Overview({ hiscores, rsn }: Props) {
           );
         })}
       </div>
+      {/* Minigames */}
+      {hasMinigames && (
+        <div className="mt-6">
+          <h3 className="text-xs uppercase tracking-wider text-text-secondary/60 mb-2">
+            Minigames
+          </h3>
+          <div className="flex flex-wrap gap-1.5 justify-center">
+            {wintertodt > 0 && (
+              <div className="bg-bg-secondary rounded-lg px-4 py-2.5 text-center">
+                <div className="text-sm font-bold">{wintertodt.toLocaleString()}</div>
+                <div className="text-[10px] text-text-secondary">Wintertodt</div>
+              </div>
+            )}
+            {tempoross > 0 && (
+              <div className="bg-bg-secondary rounded-lg px-4 py-2.5 text-center">
+                <div className="text-sm font-bold">{tempoross.toLocaleString()}</div>
+                <div className="text-[10px] text-text-secondary">Tempoross</div>
+              </div>
+            )}
+            {rifts > 0 && (
+              <div className="bg-bg-secondary rounded-lg px-4 py-2.5 text-center">
+                <div className="text-sm font-bold">{rifts.toLocaleString()}</div>
+                <div className="text-[10px] text-text-secondary">GOTR Rifts</div>
+              </div>
+            )}
+            {gauntlet > 0 && (
+              <div className="bg-bg-secondary rounded-lg px-4 py-2.5 text-center">
+                <div className="text-sm font-bold">{gauntlet.toLocaleString()}</div>
+                <div className="text-[10px] text-text-secondary">Corrupted Gauntlet</div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Boss Kill Counts */}
+      {bossActivities.length > 0 && (
+        <div className="mt-6">
+          <h3 className="text-xs uppercase tracking-wider text-text-secondary/60 mb-2">
+            Boss Kill Counts
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+            {[...bossActivities].sort((a, b) => b.score - a.score).map((boss) => (
+              <button
+                key={boss.name}
+                onClick={() => navigate("bosses", { boss: boss.name })}
+                className="bg-bg-secondary rounded px-2 py-2 hover:bg-bg-tertiary transition-colors flex items-center gap-2"
+              >
+                <div className="w-6 h-6 shrink-0 relative">
+                  <img
+                    src={bossIconSmall(boss.name)}
+                    alt=""
+                    className="w-6 h-6 rounded"
+                    onError={(e) => {
+                      // Try the large icon as fallback
+                      const fallback = bossIcon(boss.name);
+                      if (e.currentTarget.src !== fallback) {
+                        e.currentTarget.src = fallback;
+                      } else {
+                        e.currentTarget.style.display = "none";
+                        const sib = e.currentTarget.nextElementSibling as HTMLElement;
+                        if (sib) sib.style.display = "flex";
+                      }
+                    }}
+                  />
+                  <div
+                    className="w-6 h-6 rounded bg-bg-tertiary text-[10px] font-bold text-text-secondary items-center justify-center hidden"
+                  >
+                    {boss.name[0]}
+                  </div>
+                </div>
+                <div className="min-w-0 text-left">
+                  <div className="text-sm font-bold">{boss.score.toLocaleString()}</div>
+                  <div className="text-[10px] text-text-secondary truncate" title={boss.name}>{boss.name}</div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

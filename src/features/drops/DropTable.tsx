@@ -2,18 +2,23 @@ import { useState, useEffect } from "react";
 import { searchMonsters, fetchDropTable, type DropItem } from "../../lib/api/wiki";
 import { fetchLatestPrices, fetchMapping, type ItemPrice } from "../../lib/api/ge";
 import { formatGp } from "../../lib/format";
+import { itemIcon } from "../../lib/sprites";
 import { useDebounce } from "../../hooks/useDebounce";
 import { useNavigation } from "../../lib/NavigationContext";
 
 function RarityBar({ rarity }: { rarity: string }) {
-  const match = rarity.match(/1\/([\d,]+)/);
+  // Match patterns like "1/128", "~1/115", "~8/115"
+  const match = rarity.match(/~?(\d+)\/([\d,]+)/);
   if (!match) return null;
-  const denom = parseInt(match[1].replace(/,/g, ""));
-  const width = Math.max(5, Math.min(100, (1 / denom) * 5000));
-  const color = denom <= 16 ? "bg-text-secondary" : denom <= 128 ? "bg-accent" : denom <= 512 ? "bg-warning" : "bg-danger";
+  const numerator = parseInt(match[1]);
+  const denominator = parseInt(match[2].replace(/,/g, ""));
+  const rate = denominator / numerator; // effective 1-in-X rate
+  // Use log scale for better visual distribution
+  const width = Math.max(5, Math.min(100, (1 / rate) * 5000));
+  const color = rate <= 16 ? "bg-text-secondary" : rate <= 128 ? "bg-accent" : rate <= 512 ? "bg-warning" : "bg-danger";
   return (
-    <div className="w-full bg-bg-tertiary rounded-full h-1 mt-1">
-      <div className={`rounded-full h-1 ${color}`} style={{ width: `${width}%` }} />
+    <div className="w-full bg-bg-tertiary rounded-full h-1.5 mt-1">
+      <div className={`rounded-full h-1.5 ${color}`} style={{ width: `${width}%` }} />
     </div>
   );
 }
@@ -165,8 +170,14 @@ export default function DropTable() {
                     <td className="px-4 py-1.5 font-medium">
                       <button
                         onClick={() => navigate("ge", { query: drop.name })}
-                        className="hover:text-accent transition-colors text-left"
+                        className="hover:text-accent transition-colors text-left flex items-center gap-2"
                       >
+                        <img
+                          src={itemIcon(drop.name)}
+                          alt=""
+                          className="w-5 h-5 shrink-0"
+                          onError={(e) => { e.currentTarget.style.display = "none"; }}
+                        />
                         {drop.name}
                       </button>
                     </td>

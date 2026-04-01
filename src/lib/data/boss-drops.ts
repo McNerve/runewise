@@ -166,4 +166,165 @@ export const BOSS_DROP_TABLES: BossDropTable[] = [
       { itemName: "Blood rune", itemId: 565, rate: 1, quantity: 150, category: "common" },
     ],
   },
+  // DT2 Bosses
+  {
+    bossName: "Duke Sucellus",
+    killsPerHour: 20,
+    drops: [
+      { itemName: "Virtus mask", itemId: 26241, rate: 768, quantity: 1, category: "unique" },
+      { itemName: "Virtus robe top", itemId: 26243, rate: 768, quantity: 1, category: "unique" },
+      { itemName: "Virtus robe bottom", itemId: 26245, rate: 768, quantity: 1, category: "unique" },
+      { itemName: "Chromium ingot", itemId: 26247, rate: 768, quantity: 1, category: "unique" },
+      { itemName: "Eye of the duke", itemId: 28313, rate: 1536, quantity: 1, category: "unique" },
+      { itemName: "Blood rune", itemId: 565, rate: 2, quantity: 250, category: "common" },
+    ],
+  },
+  {
+    bossName: "The Leviathan",
+    killsPerHour: 18,
+    drops: [
+      { itemName: "Leviathan's lure", itemId: 28316, rate: 1536, quantity: 1, category: "unique" },
+      { itemName: "Trident of the seas (full)", itemId: 11905, rate: 400, quantity: 1, category: "rare" },
+      { itemName: "Kraken tentacle", itemId: 12004, rate: 400, quantity: 1, category: "rare" },
+      { itemName: "Death rune", itemId: 560, rate: 2, quantity: 200, category: "common" },
+    ],
+  },
+  {
+    bossName: "Vardorvis",
+    killsPerHour: 22,
+    drops: [
+      { itemName: "Executioner's axe head", itemId: 28319, rate: 768, quantity: 1, category: "unique" },
+      { itemName: "Vardorvis' poll", itemId: 28322, rate: 1536, quantity: 1, category: "unique" },
+      { itemName: "Blood rune", itemId: 565, rate: 2, quantity: 200, category: "common" },
+      { itemName: "Soul rune", itemId: 566, rate: 2, quantity: 150, category: "common" },
+    ],
+  },
+  {
+    bossName: "The Whisperer",
+    killsPerHour: 15,
+    drops: [
+      { itemName: "Siren's staff", itemId: 28325, rate: 768, quantity: 1, category: "unique" },
+      { itemName: "The Whisperer's eye", itemId: 28328, rate: 1536, quantity: 1, category: "unique" },
+      { itemName: "Soul rune", itemId: 566, rate: 2, quantity: 200, category: "common" },
+    ],
+  },
+  // New bosses
+  {
+    bossName: "Araxxor",
+    killsPerHour: 15,
+    drops: [
+      { itemName: "Noxious pommel", itemId: 29370, rate: 200, quantity: 1, category: "unique" },
+      { itemName: "Noxious point", itemId: 29372, rate: 200, quantity: 1, category: "unique" },
+      { itemName: "Noxious blade", itemId: 29374, rate: 200, quantity: 1, category: "unique" },
+      { itemName: "Araxyte fang", itemId: 29376, rate: 600, quantity: 1, category: "unique" },
+      { itemName: "Araxyte venom sack", itemId: 29378, rate: 16, quantity: 1, category: "rare" },
+    ],
+  },
+  {
+    bossName: "Nex",
+    killsPerHour: 12,
+    drops: [
+      { itemName: "Torva full helm", itemId: 26382, rate: 258, quantity: 1, category: "unique" },
+      { itemName: "Torva platebody", itemId: 26384, rate: 258, quantity: 1, category: "unique" },
+      { itemName: "Torva platelegs", itemId: 26386, rate: 258, quantity: 1, category: "unique" },
+      { itemName: "Zaryte vambraces", itemId: 26235, rate: 172, quantity: 1, category: "unique" },
+      { itemName: "Ancient hilt", itemId: 26233, rate: 258, quantity: 1, category: "unique" },
+      { itemName: "Nihil horn", itemId: 26231, rate: 258, quantity: 1, category: "unique" },
+    ],
+  },
+  {
+    bossName: "Phantom Muspah",
+    killsPerHour: 25,
+    drops: [
+      { itemName: "Ancient sceptre", itemId: 27624, rate: 100, quantity: 1, category: "unique" },
+      { itemName: "Saturated heart", itemId: 27641, rate: 1024, quantity: 1, category: "unique" },
+      { itemName: "Ancient essence", itemId: 27616, rate: 4, quantity: 150, category: "common" },
+      { itemName: "Cannonball", itemId: 2, rate: 3, quantity: 400, category: "common" },
+    ],
+  },
+  {
+    bossName: "Kraken",
+    killsPerHour: 55,
+    drops: [
+      { itemName: "Kraken tentacle", itemId: 12004, rate: 400, quantity: 1, category: "unique" },
+      { itemName: "Trident of the seas (full)", itemId: 11905, rate: 512, quantity: 1, category: "unique" },
+      { itemName: "Jar of dirt", itemId: 22520, rate: 1000, quantity: 1, category: "rare" },
+    ],
+  },
+  {
+    bossName: "Kalphite Queen",
+    killsPerHour: 20,
+    drops: [
+      { itemName: "Dragon chainbody", itemId: 3140, rate: 128, quantity: 1, category: "unique" },
+      { itemName: "Dragon 2h sword", itemId: 7158, rate: 256, quantity: 1, category: "unique" },
+      { itemName: "Kq head", itemId: 7981, rate: 128, quantity: 1, category: "rare" },
+    ],
+  },
+  {
+    bossName: "Giant Mole",
+    killsPerHour: 35,
+    drops: [
+      { itemName: "Mole claw", itemId: 7416, rate: 1, quantity: 1, category: "common" },
+      { itemName: "Mole skin", itemId: 7418, rate: 1, quantity: 1, category: "common" },
+      { itemName: "Long bone", itemId: 10976, rate: 400, quantity: 1, category: "rare" },
+    ],
+  },
+  {
+    bossName: "Dagannoth Rex",
+    killsPerHour: 30,
+    drops: [
+      { itemName: "Berserker ring", itemId: 6737, rate: 128, quantity: 1, category: "unique" },
+      { itemName: "Warrior ring", itemId: 6735, rate: 128, quantity: 1, category: "unique" },
+      { itemName: "Dragon axe", itemId: 6739, rate: 128, quantity: 1, category: "unique" },
+    ],
+  },
+  {
+    bossName: "Dagannoth Prime",
+    killsPerHour: 30,
+    drops: [
+      { itemName: "Seers ring", itemId: 6731, rate: 128, quantity: 1, category: "unique" },
+      { itemName: "Mud battlestaff", itemId: 6562, rate: 128, quantity: 1, category: "unique" },
+      { itemName: "Dragon axe", itemId: 6739, rate: 128, quantity: 1, category: "unique" },
+    ],
+  },
+  {
+    bossName: "Dagannoth Supreme",
+    killsPerHour: 30,
+    drops: [
+      { itemName: "Archers ring", itemId: 6733, rate: 128, quantity: 1, category: "unique" },
+      { itemName: "Seercull", itemId: 6724, rate: 128, quantity: 1, category: "unique" },
+      { itemName: "Dragon axe", itemId: 6739, rate: 128, quantity: 1, category: "unique" },
+    ],
+  },
+  {
+    bossName: "The Nightmare",
+    killsPerHour: 6,
+    drops: [
+      { itemName: "Inquisitor's mace", itemId: 24417, rate: 600, quantity: 1, category: "unique" },
+      { itemName: "Inquisitor's great helm", itemId: 24419, rate: 600, quantity: 1, category: "unique" },
+      { itemName: "Inquisitor's hauberk", itemId: 24420, rate: 600, quantity: 1, category: "unique" },
+      { itemName: "Inquisitor's plateskirt", itemId: 24421, rate: 600, quantity: 1, category: "unique" },
+      { itemName: "Nightmare staff", itemId: 24422, rate: 400, quantity: 1, category: "unique" },
+      { itemName: "Eldritch orb", itemId: 24511, rate: 1800, quantity: 1, category: "unique" },
+      { itemName: "Harmonised orb", itemId: 24514, rate: 1800, quantity: 1, category: "unique" },
+      { itemName: "Volatile orb", itemId: 24517, rate: 1800, quantity: 1, category: "unique" },
+    ],
+  },
+  {
+    bossName: "Scurrius",
+    killsPerHour: 30,
+    drops: [
+      { itemName: "Scurrius' spine", itemId: 28232, rate: 256, quantity: 1, category: "unique" },
+      { itemName: "Scurry", itemId: 28229, rate: 3000, quantity: 1, category: "rare" },
+    ],
+  },
+  {
+    bossName: "Corrupted Gauntlet",
+    killsPerHour: 5,
+    drops: [
+      { itemName: "Enhanced crystal weapon seed", itemId: 25859, rate: 400, quantity: 1, category: "unique" },
+      { itemName: "Crystal armour seed", itemId: 23956, rate: 50, quantity: 1, category: "rare" },
+      { itemName: "Crystal weapon seed", itemId: 23951, rate: 50, quantity: 1, category: "rare" },
+    ],
+  },
 ];

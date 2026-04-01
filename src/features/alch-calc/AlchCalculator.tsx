@@ -239,7 +239,7 @@ export default function AlchCalculator() {
                   className="text-right px-4 py-2 cursor-pointer hover:text-text-primary"
                   onClick={() => handleSort("roi")}
                 >
-                  ROI%{sortIndicator("roi")}
+                  Profit%{sortIndicator("roi")}
                 </th>
                 <th
                   className="text-right px-4 py-2 cursor-pointer hover:text-text-primary"

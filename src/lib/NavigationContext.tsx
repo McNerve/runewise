@@ -27,7 +27,9 @@ export type View =
   | "clue-helper"
   | "combat-tasks"
   | "money-making"
-  | "pet-calc";
+  | "pet-calc"
+  | "settings"
+  | "market";
 
 interface NavState {
   view: View;
