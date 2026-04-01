@@ -1,20 +1,21 @@
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import Sidebar from "./components/Sidebar";
 import PlayerBar from "./components/PlayerBar";
-import Overview from "./features/overview/Overview";
-import SkillCalculator from "./features/skill-calc/SkillCalculator";
-import CombatCalculator from "./features/combat-calc/CombatCalculator";
-import DryCalculator from "./features/dry-calc/DryCalculator";
-import GrandExchange from "./features/ge/GrandExchange";
-import ItemDatabase from "./features/item-db/ItemDatabase";
-import XpTable from "./features/xp-table/XpTable";
-import News from "./features/news/News";
-import DropTable from "./features/drops/DropTable";
-import XpTracker from "./features/tracker/XpTracker";
-import BossGuide from "./features/boss-guide/BossGuide";
-import QuestTracker from "./features/quests/QuestTracker";
-import DiaryTracker from "./features/diaries/DiaryTracker";
-import SlayerHelper from "./features/slayer/SlayerHelper";
+
+const Overview = lazy(() => import("./features/overview/Overview"));
+const SkillCalculator = lazy(() => import("./features/skill-calc/SkillCalculator"));
+const CombatCalculator = lazy(() => import("./features/combat-calc/CombatCalculator"));
+const DryCalculator = lazy(() => import("./features/dry-calc/DryCalculator"));
+const GrandExchange = lazy(() => import("./features/ge/GrandExchange"));
+const ItemDatabase = lazy(() => import("./features/item-db/ItemDatabase"));
+const XpTable = lazy(() => import("./features/xp-table/XpTable"));
+const News = lazy(() => import("./features/news/News"));
+const DropTable = lazy(() => import("./features/drops/DropTable"));
+const XpTracker = lazy(() => import("./features/tracker/XpTracker"));
+const BossGuide = lazy(() => import("./features/boss-guide/BossGuide"));
+const QuestTracker = lazy(() => import("./features/quests/QuestTracker"));
+const DiaryTracker = lazy(() => import("./features/diaries/DiaryTracker"));
+const SlayerHelper = lazy(() => import("./features/slayer/SlayerHelper"));
 import { useHiscores } from "./hooks/useHiscores";
 import { useKeyboardNav } from "./hooks/useKeyboardNav";
 
@@ -89,7 +90,11 @@ function App() {
           onLookup={hiscores.lookup}
           onClear={hiscores.clear}
         />
-        <main className="flex-1 overflow-y-auto p-6">{renderView()}</main>
+        <main className="flex-1 overflow-y-auto p-6">
+          <Suspense fallback={<div className="flex items-center justify-center h-full"><p className="text-sm text-text-secondary">Loading...</p></div>}>
+            {renderView()}
+          </Suspense>
+        </main>
       </div>
     </div>
   );
