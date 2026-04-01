@@ -45,6 +45,7 @@ export default function RuneLiteData() {
 
   useEffect(() => {
     if (!selectedProfile || status !== "found") return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- loading state for async fetch
     setLootLoading(true);
     readLootTracker(selectedProfile)
       .then(setLootEntries)

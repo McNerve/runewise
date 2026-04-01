@@ -188,6 +188,7 @@ export default function News() {
 
   useEffect(() => {
     let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- loading state for async fetch
     setLoading(true);
     fetchBlogPosts().then((p) => {
       if (!cancelled) {
