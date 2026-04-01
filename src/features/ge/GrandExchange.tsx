@@ -7,9 +7,11 @@ import {
 } from "../../lib/api/ge";
 import { useDebounce } from "../../hooks/useDebounce";
 import { formatGp, timeAgo } from "../../lib/format";
+import { useNavigation } from "../../lib/NavigationContext";
 
 export default function GrandExchange() {
-  const [query, setQuery] = useState("");
+  const { params } = useNavigation();
+  const [query, setQuery] = useState(params.query ?? "");
   const debouncedQuery = useDebounce(query, 250);
   const [results, setResults] = useState<ItemMapping[]>([]);
   const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
@@ -38,6 +40,7 @@ export default function GrandExchange() {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial price load
     return loadPrices();
   }, [loadPrices]);
 

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigation } from "../../lib/NavigationContext";
 import {
   fetchWomGains,
   fetchWomAchievements,
@@ -49,6 +50,7 @@ const SKILL_NAMES: Record<string, string> = {
 };
 
 export default function XpTracker({ rsn }: Props) {
+  const { navigate } = useNavigation();
   const [period, setPeriod] = useState<GainsPeriod>("week");
   const [gains, setGains] = useState<WomGains | null>(null);
   const [achievements, setAchievements] = useState<WomAchievement[]>([]);
@@ -182,7 +184,12 @@ export default function XpTracker({ rsn }: Props) {
                         className="border-b border-border/50 hover:bg-bg-tertiary"
                       >
                         <td className="px-4 py-1.5 font-medium">
-                          {SKILL_NAMES[key] ?? key}
+                          <button
+                            onClick={() => navigate("skill-calc", { skill: SKILL_NAMES[key] ?? key })}
+                            className="hover:text-accent transition-colors"
+                          >
+                            {SKILL_NAMES[key] ?? key}
+                          </button>
                         </td>
                         <td className="px-4 py-1.5 text-right text-success">
                           +{data.experience.gained.toLocaleString()}

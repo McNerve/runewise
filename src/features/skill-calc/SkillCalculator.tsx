@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { xpForLevel } from "../../lib/formulas/xp";
 import { getSkillXp, type HiscoreData } from "../../lib/api/hiscores";
 import { SKILL_ICONS } from "../../lib/sprites";
+import { useNavigation } from "../../lib/NavigationContext";
 
 const SKILLS = [
   "Attack", "Strength", "Defence", "Ranged", "Prayer", "Magic",
@@ -16,7 +17,8 @@ interface Props {
 }
 
 export default function SkillCalculator({ hiscores }: Props) {
-  const [selectedSkill, setSelectedSkill] = useState<string>("Attack");
+  const { params } = useNavigation();
+  const [selectedSkill, setSelectedSkill] = useState<string>(params.skill ?? "Attack");
   const [currentXp, setCurrentXp] = useState(0);
   const [targetLevel, setTargetLevel] = useState(99);
 
