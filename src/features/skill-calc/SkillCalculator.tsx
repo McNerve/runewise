@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { xpForLevel } from "../../lib/formulas/xp";
 import { getSkillXp, type HiscoreData } from "../../lib/api/hiscores";
 import { SKILL_ICONS } from "../../lib/sprites";
 import { useNavigation } from "../../lib/NavigationContext";
+import { TRAINING_METHODS } from "../../lib/data/training-methods";
 
 const SKILLS = [
   "Attack", "Strength", "Defence", "Ranged", "Prayer", "Magic",
@@ -21,17 +22,8 @@ export default function SkillCalculator({ hiscores }: Props) {
   const [selectedSkill, setSelectedSkill] = useState<string>(params.skill ?? "Attack");
   const [currentXp, setCurrentXp] = useState(0);
   const [targetLevel, setTargetLevel] = useState(99);
-
-  useEffect(() => {
-    if (hiscores) {
-      const xp = getSkillXp(hiscores, selectedSkill);
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- sync from external hiscores data, user can override
-      setCurrentXp(xp);
-    }
-  }, [hiscores, selectedSkill]);
-
-  const targetXp = xpForLevel(targetLevel);
-  const xpNeeded = Math.max(0, targetXp - currentXp);
+  // Remember custom targets per skill
+  const customTargets = useRef<Map<string, number>>(new Map());
 
   const getLevel = (skill: string) =>
     hiscores?.skills.find(
@@ -39,6 +31,33 @@ export default function SkillCalculator({ hiscores }: Props) {
     )?.level ?? null;
 
   const currentLevel = getLevel(selectedSkill);
+
+  // When skill changes: load XP from hiscores + restore or default target
+  useEffect(() => {
+    if (hiscores) {
+      const xp = getSkillXp(hiscores, selectedSkill);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- sync from external hiscores data
+      setCurrentXp(xp);
+    }
+
+    const saved = customTargets.current.get(selectedSkill);
+    if (saved !== undefined) {
+      setTargetLevel(saved);
+    } else if (currentLevel !== null && currentLevel < 99) {
+      setTargetLevel(currentLevel + 1);
+    } else {
+      setTargetLevel(99);
+    }
+  }, [hiscores, selectedSkill]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleTargetChange = (value: number) => {
+    setTargetLevel(value);
+    customTargets.current.set(selectedSkill, value);
+  };
+
+  const targetXp = xpForLevel(targetLevel);
+  const xpNeeded = Math.max(0, targetXp - currentXp);
+  const methods = TRAINING_METHODS[selectedSkill] ?? [];
 
   return (
     <div className="max-w-3xl">
@@ -100,14 +119,38 @@ export default function SkillCalculator({ hiscores }: Props) {
             <label className="block text-xs text-text-secondary mb-1">
               Target Level
             </label>
-            <input
-              type="number"
-              min={2}
-              max={99}
-              value={targetLevel}
-              onChange={(e) => setTargetLevel(Number(e.target.value))}
-              className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm"
-            />
+            <div className="flex gap-2">
+              <input
+                type="number"
+                min={2}
+                max={126}
+                value={targetLevel}
+                onChange={(e) => handleTargetChange(Number(e.target.value))}
+                className="flex-1 bg-bg-tertiary border border-border rounded px-3 py-2 text-sm"
+              />
+              {currentLevel !== null && currentLevel < 99 && (
+                <button
+                  onClick={() => handleTargetChange(currentLevel + 1)}
+                  className={`px-2 py-1 rounded text-xs transition-colors ${
+                    targetLevel === currentLevel + 1
+                      ? "bg-accent text-white"
+                      : "bg-bg-tertiary text-text-secondary hover:bg-bg-tertiary/80"
+                  }`}
+                >
+                  +1
+                </button>
+              )}
+              <button
+                onClick={() => handleTargetChange(99)}
+                className={`px-2 py-1 rounded text-xs transition-colors ${
+                  targetLevel === 99
+                    ? "bg-accent text-white"
+                    : "bg-bg-tertiary text-text-secondary hover:bg-bg-tertiary/80"
+                }`}
+              >
+                99
+              </button>
+            </div>
           </div>
         </div>
 
@@ -136,6 +179,45 @@ export default function SkillCalculator({ hiscores }: Props) {
           )}
         </div>
       </div>
+
+      {/* Training Methods */}
+      {methods.length > 0 && xpNeeded > 0 && (
+        <div className="mt-4">
+          <h3 className="text-sm font-medium text-text-secondary uppercase tracking-wider mb-2">
+            Training Methods
+          </h3>
+          <div className="bg-bg-secondary rounded-lg overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-text-secondary text-xs">
+                  <th className="text-left px-4 py-2">Method</th>
+                  <th className="text-right px-4 py-2">XP Each</th>
+                  <th className="text-right px-4 py-2">Actions Needed</th>
+                </tr>
+              </thead>
+              <tbody>
+                {methods.map((method) => {
+                  const actions = Math.ceil(xpNeeded / method.xp);
+                  return (
+                    <tr
+                      key={method.name}
+                      className="border-b border-border/50 hover:bg-bg-tertiary transition-colors"
+                    >
+                      <td className="px-4 py-1.5 font-medium">{method.name}</td>
+                      <td className="px-4 py-1.5 text-right text-text-secondary">
+                        {method.xp.toLocaleString()}
+                      </td>
+                      <td className="px-4 py-1.5 text-right text-accent font-medium">
+                        {actions.toLocaleString()}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
