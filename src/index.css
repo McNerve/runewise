@@ -14,6 +14,21 @@
   --color-danger: #ef4444;
 }
 
+/* Light mode (opt-in via .light-theme class on <html>) */
+.light-theme {
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f4f4f5;
+  --color-bg-tertiary: #e4e4e7;
+  --color-text-primary: #18181b;
+  --color-text-secondary: #71717a;
+  --color-accent: #2563eb;
+  --color-accent-hover: #1d4ed8;
+  --color-border: #d4d4d8;
+  --color-success: #16a34a;
+  --color-warning: #ca8a04;
+  --color-danger: #dc2626;
+}
+
 body {
   margin: 0;
   background: var(--color-bg-primary);

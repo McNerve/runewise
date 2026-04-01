@@ -14,7 +14,8 @@ export type View =
   | "quests"
   | "diaries"
   | "slayer"
-  | "news";
+  | "news"
+  | "about";
 
 interface NavState {
   view: View;

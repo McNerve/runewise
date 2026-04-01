@@ -5,6 +5,19 @@ import { formatGp } from "../../lib/format";
 import { useDebounce } from "../../hooks/useDebounce";
 import { useNavigation } from "../../lib/NavigationContext";
 
+function RarityBar({ rarity }: { rarity: string }) {
+  const match = rarity.match(/1\/([\d,]+)/);
+  if (!match) return null;
+  const denom = parseInt(match[1].replace(/,/g, ""));
+  const width = Math.max(5, Math.min(100, (1 / denom) * 5000));
+  const color = denom <= 16 ? "bg-text-secondary" : denom <= 128 ? "bg-accent" : denom <= 512 ? "bg-warning" : "bg-danger";
+  return (
+    <div className="w-full bg-bg-tertiary rounded-full h-1 mt-1">
+      <div className={`rounded-full h-1 ${color}`} style={{ width: `${width}%` }} />
+    </div>
+  );
+}
+
 export default function DropTable() {
   const { params, navigate } = useNavigation();
   const [query, setQuery] = useState(params.monster ?? "");
@@ -164,24 +177,7 @@ export default function DropTable() {
                       className={`px-4 py-1.5 text-right ${rarityColor(drop.rarity)}`}
                     >
                       {drop.rarity}
-                      {(() => {
-                        const match = drop.rarity.match(/1\/([\d,]+)/);
-                        if (!match) return null;
-                        const denom = parseInt(match[1].replace(/,/g, ""));
-                        const width = Math.max(5, Math.min(100, (1 / denom) * 5000));
-                        return (
-                          <div className="w-full bg-bg-tertiary rounded-full h-1 mt-1">
-                            <div
-                              className={`rounded-full h-1 ${
-                                denom <= 16 ? "bg-text-secondary" :
-                                denom <= 128 ? "bg-accent" :
-                                denom <= 512 ? "bg-warning" : "bg-danger"
-                              }`}
-                              style={{ width: `${width}%` }}
-                            />
-                          </div>
-                        );
-                      })()}
+                      <RarityBar rarity={drop.rarity} />
                     </td>
                     <td className="px-4 py-1.5 text-right text-success">
                       {(() => {

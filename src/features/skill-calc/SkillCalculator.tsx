@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { xpForLevel } from "../../lib/formulas/xp";
 import { getSkillXp, type HiscoreData } from "../../lib/api/hiscores";
+import { fetchLatestPrices, type ItemPrice } from "../../lib/api/ge";
+import { formatGp } from "../../lib/format";
 import { SKILL_ICONS } from "../../lib/sprites";
 import { useNavigation } from "../../lib/NavigationContext";
 import { TRAINING_METHODS } from "../../lib/data/training-methods";
@@ -22,8 +24,15 @@ export default function SkillCalculator({ hiscores }: Props) {
   const [selectedSkill, setSelectedSkill] = useState<string>(params.skill ?? "Attack");
   const [currentXp, setCurrentXp] = useState(0);
   const [targetLevel, setTargetLevel] = useState(99);
+  const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
   // Remember custom targets per skill
   const customTargets = useRef<Map<string, number>>(new Map());
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchLatestPrices().then((p) => { if (!cancelled) setPrices(p); });
+    return () => { cancelled = true; };
+  }, []);
 
   const getLevel = (skill: string) =>
     hiscores?.skills.find(
@@ -196,6 +205,7 @@ export default function SkillCalculator({ hiscores }: Props) {
                   <th className="text-right px-4 py-2">XP/hr</th>
                   <th className="text-right px-4 py-2">Actions</th>
                   <th className="text-right px-4 py-2">Time</th>
+                  <th className="text-right px-4 py-2">Cost</th>
                 </tr>
               </thead>
               <tbody>
@@ -205,6 +215,8 @@ export default function SkillCalculator({ hiscores }: Props) {
                     const actions = Math.ceil(xpNeeded / method.xp);
                     const hours = method.xpPerHour ? xpNeeded / method.xpPerHour : null;
                     const meetsLevel = !method.levelReq || !currentLevel || currentLevel >= method.levelReq;
+                    const itemPrice = method.itemId ? (prices[String(method.itemId)]?.high ?? prices[String(method.itemId)]?.low ?? null) : null;
+                    const totalCost = itemPrice != null ? actions * (method.itemsPerAction ?? 1) * itemPrice : null;
                     return (
                       <tr
                         key={method.name}
@@ -235,6 +247,9 @@ export default function SkillCalculator({ hiscores }: Props) {
                                 ? `${hours.toFixed(1)}h`
                                 : `${Math.round(hours)}h`
                             : "—"}
+                        </td>
+                        <td className="px-4 py-1.5 text-right text-warning">
+                          {totalCost != null ? formatGp(totalCost) : "—"}
                         </td>
                       </tr>
                     );

@@ -17,6 +17,7 @@ const BossGuide = lazy(() => import("./features/boss-guide/BossGuide"));
 const QuestTracker = lazy(() => import("./features/quests/QuestTracker"));
 const DiaryTracker = lazy(() => import("./features/diaries/DiaryTracker"));
 const SlayerHelper = lazy(() => import("./features/slayer/SlayerHelper"));
+const About = lazy(() => import("./features/about/About"));
 import { useHiscores } from "./hooks/useHiscores";
 import { useKeyboardNav } from "./hooks/useKeyboardNav";
 import { NavigationProvider, useNavigation } from "./lib/NavigationContext";
@@ -62,6 +63,8 @@ function AppContent() {
         return <SlayerHelper />;
       case "news":
         return <News />;
+      case "about":
+        return <About />;
     }
   };
 

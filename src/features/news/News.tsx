@@ -77,8 +77,12 @@ function resolveArticleUrl(url: string): string {
 }
 
 function extractArticleHtml(html: string): string {
+  // Clean up encoding artifacts (replacement characters from charset mismatch)
+  const cleaned = html
+    .replace(/\uFFFD/g, "")
+    .replace(/\?{3,}/g, "");
   const parser = new DOMParser();
-  const doc = parser.parseFromString(html, "text/html");
+  const doc = parser.parseFromString(cleaned, "text/html");
 
   const selectors = [
     ".news-article-content",
@@ -100,8 +104,14 @@ function extractArticleHtml(html: string): string {
 
   // Strip unwanted elements
   content
-    .querySelectorAll("script, style, nav, header, footer, iframe, object, embed, form, .noprint")
+    .querySelectorAll("script, style, nav, header, footer, iframe, object, embed, form, .noprint, .jmod-reply, [class^='rsw-']")
     .forEach((el) => el.remove());
+
+  // Strip hidden elements
+  content.querySelectorAll("[style]").forEach((el) => {
+    const style = el.getAttribute("style") ?? "";
+    if (style.includes("display:none") || style.includes("display: none")) el.remove();
+  });
 
   // Strip event handlers
   content.querySelectorAll("*").forEach((el) => {

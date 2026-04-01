@@ -107,13 +107,16 @@ export default function Sidebar({ currentView, onNavigate }: SidebarProps) {
       </nav>
       <div className="p-3 border-t border-border space-y-2">
         {isTauri && <UpdateButton />}
-        <p className="text-[10px] text-text-secondary/50 text-center">v{__APP_VERSION__}</p>
-        <p className="text-[9px] text-text-secondary/30 text-center leading-relaxed">
-          Data from{" "}
-          <a href="https://oldschool.runescape.wiki/" target="_blank" rel="noopener noreferrer" className="hover:text-text-secondary/50">OSRS Wiki</a>
-          {" & "}
-          <a href="https://wiseoldman.net/" target="_blank" rel="noopener noreferrer" className="hover:text-text-secondary/50">Wise Old Man</a>
-        </p>
+        <button
+          onClick={() => onNavigate("about")}
+          className={`w-full text-[10px] px-3 py-1 rounded transition-colors ${
+            currentView === "about"
+              ? "text-accent"
+              : "text-text-secondary/50 hover:text-text-secondary"
+          }`}
+        >
+          v{__APP_VERSION__} — About
+        </button>
       </div>
     </aside>
   );
