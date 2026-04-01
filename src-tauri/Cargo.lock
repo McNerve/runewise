@@ -3202,7 +3202,7 @@ dependencies = [
 
 [[package]]
 name = "runewise"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "log",
  "reqwest 0.12.28",
