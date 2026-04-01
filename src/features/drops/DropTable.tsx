@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import { searchMonsters, fetchDropTable, type DropItem } from "../../lib/api/wiki";
 import { useDebounce } from "../../hooks/useDebounce";
+import { useNavigation } from "../../lib/NavigationContext";
 
 export default function DropTable() {
-  const [query, setQuery] = useState("");
+  const { params, navigate } = useNavigation();
+  const [query, setQuery] = useState(params.monster ?? "");
   const debouncedQuery = useDebounce(query, 300);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [selectedMonster, setSelectedMonster] = useState<string | null>(null);
@@ -40,6 +42,12 @@ export default function DropTable() {
     setCategories(data.categories);
     setLoading(false);
   };
+
+  // Auto-load if navigated with a monster param
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial load from nav params
+    if (params.monster) selectMonster(params.monster);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const rarityColor = (rarity: string) => {
     const r = rarity.toLowerCase();
@@ -126,7 +134,14 @@ export default function DropTable() {
                     key={`${drop.name}-${i}`}
                     className="border-b border-border/50 hover:bg-bg-tertiary transition-colors"
                   >
-                    <td className="px-4 py-1.5 font-medium">{drop.name}</td>
+                    <td className="px-4 py-1.5 font-medium">
+                      <button
+                        onClick={() => navigate("ge", { query: drop.name })}
+                        className="hover:text-accent transition-colors text-left"
+                      >
+                        {drop.name}
+                      </button>
+                    </td>
                     <td className="px-4 py-1.5 text-right text-text-secondary">
                       {drop.quantity}
                     </td>
