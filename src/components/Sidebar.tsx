@@ -15,7 +15,8 @@ function UpdateButton() {
       if (update) {
         setStatus("downloading");
         await update.downloadAndInstall();
-        setStatus("ready");
+        const { relaunch } = await import("@tauri-apps/plugin-process");
+        await relaunch();
       } else {
         setStatus("current");
         setTimeout(() => setStatus("idle"), 3000);

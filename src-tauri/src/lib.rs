@@ -46,6 +46,7 @@ async fn proxy_fetch(
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .invoke_handler(tauri::generate_handler![proxy_fetch])
         .setup(|app| {
             if cfg!(debug_assertions) {
