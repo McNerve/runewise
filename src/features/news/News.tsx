@@ -10,7 +10,7 @@ interface NewsPost {
   status: "shipped" | "proposed" | "upcoming" | "unknown";
 }
 
-const isTauri = "__TAURI_INTERNALS__" in window;
+import { isTauri } from "../../lib/env";
 
 function classifyPost(category: string, title: string): NewsPost["status"] {
   const t = title.toLowerCase();

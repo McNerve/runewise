@@ -1,5 +1,6 @@
 import { getCached, setCache } from "./cache";
 import { apiFetch } from "./fetch";
+import { isTauri } from "../env";
 
 export interface ItemMapping {
   id: number;
@@ -20,7 +21,6 @@ export interface ItemPrice {
   lowTime: number | null;
 }
 
-const isTauri = "__TAURI_INTERNALS__" in window;
 const WIKI_API = isTauri
   ? "https://prices.runescape.wiki/api/v1/osrs"
   : "/api/wiki-prices";
