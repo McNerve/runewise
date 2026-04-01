@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import Sidebar from "./components/Sidebar";
 import PlayerBar from "./components/PlayerBar";
+import { CardSkeleton } from "./components/Skeleton";
 
 const Overview = lazy(() => import("./features/overview/Overview"));
 const SkillCalculator = lazy(() => import("./features/skill-calc/SkillCalculator"));
@@ -76,7 +77,7 @@ function AppContent() {
           onClear={hiscores.clear}
         />
         <main className="flex-1 overflow-y-auto p-6">
-          <Suspense fallback={<div className="flex items-center justify-center h-full"><p className="text-sm text-text-secondary">Loading...</p></div>}>
+          <Suspense fallback={<div className="space-y-4"><CardSkeleton /><CardSkeleton /></div>}>
             {renderView()}
           </Suspense>
         </main>

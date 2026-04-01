@@ -1,17 +1,11 @@
 import type { ItemMapping, ItemPrice } from "../../lib/api/ge";
+import { formatGp } from "../../lib/format";
 
 interface ItemDetailProps {
   item: ItemMapping;
   price?: ItemPrice;
   onClose: () => void;
 }
-
-const formatGp = (gp: number | null) => {
-  if (gp == null) return "—";
-  if (gp >= 1_000_000) return `${(gp / 1_000_000).toFixed(1)}M`;
-  if (gp >= 1_000) return `${(gp / 1_000).toFixed(0)}K`;
-  return gp.toLocaleString();
-};
 
 export default function ItemDetail({ item, price, onClose }: ItemDetailProps) {
   const margin =

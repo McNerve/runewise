@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { searchMonsters, fetchDropTable, type DropItem } from "../../lib/api/wiki";
 import { fetchLatestPrices, fetchMapping, type ItemPrice } from "../../lib/api/ge";
+import { formatGp } from "../../lib/format";
 import { useDebounce } from "../../hooks/useDebounce";
 import { useNavigation } from "../../lib/NavigationContext";
 
@@ -187,14 +188,7 @@ export default function DropTable() {
                         const itemId = itemMap.get(drop.name.toLowerCase());
                         const price = itemId ? prices[String(itemId)] : null;
                         const gePrice = price?.high ?? price?.low ?? null;
-                        if (gePrice != null) {
-                          return gePrice >= 1_000_000
-                            ? `${(gePrice / 1_000_000).toFixed(1)}M`
-                            : gePrice >= 1_000
-                              ? `${(gePrice / 1_000).toFixed(0)}K`
-                              : gePrice.toLocaleString();
-                        }
-                        return drop.price || "\u2014";
+                        return gePrice != null ? formatGp(gePrice) : (drop.price || "\u2014");
                       })()}
                     </td>
                   </tr>

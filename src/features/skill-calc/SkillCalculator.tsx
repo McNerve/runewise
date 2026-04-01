@@ -191,28 +191,54 @@ export default function SkillCalculator({ hiscores }: Props) {
               <thead>
                 <tr className="border-b border-border text-text-secondary text-xs">
                   <th className="text-left px-4 py-2">Method</th>
+                  <th className="text-right px-4 py-2">Lvl</th>
                   <th className="text-right px-4 py-2">XP Each</th>
-                  <th className="text-right px-4 py-2">Actions Needed</th>
+                  <th className="text-right px-4 py-2">XP/hr</th>
+                  <th className="text-right px-4 py-2">Actions</th>
+                  <th className="text-right px-4 py-2">Time</th>
                 </tr>
               </thead>
               <tbody>
-                {methods.map((method) => {
-                  const actions = Math.ceil(xpNeeded / method.xp);
-                  return (
-                    <tr
-                      key={method.name}
-                      className="border-b border-border/50 hover:bg-bg-tertiary transition-colors"
-                    >
-                      <td className="px-4 py-1.5 font-medium">{method.name}</td>
-                      <td className="px-4 py-1.5 text-right text-text-secondary">
-                        {method.xp.toLocaleString()}
-                      </td>
-                      <td className="px-4 py-1.5 text-right text-accent font-medium">
-                        {actions.toLocaleString()}
-                      </td>
-                    </tr>
-                  );
-                })}
+                {[...methods]
+                  .sort((a, b) => (b.xpPerHour ?? 0) - (a.xpPerHour ?? 0))
+                  .map((method) => {
+                    const actions = Math.ceil(xpNeeded / method.xp);
+                    const hours = method.xpPerHour ? xpNeeded / method.xpPerHour : null;
+                    const meetsLevel = !method.levelReq || !currentLevel || currentLevel >= method.levelReq;
+                    return (
+                      <tr
+                        key={method.name}
+                        className={`border-b border-border/50 hover:bg-bg-tertiary transition-colors ${!meetsLevel ? "opacity-40" : ""}`}
+                      >
+                        <td className="px-4 py-1.5 font-medium">{method.name}</td>
+                        <td className="px-4 py-1.5 text-right text-text-secondary text-xs">
+                          {method.levelReq ?? "—"}
+                        </td>
+                        <td className="px-4 py-1.5 text-right text-text-secondary">
+                          {method.xp.toLocaleString()}
+                        </td>
+                        <td className="px-4 py-1.5 text-right text-text-secondary">
+                          {method.xpPerHour
+                            ? method.xpPerHour >= 1_000_000
+                              ? `${(method.xpPerHour / 1_000_000).toFixed(1)}M`
+                              : `${(method.xpPerHour / 1_000).toFixed(0)}K`
+                            : "—"}
+                        </td>
+                        <td className="px-4 py-1.5 text-right text-accent font-medium">
+                          {actions.toLocaleString()}
+                        </td>
+                        <td className="px-4 py-1.5 text-right text-text-secondary">
+                          {hours != null
+                            ? hours < 1
+                              ? `${Math.ceil(hours * 60)}m`
+                              : hours < 100
+                                ? `${hours.toFixed(1)}h`
+                                : `${Math.round(hours)}h`
+                            : "—"}
+                        </td>
+                      </tr>
+                    );
+                  })}
               </tbody>
             </table>
           </div>
