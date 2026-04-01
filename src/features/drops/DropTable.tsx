@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { searchMonsters, fetchDropTable, type DropItem } from "../../lib/api/wiki";
+import { fetchLatestPrices, fetchMapping, type ItemPrice } from "../../lib/api/ge";
 import { useDebounce } from "../../hooks/useDebounce";
 import { useNavigation } from "../../lib/NavigationContext";
 
@@ -14,6 +15,19 @@ export default function DropTable() {
   >([]);
   const [loading, setLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
+  const [itemMap, setItemMap] = useState<Map<string, number>>(new Map());
+
+  useEffect(() => {
+    Promise.all([fetchLatestPrices(), fetchMapping()]).then(([p, mapping]) => {
+      setPrices(p);
+      const nameToId = new Map<string, number>();
+      for (const item of mapping) {
+        nameToId.set(item.name.toLowerCase(), item.id);
+      }
+      setItemMap(nameToId);
+    });
+  }, []);
 
   useEffect(() => {
     if (debouncedQuery.length < 2) {
@@ -149,9 +163,39 @@ export default function DropTable() {
                       className={`px-4 py-1.5 text-right ${rarityColor(drop.rarity)}`}
                     >
                       {drop.rarity}
+                      {(() => {
+                        const match = drop.rarity.match(/1\/([\d,]+)/);
+                        if (!match) return null;
+                        const denom = parseInt(match[1].replace(/,/g, ""));
+                        const width = Math.max(5, Math.min(100, (1 / denom) * 5000));
+                        return (
+                          <div className="w-full bg-bg-tertiary rounded-full h-1 mt-1">
+                            <div
+                              className={`rounded-full h-1 ${
+                                denom <= 16 ? "bg-text-secondary" :
+                                denom <= 128 ? "bg-accent" :
+                                denom <= 512 ? "bg-warning" : "bg-danger"
+                              }`}
+                              style={{ width: `${width}%` }}
+                            />
+                          </div>
+                        );
+                      })()}
                     </td>
-                    <td className="px-4 py-1.5 text-right text-text-secondary">
-                      {drop.price}
+                    <td className="px-4 py-1.5 text-right text-success">
+                      {(() => {
+                        const itemId = itemMap.get(drop.name.toLowerCase());
+                        const price = itemId ? prices[String(itemId)] : null;
+                        const gePrice = price?.high ?? price?.low ?? null;
+                        if (gePrice != null) {
+                          return gePrice >= 1_000_000
+                            ? `${(gePrice / 1_000_000).toFixed(1)}M`
+                            : gePrice >= 1_000
+                              ? `${(gePrice / 1_000).toFixed(0)}K`
+                              : gePrice.toLocaleString();
+                        }
+                        return drop.price || "\u2014";
+                      })()}
                     </td>
                   </tr>
                 ))}
