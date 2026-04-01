@@ -22,7 +22,7 @@ export default function SlayerHelper() {
           ? 0
           : (task.weight / totalWeight) * 100,
       }))
-      .sort((a, b) => b.probability - a.probability);
+      .sort((a, b) => b.weight - a.weight);
   }, [selectedMaster, blockedTasks, totalWeight]);
 
   const toggleBlock = (monster: string) => {

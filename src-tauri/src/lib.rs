@@ -1,17 +1,62 @@
+use std::collections::HashMap;
+use serde::Serialize;
+
+#[derive(Serialize)]
+struct ProxyResponse {
+    status: u16,
+    body: String,
+    headers: HashMap<String, String>,
+}
+
+#[tauri::command]
+async fn proxy_fetch(
+    url: String,
+    headers: Option<HashMap<String, String>>,
+) -> Result<ProxyResponse, String> {
+    let client = reqwest::Client::new();
+    let mut req = client.get(&url);
+
+    req = req.header("User-Agent", "runewise - osrs companion app");
+
+    if let Some(hdrs) = headers {
+        for (key, value) in hdrs {
+            req = req.header(&key, &value);
+        }
+    }
+
+    let response = req.send().await.map_err(|e| e.to_string())?;
+    let status = response.status().as_u16();
+
+    let resp_headers: HashMap<String, String> = response
+        .headers()
+        .iter()
+        .filter_map(|(k, v)| v.to_str().ok().map(|val| (k.to_string(), val.to_string())))
+        .collect();
+
+    let body = response.text().await.map_err(|e| e.to_string())?;
+
+    Ok(ProxyResponse {
+        status,
+        body,
+        headers: resp_headers,
+    })
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-  tauri::Builder::default()
-    .plugin(tauri_plugin_updater::Builder::new().build())
-    .setup(|app| {
-      if cfg!(debug_assertions) {
-        app.handle().plugin(
-          tauri_plugin_log::Builder::default()
-            .level(log::LevelFilter::Info)
-            .build(),
-        )?;
-      }
-      Ok(())
-    })
-    .run(tauri::generate_context!())
-    .expect("error while running tauri application");
+    tauri::Builder::default()
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .invoke_handler(tauri::generate_handler![proxy_fetch])
+        .setup(|app| {
+            if cfg!(debug_assertions) {
+                app.handle().plugin(
+                    tauri_plugin_log::Builder::default()
+                        .level(log::LevelFilter::Info)
+                        .build(),
+                )?;
+            }
+            Ok(())
+        })
+        .run(tauri::generate_context!())
+        .expect("error while running tauri application");
 }
