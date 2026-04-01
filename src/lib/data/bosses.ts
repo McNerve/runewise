@@ -45,6 +45,8 @@ export const BOSSES: BossInfo[] = [
   { name: "Vardorvis", wikiPage: "Vardorvis/Strategies", category: "Other" },
   { name: "The Whisperer", wikiPage: "The_Whisperer/Strategies", category: "Other" },
   { name: "Araxxor", wikiPage: "Araxxor/Strategies", category: "Other" },
+  { name: "Scurrius", wikiPage: "Scurrius/Strategies", category: "Other", combatLevel: 230, hitpoints: 400 },
+  { name: "Moons of Peril", wikiPage: "Moons_of_Peril/Strategies", category: "Other" },
 
   // Varlamore
   { name: "Amoxliatl", wikiPage: "Amoxliatl/Strategies", category: "Varlamore" },
