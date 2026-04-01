@@ -4,12 +4,25 @@ import { useNavigation } from "../../lib/NavigationContext";
 
 const BLOCKED_KEY = "runewise_blocked_slayer";
 
-function loadBlocked(): Set<string> {
+type BlockedMap = Record<string, string[]>;
+
+function loadBlocked(): BlockedMap {
   try {
     const saved = localStorage.getItem(BLOCKED_KEY);
-    return saved ? new Set(JSON.parse(saved)) : new Set();
+    if (!saved) return {};
+    const parsed = JSON.parse(saved);
+    // Migration: old format was string[] — copy to all masters
+    if (Array.isArray(parsed)) {
+      const migrated: BlockedMap = {};
+      for (const master of SLAYER_MASTERS) {
+        migrated[master.name] = [...parsed];
+      }
+      localStorage.setItem(BLOCKED_KEY, JSON.stringify(migrated));
+      return migrated;
+    }
+    return parsed as BlockedMap;
   } catch {
-    return new Set();
+    return {};
   }
 }
 
@@ -18,7 +31,12 @@ export default function SlayerHelper() {
   const [selectedMaster, setSelectedMaster] = useState<SlayerMaster>(
     SLAYER_MASTERS[SLAYER_MASTERS.length - 1] // Default to Duradel (highest level)
   );
-  const [blockedTasks, setBlockedTasks] = useState<Set<string>>(loadBlocked);
+  const [blockedMap, setBlockedMap] = useState<BlockedMap>(loadBlocked);
+
+  const blockedTasks = useMemo(
+    () => new Set(blockedMap[selectedMaster.name] ?? []),
+    [blockedMap, selectedMaster],
+  );
 
   const totalWeight = useMemo(() => {
     return selectedMaster.tasks
@@ -39,12 +57,15 @@ export default function SlayerHelper() {
   }, [selectedMaster, blockedTasks, totalWeight]);
 
   const toggleBlock = (monster: string) => {
-    setBlockedTasks((prev) => {
-      const next = new Set(prev);
-      if (next.has(monster)) next.delete(monster);
-      else next.add(monster);
-      localStorage.setItem(BLOCKED_KEY, JSON.stringify([...next]));
-      return next;
+    setBlockedMap((prev) => {
+      const masterKey = selectedMaster.name;
+      const current = prev[masterKey] ?? [];
+      const next = current.includes(monster)
+        ? current.filter((m) => m !== monster)
+        : [...current, monster];
+      const updated = { ...prev, [masterKey]: next };
+      localStorage.setItem(BLOCKED_KEY, JSON.stringify(updated));
+      return updated;
     });
   };
 
