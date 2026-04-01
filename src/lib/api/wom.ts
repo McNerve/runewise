@@ -1,7 +1,6 @@
 import { getCached, setCache } from "./cache";
 import { apiFetch } from "./fetch";
-
-const isTauri = "__TAURI_INTERNALS__" in window;
+import { isTauri } from "../env";
 const WOM_API = isTauri
   ? "https://api.wiseoldman.net/v2"
   : "/api/wom";

@@ -5,6 +5,7 @@ import {
   type ItemMapping,
   type ItemPrice,
 } from "../../lib/api/ge";
+import { formatGp } from "../../lib/format";
 
 export default function ItemDatabase() {
   const [items, setItems] = useState<ItemMapping[]>([]);
@@ -38,13 +39,6 @@ export default function ItemDatabase() {
     if (membersFilter === "p2p") result = result.filter((i) => i.members);
     return result.slice(0, 100);
   }, [items, query, membersFilter]);
-
-  const formatGp = (gp: number | null) => {
-    if (gp == null) return "—";
-    if (gp >= 1_000_000) return `${(gp / 1_000_000).toFixed(1)}M`;
-    if (gp >= 1_000) return `${(gp / 1_000).toFixed(0)}K`;
-    return gp.toLocaleString();
-  };
 
   if (loading) {
     return (
