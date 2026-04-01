@@ -23,6 +23,7 @@ export default function SkillCalculator({ hiscores }: Props) {
   useEffect(() => {
     if (hiscores) {
       const xp = getSkillXp(hiscores, selectedSkill);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- sync from external hiscores data, user can override
       setCurrentXp(xp);
     }
   }, [hiscores, selectedSkill]);

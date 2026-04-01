@@ -1,4 +1,46 @@
+import { useState } from "react";
 import type { View } from "../App";
+
+declare const __APP_VERSION__: string;
+const isTauri = "__TAURI_INTERNALS__" in window;
+
+function UpdateButton() {
+  const [status, setStatus] = useState<"idle" | "checking" | "downloading" | "ready" | "current" | "error">("idle");
+
+  const checkForUpdates = async () => {
+    setStatus("checking");
+    try {
+      const { check } = await import("@tauri-apps/plugin-updater");
+      const update = await check();
+      if (update) {
+        setStatus("downloading");
+        await update.downloadAndInstall();
+        setStatus("ready");
+      } else {
+        setStatus("current");
+        setTimeout(() => setStatus("idle"), 3000);
+      }
+    } catch {
+      setStatus("error");
+      setTimeout(() => setStatus("idle"), 3000);
+    }
+  };
+
+  return (
+    <button
+      onClick={checkForUpdates}
+      disabled={status === "checking" || status === "downloading" || status === "ready"}
+      className="w-full text-xs px-3 py-1.5 rounded text-text-secondary hover:bg-bg-tertiary hover:text-text-primary transition-colors disabled:opacity-50"
+    >
+      {status === "idle" && "Check for Updates"}
+      {status === "checking" && "Checking..."}
+      {status === "downloading" && "Downloading..."}
+      {status === "ready" && "Restart to update"}
+      {status === "current" && "Up to date"}
+      {status === "error" && "Update failed"}
+    </button>
+  );
+}
 
 const NAV_ITEMS: { id: View; label: string; icon: string; key: string }[] = [
   { id: "overview", label: "Overview", icon: "👤", key: "⌘1" },
@@ -46,6 +88,10 @@ export default function Sidebar({ currentView, onNavigate }: SidebarProps) {
           </button>
         ))}
       </nav>
+      <div className="p-3 border-t border-border space-y-2">
+        {isTauri && <UpdateButton />}
+        <p className="text-[10px] text-text-secondary/50 text-center">v{__APP_VERSION__}</p>
+      </div>
     </aside>
   );
 }

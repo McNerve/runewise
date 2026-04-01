@@ -14,15 +14,23 @@ export default function GrandExchange() {
   const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
   const [loading, setLoading] = useState(false);
   const [pricesLoaded, setPricesLoaded] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    fetchLatestPrices().then((p) => {
-      if (!cancelled) {
-        setPrices(p);
-        setPricesLoaded(true);
-      }
-    });
+    fetchLatestPrices()
+      .then((p) => {
+        if (!cancelled) {
+          setPrices(p);
+          setPricesLoaded(true);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setError("Failed to load prices. Try again later.");
+          setPricesLoaded(true);
+        }
+      });
     return () => { cancelled = true; };
   }, []);
 
@@ -33,12 +41,19 @@ export default function GrandExchange() {
     }
     let cancelled = false;
     setLoading(true);
-    searchItems(debouncedQuery).then((items) => {
-      if (!cancelled) {
-        setResults(items);
-        setLoading(false);
-      }
-    });
+    searchItems(debouncedQuery)
+      .then((items) => {
+        if (!cancelled) {
+          setResults(items);
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setLoading(false);
+          setError("Search failed. Try again.");
+        }
+      });
     return () => { cancelled = true; };
   }, [debouncedQuery]);
 
@@ -49,9 +64,11 @@ export default function GrandExchange() {
     return gp.toLocaleString();
   };
 
+  // eslint-disable-next-line react-hooks/purity -- Date.now() for display-only relative timestamps
+  const now = Date.now();
   const timeAgo = (ts: number | null) => {
     if (!ts) return "";
-    const diff = Math.floor(Date.now() / 1000 - ts);
+    const diff = Math.floor(now / 1000 - ts);
     if (diff < 60) return `${diff}s ago`;
     if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
     return `${Math.floor(diff / 3600)}h ago`;
@@ -68,6 +85,10 @@ export default function GrandExchange() {
         placeholder="Search items..."
         className="w-full bg-bg-secondary border border-border rounded-lg px-4 py-2.5 text-sm mb-4"
       />
+
+      {error && (
+        <p className="text-xs text-danger mb-2">{error}</p>
+      )}
 
       {!pricesLoaded && (
         <p className="text-xs text-text-secondary">Loading prices...</p>

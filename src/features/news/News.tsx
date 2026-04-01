@@ -9,7 +9,7 @@ interface NewsPost {
   status: "shipped" | "proposed" | "upcoming" | "unknown";
 }
 
-const isTauri = "__TAURI__" in window;
+const isTauri = "__TAURI_INTERNALS__" in window;
 
 function classifyPost(category: string, title: string): NewsPost["status"] {
   const t = title.toLowerCase();

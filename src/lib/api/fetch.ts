@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 
-const isTauri = "__TAURI__" in window;
+const isTauri = "__TAURI_INTERNALS__" in window;
 
 interface ProxyResponse {
   status: number;
