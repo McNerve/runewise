@@ -1,8 +1,22 @@
 import { useState, useEffect } from "react";
 import { searchMonsters, fetchDropTable, type DropItem } from "../../lib/api/wiki";
 import { fetchLatestPrices, fetchMapping, type ItemPrice } from "../../lib/api/ge";
+import { formatGp } from "../../lib/format";
 import { useDebounce } from "../../hooks/useDebounce";
 import { useNavigation } from "../../lib/NavigationContext";
+
+function RarityBar({ rarity }: { rarity: string }) {
+  const match = rarity.match(/1\/([\d,]+)/);
+  if (!match) return null;
+  const denom = parseInt(match[1].replace(/,/g, ""));
+  const width = Math.max(5, Math.min(100, (1 / denom) * 5000));
+  const color = denom <= 16 ? "bg-text-secondary" : denom <= 128 ? "bg-accent" : denom <= 512 ? "bg-warning" : "bg-danger";
+  return (
+    <div className="w-full bg-bg-tertiary rounded-full h-1 mt-1">
+      <div className={`rounded-full h-1 ${color}`} style={{ width: `${width}%` }} />
+    </div>
+  );
+}
 
 export default function DropTable() {
   const { params, navigate } = useNavigation();
@@ -163,38 +177,14 @@ export default function DropTable() {
                       className={`px-4 py-1.5 text-right ${rarityColor(drop.rarity)}`}
                     >
                       {drop.rarity}
-                      {(() => {
-                        const match = drop.rarity.match(/1\/([\d,]+)/);
-                        if (!match) return null;
-                        const denom = parseInt(match[1].replace(/,/g, ""));
-                        const width = Math.max(5, Math.min(100, (1 / denom) * 5000));
-                        return (
-                          <div className="w-full bg-bg-tertiary rounded-full h-1 mt-1">
-                            <div
-                              className={`rounded-full h-1 ${
-                                denom <= 16 ? "bg-text-secondary" :
-                                denom <= 128 ? "bg-accent" :
-                                denom <= 512 ? "bg-warning" : "bg-danger"
-                              }`}
-                              style={{ width: `${width}%` }}
-                            />
-                          </div>
-                        );
-                      })()}
+                      <RarityBar rarity={drop.rarity} />
                     </td>
                     <td className="px-4 py-1.5 text-right text-success">
                       {(() => {
                         const itemId = itemMap.get(drop.name.toLowerCase());
                         const price = itemId ? prices[String(itemId)] : null;
                         const gePrice = price?.high ?? price?.low ?? null;
-                        if (gePrice != null) {
-                          return gePrice >= 1_000_000
-                            ? `${(gePrice / 1_000_000).toFixed(1)}M`
-                            : gePrice >= 1_000
-                              ? `${(gePrice / 1_000).toFixed(0)}K`
-                              : gePrice.toLocaleString();
-                        }
-                        return drop.price || "\u2014";
+                        return gePrice != null ? formatGp(gePrice) : (drop.price || "\u2014");
                       })()}
                     </td>
                   </tr>

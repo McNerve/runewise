@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { apiFetch } from "../../lib/api/fetch";
+import { isTauri } from "../../lib/env";
 
 interface NewsPost {
   title: string;
@@ -8,8 +9,6 @@ interface NewsPost {
   category: string;
   status: "shipped" | "proposed" | "upcoming" | "unknown";
 }
-
-const isTauri = "__TAURI_INTERNALS__" in window;
 
 function classifyPost(category: string, title: string): NewsPost["status"] {
   const t = title.toLowerCase();
@@ -78,8 +77,12 @@ function resolveArticleUrl(url: string): string {
 }
 
 function extractArticleHtml(html: string): string {
+  // Clean up encoding artifacts (replacement characters from charset mismatch)
+  const cleaned = html
+    .replace(/\uFFFD/g, "")
+    .replace(/\?{3,}/g, "");
   const parser = new DOMParser();
-  const doc = parser.parseFromString(html, "text/html");
+  const doc = parser.parseFromString(cleaned, "text/html");
 
   const selectors = [
     ".news-article-content",
@@ -99,10 +102,33 @@ function extractArticleHtml(html: string): string {
 
   if (!content) return "<p>Could not extract article content.</p>";
 
+  // Strip unwanted elements
   content
-    .querySelectorAll("script, style, nav, header, footer")
+    .querySelectorAll("script, style, nav, header, footer, iframe, object, embed, form, .noprint, .jmod-reply, [class^='rsw-']")
     .forEach((el) => el.remove());
 
+  // Strip hidden elements
+  content.querySelectorAll("[style]").forEach((el) => {
+    const style = el.getAttribute("style") ?? "";
+    if (style.includes("display:none") || style.includes("display: none")) el.remove();
+  });
+
+  // Strip event handlers
+  content.querySelectorAll("*").forEach((el) => {
+    for (const attr of [...el.attributes]) {
+      if (attr.name.startsWith("on")) el.removeAttribute(attr.name);
+    }
+  });
+
+  // Resolve relative image URLs
+  content.querySelectorAll("img").forEach((img) => {
+    const src = img.getAttribute("src");
+    if (src && src.startsWith("/")) {
+      img.setAttribute("src", `https://secure.runescape.com${src}`);
+    }
+  });
+
+  // Strip links but keep text
   content.querySelectorAll("a").forEach((a) => {
     const text = document.createTextNode(a.textContent ?? "");
     a.replaceWith(text);

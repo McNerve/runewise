@@ -45,6 +45,18 @@ export default function Overview({ hiscores, rsn }: Props) {
     (s) => s.name !== "Overall" && s.level >= 99
   ).length;
 
+  const questPoints = hiscores.activities?.find(
+    (a) => a.name.toLowerCase().includes("quest") || a.name === "Quest Points"
+  )?.score ?? null;
+
+  const combatAchievements = hiscores.activities?.find(
+    (a) => a.name.toLowerCase().includes("combat achievement") || a.name === "Combat Achievements"
+  )?.score ?? null;
+
+  const collectionLog = hiscores.activities?.find(
+    (a) => a.name.toLowerCase().includes("collection") || a.name === "Collection Log"
+  )?.score ?? null;
+
   return (
     <div className="max-w-3xl">
       <h2 className="text-xl font-semibold mb-4">{rsn}</h2>
@@ -75,6 +87,37 @@ export default function Overview({ hiscores, rsn }: Props) {
           </div>
           <div className="text-xs text-text-secondary">Maxed Skills</div>
         </div>
+      </div>
+
+      {/* Activity stats */}
+      <div className="grid grid-cols-3 gap-3 mb-6">
+        {questPoints != null && questPoints > 0 && (
+          <div className="bg-bg-secondary rounded-lg p-3 text-center">
+            <div className="flex items-center justify-center gap-1.5 mb-1">
+              <img src={`https://oldschool.runescape.wiki/images/Quest_point_icon.png`} alt="" className="w-4 h-4" />
+              <div className="text-lg font-bold">{questPoints}</div>
+            </div>
+            <div className="text-xs text-text-secondary">Quest Points</div>
+          </div>
+        )}
+        {combatAchievements != null && combatAchievements > 0 && (
+          <div className="bg-bg-secondary rounded-lg p-3 text-center">
+            <div className="flex items-center justify-center gap-1.5 mb-1">
+              <img src={`https://oldschool.runescape.wiki/images/Combat_icon.png`} alt="" className="w-4 h-4" />
+              <div className="text-lg font-bold">{combatAchievements}<span className="text-xs text-text-secondary font-normal">/637</span></div>
+            </div>
+            <div className="text-xs text-text-secondary">Combat Tasks</div>
+          </div>
+        )}
+        {collectionLog != null && collectionLog > 0 && (
+          <div className="bg-bg-secondary rounded-lg p-3 text-center">
+            <div className="flex items-center justify-center gap-1.5 mb-1">
+              <img src={`https://oldschool.runescape.wiki/images/Collection_log.png`} alt="" className="w-4 h-4" />
+              <div className="text-lg font-bold">{collectionLog}<span className="text-xs text-text-secondary font-normal">/1,699</span></div>
+            </div>
+            <div className="text-xs text-text-secondary">Collection Log</div>
+          </div>
+        )}
       </div>
 
       {overallRank > 0 && (
