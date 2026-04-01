@@ -1,4 +1,4 @@
-const isTauri = "__TAURI_INTERNALS__" in window;
+import { isTauri } from "./env";
 
 export async function openExternal(url: string): Promise<void> {
   if (isTauri) {

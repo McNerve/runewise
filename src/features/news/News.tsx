@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { apiFetch } from "../../lib/api/fetch";
+import { isTauri } from "../../lib/env";
 
 interface NewsPost {
   title: string;
@@ -8,8 +9,6 @@ interface NewsPost {
   category: string;
   status: "shipped" | "proposed" | "upcoming" | "unknown";
 }
-
-const isTauri = "__TAURI_INTERNALS__" in window;
 
 function classifyPost(category: string, title: string): NewsPost["status"] {
   const t = title.toLowerCase();
