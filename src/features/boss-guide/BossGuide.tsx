@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { BOSSES, BOSS_CATEGORIES, type BossInfo } from "../../lib/data/bosses";
 import { apiFetch } from "../../lib/api/fetch";
 import { getCached, setCache } from "../../lib/api/cache";
@@ -48,27 +48,31 @@ async function fetchBossGuide(
       ].some((t) => s.line.toLowerCase().includes(t))
     );
 
-    const guide: GuideSection[] = [];
+    const results = await Promise.all(
+      targetSections.slice(0, 5).map(async (section) => {
+        const textUrl = `${WIKI_API}?action=parse&page=${wikiPage}&prop=text&section=${section.number}&format=json`;
+        const textRes = await apiFetch(textUrl);
+        const textData = await textRes.json();
+        const html = textData.parse?.text?.["*"] ?? "";
 
-    for (const section of targetSections.slice(0, 5)) {
-      const textUrl = `${WIKI_API}?action=parse&page=${wikiPage}&prop=text&section=${section.number}&format=json`;
-      const textRes = await apiFetch(textUrl);
-      const textData = await textRes.json();
-      const html = textData.parse?.text?.["*"] ?? "";
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, "text/html");
 
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, "text/html");
+        const text = (doc.body.textContent ?? "")
+          .replace(/\[edit.*?\]/g, "")
+          .replace(/\n{3,}/g, "\n\n")
+          .trim();
 
-      // Extract text content, strip excessive whitespace
-      const text = (doc.body.textContent ?? "")
-        .replace(/\[edit.*?\]/g, "")
-        .replace(/\n{3,}/g, "\n\n")
-        .trim();
+        if (text.length > 10) {
+          return { title: section.line, content: text };
+        }
+        return null;
+      })
+    );
 
-      if (text.length > 10) {
-        guide.push({ title: section.line, content: text });
-      }
-    }
+    const guide = results.filter(
+      (r): r is GuideSection => r !== null
+    );
 
     setCache(cacheKey, guide);
     return guide;
@@ -83,10 +87,13 @@ export default function BossGuide() {
   const [guide, setGuide] = useState<GuideSection[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const filteredBosses =
-    selectedCategory === "All"
-      ? BOSSES
-      : BOSSES.filter((b) => b.category === selectedCategory);
+  const filteredBosses = useMemo(
+    () =>
+      selectedCategory === "All"
+        ? BOSSES
+        : BOSSES.filter((b) => b.category === selectedCategory),
+    [selectedCategory]
+  );
 
   const selectBoss = async (boss: BossInfo) => {
     setSelectedBoss(boss);
