@@ -65,6 +65,6 @@ jobs:
             - macOS (Apple Silicon): `.dmg`
             - macOS (Intel): `.dmg`
             - Windows: `.msi` / `.exe`
-          releaseDraft: true
+          releaseDraft: false
           prerelease: false
           args: --target ${{ matrix.target }}

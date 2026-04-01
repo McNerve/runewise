@@ -38,6 +38,7 @@ export default function CombatCalculator({ hiscores }: Props) {
         hiscores.skills.find(
           (s) => s.name.toLowerCase() === name.toLowerCase()
         )?.level ?? 1;
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- sync from external hiscores data
       setStats({
         attack: get("Attack"),
         strength: get("Strength"),
