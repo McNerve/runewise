@@ -29,6 +29,7 @@ const MoneyMaking = lazy(() => import("./features/money-making/MoneyMaking"));
 const CombatTasks = lazy(() => import("./features/combat-tasks/CombatTasks"));
 const ClueHelper = lazy(() => import("./features/clue-helper/ClueHelper"));
 const RuneLiteData = lazy(() => import("./features/runelite/RuneLiteData"));
+const ShootingStars = lazy(() => import("./features/stars/ShootingStars"));
 const About = lazy(() => import("./features/about/About"));
 import { useHiscores } from "./hooks/useHiscores";
 import { useKeyboardNav } from "./hooks/useKeyboardNav";
@@ -97,6 +98,8 @@ function AppContent() {
         return <ClueHelper />;
       case "runelite":
         return <RuneLiteData />;
+      case "stars":
+        return <ShootingStars />;
       case "about":
         return <About />;
     }
