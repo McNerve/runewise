@@ -39,7 +39,7 @@ export default function SkillCalculator({ hiscores }: Props) {
   const currentLevel = getLevel(selectedSkill);
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-3xl">
       <h2 className="text-xl font-semibold mb-4">Skill Calculator</h2>
 
       <div className="grid grid-cols-6 gap-1.5 mb-6">

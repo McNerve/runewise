@@ -42,16 +42,19 @@ function UpdateButton() {
   );
 }
 
+const isMac = navigator.platform.toUpperCase().includes("MAC");
+const mod = isMac ? "⌘" : "Ctrl+";
+
 const NAV_ITEMS: { id: View; label: string; icon: string; key: string }[] = [
-  { id: "overview", label: "Overview", icon: "👤", key: "⌘1" },
-  { id: "skill-calc", label: "Skill Calcs", icon: "📊", key: "⌘2" },
-  { id: "combat-calc", label: "Combat", icon: "⚔️", key: "⌘3" },
-  { id: "dry-calc", label: "Dry Calc", icon: "🎲", key: "⌘4" },
-  { id: "ge", label: "Grand Exchange", icon: "💰", key: "⌘5" },
-  { id: "item-db", label: "Item Database", icon: "🗄️", key: "⌘6" },
-  { id: "xp-table", label: "XP Table", icon: "📋", key: "⌘7" },
-  { id: "drops", label: "Drop Tables", icon: "💀", key: "⌘8" },
-  { id: "tracker", label: "XP Tracker", icon: "📈", key: "⌘9" },
+  { id: "overview", label: "Overview", icon: "👤", key: `${mod}1` },
+  { id: "skill-calc", label: "Skill Calcs", icon: "📊", key: `${mod}2` },
+  { id: "combat-calc", label: "Combat", icon: "⚔️", key: `${mod}3` },
+  { id: "dry-calc", label: "Dry Calc", icon: "🎲", key: `${mod}4` },
+  { id: "ge", label: "Grand Exchange", icon: "💰", key: `${mod}5` },
+  { id: "item-db", label: "Item Database", icon: "🗄️", key: `${mod}6` },
+  { id: "xp-table", label: "XP Table", icon: "📋", key: `${mod}7` },
+  { id: "drops", label: "Drop Tables", icon: "💀", key: `${mod}8` },
+  { id: "tracker", label: "XP Tracker", icon: "📈", key: `${mod}9` },
   { id: "bosses", label: "Boss Guides", icon: "🐉", key: "" },
   { id: "quests", label: "Quests", icon: "📜", key: "" },
   { id: "diaries", label: "Diaries", icon: "🏆", key: "" },
