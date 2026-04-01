@@ -31,9 +31,13 @@ const ClueHelper = lazy(() => import("./features/clue-helper/ClueHelper"));
 const RuneLiteData = lazy(() => import("./features/runelite/RuneLiteData"));
 const ShootingStars = lazy(() => import("./features/stars/ShootingStars"));
 const About = lazy(() => import("./features/about/About"));
+const Settings = lazy(() => import("./features/settings/Settings"));
+const Market = lazy(() => import("./features/market/Market"));
 import { useHiscores } from "./hooks/useHiscores";
 import { useKeyboardNav } from "./hooks/useKeyboardNav";
 import { NavigationProvider, useNavigation } from "./lib/NavigationContext";
+import { SettingsContext } from "./hooks/useSettings";
+import { useSettingsProvider } from "./hooks/useSettings";
 
 function AppContent() {
   const { view, navigate } = useNavigation();
@@ -67,7 +71,7 @@ function AppContent() {
       case "tracker":
         return <XpTracker rsn={hiscores.rsn} />;
       case "bosses":
-        return <BossGuide />;
+        return <BossGuide hiscores={hiscores.data} />;
       case "quests":
         return <QuestTracker hiscores={hiscores.data} />;
       case "diaries":
@@ -102,6 +106,10 @@ function AppContent() {
         return <ShootingStars />;
       case "about":
         return <About />;
+      case "settings":
+        return <Settings />;
+      case "market":
+        return <Market />;
     }
   };
 
@@ -118,9 +126,11 @@ function AppContent() {
             onClear={hiscores.clear}
           />
           <main className="flex-1 overflow-y-auto p-6">
-            <Suspense fallback={<div className="space-y-4"><CardSkeleton /><CardSkeleton /></div>}>
-              {renderView()}
-            </Suspense>
+            <div className="max-w-5xl mx-auto">
+              <Suspense fallback={<div className="space-y-4"><CardSkeleton /><CardSkeleton /></div>}>
+                {renderView()}
+              </Suspense>
+            </div>
           </main>
         </div>
       </div>
@@ -130,10 +140,14 @@ function AppContent() {
 }
 
 function App() {
+  const settingsValue = useSettingsProvider();
+
   return (
-    <NavigationProvider>
-      <AppContent />
-    </NavigationProvider>
+    <SettingsContext.Provider value={settingsValue}>
+      <NavigationProvider>
+        <AppContent />
+      </NavigationProvider>
+    </SettingsContext.Provider>
   );
 }
 

@@ -31,11 +31,7 @@ function classifyPost(category: string, title: string): NewsPost["status"] {
   return "unknown";
 }
 
-async function fetchBlogPosts(): Promise<NewsPost[]> {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1;
-
+async function fetchMonth(year: number, month: number): Promise<NewsPost[]> {
   const proxyUrl = isTauri
     ? `https://secure.runescape.com/m=news/archive?oldschool=1&year=${year}&month=${month}`
     : `/api/news/archive?oldschool=1&year=${year}&month=${month}`;
@@ -68,6 +64,32 @@ async function fetchBlogPosts(): Promise<NewsPost[]> {
   } catch {
     return [];
   }
+}
+
+async function fetchBlogPosts(): Promise<NewsPost[]> {
+  const now = new Date();
+  const months: { year: number; month: number }[] = [];
+
+  // Fetch current month and previous 2 months for full coverage
+  for (let i = 0; i < 3; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push({ year: d.getFullYear(), month: d.getMonth() + 1 });
+  }
+
+  const results = await Promise.all(
+    months.map((m) => fetchMonth(m.year, m.month))
+  );
+
+  // Deduplicate by URL
+  const seen = new Set<string>();
+  const all: NewsPost[] = [];
+  for (const post of results.flat()) {
+    if (!seen.has(post.url)) {
+      seen.add(post.url);
+      all.push(post);
+    }
+  }
+  return all;
 }
 
 function resolveArticleUrl(url: string): string {
@@ -162,9 +184,12 @@ export default function News() {
   const [selectedPost, setSelectedPost] = useState<NewsPost | null>(null);
   const [articleHtml, setArticleHtml] = useState<string | null>(null);
   const [articleLoading, setArticleLoading] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- loading state for async fetch
+    setLoading(true);
     fetchBlogPosts().then((p) => {
       if (!cancelled) {
         setPosts(p);
@@ -174,7 +199,7 @@ export default function News() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [refreshKey]);
 
   function handlePostClick(post: NewsPost) {
     setSelectedPost(post);
@@ -277,7 +302,22 @@ export default function News() {
   if (!selectedPost) {
     return (
       <div className="max-w-2xl">
-        <h2 className="text-xl font-semibold mb-4">OSRS News</h2>
+        <div className="flex items-center gap-3 mb-4">
+          <h2 className="text-xl font-semibold">OSRS News</h2>
+          <button
+            onClick={() => setRefreshKey((k) => k + 1)}
+            disabled={loading}
+            className="text-xs text-text-secondary hover:text-text-primary transition-colors disabled:opacity-50"
+            title="Refresh news"
+          >
+            {loading ? "Loading..." : "Refresh"}
+          </button>
+          {!loading && posts.length > 0 && (
+            <span className="text-xs text-text-secondary/40">
+              {posts.length} articles
+            </span>
+          )}
+        </div>
         {filterButtons}
 
         {loading && (

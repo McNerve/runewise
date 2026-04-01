@@ -4,6 +4,7 @@ import { apiFetch } from "../../lib/api/fetch";
 import { getCached, setCache } from "../../lib/api/cache";
 import { bossIcon } from "../../lib/sprites";
 import { isTauri } from "../../lib/env";
+import type { HiscoreData } from "../../lib/api/hiscores";
 
 const WIKI_API = isTauri
   ? "https://oldschool.runescape.wiki/api.php"
@@ -59,7 +60,34 @@ async function fetchBossGuide(
 
         // Strip unwanted elements
         const content = doc.querySelector(".mw-parser-output") || doc.body;
-        content.querySelectorAll("script, style, sup.reference, .mw-editsection, .navbox, .catlinks, .printfooter, .noprint, iframe, object, embed, form").forEach(el => el.remove());
+        content.querySelectorAll("script, style, sup.reference, .mw-editsection, .navbox, .catlinks, .printfooter, .noprint, iframe, object, embed, form, .toc, #toc, [role='navigation'], .mw-headline-anchor").forEach(el => el.remove());
+        // Remove TOC, infoboxes, tile markers, and other wiki cruft
+        content.querySelectorAll("div, table").forEach(el => {
+          const text = el.textContent?.trim() ?? "";
+          const cls = el.className ?? "";
+          if (
+            cls.includes("toc") ||
+            cls.includes("infobox") ||
+            cls.includes("rsw-infobox") ||
+            (text.startsWith("Contents") && el.querySelectorAll("li").length > 0 && text.length < 500) ||
+            (text.includes("Tile markers") && text.length < 200) ||
+            (text.includes("guide") && text.includes("Data") && text.length < 100)
+          ) {
+            el.remove();
+          }
+        });
+
+        // Remove duplicate section headings (wiki often repeats the section name)
+        const headings = content.querySelectorAll("h2, h3");
+        const seenHeadings = new Set<string>();
+        headings.forEach(h => {
+          const text = h.textContent?.trim().toLowerCase() ?? "";
+          if (seenHeadings.has(text)) {
+            h.remove();
+          } else {
+            seenHeadings.add(text);
+          }
+        });
 
         // Strip event handler attributes
         content.querySelectorAll("*").forEach((el) => {
@@ -68,18 +96,44 @@ async function fetchBossGuide(
           }
         });
 
-        // Rewrite relative image URLs to absolute
+        // Rewrite image URLs to absolute and handle lazy-loaded images
         content.querySelectorAll("img").forEach(img => {
-          const src = img.getAttribute("src");
-          if (src && src.startsWith("/")) {
+          // Handle data-src (lazy-loaded images)
+          const dataSrc = img.getAttribute("data-src");
+          if (dataSrc) {
+            img.setAttribute("src", dataSrc);
+            img.removeAttribute("data-src");
+          }
+
+          const src = img.getAttribute("src") || "";
+
+          // Handle protocol-relative URLs (//oldschool.runescape.wiki/...)
+          if (src.startsWith("//")) {
+            img.setAttribute("src", `https:${src}`);
+          }
+          // Handle relative URLs (/images/...)
+          else if (src.startsWith("/")) {
             img.setAttribute("src", `https://oldschool.runescape.wiki${src}`);
           }
+
+          // Remove srcset to avoid loading wrong sizes
+          img.removeAttribute("srcset");
+          img.removeAttribute("data-file-width");
+          img.removeAttribute("data-file-height");
+
+          // Constrain image sizes to prevent layout shift
+          if (!img.style.maxWidth) {
+            img.style.maxWidth = "100%";
+          }
+          // Add error fallback class
+          img.setAttribute("loading", "lazy");
         });
 
-        // Strip links but keep text
+        // Strip links but keep their children (text + images)
         content.querySelectorAll("a").forEach(a => {
-          const text = document.createTextNode(a.textContent ?? "");
-          a.replaceWith(text);
+          const frag = document.createDocumentFragment();
+          while (a.firstChild) frag.appendChild(a.firstChild);
+          a.replaceWith(frag);
         });
 
         const html = content.innerHTML.trim();
@@ -95,7 +149,11 @@ async function fetchBossGuide(
   }
 }
 
-export default function BossGuide() {
+interface Props {
+  hiscores?: HiscoreData | null;
+}
+
+export default function BossGuide({ hiscores }: Props) {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedBoss, setSelectedBoss] = useState<BossInfo | null>(null);
   const [guide, setGuide] = useState<GuideSection[]>([]);
@@ -106,6 +164,16 @@ export default function BossGuide() {
     selectedCategory === "All"
       ? BOSSES
       : BOSSES.filter((b) => b.category === selectedCategory);
+
+  const getBossKc = (bossName: string): number | null => {
+    if (!hiscores?.activities) return null;
+    const activity = hiscores.activities.find((a) =>
+      a.name.toLowerCase() === bossName.toLowerCase() ||
+      bossName.toLowerCase().includes(a.name.toLowerCase()) ||
+      a.name.toLowerCase().includes(bossName.toLowerCase())
+    );
+    return activity && activity.score > 0 ? activity.score : null;
+  };
 
   const selectBoss = async (boss: BossInfo) => {
     setSelectedBoss(boss);
@@ -225,6 +293,14 @@ export default function BossGuide() {
                     {selectedBoss.hitpoints} HP
                   </span>
                 )}
+                {(() => {
+                  const kc = getBossKc(selectedBoss.name);
+                  return kc != null ? (
+                    <span className="text-xs bg-success/15 text-success px-2 py-1 rounded">
+                      Your KC: {kc.toLocaleString()}
+                    </span>
+                  ) : null;
+                })()}
                 <a
                   href={`https://oldschool.runescape.wiki/w/${selectedBoss.wikiPage}`}
                   target="_blank"

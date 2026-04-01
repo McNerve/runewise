@@ -46,6 +46,15 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/news/, "/m=news"),
       },
+      "/api/stars": {
+        target: "https://public.starminers.site",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/stars/, ""),
+        headers: {
+          "User-Agent": "RuneWise OSRS Companion",
+          Authorization: "1E15qy2D4M4G",
+        },
+      },
     },
   },
 });

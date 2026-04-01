@@ -25,8 +25,9 @@ const PAGES: SearchResult[] = [
   { name: "Skill Calculators", category: "Page", view: "skill-calc", icon: NAV_ICONS["skill-calc"] },
   { name: "Combat Calculator", category: "Page", view: "combat-calc", icon: NAV_ICONS["combat-calc"] },
   { name: "Dry Calculator", category: "Page", view: "dry-calc", icon: NAV_ICONS["dry-calc"] },
-  { name: "Grand Exchange", category: "Page", view: "ge", icon: NAV_ICONS.ge },
-  { name: "Item Database", category: "Page", view: "item-db", icon: NAV_ICONS["item-db"] },
+  { name: "Market", category: "Page", view: "market", icon: NAV_ICONS.market },
+  { name: "Grand Exchange", category: "Page", view: "market", icon: NAV_ICONS.market },
+  { name: "Item Database", category: "Page", view: "market", icon: NAV_ICONS.market },
   { name: "XP Table", category: "Page", view: "xp-table", icon: NAV_ICONS["xp-table"] },
   { name: "Drop Tables", category: "Page", view: "drops", icon: NAV_ICONS.drops },
   { name: "Boss Guides", category: "Page", view: "bosses", icon: NAV_ICONS.bosses },
@@ -35,6 +36,7 @@ const PAGES: SearchResult[] = [
   { name: "Slayer Helper", category: "Page", view: "slayer", icon: NAV_ICONS.slayer },
   { name: "News", category: "Page", view: "news", icon: NAV_ICONS.news },
   { name: "About", category: "Page", view: "about" },
+  { name: "Settings", category: "Page", view: "settings", icon: NAV_ICONS.settings },
 ];
 
 function buildIndex(): SearchResult[] {
@@ -64,16 +66,10 @@ function buildIndex(): SearchResult[] {
 
   results.push(
     {
-      name: "Search items in Item Database",
+      name: "Search items in Market",
       category: "Shortcut",
-      view: "item-db",
-      icon: NAV_ICONS["item-db"],
-    },
-    {
-      name: "Search items in Grand Exchange",
-      category: "Shortcut",
-      view: "ge",
-      icon: NAV_ICONS.ge,
+      view: "market",
+      icon: NAV_ICONS.market,
     },
   );
 

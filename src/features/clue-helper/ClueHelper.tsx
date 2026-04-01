@@ -27,7 +27,7 @@ export default function ClueHelper() {
     if (debouncedQuery.length >= 2) {
       const q = debouncedQuery.toLowerCase();
       results = results.filter(
-        (c) => c.clueText.toLowerCase().includes(q) || c.solution.toLowerCase().includes(q) || c.location.toLowerCase().includes(q)
+        (c) => c.text.toLowerCase().includes(q) || c.solution.toLowerCase().includes(q) || c.location.toLowerCase().includes(q)
       );
     }
     return results.slice(0, 100);
@@ -82,7 +82,7 @@ export default function ClueHelper() {
         {filtered.map((clue, i) => (
           <div key={i} className="bg-bg-secondary rounded-lg p-4 hover:bg-bg-tertiary transition-colors">
             <div className="flex items-start justify-between gap-3 mb-2">
-              <p className="text-sm text-text-secondary italic">{clue.clueText}</p>
+              <p className="text-sm text-text-secondary italic">{clue.text}</p>
               <div className="flex gap-1.5 shrink-0">
                 <span className={`text-[10px] px-1.5 py-0.5 rounded ${TIER_COLORS[clue.tier]}`}>
                   {clue.tier}
