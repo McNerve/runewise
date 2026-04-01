@@ -1,5 +1,15 @@
 use std::collections::HashMap;
+use std::sync::LazyLock;
+use std::time::Duration;
 use serde::Serialize;
+
+static HTTP_CLIENT: LazyLock<reqwest::Client> = LazyLock::new(|| {
+    reqwest::Client::builder()
+        .timeout(Duration::from_secs(15))
+        .user_agent("runewise - osrs companion app")
+        .build()
+        .expect("failed to build HTTP client")
+});
 
 #[derive(Serialize)]
 struct ProxyResponse {
@@ -13,10 +23,7 @@ async fn proxy_fetch(
     url: String,
     headers: Option<HashMap<String, String>>,
 ) -> Result<ProxyResponse, String> {
-    let client = reqwest::Client::new();
-    let mut req = client.get(&url);
-
-    req = req.header("User-Agent", "runewise - osrs companion app");
+    let mut req = HTTP_CLIENT.get(&url);
 
     if let Some(hdrs) = headers {
         for (key, value) in hdrs {
