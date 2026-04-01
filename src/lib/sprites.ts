@@ -15,6 +15,23 @@ export function bossIcon(bossName: string): string {
   return `${WIKI_IMG}/${name}.png`;
 }
 
+export const NAV_ICONS: Record<string, string> = {
+  overview: `${WIKI_IMG}/Stats_icon.png`,
+  "skill-calc": `${WIKI_IMG}/Antique_lamp_%28Normal%29.png`,
+  "combat-calc": `${WIKI_IMG}/Combat_icon.png`,
+  "dry-calc": `${WIKI_IMG}/Ring_of_wealth.png`,
+  ge: `${WIKI_IMG}/Coins_10000.png`,
+  "item-db": `${WIKI_IMG}/Bank_icon_%28empty%29.png`,
+  "xp-table": `${WIKI_IMG}/Book_of_knowledge.png`,
+  drops: `${WIKI_IMG}/Looting_bag.png`,
+  tracker: `${WIKI_IMG}/Adventure_Log_icon.png`,
+  bosses: `${WIKI_IMG}/Slayer_helmet_%28i%29.png`,
+  quests: `${WIKI_IMG}/Quest_point_icon.png`,
+  diaries: `${WIKI_IMG}/Achievement_Diaries_icon.png`,
+  slayer: `${WIKI_IMG}/Slayer_icon.png`,
+  news: `${WIKI_IMG}/Newspaper.png`,
+};
+
 export const SKILL_ICONS: Record<string, string> = {
   Attack: skillIcon("Attack"),
   Strength: skillIcon("Strength"),
