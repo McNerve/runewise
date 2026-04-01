@@ -1,0 +1,301 @@
+export interface QuestRequirement {
+  skill: string;
+  level: number;
+  boostable?: boolean;
+}
+
+export interface Quest {
+  name: string;
+  difficulty: "Novice" | "Intermediate" | "Experienced" | "Master" | "Grandmaster" | "Special";
+  length: string;
+  questPoints: number;
+  members: boolean;
+  skillRequirements: QuestRequirement[];
+  questRequirements: string[];
+}
+
+export const QUESTS: Quest[] = [
+  // Grandmaster
+  {
+    name: "While Guthix Sleeps",
+    difficulty: "Grandmaster",
+    length: "Very Long",
+    questPoints: 5,
+    members: true,
+    skillRequirements: [
+      { skill: "Magic", level: 75 },
+      { skill: "Thieving", level: 75 },
+      { skill: "Herblore", level: 75 },
+      { skill: "Farming", level: 65 },
+      { skill: "Mining", level: 72 },
+      { skill: "Agility", level: 60 },
+    ],
+    questRequirements: ["Defender of Varrock", "Dream Mentor", "The Hand in the Sand", "King's Ransom", "Legends' Quest", "Recipe for Disaster", "Swan Song", "Tears of Guthix", "Throne of Miscellania", "Wanted!"],
+  },
+  {
+    name: "Dragon Slayer II",
+    difficulty: "Grandmaster",
+    length: "Very Long",
+    questPoints: 5,
+    members: true,
+    skillRequirements: [
+      { skill: "Mining", level: 68 },
+      { skill: "Smithing", level: 70 },
+      { skill: "Agility", level: 60 },
+      { skill: "Thieving", level: 60 },
+      { skill: "Construction", level: 50 },
+      { skill: "Hitpoints", level: 50 },
+      { skill: "Magic", level: 75 },
+      { skill: "Crafting", level: 62 },
+    ],
+    questRequirements: ["Legends' Quest", "Dream Mentor", "A Tail of Two Cats", "Animal Magnetism", "Ghosts Ahoy", "Bone Voyage", "Client of Kourend"],
+  },
+  {
+    name: "Song of the Elves",
+    difficulty: "Grandmaster",
+    length: "Very Long",
+    questPoints: 4,
+    members: true,
+    skillRequirements: [
+      { skill: "Agility", level: 70 },
+      { skill: "Construction", level: 70 },
+      { skill: "Farming", level: 70 },
+      { skill: "Herblore", level: 70 },
+      { skill: "Hunter", level: 70 },
+      { skill: "Mining", level: 70 },
+      { skill: "Smithing", level: 70 },
+      { skill: "Woodcutting", level: 70 },
+    ],
+    questRequirements: ["Mourning's End Part II", "Making History"],
+  },
+  {
+    name: "Monkey Madness II",
+    difficulty: "Grandmaster",
+    length: "Very Long",
+    questPoints: 4,
+    members: true,
+    skillRequirements: [
+      { skill: "Slayer", level: 69 },
+      { skill: "Crafting", level: 70 },
+      { skill: "Hunter", level: 60 },
+      { skill: "Agility", level: 55 },
+      { skill: "Thieving", level: 55 },
+      { skill: "Firemaking", level: 60 },
+    ],
+    questRequirements: ["Monkey Madness I", "Troll Stronghold", "The Eyes of Glouphrie", "Recipe for Disaster"],
+  },
+  {
+    name: "Desert Treasure II - The Fallen Empire",
+    difficulty: "Grandmaster",
+    length: "Very Long",
+    questPoints: 5,
+    members: true,
+    skillRequirements: [
+      { skill: "Firemaking", level: 75 },
+      { skill: "Magic", level: 75 },
+      { skill: "Thieving", level: 70 },
+      { skill: "Herblore", level: 62 },
+      { skill: "Runecraft", level: 60 },
+      { skill: "Construction", level: 60 },
+    ],
+    questRequirements: ["Desert Treasure I", "Beneath Cursed Sands", "Secrets of the North", "Enakhra's Lament", "Temple of the Eye", "The Garden of Death"],
+  },
+  // Master
+  {
+    name: "Recipe for Disaster",
+    difficulty: "Master",
+    length: "Very Long",
+    questPoints: 6,
+    members: true,
+    skillRequirements: [
+      { skill: "Cooking", level: 70 },
+      { skill: "Agility", level: 48 },
+      { skill: "Mining", level: 50 },
+      { skill: "Fishing", level: 53 },
+      { skill: "Thieving", level: 53 },
+      { skill: "Herblore", level: 25 },
+      { skill: "Magic", level: 59 },
+      { skill: "Smithing", level: 40 },
+      { skill: "Firemaking", level: 50 },
+      { skill: "Crafting", level: 40 },
+      { skill: "Fletching", level: 10 },
+      { skill: "Woodcutting", level: 36 },
+    ],
+    questRequirements: ["Cook's Assistant", "Big Chompy Bird Hunting", "Demon Slayer", "Murder Mystery", "Nature Spirit", "Gertrude's Cat", "Shadow of the Storm", "Desert Treasure I", "Horror from the Deep", "Legends' Quest", "Monkey Madness I"],
+  },
+  {
+    name: "Legends' Quest",
+    difficulty: "Master",
+    length: "Long",
+    questPoints: 4,
+    members: true,
+    skillRequirements: [
+      { skill: "Agility", level: 50 },
+      { skill: "Crafting", level: 50 },
+      { skill: "Herblore", level: 45 },
+      { skill: "Magic", level: 56 },
+      { skill: "Mining", level: 52 },
+      { skill: "Prayer", level: 42 },
+      { skill: "Smithing", level: 50 },
+      { skill: "Strength", level: 50 },
+      { skill: "Thieving", level: 50 },
+      { skill: "Woodcutting", level: 50 },
+    ],
+    questRequirements: ["Heroes' Quest", "Family Crest", "Shilo Village", "Underground Pass", "Waterfall Quest"],
+  },
+  // Key intermediate quests
+  {
+    name: "Desert Treasure I",
+    difficulty: "Master",
+    length: "Long",
+    questPoints: 3,
+    members: true,
+    skillRequirements: [
+      { skill: "Thieving", level: 53 },
+      { skill: "Magic", level: 50 },
+      { skill: "Firemaking", level: 50 },
+      { skill: "Slayer", level: 10 },
+    ],
+    questRequirements: ["The Dig Site", "Temple of Ikov", "The Tourist Trap", "Troll Stronghold", "Priest in Peril", "Waterfall Quest"],
+  },
+  {
+    name: "Lunar Diplomacy",
+    difficulty: "Experienced",
+    length: "Long",
+    questPoints: 2,
+    members: true,
+    skillRequirements: [
+      { skill: "Crafting", level: 61 },
+      { skill: "Defence", level: 40 },
+      { skill: "Firemaking", level: 49 },
+      { skill: "Magic", level: 65 },
+      { skill: "Mining", level: 60 },
+      { skill: "Woodcutting", level: 55 },
+      { skill: "Herblore", level: 5 },
+    ],
+    questRequirements: ["The Fremennik Trials", "Lost City", "Rune Mysteries", "Shilo Village"],
+  },
+  // Important unlocks
+  {
+    name: "Animal Magnetism",
+    difficulty: "Intermediate",
+    length: "Medium",
+    questPoints: 1,
+    members: true,
+    skillRequirements: [
+      { skill: "Slayer", level: 18 },
+      { skill: "Crafting", level: 19 },
+      { skill: "Ranged", level: 30 },
+      { skill: "Woodcutting", level: 35 },
+    ],
+    questRequirements: ["Priest in Peril", "Ernest the Chicken", "The Restless Ghost"],
+  },
+  {
+    name: "Bone Voyage",
+    difficulty: "Intermediate",
+    length: "Medium",
+    questPoints: 1,
+    members: true,
+    skillRequirements: [],
+    questRequirements: ["The Dig Site"],
+  },
+  {
+    name: "Priest in Peril",
+    difficulty: "Novice",
+    length: "Medium",
+    questPoints: 1,
+    members: true,
+    skillRequirements: [],
+    questRequirements: [],
+  },
+  // F2P
+  {
+    name: "Dragon Slayer I",
+    difficulty: "Experienced",
+    length: "Long",
+    questPoints: 2,
+    members: false,
+    skillRequirements: [],
+    questRequirements: [],
+  },
+  {
+    name: "Cook's Assistant",
+    difficulty: "Novice",
+    length: "Short",
+    questPoints: 1,
+    members: false,
+    skillRequirements: [],
+    questRequirements: [],
+  },
+  {
+    name: "The Corsair Curse",
+    difficulty: "Novice",
+    length: "Short",
+    questPoints: 2,
+    members: false,
+    skillRequirements: [],
+    questRequirements: [],
+  },
+  // More key unlocks
+  {
+    name: "Fairytale II - Cure a Queen",
+    difficulty: "Experienced",
+    length: "Long",
+    questPoints: 2,
+    members: true,
+    skillRequirements: [
+      { skill: "Thieving", level: 40 },
+      { skill: "Farming", level: 49 },
+      { skill: "Herblore", level: 57 },
+    ],
+    questRequirements: ["Fairytale I - Growing Pains", "Nature Spirit"],
+  },
+  {
+    name: "Regicide",
+    difficulty: "Master",
+    length: "Long",
+    questPoints: 3,
+    members: true,
+    skillRequirements: [
+      { skill: "Agility", level: 56 },
+      { skill: "Crafting", level: 10 },
+    ],
+    questRequirements: ["Underground Pass"],
+  },
+  {
+    name: "A Kingdom Divided",
+    difficulty: "Experienced",
+    length: "Long",
+    questPoints: 2,
+    members: true,
+    skillRequirements: [
+      { skill: "Agility", level: 54 },
+      { skill: "Thieving", level: 52 },
+      { skill: "Woodcutting", level: 42 },
+      { skill: "Herblore", level: 50 },
+      { skill: "Mining", level: 42 },
+      { skill: "Crafting", level: 38 },
+      { skill: "Magic", level: 35 },
+    ],
+    questRequirements: ["The Ascent of Arceuus", "The Depths of Despair", "The Queen of Thieves", "Tale of the Righteous", "The Forsaken Tower"],
+  },
+  {
+    name: "Sins of the Father",
+    difficulty: "Master",
+    length: "Long",
+    questPoints: 2,
+    members: true,
+    skillRequirements: [
+      { skill: "Woodcutting", level: 62 },
+      { skill: "Fletching", level: 60 },
+      { skill: "Crafting", level: 56 },
+      { skill: "Agility", level: 52 },
+      { skill: "Attack", level: 50 },
+      { skill: "Slayer", level: 50 },
+      { skill: "Magic", level: 49 },
+    ],
+    questRequirements: ["A Taste of Hope"],
+  },
+];
+
+export const QUEST_DIFFICULTIES = ["Novice", "Intermediate", "Experienced", "Master", "Grandmaster"] as const;
