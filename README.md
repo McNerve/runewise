@@ -1,7 +1,7 @@
 # RuneWise
 
 [![CI](https://github.com/McNerve/runewise/actions/workflows/ci.yml/badge.svg)](https://github.com/McNerve/runewise/actions/workflows/ci.yml)
-[![Release](https://github.com/McNerve/runewise/actions/workflows/release.yml/badge.svg)](https://github.com/McNerve/runewise/releases/latest)
+[![Latest Release](https://img.shields.io/github/v/release/McNerve/runewise)](https://github.com/McNerve/runewise/releases/latest)
 [![License: MIT](https://img.shields.io/github/license/McNerve/runewise)](LICENSE)
 [![Downloads](https://img.shields.io/github/downloads/McNerve/runewise/total)](https://github.com/McNerve/runewise/releases)
 
