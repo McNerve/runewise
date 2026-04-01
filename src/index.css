@@ -22,11 +22,29 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
+.article-content h2,
+.article-content h3 {
+  color: var(--color-text-primary);
+  font-weight: 600;
+  margin-top: 1rem;
 }
 
-.animate-fadeIn {
-  animation: fadeIn 150ms ease-out;
+.article-content p {
+  margin-bottom: 0.75rem;
+}
+
+.article-content ul,
+.article-content ol {
+  padding-left: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.article-content li {
+  margin-bottom: 0.25rem;
+}
+
+.article-content img {
+  max-width: 100%;
+  border-radius: 0.5rem;
+  margin: 0.75rem 0;
 }
