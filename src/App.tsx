@@ -21,6 +21,10 @@ const SlayerHelper = lazy(() => import("./features/slayer/SlayerHelper"));
 const AlchCalculator = lazy(() => import("./features/alch-calc/AlchCalculator"));
 const PetCalculator = lazy(() => import("./features/pet-calc/PetCalculator"));
 const BossLootCalculator = lazy(() => import("./features/boss-loot/BossLootCalculator"));
+const DpsCalculator = lazy(() => import("./features/dps-calc/DpsCalculator"));
+const PriceChart = lazy(() => import("./features/price-charts/PriceChart"));
+const Watchlist = lazy(() => import("./features/watchlist/Watchlist"));
+const FarmTimers = lazy(() => import("./features/timers/FarmTimers"));
 const About = lazy(() => import("./features/about/About"));
 import { useHiscores } from "./hooks/useHiscores";
 import { useKeyboardNav } from "./hooks/useKeyboardNav";
@@ -73,6 +77,14 @@ function AppContent() {
         return <PetCalculator hiscores={hiscores.data} />;
       case "boss-loot":
         return <BossLootCalculator />;
+      case "dps-calc":
+        return <DpsCalculator hiscores={hiscores.data} />;
+      case "price-charts":
+        return <PriceChart />;
+      case "watchlist":
+        return <Watchlist />;
+      case "timers":
+        return <FarmTimers />;
       case "about":
         return <About />;
     }
