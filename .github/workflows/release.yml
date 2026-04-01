@@ -58,13 +58,22 @@ jobs:
         with:
           tagName: ${{ github.ref_name }}
           releaseName: RuneWise ${{ github.ref_name }}
-          releaseBody: |
-            See the [changelog](https://github.com/McNerve/runewise/commits/${{ github.ref_name }}) for details.
-
-            **Downloads:**
-            - macOS (Apple Silicon): `.dmg`
-            - macOS (Intel): `.dmg`
-            - Windows: `.msi` / `.exe`
+          releaseBody: ""
           releaseDraft: false
           prerelease: false
           args: --target ${{ matrix.target }}
+
+  release-notes:
+    needs: build
+    runs-on: ubuntu-latest
+    name: Update Release Notes
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate release notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release edit ${{ github.ref_name }} --generate-notes
