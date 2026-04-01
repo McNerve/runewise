@@ -25,6 +25,10 @@ const DpsCalculator = lazy(() => import("./features/dps-calc/DpsCalculator"));
 const PriceChart = lazy(() => import("./features/price-charts/PriceChart"));
 const Watchlist = lazy(() => import("./features/watchlist/Watchlist"));
 const FarmTimers = lazy(() => import("./features/timers/FarmTimers"));
+const MoneyMaking = lazy(() => import("./features/money-making/MoneyMaking"));
+const CombatTasks = lazy(() => import("./features/combat-tasks/CombatTasks"));
+const ClueHelper = lazy(() => import("./features/clue-helper/ClueHelper"));
+const RuneLiteData = lazy(() => import("./features/runelite/RuneLiteData"));
 const About = lazy(() => import("./features/about/About"));
 import { useHiscores } from "./hooks/useHiscores";
 import { useKeyboardNav } from "./hooks/useKeyboardNav";
@@ -85,6 +89,14 @@ function AppContent() {
         return <Watchlist />;
       case "timers":
         return <FarmTimers />;
+      case "money-making":
+        return <MoneyMaking hiscores={hiscores.data} />;
+      case "combat-tasks":
+        return <CombatTasks hiscores={hiscores.data} />;
+      case "clue-helper":
+        return <ClueHelper />;
+      case "runelite":
+        return <RuneLiteData />;
       case "about":
         return <About />;
     }
