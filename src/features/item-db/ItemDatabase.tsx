@@ -6,6 +6,7 @@ import {
   type ItemPrice,
 } from "../../lib/api/ge";
 import { formatGp } from "../../lib/format";
+import ItemDetail from "./ItemDetail";
 
 export default function ItemDatabase() {
   const [items, setItems] = useState<ItemMapping[]>([]);
@@ -15,6 +16,7 @@ export default function ItemDatabase() {
     "all"
   );
   const [loading, setLoading] = useState(true);
+  const [selectedItem, setSelectedItem] = useState<ItemMapping | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -49,94 +51,113 @@ export default function ItemDatabase() {
   }
 
   return (
-    <div className="max-w-4xl">
-      <h2 className="text-xl font-semibold mb-4">
-        Item Database{" "}
-        <span className="text-sm font-normal text-text-secondary">
-          ({items.length.toLocaleString()} items)
-        </span>
-      </h2>
+    <div
+      className={
+        selectedItem
+          ? "grid grid-cols-[1fr_350px] gap-4"
+          : "max-w-4xl"
+      }
+    >
+      <div>
+        <h2 className="text-xl font-semibold mb-4">
+          Item Database{" "}
+          <span className="text-sm font-normal text-text-secondary">
+            ({items.length.toLocaleString()} items)
+          </span>
+        </h2>
 
-      <div className="flex gap-3 mb-4">
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search items..."
-          className="flex-1 bg-bg-secondary border border-border rounded-lg px-4 py-2 text-sm"
-        />
-        <div className="flex gap-1">
-          {(["all", "f2p", "p2p"] as const).map((f) => (
-            <button
-              key={f}
-              onClick={() => setMembersFilter(f)}
-              className={`px-3 py-2 rounded text-xs uppercase ${
-                membersFilter === f
-                  ? "bg-accent text-white"
-                  : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
-              }`}
-            >
-              {f}
-            </button>
-          ))}
+        <div className="flex gap-3 mb-4">
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search items..."
+            className="flex-1 bg-bg-secondary border border-border rounded-lg px-4 py-2 text-sm"
+          />
+          <div className="flex gap-1">
+            {(["all", "f2p", "p2p"] as const).map((f) => (
+              <button
+                key={f}
+                onClick={() => setMembersFilter(f)}
+                className={`px-3 py-2 rounded text-xs uppercase ${
+                  membersFilter === f
+                    ? "bg-accent text-white"
+                    : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+                }`}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
         </div>
+
+        {query.length < 2 && (
+          <p className="text-sm text-text-secondary mb-4">
+            Type at least 2 characters to search.
+          </p>
+        )}
+
+        {filtered.length > 0 && (
+          <div className="bg-bg-secondary rounded-lg overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-text-secondary text-xs">
+                  <th className="text-left px-4 py-2">Item</th>
+                  <th className="text-right px-4 py-2">GE Price</th>
+                  <th className="text-right px-4 py-2">High Alch</th>
+                  <th className="text-right px-4 py-2">Value</th>
+                  <th className="text-right px-4 py-2">Limit</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((item) => {
+                  const price = prices[String(item.id)];
+                  return (
+                    <tr
+                      key={item.id}
+                      onClick={() => setSelectedItem(item)}
+                      className={`border-b border-border/50 hover:bg-bg-tertiary transition-colors group cursor-pointer ${
+                        selectedItem?.id === item.id ? "bg-bg-tertiary" : ""
+                      }`}
+                    >
+                      <td className="px-4 py-2">
+                        <div className="font-medium">{item.name}</div>
+                        <div className="text-xs text-text-secondary hidden group-hover:block">
+                          {item.examine}
+                        </div>
+                      </td>
+                      <td className="px-4 py-2 text-right text-success">
+                        {formatGp(price?.high ?? null)}
+                      </td>
+                      <td className="px-4 py-2 text-right text-warning">
+                        {formatGp(item.highalch)}
+                      </td>
+                      <td className="px-4 py-2 text-right text-text-secondary">
+                        {formatGp(item.value)}
+                      </td>
+                      <td className="px-4 py-2 text-right text-text-secondary">
+                        {item.limit ?? "—"}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            {filtered.length >= 100 && (
+              <p className="text-xs text-text-secondary text-center py-2">
+                Showing first 100 results. Refine your search.
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
-      {query.length < 2 && (
-        <p className="text-sm text-text-secondary mb-4">
-          Type at least 2 characters to search.
-        </p>
-      )}
-
-      {filtered.length > 0 && (
-        <div className="bg-bg-secondary rounded-lg overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border text-text-secondary text-xs">
-                <th className="text-left px-4 py-2">Item</th>
-                <th className="text-right px-4 py-2">GE Price</th>
-                <th className="text-right px-4 py-2">High Alch</th>
-                <th className="text-right px-4 py-2">Value</th>
-                <th className="text-right px-4 py-2">Limit</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((item) => {
-                const price = prices[String(item.id)];
-                return (
-                  <tr
-                    key={item.id}
-                    className="border-b border-border/50 even:bg-bg-primary/30 hover:bg-bg-tertiary transition-colors group"
-                  >
-                    <td className="px-4 py-2">
-                      <div className="font-medium">{item.name}</div>
-                      <div className="text-xs text-text-secondary hidden group-hover:block">
-                        {item.examine}
-                      </div>
-                    </td>
-                    <td className="px-4 py-2 text-right text-success">
-                      {formatGp(price?.high ?? null)}
-                    </td>
-                    <td className="px-4 py-2 text-right text-warning">
-                      {formatGp(item.highalch)}
-                    </td>
-                    <td className="px-4 py-2 text-right text-text-secondary">
-                      {formatGp(item.value)}
-                    </td>
-                    <td className="px-4 py-2 text-right text-text-secondary">
-                      {item.limit ?? "—"}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          {filtered.length >= 100 && (
-            <p className="text-xs text-text-secondary text-center py-2">
-              Showing first 100 results. Refine your search.
-            </p>
-          )}
-        </div>
+      {selectedItem && (
+        <ItemDetail
+          item={selectedItem}
+          price={prices[String(selectedItem.id)]}
+          onClose={() => setSelectedItem(null)}
+        />
       )}
     </div>
   );
