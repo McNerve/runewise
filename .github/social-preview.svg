@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f1117"/>
+      <stop offset="100%" style="stop-color:#1a1d2e"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#3b82f6"/>
+      <stop offset="100%" style="stop-color:#60a5fa"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#f59e0b"/>
+      <stop offset="100%" style="stop-color:#fbbf24"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="640" fill="url(#bg)"/>
+
+  <!-- Subtle grid pattern -->
+  <g opacity="0.03">
+    <line x1="0" y1="80" x2="1280" y2="80" stroke="#fff" stroke-width="1"/>
+    <line x1="0" y1="160" x2="1280" y2="160" stroke="#fff" stroke-width="1"/>
+    <line x1="0" y1="240" x2="1280" y2="240" stroke="#fff" stroke-width="1"/>
+    <line x1="0" y1="320" x2="1280" y2="320" stroke="#fff" stroke-width="1"/>
+    <line x1="0" y1="400" x2="1280" y2="400" stroke="#fff" stroke-width="1"/>
+    <line x1="0" y1="480" x2="1280" y2="480" stroke="#fff" stroke-width="1"/>
+    <line x1="0" y1="560" x2="1280" y2="560" stroke="#fff" stroke-width="1"/>
+    <line x1="160" y1="0" x2="160" y2="640" stroke="#fff" stroke-width="1"/>
+    <line x1="320" y1="0" x2="320" y2="640" stroke="#fff" stroke-width="1"/>
+    <line x1="480" y1="0" x2="480" y2="640" stroke="#fff" stroke-width="1"/>
+    <line x1="640" y1="0" x2="640" y2="640" stroke="#fff" stroke-width="1"/>
+    <line x1="800" y1="0" x2="800" y2="640" stroke="#fff" stroke-width="1"/>
+    <line x1="960" y1="0" x2="960" y2="640" stroke="#fff" stroke-width="1"/>
+    <line x1="1120" y1="0" x2="1120" y2="640" stroke="#fff" stroke-width="1"/>
+  </g>
+
+  <!-- Accent glow behind title -->
+  <ellipse cx="640" cy="260" rx="300" ry="120" fill="#3b82f6" opacity="0.06"/>
+
+  <!-- App icon: stylized compass/rune -->
+  <g transform="translate(640, 200)">
+    <!-- Outer ring -->
+    <circle cx="0" cy="0" r="68" fill="none" stroke="url(#accent)" stroke-width="3" opacity="0.8"/>
+    <!-- Inner diamond (rune shape) -->
+    <polygon points="0,-45 30,0 0,45 -30,0" fill="none" stroke="url(#gold)" stroke-width="2.5"/>
+    <!-- Center dot -->
+    <circle cx="0" cy="0" r="6" fill="url(#gold)"/>
+    <!-- Cardinal points -->
+    <line x1="0" y1="-68" x2="0" y2="-55" stroke="#3b82f6" stroke-width="2" stroke-linecap="round"/>
+    <line x1="68" y1="0" x2="55" y2="0" stroke="#3b82f6" stroke-width="2" stroke-linecap="round"/>
+    <line x1="0" y1="68" x2="0" y2="55" stroke="#3b82f6" stroke-width="2" stroke-linecap="round"/>
+    <line x1="-68" y1="0" x2="-55" y2="0" stroke="#3b82f6" stroke-width="2" stroke-linecap="round"/>
+  </g>
+
+  <!-- Title -->
+  <text x="640" y="330" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="72" font-weight="700" fill="#ffffff" text-anchor="middle" letter-spacing="-1">RuneWise</text>
+
+  <!-- Subtitle -->
+  <text x="640" y="380" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="22" fill="#94a3b8" text-anchor="middle" letter-spacing="3" text-transform="uppercase">OSRS DESKTOP COMPANION</text>
+
+  <!-- Feature pills -->
+  <g transform="translate(640, 440)">
+    <!-- Skill Calcs -->
+    <rect x="-390" y="-16" width="120" height="32" rx="16" fill="#3b82f6" opacity="0.15"/>
+    <text x="-330" y="6" font-family="-apple-system, sans-serif" font-size="13" fill="#60a5fa" text-anchor="middle" font-weight="500">Skill Calcs</text>
+
+    <!-- GE Prices -->
+    <rect x="-240" y="-16" width="110" height="32" rx="16" fill="#f59e0b" opacity="0.15"/>
+    <text x="-185" y="6" font-family="-apple-system, sans-serif" font-size="13" fill="#fbbf24" text-anchor="middle" font-weight="500">GE Prices</text>
+
+    <!-- Drop Tables -->
+    <rect x="-100" y="-16" width="120" height="32" rx="16" fill="#ef4444" opacity="0.15"/>
+    <text x="-40" y="6" font-family="-apple-system, sans-serif" font-size="13" fill="#f87171" text-anchor="middle" font-weight="500">Drop Tables</text>
+
+    <!-- Boss Guides -->
+    <rect x="50" y="-16" width="120" height="32" rx="16" fill="#a855f7" opacity="0.15"/>
+    <text x="110" y="6" font-family="-apple-system, sans-serif" font-size="13" fill="#c084fc" text-anchor="middle" font-weight="500">Boss Guides</text>
+
+    <!-- XP Tracker -->
+    <rect x="200" y="-16" width="110" height="32" rx="16" fill="#22c55e" opacity="0.15"/>
+    <text x="255" y="6" font-family="-apple-system, sans-serif" font-size="13" fill="#4ade80" text-anchor="middle" font-weight="500">XP Tracker</text>
+  </g>
+
+  <!-- Tech stack -->
+  <text x="640" y="520" font-family="-apple-system, sans-serif" font-size="14" fill="#475569" text-anchor="middle">Tauri + React + TypeScript</text>
+
+  <!-- Bottom accent line -->
+  <rect x="540" y="560" width="200" height="2" rx="1" fill="url(#accent)" opacity="0.4"/>
+</svg>
