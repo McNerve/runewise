@@ -16,6 +16,10 @@ export interface WomPlayer {
   build: string;
   combatLevel: number;
   updatedAt: string;
+  ehp: number;
+  ehb: number;
+  ttm: number;
+  tt200m: number;
   latestSnapshot: {
     data: {
       skills: Record<
@@ -131,4 +135,31 @@ export async function fetchWomRecords(
   const data: WomRecord[] = await res.json();
   setCache(cacheKey, data);
   return data;
+}
+
+export interface WomNameChange {
+  oldName: string;
+  newName: string;
+  resolvedAt: string | null;
+  status: string;
+}
+
+export async function fetchWomNameChanges(
+  rsn: string
+): Promise<WomNameChange[]> {
+  const cacheKey = `wom-names:${rsn.toLowerCase()}`;
+  const cached = getCached<WomNameChange[]>(cacheKey, ACHIEVEMENTS_TTL);
+  if (cached) return cached;
+
+  try {
+    const res = await apiFetch(
+      `${WOM_API}/players/${encodeURIComponent(rsn)}/names`
+    );
+    if (!res.ok) return [];
+    const data: WomNameChange[] = await res.json();
+    setCache(cacheKey, data);
+    return data;
+  } catch {
+    return [];
+  }
 }

@@ -4,9 +4,11 @@ import {
   fetchWomGains,
   fetchWomAchievements,
   fetchWomRecords,
+  fetchWomNameChanges,
   type WomGains,
   type WomAchievement,
   type WomRecord,
+  type WomNameChange,
   type GainsPeriod,
 } from "../../lib/api/wom";
 
@@ -55,6 +57,7 @@ export default function XpTracker({ rsn }: Props) {
   const [gains, setGains] = useState<WomGains | null>(null);
   const [achievements, setAchievements] = useState<WomAchievement[]>([]);
   const [records, setRecords] = useState<WomRecord[]>([]);
+  const [nameChanges, setNameChanges] = useState<WomNameChange[]>([]);
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState<"gains" | "achievements" | "records">(
     "gains"
@@ -70,12 +73,14 @@ export default function XpTracker({ rsn }: Props) {
       fetchWomGains(rsn, period),
       fetchWomAchievements(rsn),
       fetchWomRecords(rsn),
+      fetchWomNameChanges(rsn),
     ])
-      .then(([g, a, r]) => {
+      .then(([g, a, r, n]) => {
         if (cancelled) return;
         setGains(g);
         setAchievements(a);
         setRecords(r);
+        setNameChanges(n);
         setLoading(false);
       })
       .catch(() => {
@@ -114,12 +119,19 @@ export default function XpTracker({ rsn }: Props) {
 
   return (
     <div className="max-w-3xl">
-      <h2 className="text-xl font-semibold mb-4">
-        XP Tracker{" "}
-        <span className="text-sm font-normal text-text-secondary">
-          via Wise Old Man
-        </span>
-      </h2>
+      <div className="flex items-center gap-3 mb-4">
+        <h2 className="text-xl font-semibold">
+          XP Tracker{" "}
+          <span className="text-sm font-normal text-text-secondary">
+            via Wise Old Man
+          </span>
+        </h2>
+        {nameChanges.length > 0 && (
+          <span className="text-[10px] text-text-secondary/50" title={nameChanges.map(n => `${n.oldName} → ${n.newName}`).join(", ")}>
+            Previously: {nameChanges.map(n => n.oldName).join(" → ")}
+          </span>
+        )}
+      </div>
 
       <div className="flex gap-4 mb-4">
         <div className="flex gap-1">

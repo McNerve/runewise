@@ -41,9 +41,13 @@ function ThresholdCell({
         setDraft(value != null ? String(value) : "");
         setEditing(true);
       }}
-      className="text-xs text-text-secondary hover:text-text-primary transition-colors"
+      className={`text-xs px-2 py-0.5 rounded transition-colors ${
+        value != null
+          ? "text-text-secondary hover:text-text-primary"
+          : "text-accent border border-accent/30 hover:bg-accent/10"
+      }`}
     >
-      {value != null ? formatGp(value) : "Set"}
+      {value != null ? formatGp(value) : "Click to set"}
     </button>
   );
 }

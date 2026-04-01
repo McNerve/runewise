@@ -1,7 +1,5 @@
 import { useState } from "react";
 
-declare const __APP_VERSION__: string;
-
 interface PlayerBarProps {
   rsn: string;
   loading: boolean;
@@ -37,6 +35,7 @@ export default function PlayerBar({
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); onLookup(input); } }}
           placeholder="Enter username..."
           className="bg-bg-tertiary border border-border rounded px-2 py-1 text-sm w-40"
         />
@@ -61,8 +60,6 @@ export default function PlayerBar({
         </div>
       )}
       {error && <span className="text-xs text-danger">{error}</span>}
-      <div className="flex-1" />
-      <span className="text-[10px] text-text-secondary/40">RuneWise v{__APP_VERSION__}</span>
     </div>
   );
 }

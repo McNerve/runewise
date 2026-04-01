@@ -53,12 +53,50 @@ export const POPULAR_DROPS: DropEntry[] = [
   { item: "Beaver", source: "Woodcutting", rate: 264367, category: "Pets" },
   { item: "Tangleroot", source: "Farming", rate: 7500, category: "Pets" },
 
+  // DT2 bosses
+  { item: "Ultor ring", source: "The Whisperer", rate: 1536, category: "Other" },
+  { item: "Bellator ring", source: "Duke Sucellus", rate: 1536, category: "Other" },
+  { item: "Magus ring", source: "The Leviathan", rate: 1536, category: "Other" },
+  { item: "Venator ring", source: "Vardorvis", rate: 1536, category: "Other" },
+  { item: "Virtus mask", source: "Duke Sucellus", rate: 768, category: "Other" },
+  { item: "Executioner's axe head", source: "Vardorvis", rate: 768, category: "Other" },
+  { item: "Siren's staff", source: "The Leviathan", rate: 768, category: "Other" },
+  { item: "Blue moon spear", source: "The Whisperer", rate: 768, category: "Other" },
+
+  // More raids
+  { item: "Ancestral hat", source: "Chambers of Xeric", rate: 23, category: "Raids" },
+  { item: "Ancestral robe top", source: "Chambers of Xeric", rate: 23, category: "Raids" },
+  { item: "Dragon hunter crossbow", source: "Chambers of Xeric", rate: 34.5, category: "Raids" },
+  { item: "Masori body (f)", source: "Tombs of Amascut", rate: 24, category: "Raids" },
+  { item: "Lightbearer", source: "Tombs of Amascut", rate: 8, category: "Raids" },
+  { item: "Justiciar legguards", source: "Theatre of Blood", rate: 86, category: "Raids" },
+  { item: "Sanguinesti staff", source: "Theatre of Blood", rate: 86, category: "Raids" },
+
+  // Araxxor
+  { item: "Noxious pommel", source: "Araxxor", rate: 200, category: "Other" },
+  { item: "Noxious point", source: "Araxxor", rate: 200, category: "Other" },
+  { item: "Noxious blade", source: "Araxxor", rate: 200, category: "Other" },
+  { item: "Araxyte fang", source: "Araxxor", rate: 600, category: "Other" },
+
+  // More slayer
+  { item: "Eternal gem", source: "Superior slayer creature", rate: 25000, category: "Slayer" },
+  { item: "Basilisk jaw", source: "Basilisk Knight", rate: 1000, category: "Slayer" },
+  { item: "Drake's claw", source: "Drake", rate: 512, category: "Slayer" },
+
+  // More GWD
+  { item: "Staff of the dead", source: "K'ril Tsutsaroth", rate: 508, category: "GWD" },
+  { item: "Armadyl crossbow", source: "Commander Zilyana", rate: 508, category: "GWD" },
+  { item: "Ancient hilt", source: "Nex", rate: 258, category: "GWD" },
+
   // Clue scrolls
   { item: "3rd age piece (any)", source: "Reward casket (hard)", rate: 211250, category: "Clues" },
   { item: "3rd age piece (any)", source: "Reward casket (elite)", rate: 148750, category: "Clues" },
   { item: "3rd age piece (any)", source: "Reward casket (master)", rate: 313168, category: "Clues" },
   { item: "Ranger boots", source: "Reward casket (medium)", rate: 1133, category: "Clues" },
   { item: "Gilded platebody", source: "Reward casket (hard)", rate: 35750, category: "Clues" },
+  { item: "Bloodhound", source: "Reward casket (master)", rate: 1000, category: "Clues" },
+  { item: "Holy sandals", source: "Reward casket (medium)", rate: 1133, category: "Clues" },
+  { item: "Wizard boots", source: "Reward casket (medium)", rate: 1133, category: "Clues" },
 ];
 
 export const DROP_CATEGORIES = [...new Set(POPULAR_DROPS.map((d) => d.category))];

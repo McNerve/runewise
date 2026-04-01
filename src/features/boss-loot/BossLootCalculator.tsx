@@ -157,8 +157,8 @@ export default function BossLootCalculator() {
               <th className="text-right px-4 py-2">Rate</th>
               <th className="text-right px-4 py-2">Qty</th>
               <th className="text-right px-4 py-2">GE Price</th>
-              <th className="text-right px-4 py-2">EV/Kill</th>
-              <th className="text-right px-4 py-2">EV/Hr</th>
+              <th className="text-right px-4 py-2">GP/Kill</th>
+              <th className="text-right px-4 py-2">GP/Hr</th>
             </tr>
           </thead>
           <tbody>
