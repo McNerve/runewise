@@ -1,12 +1,43 @@
-/**
- * Cross-environment fetch wrapper.
- * In Tauri: native fetch works fine — CSP allows the OSRS domains.
- * In browser dev: relies on Vite proxy for CORS.
- */
+import { invoke } from "@tauri-apps/api/core";
+
+const isTauri = "__TAURI__" in window;
+
+interface ProxyResponse {
+  status: number;
+  body: string;
+  headers: Record<string, string>;
+}
 
 export async function apiFetch(
   url: string,
   options?: RequestInit
 ): Promise<Response> {
-  return globalThis.fetch(url, options);
+  if (!isTauri) {
+    return globalThis.fetch(url, options);
+  }
+
+  const headers: Record<string, string> = {};
+  if (options?.headers) {
+    if (options.headers instanceof Headers) {
+      options.headers.forEach((value, key) => {
+        headers[key] = value;
+      });
+    } else if (Array.isArray(options.headers)) {
+      for (const [key, value] of options.headers) {
+        headers[key] = value;
+      }
+    } else {
+      Object.assign(headers, options.headers);
+    }
+  }
+
+  const result = await invoke<ProxyResponse>("proxy_fetch", {
+    url,
+    headers: Object.keys(headers).length > 0 ? headers : null,
+  });
+
+  return new Response(result.body, {
+    status: result.status,
+    headers: result.headers,
+  });
 }
