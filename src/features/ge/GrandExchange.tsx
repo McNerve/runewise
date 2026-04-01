@@ -10,7 +10,7 @@ import { formatGp, timeAgo } from "../../lib/format";
 import { useNavigation } from "../../lib/NavigationContext";
 
 export default function GrandExchange() {
-  const { params } = useNavigation();
+  const { params, navigate } = useNavigation();
   const [query, setQuery] = useState(params.query ?? "");
   const debouncedQuery = useDebounce(query, 250);
   const [results, setResults] = useState<ItemMapping[]>([]);
@@ -118,7 +118,8 @@ export default function GrandExchange() {
                 return (
                   <tr
                     key={item.id}
-                    className="border-b border-border/50 even:bg-bg-primary/30 hover:bg-bg-tertiary transition-colors"
+                    onClick={() => navigate("item-db", { query: item.name })}
+                    className="border-b border-border/50 even:bg-bg-primary/30 hover:bg-bg-tertiary transition-colors cursor-pointer"
                   >
                     <td className="px-4 py-2">
                       <div className="font-medium">{item.name}</div>
