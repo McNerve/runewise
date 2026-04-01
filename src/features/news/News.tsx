@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { apiFetch } from "../../lib/api/fetch";
+import ExternalLink from "../../components/ExternalLink";
 
 interface NewsPost {
   title: string;
@@ -176,11 +177,9 @@ export default function News() {
 
       <div className="space-y-1.5">
         {filtered.map((post, i) => (
-          <a
+          <ExternalLink
             key={i}
             href={post.url}
-            target="_blank"
-            rel="noopener noreferrer"
             className="block bg-bg-secondary rounded-lg px-4 py-3 hover:bg-bg-tertiary transition-colors"
           >
             <div className="text-sm font-medium">{post.title}</div>
@@ -193,7 +192,7 @@ export default function News() {
               </span>
               {statusBadge(post.status)}
             </div>
-          </a>
+          </ExternalLink>
         ))}
       </div>
     </div>
