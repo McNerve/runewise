@@ -99,6 +99,7 @@ export async function fetchDropTable(
 
       rows.forEach((row, i) => {
         if (i === 0) return; // skip header
+        row.querySelectorAll("sup").forEach((sup) => sup.remove());
         const cells = row.querySelectorAll("td");
         if (cells.length >= 5) {
           // Columns: [icon, name, quantity, rarity, price, high alch]
