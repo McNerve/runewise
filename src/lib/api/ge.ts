@@ -20,7 +20,7 @@ export interface ItemPrice {
   lowTime: number | null;
 }
 
-const isTauri = "__TAURI__" in window;
+const isTauri = "__TAURI_INTERNALS__" in window;
 const WIKI_API = isTauri
   ? "https://prices.runescape.wiki/api/v1/osrs"
   : "/api/wiki-prices";

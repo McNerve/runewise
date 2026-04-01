@@ -1,7 +1,7 @@
 import { apiFetch } from "./fetch";
 import { getCached, setCache } from "./cache";
 
-const isTauri = "__TAURI__" in window;
+const isTauri = "__TAURI_INTERNALS__" in window;
 const WIKI_API = isTauri
   ? "https://oldschool.runescape.wiki/api.php"
   : "/api/wiki-content";

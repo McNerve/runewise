@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { View } from "../App";
 
 declare const __APP_VERSION__: string;
-const isTauri = "__TAURI__" in window;
+const isTauri = "__TAURI_INTERNALS__" in window;
 
 function UpdateButton() {
   const [status, setStatus] = useState<"idle" | "checking" | "downloading" | "ready" | "current" | "error">("idle");
