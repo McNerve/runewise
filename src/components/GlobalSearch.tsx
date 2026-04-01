@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigation, type View } from "../lib/NavigationContext";
 import { BOSSES } from "../lib/data/bosses";
 import { NAV_ICONS, skillIcon, bossIcon } from "../lib/sprites";
+import { isMac } from "../lib/env";
 
 interface SearchResult {
   name: string;
@@ -79,7 +80,6 @@ function buildIndex(): SearchResult[] {
   return results;
 }
 
-const isMac = navigator.platform.toUpperCase().includes("MAC");
 
 const MAX_PER_CATEGORY = 5;
 const MAX_TOTAL = 20;

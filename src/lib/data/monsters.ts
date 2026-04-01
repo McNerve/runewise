@@ -22,7 +22,7 @@ export const MONSTERS: Monster[] = [
   { name: "Abyssal Sire", defLevel: 250, defStab: 20, defSlash: 20, defCrush: 20, defRanged: 20, defMagic: 20, hp: 400 },
   { name: "Kalphite Queen (2nd form)", defLevel: 300, defStab: 0, defSlash: 0, defCrush: 0, defRanged: 300, defMagic: 0, hp: 255 },
   { name: "Thermonuclear Smoke Devil", defLevel: 150, defStab: 10, defSlash: 10, defCrush: 10, defRanged: 10, defMagic: 10, hp: 240 },
-  { name: "Giant Mole", defLevel: 200, defStab: 200, defSlash: 200, defCrush: 200, defRanged: 200, defMagic: 200, hp: 200 },
+  { name: "Giant Mole", defLevel: 30, defStab: -10, defSlash: -10, defCrush: -10, defRanged: -10, defMagic: -10, hp: 200 },
   { name: "Dagannoth Rex", defLevel: 255, defStab: 255, defSlash: 255, defCrush: 255, defRanged: 255, defMagic: 0, hp: 255 },
   { name: "Custom target", defLevel: 1, defStab: 0, defSlash: 0, defCrush: 0, defRanged: 0, defMagic: 0, hp: 100 },
 ];

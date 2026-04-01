@@ -138,12 +138,16 @@ export default function PriceChart() {
       return;
     }
     let cancelled = false;
-    searchItems(debouncedQuery).then((items) => {
-      if (!cancelled) {
-        setSuggestions(items.slice(0, 10));
-        setShowSuggestions(true);
-      }
-    });
+    searchItems(debouncedQuery)
+      .then((items) => {
+        if (!cancelled) {
+          setSuggestions(items.slice(0, 10));
+          setShowSuggestions(true);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setSuggestions([]);
+      });
     return () => {
       cancelled = true;
     };

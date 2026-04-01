@@ -8,6 +8,9 @@ export interface Prayer {
 export const PRAYERS: Prayer[] = [
   // Melee
   { name: "None", attackMult: 1, strengthMult: 1, style: "melee" },
+  { name: "Clarity of Thought", attackMult: 1.05, strengthMult: 1, style: "melee" },
+  { name: "Improved Reflexes", attackMult: 1.1, strengthMult: 1, style: "melee" },
+  { name: "Incredible Reflexes", attackMult: 1.15, strengthMult: 1, style: "melee" },
   { name: "Burst of Strength", attackMult: 1, strengthMult: 1.05, style: "melee" },
   { name: "Superhuman Strength", attackMult: 1, strengthMult: 1.1, style: "melee" },
   { name: "Ultimate Strength", attackMult: 1, strengthMult: 1.15, style: "melee" },

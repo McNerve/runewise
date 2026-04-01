@@ -55,6 +55,10 @@ export function timeToKill(hp: number, dpsValue: number): number {
   return dpsValue > 0 ? hp / dpsValue : Infinity;
 }
 
+// Note: Magic DPS is approximate. OSRS magic damage is primarily spell-base + magic dmg %,
+// not level-based like melee/ranged. This uses the standard formula which is accurate for
+// powered staves (Trident, Sanguinesti, Tumeken's shadow) where level matters.
+// Standard spellbook spells have fixed max hits not modeled here.
 export function calculateDps(input: DpsInput) {
   const effAtk = effectiveLevel(
     input.combatStyle === "melee"

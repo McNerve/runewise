@@ -9,9 +9,9 @@ export default function RuneLiteData() {
 
   useEffect(() => {
     if (!isTauri) return;
-    checkRuneLiteExists().then((exists) => {
-      setStatus(exists ? "found" : "not-found");
-    });
+    checkRuneLiteExists()
+      .then((exists) => setStatus(exists ? "found" : "not-found"))
+      .catch(() => setStatus("not-found"));
   }, []);
 
   return (

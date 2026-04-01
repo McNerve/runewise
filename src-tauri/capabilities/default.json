@@ -11,7 +11,13 @@
     "process:default",
     "shell:allow-open",
     "notification:default",
-    "fs:allow-read-text-file",
-    "fs:allow-exists"
+    {
+      "identifier": "fs:allow-read-text-file",
+      "allow": [{ "path": "$HOME/.runelite/**" }]
+    },
+    {
+      "identifier": "fs:allow-exists",
+      "allow": [{ "path": "$HOME/.runelite/**" }]
+    }
   ]
 }

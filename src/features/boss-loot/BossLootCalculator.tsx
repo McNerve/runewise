@@ -21,6 +21,7 @@ export default function BossLootCalculator() {
   const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
   const [mapping, setMapping] = useState<ItemMapping[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -33,7 +34,7 @@ export default function BossLootCalculator() {
           setMapping(m);
         }
       } catch {
-        // prices unavailable, show dashes
+        if (!cancelled) setError("Failed to load price data.");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -49,9 +50,14 @@ export default function BossLootCalculator() {
     return p.high ?? p.low ?? null;
   };
 
+  const mappingById = useMemo(() => {
+    const map = new Map<number, ItemMapping>();
+    for (const item of mapping) map.set(item.id, item);
+    return map;
+  }, [mapping]);
+
   const getItemName = (itemId: number, fallback: string): string => {
-    const item = mapping.find((m) => m.id === itemId);
-    return item?.name ?? fallback;
+    return mappingById.get(itemId)?.name ?? fallback;
   };
 
   const rows: DropRow[] = useMemo(() => {
@@ -93,6 +99,8 @@ export default function BossLootCalculator() {
   return (
     <div className="max-w-4xl">
       <h2 className="text-xl font-semibold mb-4">Boss Loot Calculator</h2>
+
+      {error && <p className="text-xs text-danger mb-2">{error}</p>}
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 gap-3 mb-4">

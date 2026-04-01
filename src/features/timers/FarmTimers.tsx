@@ -33,25 +33,31 @@ export default function FarmTimers() {
 
   useEffect(() => { saveJSON(TIMERS_KEY, timers); }, [timers]);
 
+  const hasActiveTimers = timers.some((t) => !t.notified);
+
   useEffect(() => {
+    if (!hasActiveTimers && timers.length === 0) return;
     const interval = setInterval(() => {
-      const t = Date.now();
-      setNow(t);
-      setTimers((prev) => {
-        let changed = false;
-        const next = prev.map((timer) => {
-          if (!timer.notified && t >= timer.readyAt) {
-            changed = true;
-            sendNotification("Farm Timer", `${timer.patchName} is ready!`);
-            return { ...timer, notified: true };
-          }
-          return timer;
-        });
-        return changed ? next : prev;
-      });
+      setNow(Date.now());
     }, 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [hasActiveTimers, timers.length]);
+
+  // Notifications — runs when `now` ticks, outside state updater
+  useEffect(() => {
+    const newlyReady = timers.filter((timer) => !timer.notified && now >= timer.readyAt);
+    if (newlyReady.length > 0) {
+      for (const timer of newlyReady) {
+        sendNotification("Farm Timer", `${timer.patchName} is ready!`);
+      }
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- gated behind length check, fires once per timer
+      setTimers((prev) =>
+        prev.map((timer) =>
+          !timer.notified && now >= timer.readyAt ? { ...timer, notified: true } : timer
+        )
+      );
+    }
+  }, [now]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const addTimer = useCallback((patchName: string) => {
     const patch = PATCH_TYPES.find((p) => p.name === patchName);
@@ -155,7 +161,7 @@ export default function FarmTimers() {
             const progress = Math.min(1, elapsed / total);
             const ready = now >= timer.readyAt;
             const remaining = timer.readyAt - now;
-            const color = ready ? "#22c55e" : "#3b82f6";
+            const color = ready ? "var(--color-success)" : "var(--color-accent)";
 
             return (
               <div
@@ -172,7 +178,7 @@ export default function FarmTimers() {
                 <div
                   className="w-16 h-16 rounded-full relative"
                   style={{
-                    background: `conic-gradient(${color} ${progress * 360}deg, #242836 ${progress * 360}deg)`,
+                    background: `conic-gradient(${color} ${progress * 360}deg, var(--color-bg-tertiary) ${progress * 360}deg)`,
                   }}
                 >
                   <div className="absolute inset-1 rounded-full bg-bg-secondary flex items-center justify-center">

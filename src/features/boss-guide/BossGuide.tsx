@@ -59,7 +59,14 @@ async function fetchBossGuide(
 
         // Strip unwanted elements
         const content = doc.querySelector(".mw-parser-output") || doc.body;
-        content.querySelectorAll("script, style, sup.reference, .mw-editsection, .navbox, .catlinks, .printfooter, .noprint").forEach(el => el.remove());
+        content.querySelectorAll("script, style, sup.reference, .mw-editsection, .navbox, .catlinks, .printfooter, .noprint, iframe, object, embed, form").forEach(el => el.remove());
+
+        // Strip event handler attributes
+        content.querySelectorAll("*").forEach((el) => {
+          for (const attr of [...el.attributes]) {
+            if (attr.name.startsWith("on")) el.removeAttribute(attr.name);
+          }
+        });
 
         // Rewrite relative image URLs to absolute
         content.querySelectorAll("img").forEach(img => {

@@ -23,10 +23,14 @@ export default function PanelLayout({ renderView, currentView }: PanelLayoutProp
   const containerRef = useRef<HTMLDivElement>(null);
   const dragging = useRef<{ index: number; startX: number; startWidths: number[] } | null>(null);
 
+  const persist = useCallback((p: Panel[]) => {
+    saveJSON(STORAGE_KEY, p);
+  }, []);
+
   const save = useCallback((next: Panel[]) => {
     setPanels(next);
-    saveJSON(STORAGE_KEY, next);
-  }, []);
+    persist(next);
+  }, [persist]);
 
   const addPanel = () => {
     if (panels.length >= 3) return;
@@ -59,10 +63,13 @@ export default function PanelLayout({ renderView, currentView }: PanelLayoutProp
     const newWidths = [...startWidths];
     newWidths[index] = Math.max(MIN_WIDTH, startWidths[index] + delta);
     newWidths[index + 1] = Math.max(MIN_WIDTH, startWidths[index + 1] - delta);
-    save(panels.map((p, i) => ({ ...p, width: newWidths[i] })));
+    setPanels((prev) => prev.map((p, i) => ({ ...p, width: newWidths[i] })));
   };
 
   const handlePointerUp = () => {
+    if (dragging.current) {
+      persist(panels);
+    }
     dragging.current = null;
   };
 

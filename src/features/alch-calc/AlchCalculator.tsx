@@ -136,6 +136,15 @@ export default function AlchCalculator() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="max-w-4xl">
+        <h2 className="text-xl font-semibold mb-4">High Alchemy Profits</h2>
+        <p className="text-sm text-danger">{error}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-4xl">
       <h2 className="text-xl font-semibold mb-1">High Alchemy Profit Table</h2>

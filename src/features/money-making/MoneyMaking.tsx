@@ -81,9 +81,10 @@ export default function MoneyMaking({ hiscores }: Props) {
   }, [category, search, membersOnly, bestForMe, hiscores]);
 
   const totalMethods = MONEY_METHODS.length;
-  const availableCount = hiscores
-    ? MONEY_METHODS.filter((m) => meetsRequirements(m, hiscores)).length
-    : null;
+  const availableCount = useMemo(
+    () => hiscores ? MONEY_METHODS.filter((m) => meetsRequirements(m, hiscores)).length : null,
+    [hiscores]
+  );
 
   return (
     <div className="max-w-4xl">

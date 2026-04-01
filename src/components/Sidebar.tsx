@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { View } from "../lib/NavigationContext";
-import { isTauri } from "../lib/env";
+import { isTauri, isMac } from "../lib/env";
 import { NAV_ICONS } from "../lib/sprites";
 
 declare const __APP_VERSION__: string;
@@ -44,7 +44,6 @@ function UpdateButton() {
   );
 }
 
-const isMac = navigator.platform.toUpperCase().includes("MAC");
 const mod = isMac ? "⌘" : "Ctrl+";
 
 interface NavItem {

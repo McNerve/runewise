@@ -107,8 +107,10 @@ export default function Chart({
       seriesRef.current = null;
       volumeRef.current = null;
     };
-  }, [type, height, data, volumeData]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- data/volumeData handled by separate effects below
+  }, [type, height]);
 
+  // Effect for data updates (without chart recreation)
   useEffect(() => {
     if (seriesRef.current) {
       seriesRef.current.setData(data);
@@ -116,6 +118,7 @@ export default function Chart({
     }
   }, [data]);
 
+  // Effect for volume data updates
   useEffect(() => {
     if (volumeRef.current && volumeData) {
       volumeRef.current.setData(volumeData);
