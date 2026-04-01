@@ -1,6 +1,6 @@
 [package]
 name = "runewise"
-version = "0.1.0"
+version = "0.1.1"
 description = "OSRS desktop companion app"
 authors = ["McNerve"]
 license = "MIT"
@@ -24,3 +24,4 @@ log = "0.4"
 tauri = { version = "2.10.3", features = [] }
 tauri-plugin-log = "2"
 tauri-plugin-updater = "2"
+reqwest = { version = "0.12", default-features = true }
