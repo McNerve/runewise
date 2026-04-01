@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { View } from "../lib/NavigationContext";
-
 import { isTauri } from "../lib/env";
+import { NAV_ICONS } from "../lib/sprites";
 
 declare const __APP_VERSION__: string;
 
@@ -47,21 +47,21 @@ function UpdateButton() {
 const isMac = navigator.platform.toUpperCase().includes("MAC");
 const mod = isMac ? "⌘" : "Ctrl+";
 
-const NAV_ITEMS: { id: View; label: string; icon: string; key: string }[] = [
-  { id: "overview", label: "Overview", icon: "👤", key: `${mod}1` },
-  { id: "skill-calc", label: "Skill Calcs", icon: "📊", key: `${mod}2` },
-  { id: "combat-calc", label: "Combat", icon: "⚔️", key: `${mod}3` },
-  { id: "dry-calc", label: "Dry Calc", icon: "🎲", key: `${mod}4` },
-  { id: "ge", label: "Grand Exchange", icon: "💰", key: `${mod}5` },
-  { id: "item-db", label: "Item Database", icon: "🗄️", key: `${mod}6` },
-  { id: "xp-table", label: "XP Table", icon: "📋", key: `${mod}7` },
-  { id: "drops", label: "Drop Tables", icon: "💀", key: `${mod}8` },
-  { id: "tracker", label: "XP Tracker", icon: "📈", key: `${mod}9` },
-  { id: "bosses", label: "Boss Guides", icon: "🐉", key: "" },
-  { id: "quests", label: "Quests", icon: "📜", key: "" },
-  { id: "diaries", label: "Diaries", icon: "🏆", key: "" },
-  { id: "slayer", label: "Slayer", icon: "🗡️", key: "" },
-  { id: "news", label: "News", icon: "📰", key: "" },
+const NAV_ITEMS: { id: View; label: string; key: string }[] = [
+  { id: "overview", label: "Overview", key: `${mod}1` },
+  { id: "skill-calc", label: "Skill Calcs", key: `${mod}2` },
+  { id: "combat-calc", label: "Combat", key: `${mod}3` },
+  { id: "dry-calc", label: "Dry Calc", key: `${mod}4` },
+  { id: "ge", label: "Grand Exchange", key: `${mod}5` },
+  { id: "item-db", label: "Item Database", key: `${mod}6` },
+  { id: "xp-table", label: "XP Table", key: `${mod}7` },
+  { id: "drops", label: "Drop Tables", key: `${mod}8` },
+  { id: "tracker", label: "XP Tracker", key: `${mod}9` },
+  { id: "bosses", label: "Boss Guides", key: "" },
+  { id: "quests", label: "Quests", key: "" },
+  { id: "diaries", label: "Diaries", key: "" },
+  { id: "slayer", label: "Slayer", key: "" },
+  { id: "news", label: "News", key: "" },
 ];
 
 interface SidebarProps {
@@ -87,7 +87,7 @@ export default function Sidebar({ currentView, onNavigate }: SidebarProps) {
                 : "text-text-secondary hover:bg-bg-tertiary hover:text-text-primary"
             }`}
           >
-            <span>{item.icon}</span>
+            <img src={NAV_ICONS[item.id]} alt="" className="w-4 h-4" />
             <span className="flex-1">{item.label}</span>
             <span className="text-[10px] text-text-secondary/30">{item.key}</span>
           </button>
