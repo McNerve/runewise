@@ -1,3 +1,5 @@
+export type MoneyIntensity = "afk" | "low" | "medium" | "high";
+
 export interface MoneyMethod {
   name: string;
   category: "Combat" | "Skilling" | "Processing" | "Collecting";
@@ -5,6 +7,7 @@ export interface MoneyMethod {
   baseGpPerHr: number;
   description: string;
   members: boolean;
+  intensity?: MoneyIntensity;
 }
 
 export const MONEY_METHODS: MoneyMethod[] = [
@@ -76,4 +79,17 @@ export const MONEY_METHODS: MoneyMethod[] = [
   { name: "Looting Wilderness", category: "Collecting", skills: [], baseGpPerHr: 300_000, description: "Loot items at popular Wilderness PvP hotspots", members: true },
   { name: "Collecting steel platebodies", category: "Collecting", skills: [], baseGpPerHr: 150_000, description: "Collect steel platebody spawns in the Wilderness", members: false },
   { name: "Collecting zammy wines", category: "Collecting", skills: [{ name: "Magic", level: 33 }], baseGpPerHr: 400_000, description: "Telegrab wines of zamorak from the temple", members: false },
+
+  // === New additions ===
+  { name: "Tombs of Amascut (Expert)", category: "Combat", skills: [{ name: "Attack", level: 90 }, { name: "Strength", level: 90 }, { name: "Ranged", level: 90 }, { name: "Magic", level: 90 }], baseGpPerHr: 7_000_000, description: "Complete expert ToA (300+ invocations) for Tumeken's shadow and fang", members: true, intensity: "high" },
+  { name: "Tombs of Amascut (Normal)", category: "Combat", skills: [{ name: "Attack", level: 80 }, { name: "Ranged", level: 80 }, { name: "Magic", level: 80 }], baseGpPerHr: 3_500_000, description: "Complete ToA at 150-250 invocations for consistent GP", members: true, intensity: "medium" },
+  { name: "Vardorvis", category: "Combat", skills: [{ name: "Attack", level: 85 }, { name: "Strength", level: 85 }], baseGpPerHr: 2_500_000, description: "Kill Vardorvis for Ultor ring and chromium ingots", members: true, intensity: "medium" },
+  { name: "Leviathan", category: "Combat", skills: [{ name: "Ranged", level: 85 }, { name: "Prayer", level: 77 }], baseGpPerHr: 2_200_000, description: "Kill The Leviathan for Venator ring and chromium ingots", members: true, intensity: "medium" },
+  { name: "Sarachnis", category: "Combat", skills: [{ name: "Attack", level: 70 }], baseGpPerHr: 700_000, description: "Kill Sarachnis for cudgel and Giant egg sac — good mid-level boss", members: true, intensity: "low" },
+  { name: "Giant Mole", category: "Combat", skills: [{ name: "Attack", level: 60 }], baseGpPerHr: 500_000, description: "Kill Giant Mole with Dharok's for mole claws/skins (buy Falador shield)", members: true, intensity: "low" },
+  { name: "Blast Furnace (Runite bars)", category: "Processing", skills: [{ name: "Smithing", level: 85 }], baseGpPerHr: 1_200_000, description: "Smelt runite bars at the Blast Furnace for high profit", members: true, intensity: "medium" },
+  { name: "Making battlestaves", category: "Processing", skills: [{ name: "Crafting", level: 54 }], baseGpPerHr: 500_000, description: "Buy battlestaves from Zaff daily and craft air battlestaves", members: true, intensity: "low" },
+  { name: "Hunting black chinchompas", category: "Skilling", skills: [{ name: "Hunter", level: 73 }], baseGpPerHr: 1_500_000, description: "Catch black chinchompas in the Wilderness (watch for PKers)", members: true, intensity: "high" },
+  { name: "Blood runecrafting", category: "Skilling", skills: [{ name: "Runecraft", level: 77 }], baseGpPerHr: 800_000, description: "Craft blood runes at the true blood altar for consistent passive income", members: true, intensity: "afk" },
+  { name: "Mining Shooting Stars", category: "Skilling", skills: [{ name: "Mining", level: 10 }], baseGpPerHr: 200_000, description: "Mine shooting stars for stardust and gem bags (AFK)", members: true, intensity: "afk" },
 ];

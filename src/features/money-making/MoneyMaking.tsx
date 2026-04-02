@@ -172,6 +172,16 @@ export default function MoneyMaking({ hiscores }: Props) {
                         F2P
                       </span>
                     )}
+                    {method.intensity && (
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+                        method.intensity === "afk" ? "bg-success/10 text-success" :
+                        method.intensity === "low" ? "bg-accent/10 text-accent" :
+                        method.intensity === "medium" ? "bg-warning/10 text-warning" :
+                        "bg-danger/10 text-danger"
+                      }`}>
+                        {method.intensity.toUpperCase()}
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-text-secondary mt-1">
                     {method.description}
