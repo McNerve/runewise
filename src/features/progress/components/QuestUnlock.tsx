@@ -1,12 +1,25 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import type { HiscoreData } from "../../../lib/api/hiscores";
-import { QUESTS } from "../../../lib/data/quests";
+import { QUESTS, type Quest } from "../../../lib/data/quests";
+import { fetchAllQuests, type WikiQuest } from "../../../lib/api/quests";
 import {
   checkAllQuests,
   type QuestEligibility,
   type EligibilityStatus,
 } from "../../../lib/formulas/questEligibility";
 import { SKILL_ICONS } from "../../../lib/sprites";
+
+function wikiToQuest(w: WikiQuest): Quest {
+  return {
+    name: w.name,
+    difficulty: w.difficulty,
+    length: w.length,
+    questPoints: w.questPoints,
+    members: w.members,
+    skillRequirements: w.skillRequirements,
+    questRequirements: w.questRequirements,
+  };
+}
 
 interface Props {
   hiscores: HiscoreData;
@@ -28,10 +41,19 @@ export default function QuestUnlock({ hiscores }: Props) {
   const [filter, setFilter] = useState<FilterStatus>("all");
   const [sortKey, setSortKey] = useState<SortKey>("gap");
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [quests, setQuests] = useState<Quest[]>(QUESTS);
+
+  useEffect(() => {
+    fetchAllQuests().then((wikiQuests) => {
+      if (wikiQuests.length > 0) {
+        setQuests(wikiQuests.map(wikiToQuest));
+      }
+    });
+  }, []);
 
   const eligibility = useMemo(
-    () => checkAllQuests(QUESTS, hiscores),
-    [hiscores]
+    () => checkAllQuests(quests, hiscores),
+    [hiscores, quests]
   );
 
   const counts = useMemo(() => {

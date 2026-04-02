@@ -1,9 +1,22 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { QUESTS, QUEST_DIFFICULTIES, type Quest } from "../../lib/data/quests";
+import { fetchAllQuests, type WikiQuest } from "../../lib/api/quests";
 import { type HiscoreData } from "../../lib/api/hiscores";
 import { SKILL_ICONS } from "../../lib/sprites";
 import ExternalLink from "../../components/ExternalLink";
 import { useNavigation } from "../../lib/NavigationContext";
+
+function wikiToQuest(w: WikiQuest): Quest {
+  return {
+    name: w.name,
+    difficulty: w.difficulty,
+    length: w.length,
+    questPoints: w.questPoints,
+    members: w.members,
+    skillRequirements: w.skillRequirements,
+    questRequirements: w.questRequirements,
+  };
+}
 
 interface Props {
   hiscores: HiscoreData | null;
@@ -36,13 +49,22 @@ export default function QuestTracker({ hiscores }: Props) {
   const [filter, setFilter] = useState<"all" | "available" | "locked">("all");
   const [diffFilter, setDiffFilter] = useState<string>("all");
   const [search, setSearch] = useState(params.quest ?? "");
+  const [quests, setQuests] = useState<Quest[]>(QUESTS);
+
+  useEffect(() => {
+    fetchAllQuests().then((wikiQuests) => {
+      if (wikiQuests.length > 0) {
+        setQuests(wikiQuests.map(wikiToQuest));
+      }
+    });
+  }, []);
 
   const questsWithStatus = useMemo(() => {
-    return QUESTS.map((quest) => ({
+    return quests.map((quest) => ({
       quest,
       ...checkRequirements(quest, hiscores),
     }));
-  }, [hiscores]);
+  }, [hiscores, quests]);
 
   const filtered = useMemo(() => {
     let result = questsWithStatus;
