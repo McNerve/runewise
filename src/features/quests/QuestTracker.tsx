@@ -50,11 +50,13 @@ export default function QuestTracker({ hiscores }: Props) {
   const [diffFilter, setDiffFilter] = useState<string>("all");
   const [search, setSearch] = useState(params.quest ?? "");
   const [quests, setQuests] = useState<Quest[]>(QUESTS);
+  const [wikiQuests, setWikiQuests] = useState<Map<string, WikiQuest>>(new Map());
 
   useEffect(() => {
-    fetchAllQuests().then((wikiQuests) => {
-      if (wikiQuests.length > 0) {
-        setQuests(wikiQuests.map(wikiToQuest));
+    fetchAllQuests().then((fetched) => {
+      if (fetched.length > 0) {
+        setQuests(fetched.map(wikiToQuest));
+        setWikiQuests(new Map(fetched.map((w) => [w.name, w])));
       }
     });
   }, []);
@@ -213,6 +215,26 @@ export default function QuestTracker({ hiscores }: Props) {
                 </span>
               </div>
             )}
+
+            {(() => {
+              const wiki = wikiQuests.get(quest.name);
+              if (!wiki) return null;
+              const details: { label: string; value: string }[] = [];
+              if (wiki.startPoint) details.push({ label: "Start", value: wiki.startPoint });
+              if (wiki.itemsRequired) details.push({ label: "Items", value: wiki.itemsRequired });
+              if (wiki.enemiesToDefeat && wiki.enemiesToDefeat !== "None") details.push({ label: "Enemies", value: wiki.enemiesToDefeat });
+              if (wiki.ironmanConcerns && wiki.ironmanConcerns !== "None") details.push({ label: "Ironman", value: wiki.ironmanConcerns });
+              if (details.length === 0) return null;
+              return (
+                <div className="mt-1.5 ml-4 space-y-0.5">
+                  {details.map((d) => (
+                    <div key={d.label} className="text-xs text-text-secondary">
+                      <span className="font-medium">{d.label}:</span> {d.value}
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
           </ExternalLink>
         ))}
       </div>

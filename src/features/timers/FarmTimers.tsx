@@ -14,6 +14,7 @@ interface Timer {
   startedAt: number;
   readyAt: number;
   notified: boolean;
+  repeat?: boolean;
 }
 
 function formatCountdown(ms: number): string {
@@ -44,7 +45,7 @@ export default function FarmTimers() {
     return () => clearInterval(interval);
   }, [hasActiveTimers, timers.length]);
 
-  // Notifications — runs when `now` ticks, outside state updater
+  // Notifications + auto-repeat — runs when `now` ticks
   useEffect(() => {
     const newlyReady = timers.filter((timer) => !timer.notified && now >= timer.readyAt);
     if (newlyReady.length > 0) {
@@ -53,9 +54,16 @@ export default function FarmTimers() {
       }
       // eslint-disable-next-line react-hooks/set-state-in-effect -- gated behind length check, fires once per timer
       setTimers((prev) =>
-        prev.map((timer) =>
-          !timer.notified && now >= timer.readyAt ? { ...timer, notified: true } : timer
-        )
+        prev.map((timer) => {
+          if (!timer.notified && now >= timer.readyAt) {
+            if (timer.repeat) {
+              const duration = timer.readyAt - timer.startedAt;
+              return { ...timer, startedAt: timer.readyAt, readyAt: timer.readyAt + duration, notified: false };
+            }
+            return { ...timer, notified: true };
+          }
+          return timer;
+        })
       );
     }
   }, [now]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -92,6 +100,12 @@ export default function FarmTimers() {
       };
     }).filter((t): t is Timer => t != null);
     setTimers((prev) => [...prev, ...newTimers]);
+  }, []);
+
+  const toggleRepeat = useCallback((id: string) => {
+    setTimers((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, repeat: !t.repeat } : t))
+    );
   }, []);
 
   const removeTimer = useCallback((id: string) => {
@@ -174,6 +188,13 @@ export default function FarmTimers() {
                 key={timer.id}
                 className={`relative bg-bg-secondary border border-border rounded-lg p-3 flex flex-col items-center gap-2 transition-all ${ready ? "border-success/40 shadow-[0_0_8px_rgba(34,197,94,0.15)]" : ""}`}
               >
+                <button
+                  onClick={() => toggleRepeat(timer.id)}
+                  className={`absolute top-1.5 right-8 text-xs transition-colors ${timer.repeat ? "text-accent" : "text-text-secondary/40 hover:text-accent"}`}
+                  title={timer.repeat ? "Auto-repeat on" : "Auto-repeat off"}
+                >
+                  ↻
+                </button>
                 <button
                   onClick={() => removeTimer(timer.id)}
                   className="absolute top-1.5 right-2 text-text-secondary/40 hover:text-danger text-xs transition-colors"
