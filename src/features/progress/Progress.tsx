@@ -5,13 +5,15 @@ import QuestTracker from "../quests/QuestTracker";
 import DiaryTracker from "../diaries/DiaryTracker";
 
 const CombatTasks = lazy(() => import("../combat-tasks/CombatTasks"));
+const QuestUnlock = lazy(() => import("./components/QuestUnlock"));
 
-type Tab = "quests" | "diaries" | "combat-tasks";
+type Tab = "quests" | "diaries" | "combat-tasks" | "unlock";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "quests", label: "Quests" },
   { id: "diaries", label: "Diaries" },
   { id: "combat-tasks", label: "Combat Tasks" },
+  { id: "unlock", label: "What Can I Do?" },
 ];
 
 interface Props {
@@ -23,6 +25,7 @@ export default function Progress({ hiscores }: Props) {
   const initialTab: Tab =
     params.tab === "diaries" ? "diaries" :
     params.tab === "combat-tasks" ? "combat-tasks" :
+    params.tab === "unlock" ? "unlock" :
     "quests";
   const [activeTab, setActiveTab] = useState<Tab>(initialTab);
 
@@ -50,6 +53,16 @@ export default function Progress({ hiscores }: Props) {
         <Suspense fallback={<div className="py-8 text-center text-sm text-text-secondary">Loading...</div>}>
           <CombatTasks />
         </Suspense>
+      )}
+      {activeTab === "unlock" && hiscores && (
+        <Suspense fallback={<div className="py-8 text-center text-sm text-text-secondary">Loading...</div>}>
+          <QuestUnlock hiscores={hiscores} />
+        </Suspense>
+      )}
+      {activeTab === "unlock" && !hiscores && (
+        <div className="py-10 text-center text-sm text-text-secondary">
+          Look up your RSN above to see which quests you can tackle.
+        </div>
       )}
     </div>
   );
