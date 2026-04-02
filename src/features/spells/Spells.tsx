@@ -2,7 +2,6 @@ import { useState, useMemo } from "react";
 import {
   fetchAllSpells,
   getSpellsByBook,
-  type WikiSpell,
   type Spellbook,
 } from "../../lib/api/spells";
 import EmptyState from "../../components/EmptyState";
