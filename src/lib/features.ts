@@ -55,6 +55,14 @@ export const FEATURE_REGISTRY = {
     search: true,
     aliases: ["dry", "drop chance", "rng"],
   },
+  "training-plan": {
+    title: "Training Plan",
+    navLabel: "Training Plan",
+    family: "Tools",
+    sidebar: true,
+    search: true,
+    aliases: ["training plan", "level plan", "goal", "targets"],
+  },
   "gear-compare": {
     title: "Gear Compare",
     navLabel: "Gear Compare",
