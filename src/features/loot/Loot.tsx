@@ -11,7 +11,9 @@ import DropTable from "../../components/DropTable";
 import { findBossByName, normalizeBossLookup } from "../../lib/data/bosses";
 import { BOSS_DROP_TABLES, type BossDropTable } from "../../lib/data/boss-drops";
 
-type LootTab = "drops" | "profit";
+import BossProfitRanking from "./components/BossProfitRanking";
+
+type LootTab = "drops" | "profit" | "ranking";
 
 // --- Shared helpers ---
 
@@ -611,7 +613,9 @@ function ProfitCalculatorTab({
 
 export default function Loot() {
   const { params, navigate } = useNavigation();
-  const [tab, setTab] = useState<LootTab>((params.tab as LootTab) === "profit" ? "profit" : "drops");
+  const [tab, setTab] = useState<LootTab>(
+    params.tab === "profit" ? "profit" : params.tab === "ranking" ? "ranking" : "drops"
+  );
   const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
   const [mapping, setMapping] = useState<ItemMapping[]>([]);
   const [itemMap, setItemMap] = useState<Map<string, number>>(new Map());
@@ -655,6 +659,14 @@ export default function Loot() {
         >
           Profit Calculator
         </button>
+        <button
+          onClick={() => setTab("ranking")}
+          className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+            tab === "ranking" ? "bg-accent text-white" : "text-text-secondary hover:text-text-primary"
+          }`}
+        >
+          Boss Rankings
+        </button>
       </div>
 
       {tab === "drops" ? (
@@ -664,7 +676,7 @@ export default function Loot() {
           navigate={navigate}
           initialMonster={params.monster}
         />
-      ) : (
+      ) : tab === "profit" ? (
         <ProfitCalculatorTab
           prices={prices}
           mapping={mapping}
@@ -672,6 +684,8 @@ export default function Loot() {
           navigate={navigate}
           initialBoss={params.boss}
         />
+      ) : (
+        <BossProfitRanking navigate={navigate} />
       )}
     </div>
   );
