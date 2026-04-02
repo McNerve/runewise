@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
-import { PATCH_TYPES, PRESETS } from "../../lib/data/farm-timers";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { PATCH_TYPES, PATCH_CATEGORIES, PRESETS } from "../../lib/data/farm-timers";
 import { loadJSON, saveJSON } from "../../lib/localStorage";
 import { sendNotification } from "../../lib/notify";
 import EmptyState from "../../components/EmptyState";
@@ -17,6 +17,8 @@ interface Timer {
   repeat?: boolean;
 }
 
+type Tab = "timers" | "overview";
+
 function formatCountdown(ms: number): string {
   if (ms <= 0) return "Ready!";
   const totalSec = Math.ceil(ms / 1000);
@@ -28,10 +30,173 @@ function formatCountdown(ms: number): string {
   return `${s}s`;
 }
 
+function formatDuration(minutes: number): string {
+  if (minutes < 60) return `${minutes}m`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m > 0 ? `${h}h ${m}m` : `${h}h`;
+}
+
+interface CategoryStatus {
+  category: string;
+  icon: string;
+  active: number;
+  ready: number;
+  total: number;
+  nextReady: number | null;
+  patchTypes: number;
+}
+
+function FarmOverview({ timers, now }: { timers: Timer[]; now: number }) {
+  const categories = useMemo<CategoryStatus[]>(() => {
+    return PATCH_CATEGORIES.map((cat) => {
+      const catTimers = timers.filter((t) => {
+        const patch = PATCH_TYPES.find((p) => p.name === t.patchName);
+        return patch?.category === cat;
+      });
+      const ready = catTimers.filter((t) => now >= t.readyAt).length;
+      const active = catTimers.length - ready;
+      const growing = catTimers.filter((t) => now < t.readyAt);
+      const nextReady =
+        growing.length > 0
+          ? Math.min(...growing.map((t) => t.readyAt)) - now
+          : null;
+      const patchTypes = PATCH_TYPES.filter((p) => p.category === cat).length;
+      const firstPatch = PATCH_TYPES.find((p) => p.category === cat);
+
+      return {
+        category: cat,
+        icon: firstPatch?.icon ?? "",
+        active,
+        ready,
+        total: catTimers.length,
+        nextReady,
+        patchTypes,
+      };
+    });
+  }, [timers, now]);
+
+  const activeCategories = categories.filter((c) => c.total > 0);
+  const emptyCategories = categories.filter((c) => c.total === 0);
+
+  return (
+    <div>
+      {activeCategories.length === 0 ? (
+        <EmptyState
+          title="No active timers"
+          description="Start a timer from the Timers tab to see your farm run overview here."
+        />
+      ) : (
+        <>
+          <div className="section-kicker mb-3">
+            Active ({activeCategories.reduce((s, c) => s + c.total, 0)} timers)
+          </div>
+          <div className="space-y-2 mb-6">
+            {activeCategories.map((cat) => {
+              const allReady = cat.ready > 0 && cat.active === 0;
+              const someReady = cat.ready > 0 && cat.active > 0;
+
+              return (
+                <div
+                  key={cat.category}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg border transition-all ${
+                    allReady
+                      ? "bg-success/8 border-success/30"
+                      : someReady
+                        ? "bg-warning/6 border-warning/20"
+                        : "bg-bg-secondary border-border"
+                  }`}
+                >
+                  <img
+                    src={`${WIKI_IMG}/${cat.icon}`}
+                    alt=""
+                    className="w-6 h-6 shrink-0"
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none";
+                    }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium">{cat.category}</div>
+                    <div className="text-[11px] text-text-secondary">
+                      {cat.ready > 0 && (
+                        <span className="text-success font-medium">
+                          {cat.ready} ready
+                        </span>
+                      )}
+                      {cat.ready > 0 && cat.active > 0 && (
+                        <span className="text-text-secondary/40"> · </span>
+                      )}
+                      {cat.active > 0 && (
+                        <span>{cat.active} growing</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    {/* Mini progress bar */}
+                    <div className="w-16 h-1.5 rounded-full bg-bg-tertiary overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-300"
+                        style={{
+                          width: `${cat.total > 0 ? (cat.ready / cat.total) * 100 : 0}%`,
+                          backgroundColor: allReady
+                            ? "var(--color-success)"
+                            : "var(--color-warning)",
+                        }}
+                      />
+                    </div>
+                    <span
+                      className={`text-xs tabular-nums font-mono ${allReady ? "text-success font-semibold" : "text-text-secondary"}`}
+                    >
+                      {cat.nextReady != null
+                        ? formatCountdown(cat.nextReady)
+                        : "Ready!"}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      {emptyCategories.length > 0 && activeCategories.length > 0 && (
+        <>
+          <div className="section-kicker mb-3">
+            Idle ({emptyCategories.length} categories)
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {emptyCategories.map((cat) => (
+              <div
+                key={cat.category}
+                className="flex items-center gap-2 px-2.5 py-1.5 rounded bg-bg-secondary/50 text-text-secondary/40 text-xs"
+              >
+                <img
+                  src={`${WIKI_IMG}/${cat.icon}`}
+                  alt=""
+                  className="w-4 h-4 opacity-30"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                  }}
+                />
+                {cat.category}
+                <span className="text-text-secondary/20">
+                  ({cat.patchTypes})
+                </span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function FarmTimers() {
   const [timers, setTimers] = useState<Timer[]>(() => loadJSON(TIMERS_KEY, []));
   const [now, setNow] = useState(() => Date.now());
   const [selectedPatch, setSelectedPatch] = useState(PATCH_TYPES[0].name);
+  const [tab, setTab] = useState<Tab>("timers");
 
   useEffect(() => { saveJSON(TIMERS_KEY, timers); }, [timers]);
 
@@ -122,117 +287,149 @@ export default function FarmTimers() {
     <div className="max-w-3xl">
       <h2 className="text-xl font-semibold mb-4">Farm & Birdhouse Timers</h2>
 
-      <div className="section-kicker mb-2">Quick Presets</div>
-      <div className="flex flex-wrap gap-2 mb-4">
-        {PRESETS.map((preset) => (
+      <div className="flex gap-1 mb-6">
+        {(
+          [
+            { id: "timers", label: "Timers" },
+            { id: "overview", label: "Overview" },
+          ] as const
+        ).map((t) => (
           <button
-            key={preset.name}
-            onClick={() => addPreset(preset.patches)}
-            className="px-3 py-1.5 text-xs font-medium bg-bg-secondary border border-border rounded-lg hover:bg-bg-tertiary transition-colors"
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className={`px-4 py-1.5 rounded text-sm font-medium transition-colors ${
+              tab === t.id
+                ? "bg-accent text-white"
+                : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+            }`}
           >
-            {preset.name}
+            {t.label}
+            {t.id === "overview" && readyCount > 0 && (
+              <span className="ml-1.5 inline-flex items-center justify-center w-4 h-4 rounded-full bg-success text-white text-[10px] font-bold">
+                {readyCount}
+              </span>
+            )}
           </button>
         ))}
       </div>
 
-      <div className="flex gap-2 mb-6">
-        <select
-          value={selectedPatch}
-          onChange={(e) => setSelectedPatch(e.target.value)}
-          className="flex-1 bg-bg-secondary border border-border rounded-lg px-3 py-2 text-sm"
-        >
-          {PATCH_TYPES.map((p) => (
-            <option key={p.name} value={p.name}>
-              {p.name} ({p.growthMinutes}m)
-            </option>
-          ))}
-        </select>
-        <button
-          onClick={() => addTimer(selectedPatch)}
-          className="px-4 py-2 text-sm font-medium bg-accent text-white rounded-lg hover:bg-accent-hover transition-colors"
-        >
-          Start Timer
-        </button>
-      </div>
-
-      {readyCount > 0 && (
-        <button
-          onClick={clearReady}
-          className="mb-4 text-xs text-text-secondary hover:text-danger transition-colors"
-        >
-          Clear {readyCount} ready timer{readyCount > 1 ? "s" : ""}
-        </button>
-      )}
-
-      {timers.length === 0 ? (
-        <EmptyState
-          title="No active timers"
-          description="Start a timer or use a preset above to track your farm runs."
-        />
+      {tab === "overview" ? (
+        <FarmOverview timers={timers} now={now} />
       ) : (
         <>
-        <div className="section-kicker mb-3">
-          Active Timers ({timers.length})
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-          {timers.map((timer) => {
-            const total = timer.readyAt - timer.startedAt;
-            const elapsed = now - timer.startedAt;
-            const progress = Math.min(1, elapsed / total);
-            const ready = now >= timer.readyAt;
-            const remaining = timer.readyAt - now;
-            const color = ready ? "var(--color-success)" : "var(--color-accent)";
-
-            return (
-              <div
-                key={timer.id}
-                className={`relative bg-bg-secondary border border-border rounded-lg p-3 flex flex-col items-center gap-2 transition-all ${ready ? "border-success/40 shadow-[0_0_8px_rgba(34,197,94,0.15)]" : ""}`}
+          <div className="section-kicker mb-2">Quick Presets</div>
+          <div className="flex flex-wrap gap-2 mb-4">
+            {PRESETS.map((preset) => (
+              <button
+                key={preset.name}
+                onClick={() => addPreset(preset.patches)}
+                className="px-3 py-1.5 text-xs font-medium bg-bg-secondary border border-border rounded-lg hover:bg-bg-tertiary transition-colors"
               >
-                <button
-                  onClick={() => toggleRepeat(timer.id)}
-                  className={`absolute top-1.5 right-8 text-xs transition-colors ${timer.repeat ? "text-accent" : "text-text-secondary/40 hover:text-accent"}`}
-                  title={timer.repeat ? "Auto-repeat on" : "Auto-repeat off"}
-                >
-                  ↻
-                </button>
-                <button
-                  onClick={() => removeTimer(timer.id)}
-                  className="absolute top-1.5 right-2 text-text-secondary/40 hover:text-danger text-xs transition-colors"
-                >
-                  x
-                </button>
+                {preset.name}
+              </button>
+            ))}
+          </div>
 
-                <div
-                  className="w-16 h-16 rounded-full relative"
-                  style={{
-                    background: `conic-gradient(${color} ${progress * 360}deg, var(--color-bg-tertiary) ${progress * 360}deg)`,
-                  }}
-                >
-                  <div className="absolute inset-1 rounded-full bg-bg-secondary flex items-center justify-center">
-                    <img
-                      src={`${WIKI_IMG}/${timer.icon}`}
-                      alt=""
-                      className="w-6 h-6"
-                      onError={(e) => {
-                        const el = e.currentTarget;
-                        el.style.display = "none";
+          <div className="flex gap-2 mb-6">
+            <select
+              value={selectedPatch}
+              onChange={(e) => setSelectedPatch(e.target.value)}
+              className="flex-1 bg-bg-secondary border border-border rounded-lg px-3 py-2 text-sm"
+            >
+              {PATCH_TYPES.map((p) => (
+                <option key={p.name} value={p.name}>
+                  {p.name} ({formatDuration(p.growthMinutes)})
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={() => addTimer(selectedPatch)}
+              className="px-4 py-2 text-sm font-medium bg-accent text-white rounded-lg hover:bg-accent-hover transition-colors"
+            >
+              Start Timer
+            </button>
+          </div>
+
+          {readyCount > 0 && (
+            <button
+              onClick={clearReady}
+              className="mb-4 text-xs text-text-secondary hover:text-danger transition-colors"
+            >
+              Clear {readyCount} ready timer{readyCount > 1 ? "s" : ""}
+            </button>
+          )}
+
+          {timers.length === 0 ? (
+            <EmptyState
+              title="No active timers"
+              description="Start a timer or use a preset above to track your farm runs."
+            />
+          ) : (
+            <>
+            <div className="section-kicker mb-3">
+              Active Timers ({timers.length})
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              {timers.map((timer) => {
+                const total = timer.readyAt - timer.startedAt;
+                const elapsed = now - timer.startedAt;
+                const progress = Math.min(1, elapsed / total);
+                const ready = now >= timer.readyAt;
+                const remaining = timer.readyAt - now;
+                const color = ready ? "var(--color-success)" : "var(--color-accent)";
+
+                return (
+                  <div
+                    key={timer.id}
+                    className={`relative bg-bg-secondary border border-border rounded-lg p-3 flex flex-col items-center gap-2 transition-all ${ready ? "border-success/40 shadow-[0_0_8px_rgba(34,197,94,0.15)]" : ""}`}
+                  >
+                    <button
+                      onClick={() => toggleRepeat(timer.id)}
+                      className={`absolute top-1.5 right-8 text-xs transition-colors ${timer.repeat ? "text-accent" : "text-text-secondary/40 hover:text-accent"}`}
+                      title={timer.repeat ? "Auto-repeat on" : "Auto-repeat off"}
+                    >
+                      ↻
+                    </button>
+                    <button
+                      onClick={() => removeTimer(timer.id)}
+                      className="absolute top-1.5 right-2 text-text-secondary/40 hover:text-danger text-xs transition-colors"
+                    >
+                      x
+                    </button>
+
+                    <div
+                      className="w-16 h-16 rounded-full relative"
+                      style={{
+                        background: `conic-gradient(${color} ${progress * 360}deg, var(--color-bg-tertiary) ${progress * 360}deg)`,
                       }}
-                    />
-                  </div>
-                </div>
+                    >
+                      <div className="absolute inset-1 rounded-full bg-bg-secondary flex items-center justify-center">
+                        <img
+                          src={`${WIKI_IMG}/${timer.icon}`}
+                          alt=""
+                          className="w-6 h-6"
+                          onError={(e) => {
+                            const el = e.currentTarget;
+                            el.style.display = "none";
+                          }}
+                        />
+                      </div>
+                    </div>
 
-                <span className="text-xs font-medium text-center leading-tight">
-                  {timer.patchName}
-                </span>
-                <span
-                  className={`text-xs font-mono ${ready ? "text-success font-semibold" : "text-text-secondary"}`}
-                >
-                  {formatCountdown(remaining)}
-                </span>
-              </div>
-            );
-          })}
-        </div>
+                    <span className="text-xs font-medium text-center leading-tight">
+                      {timer.patchName}
+                    </span>
+                    <span
+                      className={`text-xs font-mono ${ready ? "text-success font-semibold" : "text-text-secondary"}`}
+                    >
+                      {formatCountdown(remaining)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            </>
+          )}
         </>
       )}
     </div>

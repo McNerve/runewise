@@ -1,10 +1,17 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { COLLECTION_CATEGORIES, getTotalSlots } from "./data/slots";
 import { loadJSON, saveJSON } from "../../lib/localStorage";
 import { itemIcon, NAV_ICONS } from "../../lib/sprites";
+import {
+  fetchTempleCollectionLog,
+  fetchTemplePlayerInfo,
+  type TempleCollectionLog,
+} from "../../lib/api/temple";
 import EmptyState from "../../components/EmptyState";
 
 const STORAGE_KEY = "runewise_collection_log";
+
+type Mode = "temple" | "manual";
 
 function loadObtained(): Set<string> {
   const data = loadJSON<string[]>(STORAGE_KEY, []);
@@ -56,7 +63,108 @@ function ProgressRing({
   );
 }
 
-export default function CollectionLog() {
+function TempleView({ data }: { data: TempleCollectionLog }) {
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+
+  const sortedCategories = useMemo(() => {
+    return Object.entries(data.categories).sort(([a], [b]) =>
+      a.localeCompare(b)
+    );
+  }, [data.categories]);
+
+  return (
+    <>
+      <div className="flex items-center gap-4 mb-6">
+        <ProgressRing obtained={data.finished} total={data.total} size={48} />
+        <div>
+          <div className="text-lg font-bold tabular-nums">
+            {data.finished} / {data.total}
+          </div>
+          <div className="text-xs text-text-secondary">
+            {((data.finished / data.total) * 100).toFixed(1)}% complete
+          </div>
+        </div>
+        <span className="ml-auto text-[10px] text-text-secondary/50 bg-bg-secondary px-2 py-0.5 rounded">
+          via TempleOSRS
+        </span>
+      </div>
+
+      <div className="space-y-2">
+        {sortedCategories.map(([catName, items]) => {
+          const catObtained = items.filter((i) => i.count > 0).length;
+          const isExpanded = expandedCategory === catName;
+          const isComplete = catObtained === items.length;
+
+          return (
+            <div key={catName}>
+              <button
+                onClick={() =>
+                  setExpandedCategory(isExpanded ? null : catName)
+                }
+                className="w-full flex items-center gap-3 py-2 px-2 rounded hover:bg-bg-secondary/50 transition-colors"
+              >
+                <ProgressRing obtained={catObtained} total={items.length} />
+                <span
+                  className={`text-sm flex-1 text-left ${isComplete ? "text-success" : ""}`}
+                >
+                  {catName}
+                </span>
+                <span className="text-xs text-text-secondary tabular-nums">
+                  {catObtained}/{items.length}
+                </span>
+                <span className="text-xs text-text-secondary/40">
+                  {isExpanded ? "▾" : "▸"}
+                </span>
+              </button>
+
+              {isExpanded && (
+                <div className="ml-12 mb-3 grid grid-cols-2 gap-1">
+                  {items
+                    .sort((a, b) => {
+                      if (a.count > 0 !== b.count > 0)
+                        return a.count > 0 ? -1 : 1;
+                      return (a.name ?? "").localeCompare(b.name ?? "");
+                    })
+                    .map((item) => {
+                      const isObtained = item.count > 0;
+                      const name = item.name ?? `Item ${item.id}`;
+                      return (
+                        <div
+                          key={item.id}
+                          className={`flex items-center gap-2 px-2 py-1.5 rounded text-sm ${
+                            isObtained
+                              ? "bg-success/8 text-success"
+                              : "text-text-secondary"
+                          }`}
+                        >
+                          <img
+                            src={itemIcon(name)}
+                            alt=""
+                            className={`w-5 h-5 shrink-0 ${isObtained ? "" : "opacity-30"}`}
+                            onError={(e) => {
+                              e.currentTarget.style.display = "none";
+                            }}
+                          />
+                          <span className="truncate">{name}</span>
+                          {isObtained && item.count > 1 && (
+                            <span className="ml-auto text-[10px] text-success/60 tabular-nums shrink-0">
+                              ×{item.count}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+function ManualView() {
   const [obtained, setObtained] = useState<Set<string>>(loadObtained);
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
@@ -74,12 +182,7 @@ export default function CollectionLog() {
   }, []);
 
   return (
-    <div>
-      <h2 className="text-xl font-semibold mb-1">Collection Log</h2>
-      <p className="text-xs text-text-secondary/60 mb-5">
-        Track your collection log manually. Click items to toggle obtained.
-      </p>
-
+    <>
       {totalObtained === 0 ? (
         <EmptyState
           icon={NAV_ICONS["collection-log"]}
@@ -100,7 +203,6 @@ export default function CollectionLog() {
         </div>
       )}
 
-      {/* Categories */}
       <div className="space-y-2">
         {COLLECTION_CATEGORIES.map((cat) => {
           const catObtained = cat.slots.filter((s) => obtained.has(s)).length;
@@ -116,7 +218,9 @@ export default function CollectionLog() {
                 className="w-full flex items-center gap-3 py-2 px-2 rounded hover:bg-bg-secondary/50 transition-colors"
               >
                 <ProgressRing obtained={catObtained} total={cat.slots.length} />
-                <span className={`text-sm flex-1 text-left ${isComplete ? "text-success" : ""}`}>
+                <span
+                  className={`text-sm flex-1 text-left ${isComplete ? "text-success" : ""}`}
+                >
                   {cat.name}
                 </span>
                 <span className="text-xs text-text-secondary tabular-nums">
@@ -145,7 +249,9 @@ export default function CollectionLog() {
                           src={itemIcon(slot)}
                           alt=""
                           className={`w-5 h-5 shrink-0 ${isObtained ? "" : "opacity-30"}`}
-                          onError={(e) => { e.currentTarget.style.display = "none"; }}
+                          onError={(e) => {
+                            e.currentTarget.style.display = "none";
+                          }}
                         />
                         <span className="truncate">{slot}</span>
                       </button>
@@ -157,6 +263,101 @@ export default function CollectionLog() {
           );
         })}
       </div>
+    </>
+  );
+}
+
+interface Props {
+  rsn: string;
+}
+
+export default function CollectionLog({ rsn }: Props) {
+  const [templeData, setTempleData] = useState<TempleCollectionLog | null>(
+    null
+  );
+  const [templeLoading, setTempleLoading] = useState(false);
+  const [templeSynced, setTempleSynced] = useState<boolean | null>(null);
+  const [mode, setMode] = useState<Mode>("manual");
+
+  useEffect(() => {
+    if (!rsn) return;
+
+    let cancelled = false;
+    setTempleLoading(true); // eslint-disable-line react-hooks/set-state-in-effect -- loading state for async fetch
+
+    (async () => {
+      const info = await fetchTemplePlayerInfo(rsn);
+      if (cancelled) return;
+
+      if (!info || !info.clog_synced) {
+        setTempleSynced(false);
+        setTempleLoading(false);
+        return;
+      }
+
+      setTempleSynced(true);
+      const clog = await fetchTempleCollectionLog(rsn);
+      if (cancelled) return;
+
+      if (clog && Object.keys(clog.categories).length > 0) {
+        setTempleData(clog);
+        setMode("temple");
+      }
+      setTempleLoading(false);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [rsn]);
+
+  const hasTemple = templeData && Object.keys(templeData.categories).length > 0;
+
+  return (
+    <div>
+      <h2 className="text-xl font-semibold mb-1">Collection Log</h2>
+      <p className="text-xs text-text-secondary/60 mb-5">
+        {mode === "temple"
+          ? "Live collection log synced from TempleOSRS."
+          : "Track your collection log manually. Click items to toggle obtained."}
+      </p>
+
+      {hasTemple && (
+        <div className="flex gap-1 mb-6">
+          {(["temple", "manual"] as const).map((m) => (
+            <button
+              key={m}
+              onClick={() => setMode(m)}
+              className={`px-4 py-1.5 rounded text-sm font-medium transition-colors ${
+                mode === m
+                  ? "bg-accent text-white"
+                  : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+              }`}
+            >
+              {m === "temple" ? "Temple" : "Manual"}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {templeLoading && (
+        <div className="text-xs text-text-secondary/60 mb-4">
+          Loading Temple data...
+        </div>
+      )}
+
+      {!templeLoading && rsn && templeSynced === false && (
+        <div className="text-xs text-text-secondary/50 bg-bg-secondary/50 rounded px-3 py-2 mb-4">
+          No Temple collection log found for {rsn}. Sync your account at{" "}
+          <span className="text-accent">templeosrs.com</span> to see live data.
+        </div>
+      )}
+
+      {mode === "temple" && templeData ? (
+        <TempleView data={templeData} />
+      ) : (
+        <ManualView />
+      )}
     </div>
   );
 }

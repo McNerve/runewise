@@ -67,7 +67,7 @@ export const VIEW_RENDERERS: Record<View, ViewRenderer> = {
   "skill-calc": ({ hiscores }) => <SkillCalculator hiscores={hiscores.data} />,
   "dry-calc": renderComponent(DryCalculator),
   "xp-table": renderComponent(XpTable),
-  "collection-log": renderComponent(CollectionLog),
+  "collection-log": ({ hiscores }) => <CollectionLog rsn={hiscores.rsn} />,
   tracker: ({ hiscores }) => <XpTracker rsn={hiscores.rsn} />,
   bosses: ({ hiscores }) => <BossGuide hiscores={hiscores.data} />,
   raids: renderComponent(Raids),
