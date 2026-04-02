@@ -267,6 +267,18 @@ export const BOSS_DROP_TABLES: BossDropTable[] = [
       { itemName: "Mole claw", itemId: 7416, rate: 1, quantity: 1, category: "common" },
       { itemName: "Mole skin", itemId: 7418, rate: 1, quantity: 1, category: "common" },
       { itemName: "Long bone", itemId: 10976, rate: 400, quantity: 1, category: "rare" },
+      { itemName: "Baby mole", itemId: 12646, rate: 3000, quantity: 1, category: "rare" },
+    ],
+  },
+  {
+    bossName: "King Black Dragon",
+    killsPerHour: 20,
+    drops: [
+      { itemName: "Dragon pickaxe", itemId: 11920, rate: 1500, quantity: 1, category: "unique" },
+      { itemName: "Draconic visage", itemId: 11286, rate: 5000, quantity: 1, category: "unique" },
+      { itemName: "KBD heads", itemId: 7980, rate: 128, quantity: 1, category: "rare" },
+      { itemName: "Dragon bones", itemId: 536, rate: 1, quantity: 1, category: "common" },
+      { itemName: "Prince black dragon", itemId: 12653, rate: 3000, quantity: 1, category: "rare" },
     ],
   },
   {
@@ -325,6 +337,27 @@ export const BOSS_DROP_TABLES: BossDropTable[] = [
       { itemName: "Enhanced crystal weapon seed", itemId: 25859, rate: 400, quantity: 1, category: "unique" },
       { itemName: "Crystal armour seed", itemId: 23956, rate: 50, quantity: 1, category: "rare" },
       { itemName: "Crystal weapon seed", itemId: 23951, rate: 50, quantity: 1, category: "rare" },
+    ],
+  },
+  {
+    bossName: "Abyssal Sire",
+    killsPerHour: 20,
+    drops: [
+      { itemName: "Unsired", itemId: 13250, rate: 100, quantity: 1, category: "rare" },
+      { itemName: "Abyssal bludgeon", itemId: 13263, rate: 585, quantity: 1, category: "unique" },
+      { itemName: "Abyssal dagger", itemId: 13265, rate: 585, quantity: 1, category: "unique" },
+      { itemName: "Jar of miasma", itemId: 13261, rate: 2000, quantity: 1, category: "rare" },
+      { itemName: "Abyssal orphan", itemId: 13262, rate: 4096, quantity: 1, category: "rare" },
+    ],
+  },
+  {
+    bossName: "Skotizo",
+    killsPerHour: 6,
+    drops: [
+      { itemName: "Skotos", itemId: 22473, rate: 65, quantity: 1, category: "unique" },
+      { itemName: "Dark totem", itemId: 19677, rate: 1, quantity: 1, category: "common" },
+      { itemName: "Uncut onyx", itemId: 6571, rate: 25, quantity: 1, category: "rare" },
+      { itemName: "Dragon bones", itemId: 536, rate: 1, quantity: 5, category: "common" },
     ],
   },
 ];
