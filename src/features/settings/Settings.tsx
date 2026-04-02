@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSettings } from "../../hooks/useSettings";
 import { DEFAULT_KEYBINDS, type KeybindMap } from "../../lib/settings";
 import { isTauri, isMac } from "../../lib/env";

@@ -125,7 +125,7 @@ export default function BulkSearch({ mapping, prices }: BulkSearchProps) {
                       {margin != null ? formatGp(margin) : "—"}
                     </td>
                     <td className="px-2 py-1.5 text-xs text-right tabular-nums text-text-secondary">
-                      {r.item.highalch > 0 ? formatGp(r.item.highalch) : "—"}
+                      {r.item.highalch != null && r.item.highalch > 0 ? formatGp(r.item.highalch) : "—"}
                     </td>
                   </tr>
                 );

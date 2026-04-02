@@ -25,6 +25,7 @@ interface RawDropJson {
 }
 
 interface RawBucketDrop {
+  [key: string]: unknown;
   page_name: string;
   page_name_sub?: string;
   item_name: string;

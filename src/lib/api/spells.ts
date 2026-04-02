@@ -14,6 +14,7 @@ const SPELL_FIELDS = [
 ] as const;
 
 interface RawBucketSpell {
+  [key: string]: unknown;
   page_name: string;
   image?: string;
   is_members_only?: string;

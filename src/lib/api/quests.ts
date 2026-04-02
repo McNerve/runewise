@@ -19,6 +19,7 @@ const QUEST_FIELDS = [
 ] as const;
 
 interface RawBucketQuest {
+  [key: string]: unknown;
   page_name: string;
   description?: string;
   enemies_to_defeat?: string;
@@ -116,6 +117,7 @@ function parseRewards(raw: string | undefined): QuestReward {
 }
 
 interface QuestJson {
+  description?: string;
   difficulty?: string;
   length?: string;
   start?: string;

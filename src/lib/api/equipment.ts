@@ -40,6 +40,7 @@ const EQUIPMENT_FIELDS = [
 ] as const;
 
 interface RawBucketEquipment {
+  [key: string]: unknown;
   page_name: string;
   page_name_sub?: string;
   equipment_slot?: string;

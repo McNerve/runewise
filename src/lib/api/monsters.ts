@@ -35,6 +35,7 @@ const MONSTER_FIELDS = [
 ] as const;
 
 interface RawBucketMonster {
+  [key: string]: unknown;
   page_name: string;
   page_name_sub?: string;
   combat_level?: string;

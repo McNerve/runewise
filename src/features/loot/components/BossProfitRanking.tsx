@@ -4,6 +4,7 @@ import { fetchLatestPrices, type ItemPrice } from "../../../lib/api/ge";
 import { formatGp } from "../../../lib/format";
 import { bossIconSmall } from "../../../lib/sprites";
 import WikiImage from "../../../components/WikiImage";
+import type { View } from "../../../lib/features";
 
 interface BossProfit {
   name: string;
@@ -20,7 +21,7 @@ type SortKey = "gpPerHour" | "gpPerKill" | "killsPerHour" | "name";
 export default function BossProfitRanking({
   navigate,
 }: {
-  navigate: (view: string, params?: Record<string, string>) => void;
+  navigate: (view: View, params?: Record<string, string>) => void;
 }) {
   const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
   const [sortKey, setSortKey] = useState<SortKey>("gpPerHour");

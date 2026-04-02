@@ -11,6 +11,7 @@ const MMG_FIELDS = [
 ] as const;
 
 interface RawBucketMmg {
+  [key: string]: unknown;
   page_name: string;
   value?: string;
   json?: string;

@@ -17,6 +17,7 @@ const RECIPE_FIELDS = [
 ] as const;
 
 interface RawBucketRecipe {
+  [key: string]: unknown;
   page_name: string;
   uses_material?: string;
   uses_tool?: string;

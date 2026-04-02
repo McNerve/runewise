@@ -38,7 +38,7 @@ function calcRecipe(
   let outputValue: number | null = 0;
   for (const out of r.output) {
     const price = getItemPrice(out.name, itemMap, prices);
-    if (price != null) outputValue += price * out.quantity;
+    if (price != null && outputValue != null) outputValue += price * out.quantity;
     else outputValue = null;
   }
 
