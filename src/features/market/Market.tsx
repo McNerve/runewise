@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { lazy, Suspense, useState, useEffect, useMemo, useCallback } from "react";
 import {
   searchItems,
   fetchMapping,
@@ -9,115 +9,30 @@ import {
 import {
   fetchTimeseries,
   type TimeseriesPoint,
-  type Timestep,
 } from "../../lib/api/ge-timeseries";
 import { useDebounce } from "../../hooks/useDebounce";
 import { useWatchlist } from "../../hooks/useWatchlist";
 import { formatGp, timeAgo } from "../../lib/format";
 import { itemIcon } from "../../lib/sprites";
-import Chart from "../../components/Chart";
-import type {
-  LineData,
-  CandlestickData,
-  HistogramData,
-  Time,
-  UTCTimestamp,
-} from "lightweight-charts";
+import { useNavigation } from "../../lib/NavigationContext";
+import WikiImage from "../../components/WikiImage";
+import {
+  PERIODS,
+  PERIOD_TIMESTEP,
+  buildItemStats,
+  filterByPeriod,
+  itemToWikiUrl,
+  toCandlestickData,
+  toLineData,
+  toVolumeData,
+  type ChartMode,
+  type Period,
+} from "./shared";
 
-// --- Period / chart config ---
-
-type Period = "1D" | "1W" | "1M" | "3M" | "6M" | "1Y";
-type ChartMode = "line" | "candlestick";
-type Tab = "search" | "browse";
-
-const PERIODS: Period[] = ["1D", "1W", "1M", "3M", "6M", "1Y"];
-
-const PERIOD_TIMESTEP: Record<Period, Timestep> = {
-  "1D": "5m",
-  "1W": "1h",
-  "1M": "6h",
-  "3M": "24h",
-  "6M": "24h",
-  "1Y": "24h",
-};
-
-const PERIOD_SECONDS: Record<Period, number> = {
-  "1D": 86400,
-  "1W": 7 * 86400,
-  "1M": 30 * 86400,
-  "3M": 90 * 86400,
-  "6M": 180 * 86400,
-  "1Y": 365 * 86400,
-};
-
-// --- Chart data transforms ---
-
-function filterByPeriod(
-  points: TimeseriesPoint[],
-  period: Period
-): TimeseriesPoint[] {
-  const cutoff = Math.floor(Date.now() / 1000) - PERIOD_SECONDS[period];
-  return points.filter((p) => p.timestamp >= cutoff);
-}
-
-function toLineData(points: TimeseriesPoint[]): LineData<Time>[] {
-  return points
-    .filter((p) => p.avgHighPrice != null)
-    .map((p) => ({
-      time: p.timestamp as UTCTimestamp,
-      value: p.avgHighPrice!,
-    }));
-}
-
-function toCandlestickData(
-  points: TimeseriesPoint[]
-): CandlestickData<Time>[] {
-  const result: CandlestickData<Time>[] = [];
-  let prevClose: number | null = null;
-
-  for (const p of points) {
-    const high = p.avgHighPrice;
-    const low = p.avgLowPrice;
-    if (high == null && low == null) continue;
-
-    const closeVal = high ?? low!;
-    const openVal = prevClose ?? closeVal;
-    const hiVal = Math.max(high ?? closeVal, low ?? closeVal);
-    const loVal = Math.min(high ?? closeVal, low ?? closeVal);
-
-    result.push({
-      time: p.timestamp as UTCTimestamp,
-      open: openVal,
-      high: hiVal,
-      low: loVal,
-      close: closeVal,
-    });
-
-    prevClose = closeVal;
-  }
-
-  return result;
-}
-
-function toVolumeData(points: TimeseriesPoint[]): HistogramData<Time>[] {
-  const result: HistogramData<Time>[] = [];
-  let prevPrice: number | null = null;
-
-  for (const p of points) {
-    const vol = p.highPriceVolume + p.lowPriceVolume;
-    if (vol === 0) continue;
-    const price = p.avgHighPrice ?? p.avgLowPrice;
-    const up = prevPrice == null || (price != null && price >= prevPrice);
-    result.push({
-      time: p.timestamp as UTCTimestamp,
-      value: vol,
-      color: up ? "#22c55e30" : "#ef444430",
-    });
-    if (price != null) prevPrice = price;
-  }
-
-  return result;
-}
+type Tab = "search" | "browse" | "watchlist" | "alch";
+const Chart = lazy(() => import("../../components/Chart"));
+const Watchlist = lazy(() => import("../watchlist/Watchlist"));
+const AlchCalculator = lazy(() => import("../alch-calc/AlchCalculator"));
 
 // --- Detail panel ---
 
@@ -134,11 +49,13 @@ function MarketDetail({
   onAddToWatchlist: () => void;
   isWatched: boolean;
 }) {
+  const { navigate } = useNavigation();
   const [period, setPeriod] = useState<Period>("1M");
   const [chartMode, setChartMode] = useState<ChartMode>("line");
   const [timeseries, setTimeseries] = useState<TimeseriesPoint[]>([]);
   const [chartLoading, setChartLoading] = useState(false);
   const [chartError, setChartError] = useState<string | null>(null);
+  const stats = useMemo(() => buildItemStats(item, price), [item, price]);
 
   useEffect(() => {
     let cancelled = false;
@@ -177,26 +94,46 @@ function MarketDetail({
   }, [filtered, chartMode]);
 
   const volumeData = useMemo(() => toVolumeData(filtered), [filtered]);
-
-  const margin =
-    price?.high != null && price?.low != null
-      ? price.high - price.low
-      : null;
-
-  const wikiUrl = `https://oldschool.runescape.wiki/w/${encodeURIComponent(item.name.replace(/ /g, "_"))}`;
+  const wikiUrl = itemToWikiUrl(item.name);
+  const chartBody = chartLoading ? (
+    <div className="h-[250px] bg-bg-primary rounded-lg border border-border flex items-center justify-center">
+      <p className="text-xs text-text-secondary">Loading chart...</p>
+    </div>
+  ) : chartData.length > 0 ? (
+    <Suspense
+      fallback={
+        <div className="h-[250px] bg-bg-primary rounded-lg border border-border flex items-center justify-center">
+          <p className="text-xs text-text-secondary">Preparing chart...</p>
+        </div>
+      }
+    >
+      <div className="bg-bg-primary rounded-lg border border-border p-1">
+        <Chart
+          data={chartData}
+          volumeData={volumeData}
+          type={chartMode}
+          height={250}
+        />
+      </div>
+    </Suspense>
+  ) : (
+    <div className="h-[250px] bg-bg-primary rounded-lg border border-border flex items-center justify-center">
+      <p className="text-xs text-text-secondary">
+        No data for this period.
+      </p>
+    </div>
+  );
 
   return (
     <div className="bg-bg-secondary rounded-lg p-4 sticky top-0 overflow-y-auto max-h-[calc(100vh-6rem)]">
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
-          <img
+          <WikiImage
             src={`https://oldschool.runescape.wiki/images/${item.icon}`}
             alt={item.name}
             className="w-8 h-8"
-            onError={(e) => {
-              (e.currentTarget as HTMLImageElement).style.display = "none";
-            }}
+            fallback={item.name[0]}
           />
           <div>
             <h3 className="text-lg font-semibold leading-tight">
@@ -225,51 +162,19 @@ function MarketDetail({
 
       {/* Price stats */}
       <div className="space-y-1.5 mb-4">
-        <div className="flex justify-between text-sm">
-          <span className="text-text-secondary">Buy Price</span>
-          <div className="text-right">
-            <span className="text-success">{formatGp(price?.high ?? null)}</span>
-            <span className="text-xs text-text-secondary ml-1.5">
-              {timeAgo(price?.highTime ?? null)}
-            </span>
+        {stats.map((stat) => (
+          <div key={stat.label} className="flex justify-between text-sm">
+            <span className="text-text-secondary">{stat.label}</span>
+            <div className="text-right">
+              <span className={stat.className}>{stat.value}</span>
+              {stat.meta && (
+                <span className="text-xs text-text-secondary ml-1.5">
+                  {stat.meta}
+                </span>
+              )}
+            </div>
           </div>
-        </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-text-secondary">Sell Price</span>
-          <div className="text-right">
-            <span className="text-danger">{formatGp(price?.low ?? null)}</span>
-            <span className="text-xs text-text-secondary ml-1.5">
-              {timeAgo(price?.lowTime ?? null)}
-            </span>
-          </div>
-        </div>
-        {margin != null && (
-          <div className="flex justify-between text-sm">
-            <span className="text-text-secondary">Margin</span>
-            <span className={margin >= 0 ? "text-success" : "text-danger"}>
-              {margin > 0 ? "+" : ""}
-              {formatGp(margin)}
-            </span>
-          </div>
-        )}
-        <div className="flex justify-between text-sm">
-          <span className="text-text-secondary">High Alch</span>
-          <span className="text-warning">{formatGp(item.highalch)}</span>
-        </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-text-secondary">Low Alch</span>
-          <span>{formatGp(item.lowalch)}</span>
-        </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-text-secondary">Store Value</span>
-          <span className="text-text-secondary">{formatGp(item.value)}</span>
-        </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-text-secondary">Buy Limit</span>
-          <span className="text-text-secondary">
-            {item.limit?.toLocaleString() ?? "\u2014"}
-          </span>
-        </div>
+        ))}
       </div>
 
       {/* Chart controls */}
@@ -317,26 +222,7 @@ function MarketDetail({
       {chartError && (
         <p className="text-xs text-danger mb-2">{chartError}</p>
       )}
-      {chartLoading ? (
-        <div className="h-[250px] bg-bg-primary rounded-lg border border-border flex items-center justify-center">
-          <p className="text-xs text-text-secondary">Loading chart...</p>
-        </div>
-      ) : chartData.length > 0 ? (
-        <div className="bg-bg-primary rounded-lg border border-border p-1">
-          <Chart
-            data={chartData}
-            volumeData={volumeData}
-            type={chartMode}
-            height={250}
-          />
-        </div>
-      ) : (
-        <div className="h-[250px] bg-bg-primary rounded-lg border border-border flex items-center justify-center">
-          <p className="text-xs text-text-secondary">
-            No data for this period.
-          </p>
-        </div>
-      )}
+      {chartBody}
 
       {/* Actions */}
       <div className="mt-4 flex gap-2">
@@ -351,13 +237,20 @@ function MarketDetail({
         >
           {isWatched ? "On Watchlist" : "Add to Watchlist"}
         </button>
+        <button
+          type="button"
+          onClick={() => navigate("wiki", { page: item.name, query: item.name })}
+          className="flex-1 text-center text-xs py-2 rounded bg-bg-tertiary text-text-secondary hover:text-text-primary transition-colors"
+        >
+          Open in App Wiki
+        </button>
         <a
           href={wikiUrl}
           target="_blank"
           rel="noopener noreferrer"
           className="flex-1 text-center text-xs py-2 rounded bg-bg-tertiary text-text-secondary hover:text-text-primary transition-colors"
         >
-          View on Wiki
+          Open OSRS Wiki Site
         </a>
       </div>
     </div>
@@ -366,12 +259,25 @@ function MarketDetail({
 
 // --- Main Market view ---
 
-export default function Market() {
+interface MarketProps {
+  initialTab?: Tab;
+  title?: string;
+  subtitle?: string;
+}
+
+export default function Market({
+  initialTab = "search",
+  title = "Item Workspace",
+  subtitle = "Search items, compare prices, inspect trends, and move into watchlists from one shared workspace.",
+}: MarketProps) {
+  const { params, navigate } = useNavigation();
   const { items: watchlistItems, addItem: addToWatchlist } = useWatchlist();
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebounce(query, 250);
 
-  const [tab, setTab] = useState<Tab>("search");
+  const paramTab = params.tab as Tab | undefined;
+  const resolvedInitial: Tab = paramTab === "watchlist" || paramTab === "alch" || paramTab === "browse" ? paramTab : initialTab;
+  const [tab, setTab] = useState<Tab>(resolvedInitial);
   const [membersFilter, setMembersFilter] = useState<"all" | "f2p" | "p2p">(
     "all"
   );
@@ -386,6 +292,33 @@ export default function Market() {
   const [browseLoading, setBrowseLoading] = useState(false);
   const [pricesLoaded, setPricesLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setTab(initialTab);
+  }, [initialTab]);
+
+  useEffect(() => {
+    if (params.query) {
+      setQuery(params.query);
+    }
+    if (params.query && initialTab === "browse") {
+      setTab("browse");
+    }
+  }, [params, initialTab]);
+
+  useEffect(() => {
+    if (!params.query || searchResults.length === 0) return;
+    if (selectedItem && selectedItem.name.toLowerCase() === params.query.toLowerCase()) {
+      return;
+    }
+
+    const exactMatch = searchResults.find(
+      (item) => item.name.toLowerCase() === params.query?.toLowerCase()
+    );
+    if (exactMatch) {
+      setSelectedItem(exactMatch);
+    }
+  }, [params.query, searchResults, selectedItem]);
 
   // Load prices on mount
   const loadPrices = useCallback(() => {
@@ -411,14 +344,12 @@ export default function Market() {
   }, []);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial price load
     return loadPrices();
   }, [loadPrices]);
 
   // Search items when query changes
   useEffect(() => {
     if (debouncedQuery.length < 2) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- clear results when query is too short
       setSearchResults([]);
       return;
     }
@@ -446,7 +377,6 @@ export default function Market() {
   useEffect(() => {
     if (tab !== "browse" || allItems.length > 0) return;
     let cancelled = false;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- loading state for async fetch
     setBrowseLoading(true);
     fetchMapping()
       .then((items) => {
@@ -468,7 +398,6 @@ export default function Market() {
 
   // Auto-switch to search tab when typing
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync tab state with query input
     if (query.length >= 2) setTab("search");
   }, [query]);
 
@@ -490,6 +419,46 @@ export default function Market() {
     tab === "browse"
       ? !browseLoading
       : query.length >= 2 && !loading;
+  const selectedPrice = selectedItem ? prices[String(selectedItem.id)] : undefined;
+  const selectedWatched = selectedItem
+    ? watchlistItems.some((item) => item.itemId === selectedItem.id)
+    : false;
+  const selectedMargin =
+    selectedPrice?.high != null && selectedPrice?.low != null
+      ? selectedPrice.high - selectedPrice.low
+      : null;
+  const selectedSummary = selectedItem
+    ? [
+        {
+          label: "Buy Price",
+          value: formatGp(selectedPrice?.high ?? null),
+          tone: "text-success",
+        },
+        {
+          label: "Sell Price",
+          value: formatGp(selectedPrice?.low ?? null),
+          tone: "text-danger",
+        },
+        {
+          label: "Margin",
+          value:
+            selectedMargin == null
+              ? "\u2014"
+              : `${selectedMargin > 0 ? "+" : ""}${formatGp(selectedMargin)}`,
+          tone:
+            selectedMargin == null
+              ? "text-text-primary"
+              : selectedMargin >= 0
+                ? "text-success"
+                : "text-danger",
+        },
+        {
+          label: "Buy Limit",
+          value: selectedItem.limit?.toLocaleString() ?? "\u2014",
+          tone: "text-text-primary",
+        },
+      ]
+    : [];
 
   return (
     <div
@@ -501,8 +470,129 @@ export default function Market() {
     >
       {/* Left: search + table */}
       <div className="min-w-0">
-        <h2 className="text-xl font-semibold mb-4">Market</h2>
+        <div className="mb-4">
+          <h2 className="text-xl font-semibold">{title}</h2>
+          <p className="mt-1 text-sm text-text-secondary">{subtitle}</p>
+        </div>
 
+        {selectedItem ? (
+          <div className="mb-4 space-y-3">
+            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+              <div className="min-w-0">
+                <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
+                  Active Item
+                </div>
+                <div className="mt-1 flex items-center gap-3">
+                  <WikiImage
+                    src={itemIcon(selectedItem.name)}
+                    alt=""
+                    className="h-9 w-9 shrink-0"
+                    fallback={selectedItem.name[0]}
+                  />
+                  <div className="min-w-0">
+                    <div className="truncate text-lg font-semibold text-text-primary">
+                      {selectedItem.name}
+                    </div>
+                    <div className="mt-1 text-sm text-text-secondary">
+                      {selectedItem.examine || "OSRS Wiki item reference"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2 md:justify-end">
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigate("market", {
+                      query: selectedItem.name,
+                      tab: "chart",
+                    })
+                  }
+                  className="rounded-xl border border-border bg-bg-primary/70 px-3 py-2 text-xs font-medium text-text-secondary transition hover:border-accent/35 hover:text-text-primary"
+                >
+                  Open Chart View
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate("wiki", { page: selectedItem.name, query: selectedItem.name })}
+                  className="rounded-xl border border-border bg-bg-primary/70 px-3 py-2 text-xs font-medium text-text-secondary transition hover:border-accent/35 hover:text-text-primary"
+                >
+                  Open Wiki
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!selectedWatched) {
+                      addToWatchlist(selectedItem.id, selectedItem.name);
+                    }
+                    navigate("watchlist");
+                  }}
+                  className={`rounded-xl px-3 py-2 text-xs font-medium transition ${
+                    selectedWatched
+                      ? "border border-border bg-bg-primary/70 text-text-secondary hover:border-accent/35 hover:text-text-primary"
+                      : "bg-accent text-white hover:bg-accent-hover"
+                  }`}
+                >
+                  {selectedWatched ? "Open Watchlist" : "Watch Item"}
+                </button>
+              </div>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-4">
+              {selectedSummary.map((stat) => (
+                <div
+                  key={stat.label}
+                  className="px-4 py-3"
+                >
+                  <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
+                    {stat.label}
+                  </div>
+                  <div className={`mt-1 text-lg font-semibold ${stat.tone}`}>
+                    {stat.value}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="mb-4 grid gap-3 md:grid-cols-3">
+            <div className="px-4 py-3">
+              <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
+                Search Flow
+              </div>
+              <div className="mt-1 text-sm text-text-secondary">
+                Find a specific item to inspect live prices, charts, and wiki context.
+              </div>
+            </div>
+            <div className="px-4 py-3">
+              <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
+                Browse Flow
+              </div>
+              <div className="mt-1 text-sm text-text-secondary">
+                Switch to Browse All for the full catalogue with members filtering.
+              </div>
+            </div>
+            <div className="px-4 py-3">
+              <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
+                Workspace Goal
+              </div>
+              <div className="mt-1 text-sm text-text-secondary">
+                Use this as your hub for pricing, alch checks, watchlist adds, and wiki jumps.
+              </div>
+            </div>
+          </div>
+        )}
+
+        {tab === "watchlist" ? (
+          <Suspense fallback={<div className="py-8 text-center text-sm text-text-secondary">Loading...</div>}>
+            <Watchlist />
+          </Suspense>
+        ) : tab === "alch" ? (
+          <Suspense fallback={<div className="py-8 text-center text-sm text-text-secondary">Loading...</div>}>
+            <AlchCalculator />
+          </Suspense>
+        ) : (
+        <>
         {/* Search bar */}
         <input
           type="text"
@@ -539,6 +629,26 @@ export default function Market() {
                   ({allItems.length.toLocaleString()})
                 </span>
               )}
+            </button>
+            <button
+              onClick={() => setTab("watchlist")}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                tab === "watchlist"
+                  ? "bg-accent text-white"
+                  : "text-text-secondary hover:text-text-primary"
+              }`}
+            >
+              Watchlist
+            </button>
+            <button
+              onClick={() => setTab("alch")}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                tab === "alch"
+                  ? "bg-accent text-white"
+                  : "text-text-secondary hover:text-text-primary"
+              }`}
+            >
+              Alch Profits
             </button>
           </div>
 
@@ -627,11 +737,11 @@ export default function Market() {
                     >
                       <td className="px-4 py-2">
                         <div className="flex items-center gap-2">
-                          <img
+                          <WikiImage
                             src={itemIcon(item.name)}
                             alt=""
                             className="w-5 h-5 shrink-0"
-                            onError={(e) => { e.currentTarget.style.display = "none"; }}
+                            fallback={item.name[0]}
                           />
                           <div>
                             <div className="font-medium">{item.name}</div>
@@ -704,6 +814,8 @@ export default function Market() {
               No items match your filters.
             </p>
           )}
+        </>
+        )}
       </div>
 
       {/* Right: detail panel */}

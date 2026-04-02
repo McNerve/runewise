@@ -3,6 +3,10 @@ import { useWatchlist } from "../../hooks/useWatchlist";
 import { searchItems, type ItemMapping } from "../../lib/api/ge";
 import { useDebounce } from "../../hooks/useDebounce";
 import { formatGp } from "../../lib/format";
+import { useNavigation } from "../../lib/NavigationContext";
+import { itemIcon } from "../../lib/sprites";
+import WikiImage from "../../components/WikiImage";
+import { parseThresholdInput } from "./helpers";
 
 function ThresholdCell({
   value,
@@ -17,20 +21,20 @@ function ThresholdCell({
   if (editing) {
     return (
       <input
-        type="number"
+        type="text"
         autoFocus
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={() => {
           setEditing(false);
-          const num = parseInt(draft, 10);
-          onChange(isNaN(num) ? null : num);
+          onChange(parseThresholdInput(draft));
         }}
         onKeyDown={(e) => {
           if (e.key === "Enter") (e.target as HTMLInputElement).blur();
           if (e.key === "Escape") setEditing(false);
         }}
-        className="w-20 bg-bg-primary border border-border rounded px-2 py-0.5 text-xs text-right"
+        placeholder="250k"
+        className="w-24 bg-bg-primary border border-border rounded px-2 py-0.5 text-xs text-right"
       />
     );
   }
@@ -53,6 +57,7 @@ function ThresholdCell({
 }
 
 export default function Watchlist() {
+  const { navigate } = useNavigation();
   const { items, prices, addItem, removeItem, updateThreshold } = useWatchlist();
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebounce(query, 250);
@@ -73,9 +78,44 @@ export default function Watchlist() {
     return () => { cancelled = true; };
   }, [debouncedQuery]);
 
+  const trackedCount = items.length;
+  const triggeredCount = items.filter((item) => {
+    const price = prices[String(item.itemId)];
+    const current = price?.high ?? price?.low ?? null;
+    return (
+      (item.thresholdHigh != null && current != null && current >= item.thresholdHigh) ||
+      (item.thresholdLow != null && current != null && current <= item.thresholdLow)
+    );
+  }).length;
+  const thresholdCount = items.filter(
+    (item) => item.thresholdHigh != null || item.thresholdLow != null
+  ).length;
+
   return (
     <div className="max-w-3xl">
-      <h2 className="text-xl font-semibold mb-4">Price Watchlist</h2>
+      <div className="mb-4">
+        <h2 className="text-xl font-semibold">Price Watchlist</h2>
+        <p className="mt-1 text-sm text-text-secondary">
+          Monitor tracked items, set alert thresholds, and jump straight into the item workspace when something moves.
+        </p>
+      </div>
+
+      <div className="mb-5 grid gap-3 md:grid-cols-3">
+        <div className="px-4 py-3">
+          <div className="section-kicker">Tracked Items</div>
+          <div className="mt-1 text-lg font-semibold text-text-primary">{trackedCount}</div>
+        </div>
+        <div className="px-4 py-3">
+          <div className="section-kicker">Thresholds Set</div>
+          <div className="mt-1 text-lg font-semibold text-text-primary">{thresholdCount}</div>
+        </div>
+        <div className="px-4 py-3">
+          <div className="section-kicker">Triggered</div>
+          <div className={`mt-1 text-lg font-semibold ${triggeredCount > 0 ? "text-warning" : "text-text-primary"}`}>
+            {triggeredCount}
+          </div>
+        </div>
+      </div>
 
       <div className="relative mb-6">
         <input
@@ -100,7 +140,10 @@ export default function Watchlist() {
                 }}
                 className="w-full text-left px-4 py-2 text-sm hover:bg-bg-tertiary transition-colors flex items-center justify-between"
               >
-                <span>{item.name}</span>
+                <span className="flex items-center gap-2">
+                  <WikiImage src={itemIcon(item.name)} alt="" className="h-5 w-5 shrink-0" fallback={item.name[0]} />
+                  <span>{item.name}</span>
+                </span>
                 {items.some((w) => w.itemId === item.id) && (
                   <span className="text-xs text-text-secondary">Watching</span>
                 )}
@@ -111,12 +154,12 @@ export default function Watchlist() {
       </div>
 
       {items.length === 0 ? (
-        <div className="text-center py-12 text-text-secondary">
+        <div className="py-12 text-center text-text-secondary">
           <p className="text-sm">No items on your watchlist yet.</p>
           <p className="text-xs mt-1">Search above to add items and set price alerts.</p>
         </div>
       ) : (
-        <div className="bg-bg-secondary rounded-lg overflow-hidden">
+        <div className="overflow-hidden">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border text-text-secondary text-xs">
@@ -125,7 +168,7 @@ export default function Watchlist() {
                 <th className="text-right px-4 py-2">Alert High</th>
                 <th className="text-right px-4 py-2">Alert Low</th>
                 <th className="text-center px-4 py-2">Status</th>
-                <th className="px-4 py-2"></th>
+                <th className="px-4 py-2">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -141,7 +184,21 @@ export default function Watchlist() {
                     key={item.itemId}
                     className={`border-b border-border/50 even:bg-bg-primary/30 transition-colors ${triggered ? "bg-accent/5" : ""}`}
                   >
-                    <td className="px-4 py-2 font-medium">{item.itemName}</td>
+                    <td className="px-4 py-2">
+                      <button
+                        type="button"
+                        onClick={() => navigate("market", { query: item.itemName })}
+                        className="flex items-center gap-2 text-left transition hover:text-accent"
+                      >
+                        <WikiImage
+                          src={itemIcon(item.itemName)}
+                          alt=""
+                          className="h-5 w-5 shrink-0"
+                          fallback={item.itemName[0]}
+                        />
+                        <span className="font-medium">{item.itemName}</span>
+                      </button>
+                    </td>
                     <td className="px-4 py-2 text-right">
                       {current != null ? formatGp(current) : "..."}
                     </td>
@@ -168,13 +225,23 @@ export default function Watchlist() {
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-2 text-center">
-                      <button
-                        onClick={() => removeItem(item.itemId)}
-                        className="text-text-secondary hover:text-danger transition-colors text-xs"
-                      >
-                        Remove
-                      </button>
+                    <td className="px-4 py-2">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => navigate("market", { query: item.itemName })}
+                          className="text-xs text-accent transition hover:text-accent-hover"
+                        >
+                          Open
+                        </button>
+                        <span className="text-text-secondary/25">•</span>
+                        <button
+                          onClick={() => removeItem(item.itemId)}
+                          className="text-text-secondary hover:text-danger transition-colors text-xs"
+                        >
+                          Remove
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );

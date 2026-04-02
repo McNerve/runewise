@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { CLUE_ENTRIES, type ClueTier, type ClueType } from "../../lib/data/clues";
+import { useEffect, useMemo, useState } from "react";
+import type { ClueEntry, ClueTier, ClueType } from "../../lib/data/clues";
 import { useDebounce } from "../../hooks/useDebounce";
 
 const TYPES: (ClueType | "All")[] = ["All", "Anagram", "Cipher", "Coordinate", "Cryptic", "Map", "Emote"];
@@ -15,13 +15,29 @@ const TIER_COLORS: Record<ClueTier, string> = {
 };
 
 export default function ClueHelper() {
+  const [clues, setClues] = useState<ClueEntry[]>([]);
+  const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebounce(query, 150);
   const [typeFilter, setTypeFilter] = useState<ClueType | "All">("All");
   const [tierFilter, setTierFilter] = useState<ClueTier | "All">("All");
 
+  useEffect(() => {
+    let cancelled = false;
+
+    import("../../lib/data/clues").then((module) => {
+      if (cancelled) return;
+      setClues(module.CLUE_ENTRIES);
+      setLoading(false);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const filtered = useMemo(() => {
-    let results = CLUE_ENTRIES;
+    let results = clues;
     if (typeFilter !== "All") results = results.filter((c) => c.type === typeFilter);
     if (tierFilter !== "All") results = results.filter((c) => c.tier === tierFilter);
     if (debouncedQuery.length >= 2) {
@@ -31,11 +47,17 @@ export default function ClueHelper() {
       );
     }
     return results.slice(0, 100);
-  }, [debouncedQuery, typeFilter, tierFilter]);
+  }, [clues, debouncedQuery, typeFilter, tierFilter]);
 
   return (
     <div className="max-w-3xl">
       <h2 className="text-xl font-semibold mb-4">Clue Scroll Helper</h2>
+
+      {loading ? (
+        <div className="mb-4 px-4 py-3 text-sm text-text-secondary">
+          Loading clue reference data...
+        </div>
+      ) : null}
 
       <input
         type="text"

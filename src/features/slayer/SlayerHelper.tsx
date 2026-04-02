@@ -71,7 +71,7 @@ export default function SlayerHelper() {
 
   return (
     <div className="max-w-3xl">
-      <h2 className="text-xl font-semibold mb-4">Slayer Task Helper</h2>
+      <h2 className="text-xl font-semibold mb-4">Slayer Blocks</h2>
 
       <div className="flex gap-2 mb-4">
         {SLAYER_MASTERS.map((master) => (
@@ -138,7 +138,7 @@ export default function SlayerHelper() {
                 </td>
                 <td className="px-4 py-1.5 font-medium">
                   <button
-                    onClick={() => navigate("drops", { monster: task.monster })}
+                    onClick={() => navigate("loot", { monster: task.monster, tab: "drops" })}
                     className="hover:text-accent transition-colors text-left"
                   >
                     {task.monster}

@@ -3,6 +3,7 @@ import { fetchLatestPrices, type ItemPrice } from "../lib/api/ge";
 import { loadJSON, saveJSON } from "../lib/localStorage";
 import { sendNotification } from "../lib/notify";
 import { formatGp } from "../lib/format";
+import { useSettings } from "./useSettings";
 
 const WATCHLIST_KEY = "runewise_watchlist";
 const POLL_INTERVAL = 60_000;
@@ -17,6 +18,7 @@ export interface WatchItem {
 }
 
 export function useWatchlist() {
+  const { settings } = useSettings();
   const [items, setItems] = useState<WatchItem[]>(() => loadJSON(WATCHLIST_KEY, []));
   const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
 
@@ -26,6 +28,7 @@ export function useWatchlist() {
     if (items.length === 0) return;
     let cancelled = false;
     const check = () => {
+      if (document.visibilityState === "hidden") return;
       fetchLatestPrices()
         .then((p) => {
           if (cancelled) return;
@@ -37,11 +40,15 @@ export function useWatchlist() {
               if (current == null) return item;
               let updated = item;
               if (item.thresholdHigh != null && current >= item.thresholdHigh && !item.notifiedHigh) {
-                sendNotification("Price Alert", `${item.itemName} is now ${formatGp(current)} (above ${formatGp(item.thresholdHigh)})`);
+                if (settings.notifications.priceAlerts) {
+                  sendNotification("Price Alert", `${item.itemName} is now ${formatGp(current)} (above ${formatGp(item.thresholdHigh)})`);
+                }
                 updated = { ...updated, notifiedHigh: true };
               }
               if (item.thresholdLow != null && current <= item.thresholdLow && !item.notifiedLow) {
-                sendNotification("Price Alert", `${item.itemName} is now ${formatGp(current)} (below ${formatGp(item.thresholdLow)})`);
+                if (settings.notifications.priceAlerts) {
+                  sendNotification("Price Alert", `${item.itemName} is now ${formatGp(current)} (below ${formatGp(item.thresholdLow)})`);
+                }
                 updated = { ...updated, notifiedLow: true };
               }
               return updated;
@@ -55,8 +62,7 @@ export function useWatchlist() {
     check();
     const interval = setInterval(check, POLL_INTERVAL);
     return () => { cancelled = true; clearInterval(interval); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- only start/stop polling when list goes empty↔non-empty
-  }, [items.length > 0]);
+  }, [items.length, settings.notifications.priceAlerts]);
 
   const addItem = useCallback((itemId: number, itemName: string) => {
     setItems((prev) => {

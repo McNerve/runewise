@@ -1,5 +1,4 @@
-import { getCached, setCache } from "./cache";
-import { apiFetch } from "./fetch";
+import { fetchJson } from "./client";
 import { isTauri } from "../env";
 const WOM_API = isTauri
   ? "https://api.wiseoldman.net/v2"
@@ -72,17 +71,12 @@ export interface WomRecord {
 }
 
 export async function fetchWomPlayer(rsn: string): Promise<WomPlayer> {
-  const cacheKey = `wom-player:${rsn.toLowerCase()}`;
-  const cached = getCached<WomPlayer>(cacheKey, PLAYER_TTL);
-  if (cached) return cached;
-
-  const res = await apiFetch(
-    `${WOM_API}/players/${encodeURIComponent(rsn)}`
-  );
-  if (!res.ok) throw new Error(`WOM API error: ${res.status}`);
-  const data: WomPlayer = await res.json();
-  setCache(cacheKey, data);
-  return data;
+  return fetchJson<WomPlayer>({
+    url: `${WOM_API}/players/${encodeURIComponent(rsn)}`,
+    cacheKey: `wom-player:${rsn.toLowerCase()}`,
+    ttlMs: PLAYER_TTL,
+    persist: true,
+  });
 }
 
 export type GainsPeriod = "day" | "week" | "month" | "year";
@@ -91,50 +85,35 @@ export async function fetchWomGains(
   rsn: string,
   period: GainsPeriod = "week"
 ): Promise<WomGains> {
-  const cacheKey = `wom-gains:${rsn.toLowerCase()}:${period}`;
-  const cached = getCached<WomGains>(cacheKey, GAINS_TTL);
-  if (cached) return cached;
-
-  const res = await apiFetch(
-    `${WOM_API}/players/${encodeURIComponent(rsn)}/gained?period=${period}`
-  );
-  if (!res.ok) throw new Error(`WOM gains error: ${res.status}`);
-  const json = await res.json();
-  const data: WomGains = json.data;
-  setCache(cacheKey, data);
-  return data;
+  return fetchJson<WomGains>({
+    url: `${WOM_API}/players/${encodeURIComponent(rsn)}/gained?period=${period}`,
+    cacheKey: `wom-gains:${rsn.toLowerCase()}:${period}`,
+    ttlMs: GAINS_TTL,
+    transform: (json) =>
+      typeof json === "object" && json !== null && "data" in json
+        ? (json as { data: WomGains }).data
+        : { skills: {}, bosses: {} },
+  });
 }
 
 export async function fetchWomAchievements(
   rsn: string
 ): Promise<WomAchievement[]> {
-  const cacheKey = `wom-achievements:${rsn.toLowerCase()}`;
-  const cached = getCached<WomAchievement[]>(cacheKey, ACHIEVEMENTS_TTL);
-  if (cached) return cached;
-
-  const res = await apiFetch(
-    `${WOM_API}/players/${encodeURIComponent(rsn)}/achievements`
-  );
-  if (!res.ok) throw new Error(`WOM achievements error: ${res.status}`);
-  const data: WomAchievement[] = await res.json();
-  setCache(cacheKey, data);
-  return data;
+  return fetchJson<WomAchievement[]>({
+    url: `${WOM_API}/players/${encodeURIComponent(rsn)}/achievements`,
+    cacheKey: `wom-achievements:${rsn.toLowerCase()}`,
+    ttlMs: ACHIEVEMENTS_TTL,
+  });
 }
 
 export async function fetchWomRecords(
   rsn: string
 ): Promise<WomRecord[]> {
-  const cacheKey = `wom-records:${rsn.toLowerCase()}`;
-  const cached = getCached<WomRecord[]>(cacheKey, ACHIEVEMENTS_TTL);
-  if (cached) return cached;
-
-  const res = await apiFetch(
-    `${WOM_API}/players/${encodeURIComponent(rsn)}/records`
-  );
-  if (!res.ok) throw new Error(`WOM records error: ${res.status}`);
-  const data: WomRecord[] = await res.json();
-  setCache(cacheKey, data);
-  return data;
+  return fetchJson<WomRecord[]>({
+    url: `${WOM_API}/players/${encodeURIComponent(rsn)}/records`,
+    cacheKey: `wom-records:${rsn.toLowerCase()}`,
+    ttlMs: ACHIEVEMENTS_TTL,
+  });
 }
 
 export interface WomNameChange {
@@ -147,18 +126,13 @@ export interface WomNameChange {
 export async function fetchWomNameChanges(
   rsn: string
 ): Promise<WomNameChange[]> {
-  const cacheKey = `wom-names:${rsn.toLowerCase()}`;
-  const cached = getCached<WomNameChange[]>(cacheKey, ACHIEVEMENTS_TTL);
-  if (cached) return cached;
-
   try {
-    const res = await apiFetch(
-      `${WOM_API}/players/${encodeURIComponent(rsn)}/names`
-    );
-    if (!res.ok) return [];
-    const data: WomNameChange[] = await res.json();
-    setCache(cacheKey, data);
-    return data;
+    return await fetchJson<WomNameChange[]>({
+      url: `${WOM_API}/players/${encodeURIComponent(rsn)}/names`,
+      cacheKey: `wom-names:${rsn.toLowerCase()}`,
+      ttlMs: ACHIEVEMENTS_TTL,
+      transform: (json) => (Array.isArray(json) ? (json as WomNameChange[]) : []),
+    });
   } catch {
     return [];
   }

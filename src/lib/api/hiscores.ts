@@ -1,6 +1,6 @@
-import { getCached, setCache } from "./cache";
-import { apiFetch } from "./fetch";
+import { fetchJson } from "./client";
 import { isTauri } from "../env";
+import { parseHiscoreData } from "./validators";
 
 export interface HiscoreSkill {
   id: number;
@@ -22,20 +22,21 @@ const BASE_URL = isTauri
 const HISCORES_TTL = 10 * 60 * 1000;
 
 export async function fetchHiscores(rsn: string): Promise<HiscoreData> {
-  const cacheKey = `hiscores:${rsn.toLowerCase()}`;
-  const cached = getCached<HiscoreData>(cacheKey, HISCORES_TTL);
-  if (cached) return cached;
-
-  const res = await apiFetch(
-    `${BASE_URL}/index_lite.json?player=${encodeURIComponent(rsn)}`
-  );
-  if (!res.ok) {
-    if (res.status === 404) throw new Error(`Player "${rsn}" not found`);
-    throw new Error(`Hiscores API error: ${res.status}`);
+  try {
+    return await fetchJson<HiscoreData>({
+      url: `${BASE_URL}/index_lite.json?player=${encodeURIComponent(rsn)}`,
+      cacheKey: `hiscores:${rsn.toLowerCase()}`,
+      ttlMs: HISCORES_TTL,
+      persist: true,
+      parser: parseHiscoreData,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    if (message.includes("404")) {
+      throw new Error(`Player "${rsn}" not found`);
+    }
+    throw error;
   }
-  const data: HiscoreData = await res.json();
-  setCache(cacheKey, data);
-  return data;
 }
 
 export function getSkillLevel(data: HiscoreData, skillName: string): number {

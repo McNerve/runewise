@@ -3,6 +3,7 @@ import { QUESTS, QUEST_DIFFICULTIES, type Quest } from "../../lib/data/quests";
 import { type HiscoreData } from "../../lib/api/hiscores";
 import { SKILL_ICONS } from "../../lib/sprites";
 import ExternalLink from "../../components/ExternalLink";
+import { useNavigation } from "../../lib/NavigationContext";
 
 interface Props {
   hiscores: HiscoreData | null;
@@ -31,9 +32,10 @@ function checkRequirements(
 }
 
 export default function QuestTracker({ hiscores }: Props) {
+  const { params } = useNavigation();
   const [filter, setFilter] = useState<"all" | "available" | "locked">("all");
   const [diffFilter, setDiffFilter] = useState<string>("all");
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(params.quest ?? "");
 
   const questsWithStatus = useMemo(() => {
     return QUESTS.map((quest) => ({

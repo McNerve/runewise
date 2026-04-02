@@ -2,12 +2,15 @@ import { useState, useEffect, useMemo } from "react";
 import { isTauri } from "../../lib/env";
 import {
   checkRuneLiteExists,
+  getRuneLiteStatus,
   readProfiles,
   readLootTracker,
   type RuneLiteProfile,
   type LootEntry,
+  type RuneLiteStatus,
 } from "../../lib/runelite/reader";
 import { formatGp } from "../../lib/format";
+import { fetchLatestPrices, fetchMapping, type ItemPrice } from "../../lib/api/ge";
 
 type Status = "checking" | "not-desktop" | "not-found" | "found";
 
@@ -16,6 +19,10 @@ interface AggregatedBoss {
   totalKills: number;
   totalValue: number;
 }
+
+const LOCAL_ITEM_FALLBACKS: Record<number, { name: string; price: number }> = {
+  995: { name: "Coins", price: 1 },
+};
 
 export default function RuneLiteData() {
   const [status, setStatus] = useState<Status>(() =>
@@ -26,11 +33,29 @@ export default function RuneLiteData() {
   const [lootEntries, setLootEntries] = useState<LootEntry[]>([]);
   const [lootLoading, setLootLoading] = useState(false);
   const [tab, setTab] = useState<"loot" | "info">("loot");
+  const [pathInfo, setPathInfo] = useState<RuneLiteStatus | null>(null);
+  const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
+  const [itemNames, setItemNames] = useState<Map<number, string>>(new Map());
+
+  useEffect(() => {
+    fetchLatestPrices().then(setPrices).catch(() => {});
+    fetchMapping()
+      .then((mapping) => {
+        const next = new Map<number, string>();
+        for (const item of mapping) {
+          next.set(item.id, item.name);
+        }
+        setItemNames(next);
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!isTauri) return;
     checkRuneLiteExists()
       .then(async (exists) => {
+        const statusInfo = await getRuneLiteStatus();
+        setPathInfo(statusInfo);
         if (exists) {
           setStatus("found");
           const p = await readProfiles();
@@ -57,7 +82,16 @@ export default function RuneLiteData() {
     for (const entry of lootEntries) {
       const existing = map.get(entry.name);
       const entryValue = entry.drops.reduce(
-        (sum, d) => sum + d.price * d.quantity,
+        (sum, d) => {
+          const fallback = LOCAL_ITEM_FALLBACKS[d.id];
+          const currentPrice =
+            prices[String(d.id)]?.high ??
+            prices[String(d.id)]?.low ??
+            d.price ??
+            fallback?.price ??
+            0;
+          return sum + currentPrice * d.quantity;
+        },
         0
       );
       if (existing) {
@@ -74,7 +108,37 @@ export default function RuneLiteData() {
     return Array.from(map.values()).sort(
       (a, b) => b.totalValue - a.totalValue
     );
-  }, [lootEntries]);
+  }, [lootEntries, prices]);
+
+  const topDrops = useMemo(() => {
+    const drops = new Map<number, { id: number; quantity: number; value: number }>();
+    for (const entry of lootEntries) {
+      for (const drop of entry.drops) {
+        const fallback = LOCAL_ITEM_FALLBACKS[drop.id];
+        const currentPrice =
+          prices[String(drop.id)]?.high ??
+          prices[String(drop.id)]?.low ??
+          drop.price ??
+          fallback?.price ??
+          0;
+        const existing = drops.get(drop.id);
+        if (existing) {
+          existing.quantity += drop.quantity;
+          existing.value += currentPrice * drop.quantity;
+        } else {
+          drops.set(drop.id, {
+            id: drop.id,
+            quantity: drop.quantity,
+            value: currentPrice * drop.quantity,
+          });
+        }
+      }
+    }
+
+    return Array.from(drops.values())
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 8);
+  }, [lootEntries, prices]);
 
   const totalGp = aggregated.reduce((s, b) => s + b.totalValue, 0);
   const totalKills = aggregated.reduce((s, b) => s + b.totalKills, 0);
@@ -84,7 +148,7 @@ export default function RuneLiteData() {
       <h2 className="text-xl font-semibold mb-4">RuneLite Integration</h2>
 
       {status === "checking" && (
-        <div className="bg-bg-secondary rounded-lg p-6 text-center">
+        <div className="py-6 text-center">
           <p className="text-sm text-text-secondary animate-pulse">
             Checking for RuneLite...
           </p>
@@ -92,7 +156,7 @@ export default function RuneLiteData() {
       )}
 
       {status === "not-desktop" && (
-        <div className="bg-bg-secondary rounded-lg p-6 text-center">
+        <div className="py-6 text-center">
           <p className="text-lg font-semibold mb-2">Desktop Only</p>
           <p className="text-sm text-text-secondary leading-relaxed">
             RuneLite integration reads local files from your computer. Download
@@ -102,14 +166,27 @@ export default function RuneLiteData() {
       )}
 
       {status === "not-found" && (
-        <div className="bg-bg-secondary rounded-lg p-6 text-center">
+        <div className="py-6 text-center">
           <p className="text-lg font-semibold mb-2">RuneLite Not Found</p>
           <p className="text-sm text-text-secondary leading-relaxed mb-3">
-            Could not find the RuneLite data directory at{" "}
+            Could not find a RuneLite profile manifest in{" "}
             <code className="text-accent">~/.runelite/</code>.
           </p>
+          {pathInfo?.checkedPaths?.length ? (
+            <div className="mb-3 space-y-1 p-3 text-left">
+              <div className="text-[10px] uppercase tracking-wider text-text-secondary/50">
+                Checked paths
+              </div>
+              {pathInfo.checkedPaths.map((path) => (
+                <div key={path} className="break-all text-xs text-text-secondary">
+                  {path}
+                </div>
+              ))}
+            </div>
+          ) : null}
           <p className="text-xs text-text-secondary">
-            Make sure RuneLite is installed and has been launched at least once.
+            Make sure RuneLite has been launched at least once and has created a
+            profile under either <code>profiles2</code> or <code>profiles</code>.
           </p>
         </div>
       )}
@@ -136,7 +213,7 @@ export default function RuneLiteData() {
 
           {/* Summary cards */}
           <div className="grid grid-cols-3 gap-3">
-            <div className="bg-bg-secondary rounded-lg p-4 text-center">
+            <div className="text-center">
               <div className="text-xs text-text-secondary mb-1">
                 Total Loot Value
               </div>
@@ -144,7 +221,7 @@ export default function RuneLiteData() {
                 {formatGp(totalGp)}
               </div>
             </div>
-            <div className="bg-bg-secondary rounded-lg p-4 text-center">
+            <div className="text-center">
               <div className="text-xs text-text-secondary mb-1">
                 Total Kills
               </div>
@@ -152,7 +229,7 @@ export default function RuneLiteData() {
                 {totalKills.toLocaleString()}
               </div>
             </div>
-            <div className="bg-bg-secondary rounded-lg p-4 text-center">
+            <div className="text-center">
               <div className="text-xs text-text-secondary mb-1">
                 Sources Tracked
               </div>
@@ -195,74 +272,121 @@ export default function RuneLiteData() {
               )}
 
               {!lootLoading && aggregated.length === 0 && (
-                <div className="bg-bg-secondary rounded-lg p-6 text-center">
+                <div className="py-6 text-center">
                   <p className="text-sm text-text-secondary">
-                    No loot tracker data found. Make sure the Loot Tracker
-                    plugin is enabled in RuneLite.
+                    No supported loot data was found. RuneWise currently reads
+                    RuneLite loot tracker logs and bossing-info loot JSON files.
                   </p>
                 </div>
               )}
 
               {!lootLoading && aggregated.length > 0 && (
-                <div className="bg-bg-secondary rounded-lg overflow-hidden">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-border text-text-secondary text-xs">
-                        <th className="text-left px-4 py-2">Source</th>
-                        <th className="text-right px-4 py-2">Kills</th>
-                        <th className="text-right px-4 py-2">Total Value</th>
-                        <th className="text-right px-4 py-2">GP/Kill</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {aggregated.map((boss) => (
-                        <tr
-                          key={boss.name}
-                          className="border-b border-border/50 hover:bg-bg-tertiary transition-colors"
-                        >
-                          <td className="px-4 py-1.5 font-medium">
-                            {boss.name}
-                          </td>
-                          <td className="px-4 py-1.5 text-right text-text-secondary">
-                            {boss.totalKills.toLocaleString()}
-                          </td>
-                          <td className="px-4 py-1.5 text-right text-success">
-                            {formatGp(boss.totalValue)}
-                          </td>
-                          <td className="px-4 py-1.5 text-right text-success">
-                            {formatGp(
-                              boss.totalKills > 0
-                                ? Math.round(boss.totalValue / boss.totalKills)
-                                : 0
-                            )}
-                          </td>
+                <div className="space-y-4">
+                  <div className="overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-border text-text-secondary text-xs">
+                          <th className="text-left px-4 py-2">Source</th>
+                          <th className="text-right px-4 py-2">Kills</th>
+                          <th className="text-right px-4 py-2">Total Value</th>
+                          <th className="text-right px-4 py-2">GP/Kill</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {aggregated.map((boss) => (
+                          <tr
+                            key={boss.name}
+                            className="border-b border-border/50 hover:bg-bg-tertiary transition-colors"
+                          >
+                            <td className="px-4 py-1.5 font-medium">
+                              {boss.name}
+                            </td>
+                            <td className="px-4 py-1.5 text-right text-text-secondary">
+                              {boss.totalKills.toLocaleString()}
+                            </td>
+                            <td className="px-4 py-1.5 text-right text-success">
+                              {formatGp(boss.totalValue)}
+                            </td>
+                            <td className="px-4 py-1.5 text-right text-success">
+                              {formatGp(
+                                boss.totalKills > 0
+                                  ? Math.round(boss.totalValue / boss.totalKills)
+                                  : 0
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {topDrops.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-medium mb-3">Top Looted Items</h3>
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {topDrops.map((drop) => (
+                          <div
+                            key={drop.id}
+                            className="flex items-center justify-between px-3 py-2"
+                          >
+                            <div>
+                              <div className="text-sm font-medium">
+                                {itemNames.get(drop.id) ??
+                                  LOCAL_ITEM_FALLBACKS[drop.id]?.name ??
+                                  `Unknown item (${drop.id})`}
+                              </div>
+                              <div className="text-[11px] text-text-secondary">
+                                x{drop.quantity.toLocaleString()}
+                              </div>
+                            </div>
+                            <div className="text-sm font-semibold text-success">
+                              {formatGp(drop.value)}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </>
           )}
 
           {tab === "info" && (
-            <div className="bg-bg-secondary rounded-lg p-4 space-y-3">
+            <div className="space-y-3">
               <div>
                 <div className="text-xs text-text-secondary mb-1">
                   Data Directory
                 </div>
                 <code className="text-sm text-accent">~/.runelite/</code>
               </div>
+              {pathInfo?.directory ? (
+                <div>
+                  <div className="text-xs text-text-secondary mb-1">
+                    Active Profile Root
+                  </div>
+                  <code className="text-sm text-accent break-all">
+                    {pathInfo.directory}
+                  </code>
+                </div>
+              ) : null}
               <div>
                 <div className="text-xs text-text-secondary mb-1">
                   Profiles Found
                 </div>
                 <div className="text-sm">{profiles.length}</div>
               </div>
+              <div>
+                <div className="text-xs text-text-secondary mb-1">
+                  Loot Formats
+                </div>
+                <div className="text-sm text-text-secondary">
+                  RuneLite loot-tracker logs and bossing-info boss-loot JSON
+                </div>
+              </div>
               <p className="text-xs text-text-secondary leading-relaxed">
                 RuneWise reads loot tracker data from RuneLite's local profile
-                storage. Make sure the Loot Tracker plugin is enabled and set to
-                write locally. Data is read-only — RuneWise never modifies your
+                storage. Data is read-only — RuneWise never modifies your
                 RuneLite files.
               </p>
               <div className="mt-3 p-2 rounded bg-bg-tertiary">
