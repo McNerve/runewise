@@ -66,8 +66,6 @@ export default function ProductionCalc() {
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    setLoadError(null);
     Promise.all([fetchAllRecipes(), fetchLatestPrices(), fetchMapping()])
       .then(([r, p, m]) => {
         if (cancelled) return;

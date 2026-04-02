@@ -10,15 +10,10 @@ export function useAsyncData<T>(
   const fetcherRef = useRef(fetcher);
   const [retryCount, setRetryCount] = useState(0);
 
-  useEffect(() => {
-    fetcherRef.current = fetcher;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetcher]);
+  fetcherRef.current = fetcher;
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    setError(null);
 
     fetcherRef.current()
       .then((result) => {
