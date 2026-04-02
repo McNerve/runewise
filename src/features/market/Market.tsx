@@ -3,6 +3,7 @@ import {
   searchItems,
   fetchMapping,
   fetchLatestPrices,
+  fetchVolumes,
   type ItemMapping,
   type ItemPrice,
 } from "../../lib/api/ge";
@@ -286,6 +287,7 @@ export default function Market({
   const [allItems, setAllItems] = useState<ItemMapping[]>([]);
   const [searchResults, setSearchResults] = useState<ItemMapping[]>([]);
   const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
+  const [volumes, setVolumes] = useState<Record<string, number>>({});
 
   const [selectedItem, setSelectedItem] = useState<ItemMapping | null>(null);
 
@@ -338,6 +340,13 @@ export default function Market({
           setError("Failed to load prices. Try again later.");
           setPricesLoaded(true);
         }
+      });
+    fetchVolumes()
+      .then((v) => {
+        if (!cancelled) setVolumes(v);
+      })
+      .catch(() => {
+        // volumes are optional — fail silently
       });
     return () => {
       cancelled = true;
@@ -688,6 +697,7 @@ export default function Market({
                   <th className="text-right px-4 py-2">Buy</th>
                   <th className="text-right px-4 py-2">Sell</th>
                   <th className="text-right px-4 py-2">Margin</th>
+                  <th className="text-right px-4 py-2">Volume</th>
                   <th className="text-right px-4 py-2">High Alch</th>
                   <th className="text-right px-4 py-2">Limit</th>
                 </tr>
@@ -754,6 +764,11 @@ export default function Market({
                             {formatGp(itemMargin)}
                           </span>
                         )}
+                      </td>
+                      <td className="px-4 py-2 text-right text-text-secondary tabular-nums">
+                        {volumes[String(item.id)]
+                          ? formatGp(volumes[String(item.id)])
+                          : "\u2014"}
                       </td>
                       <td className="px-4 py-2 text-right text-warning">
                         {formatGp(item.highalch)}

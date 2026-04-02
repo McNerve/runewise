@@ -229,6 +229,7 @@ export default function SkillCalculator({ hiscores }: Props) {
                   <th className="text-right px-4 py-2">XP/hr</th>
                   <th className="text-right px-4 py-2">Actions</th>
                   <th className="text-right px-4 py-2">Time</th>
+                  <th className="text-right px-4 py-2">GP/XP</th>
                   <th className="text-right px-4 py-2">Cost</th>
                 </tr>
               </thead>
@@ -282,6 +283,11 @@ export default function SkillCalculator({ hiscores }: Props) {
                               : hours < 100
                                 ? `${hours.toFixed(1)}h`
                                 : `${Math.round(hours)}h`
+                            : "—"}
+                        </td>
+                        <td className="px-4 py-1.5 text-right text-text-secondary text-xs tabular-nums">
+                          {itemPrice != null
+                            ? `${((itemPrice * (method.itemsPerAction ?? 1)) / method.xp).toFixed(1)}`
                             : "—"}
                         </td>
                         <td className="px-4 py-1.5 text-right text-warning">

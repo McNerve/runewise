@@ -53,6 +53,19 @@ export async function fetchLatestPrices(): Promise<
   });
 }
 
+export async function fetchVolumes(): Promise<Record<string, number>> {
+  return fetchJson<Record<string, number>>({
+    url: `${WIKI_API}/volumes`,
+    cacheKey: "ge-volumes",
+    ttlMs: PRICES_TTL,
+    headers: { "User-Agent": "runewise - osrs companion app" },
+    transform: (json) =>
+      typeof json === "object" && json !== null && "data" in json
+        ? (json as { data: Record<string, number> }).data
+        : {},
+  });
+}
+
 export async function searchItems(query: string): Promise<ItemMapping[]> {
   const mapping = await fetchMapping();
   const q = query.toLowerCase();
