@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSettings } from "../../hooks/useSettings";
 import { DEFAULT_KEYBINDS, type KeybindMap } from "../../lib/settings";
 import { isTauri, isMac } from "../../lib/env";
@@ -59,22 +59,40 @@ function ThemeGlyph({ theme }: { theme: "dark" | "light" | "system" }) {
 
 function UpdateButton() {
   const [status, setStatus] = useState<
-    "idle" | "checking" | "downloading" | "ready" | "current" | "error"
+    "idle" | "checking" | "downloading" | "available" | "current" | "error"
   >("idle");
+  const [updateVersion, setUpdateVersion] = useState<string | null>(null);
+  const [autoChecked, setAutoChecked] = useState(false);
 
-  const checkForUpdates = async () => {
-    setStatus("checking");
+  const checkForUpdates = async (silent = false) => {
+    if (!silent) setStatus("checking");
     try {
       const { check } = await import("@tauri-apps/plugin-updater");
       const update = await check();
       if (update) {
-        setStatus("downloading");
+        setUpdateVersion(update.version ?? null);
+        setStatus("available");
+      } else {
+        setStatus("current");
+        if (!silent) setTimeout(() => setStatus("idle"), 3000);
+      }
+    } catch {
+      if (!silent) {
+        setStatus("error");
+        setTimeout(() => setStatus("idle"), 3000);
+      }
+    }
+  };
+
+  const installUpdate = async () => {
+    setStatus("downloading");
+    try {
+      const { check } = await import("@tauri-apps/plugin-updater");
+      const update = await check();
+      if (update) {
         await update.downloadAndInstall();
         const { relaunch } = await import("@tauri-apps/plugin-process");
         await relaunch();
-      } else {
-        setStatus("current");
-        setTimeout(() => setStatus("idle"), 3000);
       }
     } catch {
       setStatus("error");
@@ -82,19 +100,52 @@ function UpdateButton() {
     }
   };
 
+  // Auto-check on mount (silent)
+  useEffect(() => {
+    if (autoChecked) return;
+    setAutoChecked(true);
+    const timer = setTimeout(() => checkForUpdates(true), 2000);
+    return () => clearTimeout(timer);
+  }, [autoChecked]);
+
+  if (status === "available") {
+    return (
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
+          <span className="text-xs text-text-primary">
+            v{updateVersion ?? "new"} available
+          </span>
+        </div>
+        <button
+          onClick={installUpdate}
+          className="bg-success hover:bg-success/80 text-white text-xs px-3 py-1.5 rounded font-medium transition-colors"
+        >
+          Update Now
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <button
-      onClick={checkForUpdates}
-      disabled={status === "checking" || status === "downloading"}
-      className="bg-accent hover:bg-accent-hover text-white text-xs px-3 py-1.5 rounded transition-colors disabled:opacity-50"
-    >
-      {status === "idle" && "Check for Updates"}
-      {status === "checking" && "Checking..."}
-      {status === "downloading" && "Downloading..."}
-      {status === "ready" && "Restart to update"}
-      {status === "current" && "Up to date!"}
-      {status === "error" && "Update failed"}
-    </button>
+    <div className="flex items-center gap-3">
+      <button
+        onClick={() => checkForUpdates(false)}
+        disabled={status === "checking" || status === "downloading"}
+        className="bg-accent hover:bg-accent-hover text-white text-xs px-3 py-1.5 rounded transition-colors disabled:opacity-50"
+      >
+        {status === "idle" && "Check for Updates"}
+        {status === "checking" && "Checking..."}
+        {status === "downloading" && "Installing..."}
+        {status === "current" && "Up to date ✓"}
+        {status === "error" && "Check failed"}
+      </button>
+      {status === "downloading" && (
+        <div className="w-20 h-1.5 bg-bg-tertiary rounded-full overflow-hidden">
+          <div className="h-full bg-accent rounded-full animate-pulse" style={{ width: "60%" }} />
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -271,6 +322,33 @@ export default function Settings() {
                 <span
                   className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white transition-transform ${
                     settings.notifications.priceAlerts ? "translate-x-5" : ""
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <h3 className="section-kicker mb-3">Game Mode</h3>
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <span className="text-sm font-medium text-text-primary">Ironman Mode</span>
+                <p className="mt-1 text-xs text-text-secondary/70">
+                  Filter training methods and calculators to ironman-viable options only.
+                </p>
+              </div>
+              <button
+                role="switch"
+                aria-checked={settings.ironmanMode}
+                aria-label="Ironman mode"
+                onClick={() => update({ ironmanMode: !settings.ironmanMode })}
+                className={`relative h-5 w-10 rounded-full transition-colors ${
+                  settings.ironmanMode ? "bg-accent" : "bg-bg-tertiary"
+                }`}
+              >
+                <span
+                  className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white transition-transform ${
+                    settings.ironmanMode ? "translate-x-5" : ""
                   }`}
                 />
               </button>

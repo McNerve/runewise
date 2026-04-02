@@ -1,9 +1,6 @@
 import { apiFetch } from "./fetch";
 import { getCached, setCache } from "./cache";
-import { isTauri } from "../env";
-const WIKI_API = isTauri
-  ? "https://oldschool.runescape.wiki/api.php"
-  : "/api/wiki-content";
+import { WIKI_API } from "../wiki/helpers";
 
 const SEARCH_TTL = 60 * 60 * 1000; // 1 hour
 const DROPS_TTL = 30 * 60 * 1000; // 30 minutes

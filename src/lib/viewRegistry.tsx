@@ -27,6 +27,17 @@ const Market = lazy(() => import("../features/market/Market"));
 const PlayerLookup = lazy(() => import("../features/player-lookup/PlayerLookup"));
 const Loot = lazy(() => import("../features/loot/Loot"));
 const Progress = lazy(() => import("../features/progress/Progress"));
+const GearCompare = lazy(() => import("../features/gear-compare/GearCompare"));
+const WorldMap = lazy(() => import("../features/world-map/WorldMap"));
+const Spells = lazy(() => import("../features/spells/Spells"));
+import EmptyState from "../components/EmptyState";
+import { NAV_ICONS } from "./sprites";
+const TrainingPlan = lazy(() => import("../features/training-plan/TrainingPlan"));
+const CollectionLog = lazy(() => import("../features/collection-log/CollectionLog"));
+const Raids = lazy(() => import("../features/raids/Raids"));
+const ProductionCalc = lazy(() => import("../features/production/ProductionCalc"));
+const Kingdom = lazy(() => import("../features/kingdom/Kingdom"));
+const ProfitHub = lazy(() => import("../features/profit-hub/ProfitHub"));
 
 interface AppViewContext {
   hiscores: {
@@ -47,30 +58,41 @@ export const VIEW_RENDERERS: Record<View, ViewRenderer> = {
     hiscores.data ? (
       <Overview hiscores={hiscores.data} rsn={hiscores.rsn} />
     ) : (
-      <div className="py-10 text-center text-sm text-text-secondary">
-        Set your saved RSN above to turn RuneWise into a personalized command center.
-      </div>
+      <EmptyState
+        icon={NAV_ICONS.overview}
+        title="Set your RSN to get started"
+        description="Enter your RuneScape name above to turn RuneWise into a personalized command center."
+      />
     ),
   lookup: renderComponent(PlayerLookup),
   "skill-calc": ({ hiscores }) => <SkillCalculator hiscores={hiscores.data} />,
   "dry-calc": renderComponent(DryCalculator),
   "xp-table": renderComponent(XpTable),
+  "collection-log": ({ hiscores }) => <CollectionLog rsn={hiscores.rsn} />,
   tracker: ({ hiscores }) => <XpTracker rsn={hiscores.rsn} />,
   bosses: ({ hiscores }) => <BossGuide hiscores={hiscores.data} />,
+  raids: renderComponent(Raids),
   loot: () => <Loot key={window.location.hash} />,
   progress: ({ hiscores }) => <Progress key={window.location.hash} hiscores={hiscores.data} />,
   slayer: renderComponent(SlayerHelper),
   news: renderComponent(News),
   "pet-calc": ({ hiscores }) => <PetCalculator hiscores={hiscores.data} />,
   "dps-calc": ({ hiscores }) => <DpsCalculator hiscores={hiscores.data} />,
+  "training-plan": ({ hiscores }) => <TrainingPlan hiscores={hiscores.data} />,
+  "gear-compare": renderComponent(GearCompare),
   watchlist: renderComponent(Watchlist),
   timers: renderComponent(FarmTimers),
   "money-making": ({ hiscores }) => <MoneyMaking hiscores={hiscores.data} />,
   "combat-tasks": () => <CombatTasks key={window.location.hash} />,
   "clue-helper": renderComponent(ClueHelper),
+  spells: renderComponent(Spells),
+  "world-map": renderComponent(WorldMap),
   stars: renderComponent(ShootingStars),
   wiki: () => <WikiLookup key={window.location.hash} />,
   market: renderComponent(Market),
+  "production-calc": renderComponent(ProductionCalc),
+  kingdom: renderComponent(Kingdom),
+  "profit-hub": renderComponent(ProfitHub),
   about: renderComponent(About),
   settings: renderComponent(Settings),
 };

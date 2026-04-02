@@ -1,0 +1,392 @@
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { fetchAllRecipes, type WikiRecipe } from "../../lib/api/recipes";
+import { fetchLatestPrices, fetchMapping, type ItemPrice } from "../../lib/api/ge";
+import { formatGp } from "../../lib/format";
+import { itemIcon, skillIcon } from "../../lib/sprites";
+
+function getItemPrice(
+  name: string,
+  itemMap: Map<string, number>,
+  prices: Record<string, ItemPrice>,
+): number | null {
+  const id = itemMap.get(name.toLowerCase());
+  if (!id) return null;
+  const p = prices[String(id)];
+  return p?.high ?? p?.low ?? null;
+}
+
+interface RecipeCalc {
+  recipe: WikiRecipe;
+  materialCost: number | null;
+  outputValue: number | null;
+  netCost: number | null;
+  costPerXp: number | null;
+}
+
+function calcRecipe(
+  r: WikiRecipe,
+  itemMap: Map<string, number>,
+  prices: Record<string, ItemPrice>,
+): RecipeCalc {
+  let materialCost: number | null = 0;
+  for (const mat of r.materials) {
+    const price = getItemPrice(mat.name, itemMap, prices);
+    if (price == null) { materialCost = null; break; }
+    materialCost += price * mat.quantity;
+  }
+
+  let outputValue: number | null = 0;
+  for (const out of r.output) {
+    const price = getItemPrice(out.name, itemMap, prices);
+    if (price != null && outputValue != null) outputValue += price * out.quantity;
+    else outputValue = null;
+  }
+
+  const netCost =
+    materialCost != null && outputValue != null
+      ? materialCost - outputValue
+      : materialCost;
+
+  const costPerXp = netCost != null && r.xp > 0 ? netCost / r.xp : null;
+
+  return { recipe: r, materialCost, outputValue, netCost, costPerXp };
+}
+
+export default function ProductionCalc() {
+  const [recipes, setRecipes] = useState<WikiRecipe[]>([]);
+  const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
+  const [itemMap, setItemMap] = useState<Map<string, number>>(new Map());
+  const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState<WikiRecipe | null>(null);
+  const [quantity, setQuantity] = useState(1);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([fetchAllRecipes(), fetchLatestPrices(), fetchMapping()]).then(
+      ([r, p, m]) => {
+        if (cancelled) return;
+        setRecipes(r);
+        setPrices(p);
+        const nameToId = new Map<string, number>();
+        for (const item of m) nameToId.set(item.name.toLowerCase(), item.id);
+        setItemMap(nameToId);
+        setLoading(false);
+      },
+    );
+    return () => { cancelled = true; };
+  }, []);
+
+  const results = useMemo(() => {
+    if (search.length < 2) return [];
+    const q = search.toLowerCase();
+    return recipes
+      .filter((r) => r.name.toLowerCase().includes(q))
+      .slice(0, 60);
+  }, [search, recipes]);
+
+  const calc = useMemo(
+    () => (selected ? calcRecipe(selected, itemMap, prices) : null),
+    [selected, itemMap, prices],
+  );
+
+  const totalMaterialCost =
+    calc?.materialCost != null ? calc.materialCost * quantity : null;
+  const totalOutputValue =
+    calc?.outputValue != null ? calc.outputValue * quantity : null;
+  const totalNet = calc?.netCost != null ? calc.netCost * quantity : null;
+  const totalXp = selected ? selected.xp * quantity : 0;
+  const profit = totalNet != null ? -totalNet : null;
+
+  const handleSelect = useCallback((r: WikiRecipe) => {
+    setSelected(r);
+    setSearch(r.name);
+    setQuantity(1);
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="max-w-4xl">
+        <h2 className="text-xl font-semibold mb-1">Production Calculator</h2>
+        <p className="text-xs text-text-secondary">Loading recipes...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-4xl">
+      <h2 className="text-xl font-semibold mb-1">Production Calculator</h2>
+      <p className="text-xs text-text-secondary mb-4">
+        {recipes.length.toLocaleString()} recipes — search any craftable item to
+        see costs, XP, and profit
+      </p>
+
+      {/* Search */}
+      <input
+        type="text"
+        value={search}
+        onChange={(e) => {
+          setSearch(e.target.value);
+          if (selected && e.target.value !== selected.name) setSelected(null);
+        }}
+        placeholder="Search recipes (e.g. Rune platebody, Shark, Prayer potion)..."
+        className="w-full bg-bg-secondary border border-border rounded px-3 py-2 text-sm mb-1"
+        autoFocus
+      />
+
+      {/* Results dropdown */}
+      {!selected && results.length > 0 && (
+        <div className="border border-border rounded bg-bg-secondary max-h-72 overflow-y-auto mb-4">
+          {results.map((r) => (
+            <button
+              key={`${r.name}-${r.skill}-${r.levelReq}`}
+              onClick={() => handleSelect(r)}
+              className="w-full text-left px-3 py-2 hover:bg-bg-tertiary transition-colors flex items-center gap-2 border-b border-border/30 last:border-0"
+            >
+              <img
+                src={itemIcon(r.name)}
+                alt=""
+                className="w-5 h-5 shrink-0"
+                onError={(e) => { e.currentTarget.style.display = "none"; }}
+              />
+              <div className="flex-1 min-w-0">
+                <span className="text-sm">{r.name}</span>
+                {r.facility && (
+                  <span className="text-[10px] text-text-secondary/50 ml-1.5">
+                    ({r.facility})
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <img src={skillIcon(r.skill)} alt="" className="w-3.5 h-3.5" />
+                <span className="text-xs text-text-secondary tabular-nums">
+                  {r.levelReq}
+                </span>
+              </div>
+              <span className="text-xs text-text-secondary tabular-nums ml-2">
+                {r.xp} XP
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {search.length >= 2 && !selected && results.length === 0 && (
+        <p className="text-xs text-text-secondary py-3 mb-4">
+          No recipes found for "{search}"
+        </p>
+      )}
+
+      {/* Selected recipe detail */}
+      {selected && calc && (
+        <div className="mt-4 space-y-4">
+          {/* Recipe header */}
+          <div className="flex items-center gap-3">
+            <img
+              src={itemIcon(selected.name)}
+              alt=""
+              className="w-8 h-8"
+              onError={(e) => { e.currentTarget.style.display = "none"; }}
+            />
+            <div>
+              <h3 className="text-lg font-semibold">{selected.name}</h3>
+              <div className="flex items-center gap-2 text-xs text-text-secondary">
+                <img src={skillIcon(selected.skill)} alt="" className="w-3.5 h-3.5" />
+                <span>{selected.skill} — Level {selected.levelReq}</span>
+                {selected.facility && (
+                  <span className="text-text-secondary/50">
+                    — {selected.facility}
+                  </span>
+                )}
+                {selected.members && (
+                  <span className="text-warning text-[10px]">Members</span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Materials */}
+          <div>
+            <div className="section-kicker mb-2">Materials</div>
+            <div className="space-y-1">
+              {selected.materials.map((mat) => {
+                const price = getItemPrice(mat.name, itemMap, prices);
+                return (
+                  <div
+                    key={mat.name}
+                    className="flex items-center gap-2 py-1 px-2 rounded hover:bg-bg-tertiary transition-colors"
+                  >
+                    <img
+                      src={itemIcon(mat.name)}
+                      alt=""
+                      className="w-4 h-4 shrink-0"
+                      onError={(e) => { e.currentTarget.style.display = "none"; }}
+                    />
+                    <span className="text-sm flex-1">{mat.name}</span>
+                    <span className="text-xs text-text-secondary tabular-nums">
+                      x{mat.quantity}
+                    </span>
+                    <span className="text-xs text-text-secondary tabular-nums w-16 text-right">
+                      {price != null ? formatGp(price) : "—"}
+                    </span>
+                    <span className="text-xs text-text-secondary tabular-nums w-20 text-right">
+                      {price != null ? formatGp(price * mat.quantity) : "—"}
+                    </span>
+                  </div>
+                );
+              })}
+              {selected.materials.length === 0 && (
+                <p className="text-xs text-text-secondary/50">No materials required</p>
+              )}
+            </div>
+          </div>
+
+          {/* Output */}
+          <div>
+            <div className="section-kicker mb-2">Output</div>
+            <div className="space-y-1">
+              {selected.output.map((out) => {
+                const price = getItemPrice(out.name, itemMap, prices);
+                return (
+                  <div
+                    key={out.name}
+                    className="flex items-center gap-2 py-1 px-2 rounded"
+                  >
+                    <img
+                      src={itemIcon(out.name)}
+                      alt=""
+                      className="w-4 h-4 shrink-0"
+                      onError={(e) => { e.currentTarget.style.display = "none"; }}
+                    />
+                    <span className="text-sm flex-1">{out.name}</span>
+                    <span className="text-xs text-text-secondary tabular-nums">
+                      x{out.quantity}
+                    </span>
+                    <span className="text-xs text-text-secondary tabular-nums w-16 text-right">
+                      {price != null ? formatGp(price) : "—"}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Per-unit summary */}
+          <div className="flex gap-6 py-2 text-sm">
+            <div>
+              <span className="text-text-secondary text-xs">XP/craft</span>
+              <div className="tabular-nums font-medium">{selected.xp}</div>
+            </div>
+            <div>
+              <span className="text-text-secondary text-xs">Material cost</span>
+              <div className="tabular-nums font-medium">
+                {calc.materialCost != null ? formatGp(Math.round(calc.materialCost)) : "—"}
+              </div>
+            </div>
+            <div>
+              <span className="text-text-secondary text-xs">Output value</span>
+              <div className="tabular-nums font-medium">
+                {calc.outputValue != null ? formatGp(Math.round(calc.outputValue)) : "—"}
+              </div>
+            </div>
+            <div>
+              <span className="text-text-secondary text-xs">Net cost</span>
+              <div className={`tabular-nums font-medium ${calc.netCost != null && calc.netCost < 0 ? "text-success" : ""}`}>
+                {calc.netCost != null ? formatGp(Math.round(calc.netCost)) : "—"}
+              </div>
+            </div>
+            <div>
+              <span className="text-text-secondary text-xs">GP/XP</span>
+              <div className={`tabular-nums font-medium ${calc.costPerXp != null && calc.costPerXp < 0 ? "text-success" : ""}`}>
+                {calc.costPerXp != null ? calc.costPerXp.toFixed(1) : "—"}
+              </div>
+            </div>
+          </div>
+
+          {/* Quantity calculator */}
+          <div>
+            <div className="section-kicker mb-2">Batch Calculator</div>
+            <div className="flex items-center gap-3 mb-3">
+              <label className="text-xs text-text-secondary">Quantity:</label>
+              <input
+                type="number"
+                min={1}
+                value={quantity}
+                onChange={(e) => setQuantity(Math.max(1, Number(e.target.value) || 1))}
+                className="w-28 bg-bg-secondary border border-border rounded px-2 py-1 text-sm tabular-nums"
+              />
+              <div className="flex gap-1">
+                {[10, 100, 1000, 10000].map((q) => (
+                  <button
+                    key={q}
+                    onClick={() => setQuantity(q)}
+                    className={`px-2 py-1 rounded text-xs transition-colors ${
+                      quantity === q
+                        ? "bg-accent text-white"
+                        : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+                    }`}
+                  >
+                    {q.toLocaleString()}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="bg-bg-secondary rounded-lg px-3 py-2">
+                <div className="text-[10px] text-text-secondary uppercase tracking-wider">
+                  Total XP
+                </div>
+                <div className="text-sm font-semibold tabular-nums mt-0.5">
+                  {totalXp.toLocaleString()}
+                </div>
+              </div>
+              <div className="bg-bg-secondary rounded-lg px-3 py-2">
+                <div className="text-[10px] text-text-secondary uppercase tracking-wider">
+                  Material Cost
+                </div>
+                <div className="text-sm font-semibold tabular-nums mt-0.5">
+                  {totalMaterialCost != null ? formatGp(Math.round(totalMaterialCost)) : "—"}
+                </div>
+              </div>
+              <div className="bg-bg-secondary rounded-lg px-3 py-2">
+                <div className="text-[10px] text-text-secondary uppercase tracking-wider">
+                  Output Value
+                </div>
+                <div className="text-sm font-semibold tabular-nums mt-0.5">
+                  {totalOutputValue != null ? formatGp(Math.round(totalOutputValue)) : "—"}
+                </div>
+              </div>
+              <div className="bg-bg-secondary rounded-lg px-3 py-2">
+                <div className="text-[10px] text-text-secondary uppercase tracking-wider">
+                  {profit != null && profit >= 0 ? "Profit" : "Loss"}
+                </div>
+                <div className={`text-sm font-semibold tabular-nums mt-0.5 ${
+                  profit != null && profit >= 0 ? "text-success" : "text-danger"
+                }`}>
+                  {profit != null ? formatGp(Math.round(Math.abs(profit))) : "—"}
+                </div>
+              </div>
+            </div>
+
+            {calc.costPerXp != null && (
+              <p className="text-xs text-text-secondary mt-2">
+                Cost per XP:{" "}
+                <span className={`tabular-nums font-medium ${calc.costPerXp < 0 ? "text-success" : ""}`}>
+                  {calc.costPerXp.toFixed(1)} GP/XP
+                </span>
+                {calc.costPerXp < 0 && " (profit)"}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {!selected && search.length < 2 && (
+        <p className="text-xs text-text-secondary/50 mt-2">
+          Type at least 2 characters to search
+        </p>
+      )}
+    </div>
+  );
+}

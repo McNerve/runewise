@@ -1,64 +1,89 @@
+export type TrainingIntensity = "afk" | "low" | "medium" | "high";
+
 export interface TrainingMethod {
   name: string;
   xp: number;
   xpPerHour?: number;
   levelReq?: number;
-  itemId?: number; // Wiki item ID for GE price lookup
+  itemId?: number;
   itemName?: string;
-  itemsPerAction?: number; // how many items consumed per action (default 1)
+  itemsPerAction?: number;
+  intensity?: TrainingIntensity;
+  ironmanViable?: boolean;
+  members?: boolean;
 }
 
 export const TRAINING_METHODS: Record<string, TrainingMethod[]> = {
   Attack: [
-    { name: "Sand Crabs", xp: 40, xpPerHour: 30_000, levelReq: 1 },
-    { name: "Ammonite Crabs", xp: 52, xpPerHour: 45_000, levelReq: 1 },
-    { name: "Nightmare Zone", xp: 80, xpPerHour: 80_000, levelReq: 70 },
-    { name: "Slayer tasks", xp: 45, xpPerHour: 40_000, levelReq: 1 },
+    { name: "Sand Crabs", xp: 40, xpPerHour: 30_000, levelReq: 1, intensity: "afk", ironmanViable: true },
+    { name: "Ammonite Crabs", xp: 52, xpPerHour: 45_000, levelReq: 1, intensity: "afk", ironmanViable: true },
+    { name: "Experiments", xp: 25, xpPerHour: 20_000, levelReq: 1, intensity: "afk", ironmanViable: true, members: false },
+    { name: "Nightmare Zone", xp: 80, xpPerHour: 80_000, levelReq: 70, intensity: "afk", ironmanViable: true },
+    { name: "Slayer tasks", xp: 45, xpPerHour: 40_000, levelReq: 1, intensity: "medium", ironmanViable: true },
+    { name: "Pest Control", xp: 35, xpPerHour: 35_000, levelReq: 40, intensity: "low", ironmanViable: true },
+    { name: "Soul Wars", xp: 30, xpPerHour: 25_000, levelReq: 40, intensity: "low", ironmanViable: true },
   ],
   Strength: [
-    { name: "Sand Crabs", xp: 40, xpPerHour: 30_000, levelReq: 1 },
-    { name: "Ammonite Crabs", xp: 52, xpPerHour: 45_000, levelReq: 1 },
-    { name: "Nightmare Zone", xp: 80, xpPerHour: 80_000, levelReq: 70 },
-    { name: "Slayer tasks", xp: 45, xpPerHour: 40_000, levelReq: 1 },
+    { name: "Sand Crabs", xp: 40, xpPerHour: 30_000, levelReq: 1, intensity: "afk", ironmanViable: true },
+    { name: "Ammonite Crabs", xp: 52, xpPerHour: 45_000, levelReq: 1, intensity: "afk", ironmanViable: true },
+    { name: "Experiments", xp: 25, xpPerHour: 20_000, levelReq: 1, intensity: "afk", ironmanViable: true, members: false },
+    { name: "Nightmare Zone", xp: 80, xpPerHour: 80_000, levelReq: 70, intensity: "afk", ironmanViable: true },
+    { name: "Slayer tasks", xp: 45, xpPerHour: 40_000, levelReq: 1, intensity: "medium", ironmanViable: true },
+    { name: "Pest Control", xp: 35, xpPerHour: 35_000, levelReq: 40, intensity: "low", ironmanViable: true },
   ],
   Defence: [
-    { name: "Sand Crabs", xp: 40, xpPerHour: 30_000, levelReq: 1 },
-    { name: "Ammonite Crabs", xp: 52, xpPerHour: 45_000, levelReq: 1 },
-    { name: "Nightmare Zone", xp: 80, xpPerHour: 80_000, levelReq: 70 },
-    { name: "Slayer tasks", xp: 45, xpPerHour: 40_000, levelReq: 1 },
+    { name: "Sand Crabs", xp: 40, xpPerHour: 30_000, levelReq: 1, intensity: "afk", ironmanViable: true },
+    { name: "Ammonite Crabs", xp: 52, xpPerHour: 45_000, levelReq: 1, intensity: "afk", ironmanViable: true },
+    { name: "Experiments", xp: 25, xpPerHour: 20_000, levelReq: 1, intensity: "afk", ironmanViable: true, members: false },
+    { name: "Nightmare Zone", xp: 80, xpPerHour: 80_000, levelReq: 70, intensity: "afk", ironmanViable: true },
+    { name: "Slayer tasks", xp: 45, xpPerHour: 40_000, levelReq: 1, intensity: "medium", ironmanViable: true },
+    { name: "Pest Control", xp: 35, xpPerHour: 35_000, levelReq: 40, intensity: "low", ironmanViable: true },
   ],
   Ranged: [
-    { name: "Sand Crabs (MSB)", xp: 40, xpPerHour: 35_000, levelReq: 40 },
-    { name: "Chinchompas (MM2)", xp: 350, xpPerHour: 500_000, levelReq: 65 },
-    { name: "Ammonite Crabs", xp: 52, xpPerHour: 45_000, levelReq: 1 },
-    { name: "Slayer tasks", xp: 45, xpPerHour: 40_000, levelReq: 1 },
-    { name: "Cannon + Slayer", xp: 80, xpPerHour: 70_000, levelReq: 1 },
-    { name: "Toxic blowpipe", xp: 50, xpPerHour: 60_000, levelReq: 75 },
+    { name: "Sand Crabs (MSB)", xp: 40, xpPerHour: 35_000, levelReq: 40, intensity: "afk", ironmanViable: true },
+    { name: "Ammonite Crabs", xp: 52, xpPerHour: 45_000, levelReq: 1, intensity: "afk", ironmanViable: true },
+    { name: "Chinchompas (MM2)", xp: 350, xpPerHour: 500_000, levelReq: 65, intensity: "high", ironmanViable: true },
+    { name: "Chinchompas (pre-MM2)", xp: 200, xpPerHour: 200_000, levelReq: 65, intensity: "medium", ironmanViable: true },
+    { name: "Slayer tasks", xp: 45, xpPerHour: 40_000, levelReq: 1, intensity: "medium", ironmanViable: true },
+    { name: "Cannon + Slayer", xp: 80, xpPerHour: 70_000, levelReq: 1, intensity: "medium", ironmanViable: true },
+    { name: "Toxic blowpipe", xp: 50, xpPerHour: 60_000, levelReq: 75, intensity: "medium", ironmanViable: true },
+    { name: "Knives", xp: 30, xpPerHour: 25_000, levelReq: 1, intensity: "afk", ironmanViable: true, members: false },
+    { name: "Darts", xp: 20, xpPerHour: 20_000, levelReq: 1, intensity: "afk", ironmanViable: true, members: false },
+    { name: "Craw's bow (Wilderness)", xp: 60, xpPerHour: 65_000, levelReq: 60, intensity: "medium", ironmanViable: true },
   ],
   Prayer: [
-    { name: "Big bones (Gilded altar)", xp: 52.5, xpPerHour: 200_000, levelReq: 1, itemId: 532, itemName: "Big bones" },
-    { name: "Dragon bones (Gilded altar)", xp: 252, xpPerHour: 600_000, levelReq: 1, itemId: 536, itemName: "Dragon bones" },
-    { name: "Dagannoth bones (Gilded altar)", xp: 437.5, xpPerHour: 800_000, levelReq: 1, itemId: 6729, itemName: "Dagannoth bones" },
-    { name: "Superior dragon bones (Gilded altar)", xp: 525, xpPerHour: 1_000_000, levelReq: 70, itemId: 22124, itemName: "Superior dragon bones" },
-    { name: "Ensouled dragon heads", xp: 1560, xpPerHour: 350_000, levelReq: 93, itemId: 13511, itemName: "Ensouled dragon head" },
+    { name: "Big bones (Gilded altar)", xp: 52.5, xpPerHour: 200_000, levelReq: 1, itemId: 532, itemName: "Big bones", intensity: "low", ironmanViable: true },
+    { name: "Dragon bones (Gilded altar)", xp: 252, xpPerHour: 600_000, levelReq: 1, itemId: 536, itemName: "Dragon bones", intensity: "low" },
+    { name: "Dagannoth bones (Gilded altar)", xp: 437.5, xpPerHour: 800_000, levelReq: 1, itemId: 6729, itemName: "Dagannoth bones", intensity: "low" },
+    { name: "Superior dragon bones (Gilded altar)", xp: 525, xpPerHour: 1_000_000, levelReq: 70, itemId: 22124, itemName: "Superior dragon bones", intensity: "low" },
+    { name: "Ensouled dragon heads", xp: 1560, xpPerHour: 350_000, levelReq: 93, itemId: 13511, itemName: "Ensouled dragon head", intensity: "medium", ironmanViable: true },
+    { name: "Ectofuntus (Dragon bones)", xp: 288, xpPerHour: 250_000, levelReq: 1, itemId: 536, itemName: "Dragon bones", intensity: "medium", ironmanViable: true },
+    { name: "Chaos altar (Dragon bones)", xp: 252, xpPerHour: 500_000, levelReq: 1, itemId: 536, itemName: "Dragon bones", intensity: "high" },
+    { name: "Wyvern bones (Gilded altar)", xp: 315, xpPerHour: 700_000, levelReq: 1, itemId: 6812, itemName: "Wyvern bones", intensity: "low" },
   ],
   Magic: [
-    { name: "High Level Alchemy", xp: 65, xpPerHour: 78_000, levelReq: 55 },
-    { name: "Burst/Barrage (MM2)", xp: 170, xpPerHour: 250_000, levelReq: 70 },
-    { name: "Enchant bolts", xp: 87, xpPerHour: 100_000, levelReq: 4 },
-    { name: "Tan Leather", xp: 81, xpPerHour: 130_000, levelReq: 78 },
-    { name: "String Jewellery", xp: 83, xpPerHour: 140_000, levelReq: 80 },
-    { name: "Surge spells", xp: 80, xpPerHour: 70_000, levelReq: 81 },
+    { name: "Splashing", xp: 11.5, xpPerHour: 12_000, levelReq: 1, intensity: "afk", ironmanViable: true },
+    { name: "High Level Alchemy", xp: 65, xpPerHour: 78_000, levelReq: 55, intensity: "low", ironmanViable: true },
+    { name: "Burst/Barrage (MM2)", xp: 170, xpPerHour: 250_000, levelReq: 70, intensity: "medium" },
+    { name: "Burst/Barrage (Slayer)", xp: 150, xpPerHour: 200_000, levelReq: 70, intensity: "medium", ironmanViable: true },
+    { name: "Enchant bolts", xp: 87, xpPerHour: 100_000, levelReq: 4, intensity: "low", ironmanViable: true },
+    { name: "Tan Leather", xp: 81, xpPerHour: 130_000, levelReq: 78, intensity: "low" },
+    { name: "Plank Make", xp: 90, xpPerHour: 140_000, levelReq: 86, intensity: "low", ironmanViable: true },
+    { name: "String Jewellery", xp: 83, xpPerHour: 140_000, levelReq: 80, intensity: "low" },
+    { name: "Surge spells", xp: 80, xpPerHour: 70_000, levelReq: 81, intensity: "medium", ironmanViable: true },
   ],
   Runecraft: [
-    { name: "Guardians of the Rift", xp: 55, xpPerHour: 50_000, levelReq: 27 },
-    { name: "Lava runes", xp: 26, xpPerHour: 70_000, levelReq: 23 },
-    { name: "Blood runes (true altar)", xp: 24, xpPerHour: 40_000, levelReq: 77 },
-    { name: "ZMI altar", xp: 40, xpPerHour: 55_000, levelReq: 1 },
+    { name: "Guardians of the Rift", xp: 55, xpPerHour: 50_000, levelReq: 27, intensity: "medium", ironmanViable: true },
+    { name: "Lava runes", xp: 26, xpPerHour: 70_000, levelReq: 23, intensity: "high" },
+    { name: "Blood runes (true altar)", xp: 24, xpPerHour: 40_000, levelReq: 77, intensity: "low", ironmanViable: true },
+    { name: "ZMI altar", xp: 40, xpPerHour: 55_000, levelReq: 1, intensity: "medium", ironmanViable: true },
+    { name: "Abyss (Nature runes)", xp: 9, xpPerHour: 25_000, levelReq: 44, intensity: "medium", ironmanViable: true },
+    { name: "Wrath runes", xp: 8, xpPerHour: 20_000, levelReq: 95, intensity: "medium", ironmanViable: true },
+    { name: "Death runes (Abyss)", xp: 10, xpPerHour: 30_000, levelReq: 65, intensity: "medium", ironmanViable: true },
   ],
   Hitpoints: [
-    { name: "Any combat (1/3 of combat XP)", xp: 13, xpPerHour: 15_000, levelReq: 1 },
-    { name: "Nightmare Zone", xp: 27, xpPerHour: 27_000, levelReq: 70 },
+    { name: "Any combat (1/3 of combat XP)", xp: 13, xpPerHour: 15_000, levelReq: 1, intensity: "low", ironmanViable: true },
+    { name: "Nightmare Zone", xp: 27, xpPerHour: 27_000, levelReq: 70, intensity: "afk", ironmanViable: true },
   ],
   Crafting: [
     { name: "Gold bracelets", xp: 25, xpPerHour: 60_000, levelReq: 7, itemId: 2357, itemName: "Gold bar" },

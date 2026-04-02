@@ -33,6 +33,10 @@ import SourceAttribution from "../../components/SourceAttribution";
 import { useNavigation } from "../../lib/NavigationContext";
 import WikiImage from "../../components/WikiImage";
 import StructuredSection from "./StructuredSection";
+import BossMetaCard from "./components/BossMetaCard";
+import { BOSS_METADATA } from "../../lib/data/boss-metadata";
+import { fetchDropsForMonster, type WikiDrop } from "../../lib/api/drops";
+import DropTable from "../../components/DropTable";
 
 interface Props {
   hiscores?: HiscoreData | null;
@@ -117,6 +121,7 @@ export default function BossGuide({ hiscores }: Props) {
   const [lootKillsPerHour, setLootKillsPerHour] = useState(20);
   const [loading, setLoading] = useState(false);
   const [dropsLoading, setDropsLoading] = useState(false);
+  const [wikiDrops, setWikiDrops] = useState<WikiDrop[]>([]);
   const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
   const [itemMap, setItemMap] = useState<Map<string, number>>(new Map());
   const activeRequest = useRef(0);
@@ -260,15 +265,18 @@ export default function BossGuide({ hiscores }: Props) {
     setLoading(true);
     setDropsLoading(true);
     setDropCategories([]);
+    setWikiDrops([]);
     const requestId = ++activeRequest.current;
     try {
-      const [nextGuide, nextDrops] = await Promise.all([
+      const [nextGuide, nextDrops, nextWikiDrops] = await Promise.all([
         fetchBossGuideDocument(boss.wikiPage),
         fetchDropTable(boss.name).catch(() => ({ categories: [] })),
+        fetchDropsForMonster(boss.name).then((t) => t.drops).catch(() => [] as WikiDrop[]),
       ]);
       if (requestId === activeRequest.current) {
         setGuide(nextGuide);
         setDropCategories(nextDrops.categories);
+        setWikiDrops(nextWikiDrops);
       }
     } finally {
       if (requestId === activeRequest.current) {
@@ -550,6 +558,17 @@ export default function BossGuide({ hiscores }: Props) {
           ) : null}
 
           {selectedBoss && !loading && activeTab === "guide" && guide && guide.sections.length > 0 ? (
+            <div>
+              {BOSS_METADATA[selectedBoss.name] && (
+                <BossMetaCard
+                  meta={BOSS_METADATA[selectedBoss.name]}
+                  combatLevel={selectedBoss.combatLevel}
+                  hitpoints={selectedBoss.hitpoints}
+                  maxHit={selectedBoss.maxHit}
+                  weakness={selectedBoss.weakness}
+                  hiscores={hiscores}
+                />
+              )}
             <div className="grid gap-4 xl:grid-cols-[220px_minmax(0,1fr)]">
               <aside className="h-fit xl:sticky xl:top-6">
                 <div className="mb-2 px-2 text-[10px] uppercase tracking-[0.2em] text-text-secondary/45">
@@ -596,6 +615,7 @@ export default function BossGuide({ hiscores }: Props) {
                 ))}
               </div>
             </div>
+            </div>
           ) : null}
 
           {selectedBoss && !loading && activeTab === "guide" && guide && guide.sections.length === 0 ? (
@@ -628,6 +648,15 @@ export default function BossGuide({ hiscores }: Props) {
                 <div className="py-6 text-sm text-text-secondary">
                   Loading drop table...
                 </div>
+              ) : wikiDrops.length > 0 ? (
+                <DropTable
+                  drops={wikiDrops}
+                  prices={prices}
+                  itemMap={itemMap}
+                  killsPerHour={lootKillsPerHour}
+                  onKillsPerHourChange={setLootKillsPerHour}
+                  showProfit
+                />
               ) : dropCategories.length > 0 ? (
                 <div className="space-y-4">
                   {bossLootTable ? (

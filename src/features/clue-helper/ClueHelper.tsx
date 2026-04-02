@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ClueEntry, ClueTier, ClueType } from "../../lib/data/clues";
 import { useDebounce } from "../../hooks/useDebounce";
+import EmptyState from "../../components/EmptyState";
+import { NAV_ICONS } from "../../lib/sprites";
 
 const TYPES: (ClueType | "All")[] = ["All", "Anagram", "Cipher", "Coordinate", "Cryptic", "Map", "Emote"];
 const TIERS: (ClueTier | "All")[] = ["All", "Beginner", "Easy", "Medium", "Hard", "Elite", "Master"];
@@ -123,9 +125,11 @@ export default function ClueHelper() {
       </div>
 
       {filtered.length === 0 && (
-        <p className="text-sm text-text-secondary text-center py-8">
-          No clues found. Try a different search or filter.
-        </p>
+        <EmptyState
+          icon={NAV_ICONS["clue-helper"]}
+          title="No clues found"
+          description="Try a different search or filter."
+        />
       )}
     </div>
   );

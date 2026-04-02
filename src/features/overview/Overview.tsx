@@ -6,10 +6,25 @@ import { combatLevel } from "../../lib/formulas/combat";
 import { SKILL_ICONS, NAV_ICONS, bossIconSmall, bossIcon, itemIcon } from "../../lib/sprites";
 import { useNavigation } from "../../lib/NavigationContext";
 import WikiImage from "../../components/WikiImage";
+import { TRAINING_METHODS } from "../../lib/data/training-methods";
 
 interface Props {
   hiscores: HiscoreData;
   rsn: string;
+}
+
+function hoursTo99(skillName: string, currentXp: number): string | null {
+  const methods = TRAINING_METHODS[skillName];
+  if (!methods || methods.length === 0) return null;
+  const targetXp = xpForLevel(99);
+  const xpNeeded = targetXp - currentXp;
+  if (xpNeeded <= 0) return null;
+  const best = methods.reduce((a, b) => ((b.xpPerHour ?? 0) > (a.xpPerHour ?? 0) ? b : a));
+  if (!best.xpPerHour || best.xpPerHour <= 0) return null;
+  const hours = xpNeeded / best.xpPerHour;
+  if (hours < 1) return `${Math.ceil(hours * 60)}m`;
+  if (hours < 100) return `${hours.toFixed(0)}h`;
+  return `${Math.round(hours)}h`;
 }
 
 const SKILL_ORDER = [
@@ -222,12 +237,20 @@ export default function Overview({ hiscores, rsn }: Props) {
               </div>
               <div className="flex items-center gap-2">
                 {skill.level < 99 ? (
-                  <div className="w-16 bg-bg-tertiary rounded-full h-1.5">
-                    <div
-                      className="bg-accent rounded-full h-1.5"
-                      style={{ width: `${Math.min(100, progress)}%` }}
-                    />
-                  </div>
+                  <>
+                    {(() => {
+                      const h = hoursTo99(skillName, skill.xp);
+                      return h ? (
+                        <span className="text-[10px] text-text-secondary/50 tabular-nums">{h}</span>
+                      ) : null;
+                    })()}
+                    <div className="w-12 bg-bg-tertiary rounded-full h-1.5">
+                      <div
+                        className="bg-accent rounded-full h-1.5"
+                        style={{ width: `${Math.min(100, progress)}%` }}
+                      />
+                    </div>
+                  </>
                 ) : (
                   <span className="text-[10px] text-success">MAX</span>
                 )}

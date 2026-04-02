@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import DOMPurify from "dompurify";
 import { apiFetch } from "../../lib/api/fetch";
 import { isTauri } from "../../lib/env";
+import EmptyState from "../../components/EmptyState";
+import { NAV_ICONS } from "../../lib/sprites";
 
 interface NewsPost {
   title: string;
@@ -330,15 +332,18 @@ export default function News() {
         {filterButtons}
 
         {loading && (
-          <p className="text-sm text-text-secondary">Loading news...</p>
+          <EmptyState
+            icon={NAV_ICONS.news}
+            title="Loading news..."
+          />
         )}
 
         {!loading && filtered.length === 0 && (
-          <p className="text-sm text-text-secondary">
-            {posts.length === 0
-              ? "Could not load news. Try again later."
-              : "No posts match this filter."}
-          </p>
+          <EmptyState
+            icon={NAV_ICONS.news}
+            title={posts.length === 0 ? "Could not load news" : "No posts match this filter"}
+            description={posts.length === 0 ? "Try again later." : "Try a different filter."}
+          />
         )}
 
         <div className="space-y-1.5">
@@ -384,7 +389,10 @@ export default function News() {
         </div>
 
         {articleLoading && (
-          <p className="text-sm text-text-secondary">Loading article...</p>
+          <EmptyState
+            icon={NAV_ICONS.news}
+            title="Loading article..."
+          />
         )}
 
         {!articleLoading && articleHtml && (

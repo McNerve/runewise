@@ -1,23 +1,29 @@
-import DOMPurify from "dompurify";
 import { fetchJson } from "../api/client";
 import { getCached, setCache } from "../api/cache";
-import { isTauri } from "../env";
 import type { WikiGuideTemplate } from "./blocks";
 import {
   classifyWikiEntityKind,
   classifyWikiPage as classifyWikiPageInternal,
   type WikiEntityKind,
 } from "./classify";
+import {
+  WIKI_API,
+  WIKI_PARSE_FLAGS,
+  slugify,
+  cleanValue,
+  normalizeImages,
+  stripUnsafeNodes,
+  sanitizeHtml,
+  extractSummary,
+  resolveWikiPageFromHref,
+  type WikiTextResponse,
+} from "./helpers";
 
+export { resolveWikiPageFromHref } from "./helpers";
 export type { WikiEntityKind } from "./classify";
-
-const WIKI_API = isTauri
-  ? "https://oldschool.runescape.wiki/api.php"
-  : "/api/wiki-content";
 
 const LOOKUP_TTL = 60 * 60 * 1000;
 const MAX_SECTIONS = 6;
-const WIKI_PARSE_FLAGS = "format=json&redirects=1";
 const IGNORED_SECTION_PATTERNS = [
   "changes",
   "history",
@@ -32,14 +38,6 @@ interface WikiLookupApiSection {
   number: string;
   line: string;
   level: string;
-}
-
-interface WikiTextResponse {
-  parse?: {
-    text?: {
-      "*": string;
-    };
-  };
 }
 
 export interface WikiLookupSection {
@@ -67,152 +65,8 @@ export interface WikiLookupDocument {
   fetchedAt: number;
 }
 
-export function resolveWikiPageFromHref(href: string): string | null {
-  if (!href || href.startsWith("#")) return null;
-
-  try {
-    const base = href.startsWith("http")
-      ? new URL(href)
-      : new URL(href, "https://oldschool.runescape.wiki");
-
-    if (base.hostname !== "oldschool.runescape.wiki") return null;
-    if (!base.pathname.startsWith("/w/")) return null;
-
-    const page = decodeURIComponent(base.pathname.replace(/^\/w\//, ""))
-      .replace(/_/g, " ")
-      .trim();
-
-    if (!page || page.startsWith("File:") || page.startsWith("Special:")) {
-      return null;
-    }
-
-    return page;
-  } catch {
-    return null;
-  }
-}
-
-function buildWikiAppHref(page: string): string {
-  const params = new URLSearchParams({
-    page,
-    query: page,
-  });
-  return `#wiki?${params.toString()}`;
-}
-
-function slugify(input: string): string {
-  return input
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-}
-
 export async function classifyWikiPage(page: string): Promise<WikiEntityKind> {
   return classifyWikiEntityKind(page);
-}
-
-function normalizeImages(root: Element): void {
-  root.querySelectorAll("img").forEach((img) => {
-    const dataSrc = img.getAttribute("data-src");
-    if (dataSrc) {
-      img.setAttribute("src", dataSrc);
-      img.removeAttribute("data-src");
-    }
-
-    const src = img.getAttribute("src") || "";
-    if (src.startsWith("//")) {
-      img.setAttribute("src", `https:${src}`);
-    } else if (src.startsWith("/")) {
-      img.setAttribute("src", `https://oldschool.runescape.wiki${src}`);
-    }
-
-    img.removeAttribute("srcset");
-    img.removeAttribute("data-file-width");
-    img.removeAttribute("data-file-height");
-    img.setAttribute("loading", "lazy");
-  });
-}
-
-function sanitizeHtml(root: Element): string {
-  return DOMPurify.sanitize(root.innerHTML.trim(), {
-    ALLOWED_TAGS: [
-      "p",
-      "ul",
-      "ol",
-      "li",
-      "table",
-      "thead",
-      "tbody",
-      "tr",
-      "th",
-      "td",
-      "strong",
-      "em",
-      "b",
-      "i",
-      "br",
-      "img",
-      "blockquote",
-      "details",
-      "summary",
-      "h4",
-      "h5",
-      "code",
-      "a",
-    ],
-    ALLOWED_ATTR: [
-      "src",
-      "alt",
-      "loading",
-      "colspan",
-      "rowspan",
-      "href",
-      "target",
-      "rel",
-      "data-wiki-page",
-    ],
-  });
-}
-
-function normalizeLinks(root: Element): void {
-  root.querySelectorAll("a").forEach((link) => {
-    const href = link.getAttribute("href") ?? "";
-    const internalPage = resolveWikiPageFromHref(href);
-
-    if (internalPage) {
-      link.setAttribute("href", buildWikiAppHref(internalPage));
-      link.setAttribute("data-wiki-page", internalPage);
-      link.removeAttribute("target");
-      link.removeAttribute("rel");
-      return;
-    }
-
-    if (href.startsWith("//")) {
-      link.setAttribute("href", `https:${href}`);
-    } else if (href.startsWith("/")) {
-      link.setAttribute("href", `https://oldschool.runescape.wiki${href}`);
-    }
-
-    link.setAttribute("target", "_blank");
-    link.setAttribute("rel", "noopener noreferrer");
-  });
-}
-
-function stripUnsafeNodes(root: Element): void {
-  root
-    .querySelectorAll(
-      "script, style, sup.reference, .mw-editsection, .navbox, .catlinks, .printfooter, .noprint, iframe, object, embed, form, .toc, #toc, [role='navigation'], .mw-headline-anchor, .infobox-switch-resources, .navigation-not-searchable, .advanced-data, .smwfact, .redirectMsg, .mw-collapsible"
-    )
-    .forEach((element) => element.remove());
-
-  root.querySelectorAll("*").forEach((element) => {
-    for (const attr of [...element.attributes]) {
-      if (attr.name.startsWith("on")) element.removeAttribute(attr.name);
-    }
-  });
-
-  normalizeLinks(root);
-  normalizeImages(root);
 }
 
 function collectRelatedPages(root: Element, currentTitle: string): string[] {
@@ -230,17 +84,6 @@ function collectRelatedPages(root: Element, currentTitle: string): string[] {
   });
 
   return related;
-}
-
-function extractSummary(root: Element): string | null {
-  const paragraph = Array.from(root.querySelectorAll("p")).find(
-    (node) => (node.textContent ?? "").trim().length > 80
-  );
-  return paragraph?.textContent?.trim() ?? null;
-}
-
-function cleanValue(input: string): string {
-  return input.replace(/\s+/g, " ").trim();
 }
 
 function parseLead(rawHtml: string, title: string) {
@@ -290,7 +133,7 @@ function parseLead(rawHtml: string, title: string) {
   stripUnsafeNodes(content);
 
   return {
-    summary: extractSummary(content),
+    summary: extractSummary(content, 80),
     leadHtml: sanitizeHtml(content),
     infoboxTitle,
     infoboxImage,
