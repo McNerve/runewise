@@ -27,6 +27,7 @@ const Market = lazy(() => import("../features/market/Market"));
 const PlayerLookup = lazy(() => import("../features/player-lookup/PlayerLookup"));
 const Loot = lazy(() => import("../features/loot/Loot"));
 const Progress = lazy(() => import("../features/progress/Progress"));
+const GearCompare = lazy(() => import("../features/gear-compare/GearCompare"));
 
 interface AppViewContext {
   hiscores: {
@@ -63,6 +64,7 @@ export const VIEW_RENDERERS: Record<View, ViewRenderer> = {
   news: renderComponent(News),
   "pet-calc": ({ hiscores }) => <PetCalculator hiscores={hiscores.data} />,
   "dps-calc": ({ hiscores }) => <DpsCalculator hiscores={hiscores.data} />,
+  "gear-compare": renderComponent(GearCompare),
   watchlist: renderComponent(Watchlist),
   timers: renderComponent(FarmTimers),
   "money-making": ({ hiscores }) => <MoneyMaking hiscores={hiscores.data} />,

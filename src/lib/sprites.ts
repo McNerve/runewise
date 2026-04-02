@@ -118,6 +118,7 @@ export const NAV_ICONS: Record<string, string> = {
   slayer: `${WIKI_IMG}/Slayer_icon.png`,
   news: `${WIKI_IMG}/Newspaper.png`,
   "dps-calc": `${WIKI_IMG}/Dragon_claws_detail.png`,
+  "gear-compare": `${WIKI_IMG}/Armour_case.png`,
   watchlist: `${WIKI_IMG}/Platinum_token_detail.png`,
   timers: `${WIKI_IMG}/Farming_icon.png`,
   stars: `${WIKI_IMG}/Stardust.png`,

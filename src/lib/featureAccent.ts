@@ -7,6 +7,7 @@ const FEATURE_ACCENTS: Record<View, string> = {
   tracker: "#34d399",
   "skill-calc": "#c084fc",
   "dps-calc": "#a78bfa",
+  "gear-compare": "#818cf8",
   "dry-calc": "#f59e0b",
   "pet-calc": "#f472b6",
   bosses: "#f97316",

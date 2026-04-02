@@ -55,6 +55,14 @@ export const FEATURE_REGISTRY = {
     search: true,
     aliases: ["dry", "drop chance", "rng"],
   },
+  "gear-compare": {
+    title: "Gear Compare",
+    navLabel: "Gear Compare",
+    family: "Tools",
+    sidebar: true,
+    search: true,
+    aliases: ["gear", "equipment", "compare", "bis", "best in slot"],
+  },
   "pet-calc": {
     title: "Pet Calculator",
     navLabel: "Pet Calc",
