@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import type { HiscoreData } from "../../lib/api/hiscores";
-import { generatePlan } from "../../lib/formulas/trainingPlan";
+import { generatePlan, type TrainingPreference } from "../../lib/formulas/trainingPlan";
 import { formatGp } from "../../lib/format";
 import { SKILL_ICONS } from "../../lib/sprites";
 
@@ -35,8 +35,15 @@ interface Props {
   hiscores: HiscoreData | null;
 }
 
+const PREFERENCES: { id: TrainingPreference; label: string; desc: string }[] = [
+  { id: "fastest", label: "Fastest XP", desc: "Maximizes XP/hr regardless of effort" },
+  { id: "afk", label: "AFK Priority", desc: "Prefers low-intensity methods" },
+  { id: "cheapest", label: "Cheapest", desc: "Avoids expensive consumables" },
+];
+
 export default function TrainingPlan({ hiscores }: Props) {
   const [targets, setTargets] = useState<Record<string, number>>({});
+  const [preference, setPreference] = useState<TrainingPreference>("fastest");
 
   const currentLevels = useMemo(() => {
     const levels: Record<string, number> = {};
@@ -47,8 +54,8 @@ export default function TrainingPlan({ hiscores }: Props) {
   }, [hiscores]);
 
   const plan = useMemo(
-    () => generatePlan(currentLevels, targets),
-    [currentLevels, targets]
+    () => generatePlan(currentLevels, targets, preference),
+    [currentLevels, targets, preference]
   );
 
   function setTarget(skill: string, level: number) {
@@ -96,6 +103,25 @@ export default function TrainingPlan({ hiscores }: Props) {
         </button>
       </div>
 
+      {/* Training preference */}
+      <div className="section-kicker mb-2">Training Preference</div>
+      <div className="flex gap-2 mb-5">
+        {PREFERENCES.map((p) => (
+          <button
+            key={p.id}
+            onClick={() => setPreference(p.id)}
+            title={p.desc}
+            className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+              preference === p.id
+                ? "bg-accent text-white"
+                : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+            }`}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
+
       {/* Skill grid */}
       <div className="section-kicker mb-3">Set target levels</div>
       <div className="grid grid-cols-4 gap-2 mb-6">
@@ -107,8 +133,10 @@ export default function TrainingPlan({ hiscores }: Props) {
           return (
             <div
               key={skill}
-              className={`flex items-center gap-2 px-2.5 py-1.5 rounded transition-colors ${
-                hasGap ? "bg-accent/8" : "bg-bg-secondary/50"
+              className={`flex items-center gap-2 px-2.5 py-2 rounded transition-colors border ${
+                hasGap
+                  ? "bg-accent/8 border-accent/20"
+                  : "bg-bg-secondary/50 border-transparent"
               }`}
             >
               <img
@@ -117,7 +145,7 @@ export default function TrainingPlan({ hiscores }: Props) {
                 className="w-4 h-4 shrink-0"
                 onError={(e) => { e.currentTarget.style.display = "none"; }}
               />
-              <span className="text-xs text-text-secondary truncate flex-1">{skill}</span>
+              <span className={`text-xs truncate flex-1 ${hasGap ? "text-text-primary" : "text-text-secondary"}`}>{skill}</span>
               <span className="text-xs text-text-secondary/50 tabular-nums w-5 text-right">
                 {current}
               </span>
@@ -128,7 +156,9 @@ export default function TrainingPlan({ hiscores }: Props) {
                 max={126}
                 value={target}
                 onChange={(e) => setTarget(skill, Math.max(current, Number(e.target.value)))}
-                className="w-10 bg-bg-tertiary border border-border rounded px-1 py-0.5 text-xs text-center tabular-nums"
+                className={`w-10 bg-bg-tertiary border rounded px-1 py-0.5 text-xs text-center tabular-nums ${
+                  hasGap ? "border-accent/30" : "border-border"
+                }`}
               />
             </div>
           );

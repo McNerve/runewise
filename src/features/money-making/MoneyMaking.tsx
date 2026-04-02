@@ -279,10 +279,21 @@ export default function MoneyMaking({ hiscores }: Props) {
 
       {showWiki && (
         <div className="space-y-2 mt-2">
-          {wikiMethods
-            .filter((m) => !search || m.activity.toLowerCase().includes(search.toLowerCase()))
-            .slice(0, 100)
-            .map((method) => (
+          {(() => {
+            let methods = [...wikiMethods];
+            if (category !== "All") {
+              methods = methods.filter((m) => m.category === category);
+            }
+            if (!membersOnly) {
+              methods = methods.filter((m) => !m.members);
+            }
+            if (search.length >= 2) {
+              const s = search.toLowerCase();
+              methods = methods.filter((m) => m.activity.toLowerCase().includes(s));
+            }
+            methods.sort((a, b) => b.profitPerHour - a.profitPerHour);
+            return methods.slice(0, 100);
+          })().map((method) => (
               <div
                 key={method.name}
                 className="py-3 px-3 rounded-lg hover:bg-bg-secondary/50 transition-colors"

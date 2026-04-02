@@ -123,6 +123,40 @@ export interface WomNameChange {
   status: string;
 }
 
+export interface WomCompetition {
+  id: number;
+  title: string;
+  metric: string;
+  type: string;
+  startsAt: string;
+  endsAt: string;
+  participantCount: number;
+  group?: { id: number; name: string };
+}
+
+export interface WomPlayerCompetition {
+  competition: WomCompetition;
+  teamName?: string;
+  progress: { start: number; end: number; gained: number };
+  levels?: { start: number; end: number; gained: number };
+  rank: number;
+}
+
+export async function fetchWomCompetitions(
+  rsn: string
+): Promise<WomPlayerCompetition[]> {
+  try {
+    return await fetchJson<WomPlayerCompetition[]>({
+      url: `${WOM_API}/players/${encodeURIComponent(rsn)}/competitions`,
+      cacheKey: `wom-competitions:${rsn.toLowerCase()}`,
+      ttlMs: ACHIEVEMENTS_TTL,
+      transform: (json) => (Array.isArray(json) ? (json as WomPlayerCompetition[]) : []),
+    });
+  } catch {
+    return [];
+  }
+}
+
 export async function fetchWomNameChanges(
   rsn: string
 ): Promise<WomNameChange[]> {

@@ -80,7 +80,9 @@ export default function ProfitHub() {
       });
     }
 
-    return result;
+    // Deduplicate: prefer Boss Loot entries over Money Method entries for same name
+    const bossNames = new Set(result.filter(e => e.source === "Boss Loot").map(e => e.name.toLowerCase()));
+    return result.filter(e => !(e.source === "Money Method" && e.category === "Combat" && bossNames.has(e.name.toLowerCase())));
   }, [prices]);
 
   const filtered = useMemo(() => {

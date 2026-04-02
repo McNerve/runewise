@@ -89,16 +89,32 @@ export default function SlayerHelper() {
         ))}
       </div>
 
-      <div className="text-xs text-text-secondary mb-4">
-        Combat {selectedMaster.combatRequired}+ required
-        {selectedMaster.slayerRequired > 1 &&
-          ` · Slayer ${selectedMaster.slayerRequired}+`}
-        {" · "}
-        {selectedMaster.location}
+      <div className="flex items-center justify-between mb-4">
+        <div className="text-xs text-text-secondary">
+          Combat {selectedMaster.combatRequired}+ required
+          {selectedMaster.slayerRequired > 1 &&
+            ` · Slayer ${selectedMaster.slayerRequired}+`}
+          {" · "}
+          {selectedMaster.location}
+          {blockedTasks.size > 0 && (
+            <span className="text-danger ml-2">
+              {blockedTasks.size} blocked
+            </span>
+          )}
+        </div>
         {blockedTasks.size > 0 && (
-          <span className="text-danger ml-2">
-            {blockedTasks.size} blocked
-          </span>
+          <button
+            onClick={() => {
+              setBlockedMap((prev) => {
+                const updated = { ...prev, [selectedMaster.name]: [] };
+                localStorage.setItem(BLOCKED_KEY, JSON.stringify(updated));
+                return updated;
+              });
+            }}
+            className="text-xs text-text-secondary hover:text-text-primary transition-colors"
+          >
+            Clear All Blocks
+          </button>
         )}
       </div>
 

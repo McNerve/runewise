@@ -1,9 +1,26 @@
 import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from "react";
-import { PATCH_TYPES, PATCH_CATEGORIES, PRESETS } from "../../lib/data/farm-timers";
+import { PATCH_TYPES, PATCH_CATEGORIES, PRESETS, type PatchType } from "../../lib/data/farm-timers";
 import { loadJSON, saveJSON } from "../../lib/localStorage";
 import { sendNotification } from "../../lib/notify";
 import { WIKI_IMG } from "../../lib/sprites";
 import EmptyState from "../../components/EmptyState";
+
+// Categories where selecting a specific crop variety matters for timers
+const CONFIGURABLE_CATEGORIES = new Set(["Trees", "Fruit Trees", "Hardwood", "Special"]);
+
+function getCategoryForPatch(name: string): string | undefined {
+  return PATCH_TYPES.find((p) => p.name === name)?.category;
+}
+
+function isConfigurablePreset(patches: string[]): boolean {
+  return patches.some((p) => CONFIGURABLE_CATEGORIES.has(getCategoryForPatch(p) ?? ""));
+}
+
+interface PresetSlot {
+  originalPatch: string;
+  selectedPatch: string;
+  alternatives: PatchType[];
+}
 
 const FarmProfit = lazy(() => import("./FarmProfit"));
 
@@ -199,6 +216,7 @@ export default function FarmTimers() {
   const [now, setNow] = useState(() => Date.now());
   const [selectedPatch, setSelectedPatch] = useState(PATCH_TYPES[0].name);
   const [tab, setTab] = useState<Tab>("timers");
+  const [configuringPreset, setConfiguringPreset] = useState<{ name: string; slots: PresetSlot[] } | null>(null);
 
   useEffect(() => { saveJSON(TIMERS_KEY, timers); }, [timers]);
 
@@ -329,13 +347,79 @@ export default function FarmTimers() {
             {PRESETS.map((preset) => (
               <button
                 key={preset.name}
-                onClick={() => addPreset(preset.patches)}
+                onClick={() => {
+                  if (isConfigurablePreset(preset.patches)) {
+                    const slots: PresetSlot[] = preset.patches.map((patchName) => {
+                      const category = getCategoryForPatch(patchName);
+                      const alternatives = category
+                        ? PATCH_TYPES.filter((p) => p.category === category)
+                        : [PATCH_TYPES.find((p) => p.name === patchName)].filter(Boolean) as PatchType[];
+                      return { originalPatch: patchName, selectedPatch: patchName, alternatives };
+                    });
+                    setConfiguringPreset({ name: preset.name, slots });
+                  } else {
+                    addPreset(preset.patches);
+                  }
+                }}
                 className="px-3 py-1.5 text-xs font-medium bg-bg-secondary border border-border rounded-lg hover:bg-bg-tertiary transition-colors"
               >
                 {preset.name}
               </button>
             ))}
           </div>
+
+          {configuringPreset && (
+            <div className="mb-4 rounded-xl border border-border bg-bg-secondary p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">{configuringPreset.name} — Configure Patches</span>
+                <button
+                  onClick={() => setConfiguringPreset(null)}
+                  className="text-text-secondary/50 hover:text-text-primary text-xs transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+              <div className="space-y-2">
+                {configuringPreset.slots.map((slot, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <img
+                      src={`${WIKI_IMG}/${PATCH_TYPES.find((p) => p.name === slot.selectedPatch)?.icon ?? ""}`}
+                      alt=""
+                      className="w-5 h-5 shrink-0"
+                      onError={(e) => { e.currentTarget.style.display = "none"; }}
+                    />
+                    <select
+                      value={slot.selectedPatch}
+                      onChange={(e) => {
+                        setConfiguringPreset((prev) => {
+                          if (!prev) return prev;
+                          const updated = [...prev.slots];
+                          updated[i] = { ...updated[i], selectedPatch: e.target.value };
+                          return { ...prev, slots: updated };
+                        });
+                      }}
+                      className="flex-1 bg-bg-tertiary border border-border rounded px-2 py-1 text-xs"
+                    >
+                      {slot.alternatives.map((alt) => (
+                        <option key={alt.name} value={alt.name}>
+                          {alt.name} ({formatDuration(alt.growthMinutes)})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
+              </div>
+              <button
+                onClick={() => {
+                  addPreset(configuringPreset.slots.map((s) => s.selectedPatch));
+                  setConfiguringPreset(null);
+                }}
+                className="w-full py-1.5 text-xs font-medium bg-accent text-white rounded-lg hover:bg-accent-hover transition-colors"
+              >
+                Start {configuringPreset.slots.length} Timers
+              </button>
+            </div>
+          )}
 
           <div className="flex gap-2 mb-6">
             <select

@@ -13,6 +13,12 @@ const TYPE_COLORS: Record<string, string> = {
   boss: "border-warning/30 bg-warning/5",
 };
 
+const TYPE_BADGE: Record<string, string> = {
+  combat: "bg-danger/15 text-danger",
+  puzzle: "bg-accent/15 text-accent",
+  boss: "bg-warning/15 text-warning",
+};
+
 const TYPE_LABELS: Record<string, string> = {
   combat: "Combat",
   puzzle: "Puzzle",
@@ -31,27 +37,34 @@ function RoomCard({
   return (
     <button
       onClick={onToggle}
-      className={`w-full text-left rounded-lg border p-3 transition-colors ${TYPE_COLORS[room.type] ?? "border-border"}`}
+      className={`w-full text-left rounded-lg border p-4 transition-colors ${TYPE_COLORS[room.type] ?? "border-border"} hover:brightness-110`}
     >
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-sm font-medium">{room.name}</span>
-        <span className="text-[10px] uppercase tracking-wider text-text-secondary/50">
+      <div className="flex items-center justify-between gap-3 mb-2">
+        <span className="text-sm font-semibold">{room.name}</span>
+        <span className={`text-[10px] font-medium px-2 py-0.5 rounded uppercase tracking-wide shrink-0 ${TYPE_BADGE[room.type] ?? "bg-bg-tertiary text-text-secondary"}`}>
           {TYPE_LABELS[room.type] ?? room.type}
         </span>
       </div>
       <p className="text-xs text-text-secondary leading-relaxed">
         {room.mechanics}
       </p>
-      {expanded && (
-        <div className="mt-2 pt-2 border-t border-border/20">
-          <div className="text-[10px] uppercase tracking-wider text-text-secondary/40 mb-1">
+      <div
+        className={`overflow-hidden transition-all duration-200 ${expanded ? "max-h-40 opacity-100 mt-3" : "max-h-0 opacity-0"}`}
+      >
+        <div className="pt-3 border-t border-border/20">
+          <div className="text-[10px] uppercase tracking-wider text-text-secondary/50 mb-1.5 font-semibold">
             Tips
           </div>
-          <p className="text-xs text-text-secondary/80 leading-relaxed">
+          <p className="text-xs text-text-secondary/85 leading-relaxed">
             {room.tips}
           </p>
         </div>
-      )}
+      </div>
+      <div className="flex items-center justify-end mt-2">
+        <span className="text-[10px] text-text-secondary/40">
+          {expanded ? "▲ collapse" : "▼ tips"}
+        </span>
+      </div>
     </button>
   );
 }
@@ -71,39 +84,53 @@ function RaidContent({
   expandedRoom: string | null;
   onToggleRoom: (name: string) => void;
 }) {
+  const combatRooms = rooms.filter((r) => r.type === "combat");
+  const puzzleRooms = rooms.filter((r) => r.type === "puzzle");
+  const bossRooms = rooms.filter((r) => r.type === "boss");
+
+  const sections = [
+    { label: "Combat", color: "text-danger", rooms: combatRooms },
+    { label: "Puzzle", color: "text-accent", rooms: puzzleRooms },
+    { label: "Final Boss", color: "text-warning", rooms: bossRooms },
+  ].filter((s) => s.rooms.length > 0);
+
   return (
     <div className="space-y-6">
-      <div>
-        <div className="section-kicker mb-3">Rooms ({rooms.length})</div>
-        <div className="grid grid-cols-1 gap-2">
-          {rooms.map((room) => (
-            <RoomCard
-              key={room.name}
-              room={room}
-              expanded={expandedRoom === room.name}
-              onToggle={() => onToggleRoom(room.name)}
-            />
-          ))}
+      {sections.map(({ label, color, rooms: sectionRooms }) => (
+        <div key={label}>
+          <div className={`section-kicker mb-3 ${color}`}>
+            {label} ({sectionRooms.length})
+          </div>
+          <div className="grid grid-cols-1 gap-2">
+            {sectionRooms.map((room) => (
+              <RoomCard
+                key={room.name}
+                room={room}
+                expanded={expandedRoom === room.name}
+                onToggle={() => onToggleRoom(room.name)}
+              />
+            ))}
+          </div>
         </div>
-      </div>
+      ))}
 
       <div>
-        <div className="section-kicker mb-3">Unique Rewards</div>
+        <div className="section-kicker mb-2">Unique Rewards</div>
         <p className="text-xs text-text-secondary mb-3">{lootDescription}</p>
-        <div className="space-y-1">
+        <div className="grid grid-cols-1 gap-1">
           {uniques.map((item) => (
             <div
               key={item.name}
-              className="flex items-center gap-3 py-1.5 border-b border-border/15"
+              className="flex items-center gap-3 py-2 border-b border-border/10"
             >
               <img
                 src={itemIcon(item.name)}
                 alt=""
-                className="w-5 h-5 shrink-0"
+                className="w-6 h-6 shrink-0 object-contain"
                 onError={(e) => { e.currentTarget.style.display = "none"; }}
               />
-              <span className="text-sm flex-1">{item.name}</span>
-              <span className="text-xs text-text-secondary tabular-nums">
+              <span className="text-sm flex-1 font-medium">{item.name}</span>
+              <span className="text-xs text-text-secondary tabular-nums text-right">
                 {item.rateDescription}
               </span>
             </div>
@@ -114,21 +141,30 @@ function RaidContent({
   );
 }
 
+const RAID_TABS = [
+  { id: "cox" as const, label: "Chambers of Xeric", short: "CoX", rooms: COX_ROOMS },
+  { id: "tob" as const, label: "Theatre of Blood", short: "ToB", rooms: TOB_ROOMS },
+  { id: "toa" as const, label: "Tombs of Amascut", short: "ToA", rooms: TOA_ROOMS },
+];
+
 export default function Raids() {
   const [tab, setTab] = useState<RaidTab>("cox");
   const [expandedRoom, setExpandedRoom] = useState<string | null>(null);
 
+  const activeRaid = RAID_TABS.find((t) => t.id === tab)!;
+
   return (
     <div>
-      <h2 className="text-xl font-semibold mb-5">Raids</h2>
+      <div className="flex items-baseline gap-3 mb-5">
+        <h2 className="text-xl font-semibold">Raids</h2>
+        <span className="text-xs text-text-secondary">
+          {activeRaid.rooms.length} rooms — {activeRaid.rooms.filter((r) => r.type === "combat").length} combat, {activeRaid.rooms.filter((r) => r.type === "puzzle").length} puzzle, {activeRaid.rooms.filter((r) => r.type === "boss").length} boss
+        </span>
+      </div>
 
       {/* Tabs */}
       <div className="flex gap-2 mb-5">
-        {([
-          { id: "cox" as const, label: "Chambers of Xeric" },
-          { id: "tob" as const, label: "Theatre of Blood" },
-          { id: "toa" as const, label: "Tombs of Amascut" },
-        ]).map((t) => (
+        {RAID_TABS.map((t) => (
           <button
             key={t.id}
             onClick={() => { setTab(t.id); setExpandedRoom(null); }}

@@ -199,6 +199,18 @@ export default function AlchCalculator() {
             </button>
           ))}
         </div>
+        {(minProfit > 0 || minBuyLimit > 0 || membersFilter !== "all") && (
+          <button
+            onClick={() => {
+              setMinProfit(0);
+              setMinBuyLimit(0);
+              setMembersFilter("all");
+            }}
+            className="text-xs text-text-secondary hover:text-text-primary transition-colors self-end pb-2"
+          >
+            Reset Filters
+          </button>
+        )}
       </div>
 
       <p className="text-xs text-text-secondary mb-2">

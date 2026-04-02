@@ -16,6 +16,7 @@ export default function WikiLookup() {
   const [query, setQuery] = useState(params.query ?? "");
   const debouncedQuery = useDebounce(query, 180);
   const [results, setResults] = useState<string[]>([]);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [selectedPage, setSelectedPage] = useState(params.page ?? "");
   const [document, setDocument] = useState<WikiLookupDocument | null>(null);
   const [loadingDocument, setLoadingDocument] = useState(Boolean(params.page));
@@ -132,7 +133,7 @@ export default function WikiLookup() {
   const loadingResults = debouncedQuery.trim().length >= 2 && results.length === 0;
   const visibleResults =
     debouncedQuery.trim().length < 2 ? [] : results;
-  const showResultsPanel = query.trim().length >= 2 || visibleResults.length > 0 || loadingResults;
+  const showResultsPanel = dropdownOpen && (query.trim().length >= 2 || visibleResults.length > 0 || loadingResults);
 
   function openPage(page: string) {
     const nextTrail = selectedPage && selectedPage !== page
@@ -147,6 +148,8 @@ export default function WikiLookup() {
 
     setSelectedPage(page);
     setQuery(page);
+    setDropdownOpen(false);
+    setResults([]);
     setLoadingDocument(true);
     setError(null);
     navigate("wiki", {
@@ -229,7 +232,8 @@ export default function WikiLookup() {
             <input
               type="text"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => { setQuery(e.target.value); setDropdownOpen(true); }}
+              onFocus={() => setDropdownOpen(true)}
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
                   event.preventDefault();

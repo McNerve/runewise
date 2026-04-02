@@ -55,16 +55,12 @@ async function fetchGeoJsonMarkers(): Promise<WikiMapFeature[]> {
   const cached = getCached<WikiMapFeature[]>(GEOJSON_CACHE_KEY, GEOJSON_TTL, { persist: true });
   if (cached) return cached;
 
-  try {
-    const res = await apiFetch(GEOJSON_URL);
-    if (!res.ok) return [];
-    const data = await res.json();
-    const features = (data?.features ?? []) as WikiMapFeature[];
-    setCache(GEOJSON_CACHE_KEY, features, { persist: true });
-    return features;
-  } catch {
-    return [];
-  }
+  const res = await apiFetch(GEOJSON_URL);
+  if (!res.ok) throw new Error(`Failed to load map markers (HTTP ${res.status})`);
+  const data = await res.json();
+  const features = (data?.features ?? []) as WikiMapFeature[];
+  setCache(GEOJSON_CACHE_KEY, features, { persist: true });
+  return features;
 }
 
 // Map wiki icon categories to our marker categories
@@ -93,6 +89,7 @@ export default function WorldMap() {
   );
   const [wikiMarkerCount, setWikiMarkerCount] = useState(0);
   const [showWikiMarkers, setShowWikiMarkers] = useState(true);
+  const [mapError, setMapError] = useState<string | null>(null);
 
   // Initialize map
   useEffect(() => {
@@ -123,45 +120,51 @@ export default function WorldMap() {
     mapInstance.current = map;
 
     // Fetch wiki GeoJSON markers
-    fetchGeoJsonMarkers().then((features) => {
-      if (!wikiLayerRef.current) return;
-      let count = 0;
+    fetchGeoJsonMarkers()
+      .then((features) => {
+        if (!wikiLayerRef.current) return;
+        let count = 0;
 
-      for (const feature of features) {
-        if (feature.geometry.type !== "Point") continue;
-        const [x, y, plane] = feature.geometry.coordinates;
-        if (plane && plane !== 0) continue; // Only surface markers
+        for (const feature of features) {
+          if (feature.geometry.type !== "Point") continue;
+          const [x, y, plane] = feature.geometry.coordinates;
+          if (plane && plane !== 0) continue; // Only surface markers
 
-        const iconFile = feature.properties.icon;
-        const name = feature.properties.name || "";
-        const category = mapIconCategory(iconFile);
+          const iconFile = feature.properties.icon;
+          const name = feature.properties.name || "";
+          const category = mapIconCategory(iconFile);
 
-        if (!category) continue;
-        count++;
+          if (!category) continue;
+          count++;
 
-        const marker = L.circleMarker(gameToLatLng(x, y), {
-          radius: 4,
-          fillColor: MARKER_COLORS[category] ?? "#94a3b8",
-          color: "var(--color-bg-primary)",
-          weight: 1,
-          fillOpacity: 0.7,
-          className: `wiki-marker wiki-cat-${category}`,
-        });
-
-        if (name) {
-          marker.bindTooltip(name, {
-            permanent: false,
-            direction: "top",
-            offset: [0, -6],
-            className: "osrs-map-tooltip",
+          const marker = L.circleMarker(gameToLatLng(x, y), {
+            radius: 4,
+            fillColor: MARKER_COLORS[category] ?? "#94a3b8",
+            color: "var(--color-bg-primary)",
+            weight: 1,
+            fillOpacity: 0.7,
+            className: `wiki-marker wiki-cat-${category}`,
           });
+
+          if (name) {
+            marker.bindTooltip(name, {
+              permanent: false,
+              direction: "top",
+              offset: [0, -6],
+              className: "osrs-map-tooltip",
+            });
+          }
+
+          marker.addTo(wikiLayerRef.current);
         }
 
-        marker.addTo(wikiLayerRef.current);
-      }
-
-      setWikiMarkerCount(count);
-    });
+        setWikiMarkerCount(count);
+      })
+      .catch((err: unknown) => {
+        const message =
+          err instanceof Error ? err.message : "Failed to load map markers";
+        setMapError(message);
+      });
 
     return () => {
       map.remove();
@@ -271,6 +274,20 @@ export default function WorldMap() {
           );
         })}
       </div>
+
+      {/* Map marker error banner */}
+      {mapError && (
+        <div className="flex items-center justify-between mb-2 px-3 py-2 rounded-lg bg-danger/10 border border-danger/20 text-sm text-danger">
+          <span>{mapError}</span>
+          <button
+            onClick={() => setMapError(null)}
+            className="ml-3 text-danger/60 hover:text-danger transition-colors text-xs"
+            aria-label="Dismiss"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Map container */}
       <div

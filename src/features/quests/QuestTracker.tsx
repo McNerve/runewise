@@ -4,8 +4,11 @@ import { fetchAllQuests, type WikiQuest } from "../../lib/api/quests";
 import { type HiscoreData } from "../../lib/api/hiscores";
 import { SKILL_ICONS } from "../../lib/sprites";
 import { formatGp } from "../../lib/format";
+import { loadJSON, saveJSON } from "../../lib/localStorage";
 import ExternalLink from "../../components/ExternalLink";
 import { useNavigation } from "../../lib/NavigationContext";
+
+const COMPLETED_QUESTS_KEY = "runewise_completed_quests";
 
 function wikiToQuest(w: WikiQuest): Quest {
   return {
@@ -52,6 +55,10 @@ export default function QuestTracker({ hiscores }: Props) {
   const [search, setSearch] = useState(params.quest ?? "");
   const [quests, setQuests] = useState<Quest[]>(QUESTS);
   const [wikiQuests, setWikiQuests] = useState<Map<string, WikiQuest>>(new Map());
+  const [completedQuests, setCompletedQuests] = useState<Set<string>>(
+    () => new Set(loadJSON<string[]>(COMPLETED_QUESTS_KEY, []))
+  );
+  const [hideCompleted, setHideCompleted] = useState(false);
 
   useEffect(() => {
     fetchAllQuests().then((fetched) => {
@@ -74,6 +81,7 @@ export default function QuestTracker({ hiscores }: Props) {
 
     if (filter === "available") result = result.filter((q) => q.met);
     if (filter === "locked") result = result.filter((q) => !q.met);
+    if (hideCompleted) result = result.filter((q) => !completedQuests.has(q.quest.name));
     if (diffFilter !== "all")
       result = result.filter((q) => q.quest.difficulty === diffFilter);
     if (search.length >= 2) {
@@ -84,16 +92,46 @@ export default function QuestTracker({ hiscores }: Props) {
     }
 
     return result;
-  }, [questsWithStatus, filter, diffFilter, search]);
+  }, [questsWithStatus, filter, diffFilter, search, hideCompleted, completedQuests]);
 
   const available = questsWithStatus.filter((q) => q.met).length;
   const total = questsWithStatus.length;
 
+  // Quest Points from hiscores (activities array)
+  const hiscoresQp = hiscores?.activities.find(
+    (a) => a.name.toLowerCase().includes("quest")
+  )?.score ?? null;
+
+  const completedCount = completedQuests.size;
+
+  function toggleCompleted(questName: string) {
+    setCompletedQuests((prev) => {
+      const next = new Set(prev);
+      if (next.has(questName)) {
+        next.delete(questName);
+      } else {
+        next.add(questName);
+      }
+      saveJSON(COMPLETED_QUESTS_KEY, [...next]);
+      return next;
+    });
+  }
+
   return (
     <div className="max-w-3xl">
-      <h2 className="text-xl font-semibold mb-1">Quest Tracker</h2>
+      <div className="flex items-start justify-between gap-4 mb-2">
+        <h2 className="text-xl font-semibold">Quest Tracker</h2>
+        <div className="flex flex-col items-end gap-1 text-xs text-text-secondary">
+          {hiscoresQp !== null && (
+            <span>{hiscoresQp} / 300 QP</span>
+          )}
+          {completedCount > 0 && (
+            <span>{completedCount} / {total} marked complete</span>
+          )}
+        </div>
+      </div>
       {hiscores && (
-        <p className="text-xs text-text-secondary mb-4">
+        <p className="text-xs text-text-secondary mb-2">
           {available}/{total} quests available based on your stats
         </p>
       )}
@@ -125,6 +163,15 @@ export default function QuestTracker({ hiscores }: Props) {
             </button>
           ))}
         </div>
+        <label className="flex items-center gap-1.5 cursor-pointer text-xs text-text-secondary select-none">
+          <input
+            type="checkbox"
+            checked={hideCompleted}
+            onChange={(e) => setHideCompleted(e.target.checked)}
+            className="w-3.5 h-3.5 accent-accent"
+          />
+          Hide completed
+        </label>
       </div>
 
       <div className="flex gap-1 mb-4">
@@ -154,11 +201,24 @@ export default function QuestTracker({ hiscores }: Props) {
       </div>
 
       <div className="space-y-1.5">
-        {filtered.map(({ quest, met, missing }) => (
+        {filtered.map(({ quest, met, missing }) => {
+          const isCompleted = completedQuests.has(quest.name);
+          return (
+          <div key={quest.name} className="relative group">
+          <button
+            onClick={(e) => { e.stopPropagation(); toggleCompleted(quest.name); }}
+            title={isCompleted ? "Mark incomplete" : "Mark complete"}
+            className={`absolute left-1 top-1/2 -translate-y-1/2 z-10 w-5 h-5 flex items-center justify-center rounded text-[10px] transition-colors ${
+              isCompleted
+                ? "bg-success/20 text-success"
+                : "opacity-0 group-hover:opacity-100 bg-bg-tertiary text-text-secondary/40 hover:text-text-secondary"
+            }`}
+          >
+            {isCompleted ? "✓" : "○"}
+          </button>
           <ExternalLink
-            key={quest.name}
             href={`https://oldschool.runescape.wiki/w/${encodeURIComponent(quest.name.replace(/ /g, "_"))}`}
-            className="block bg-bg-secondary rounded-lg px-4 py-3 hover:bg-bg-tertiary transition-colors cursor-pointer"
+            className={`block bg-bg-secondary rounded-lg pl-8 pr-4 py-3 hover:bg-bg-tertiary transition-colors cursor-pointer ${isCompleted ? "opacity-60" : ""}`}
           >
             <div className="flex items-center justify-between">
               <div>
@@ -266,7 +326,9 @@ export default function QuestTracker({ hiscores }: Props) {
               );
             })()}
           </ExternalLink>
-        ))}
+          </div>
+          );
+        })}
       </div>
 
       {!hiscores && (

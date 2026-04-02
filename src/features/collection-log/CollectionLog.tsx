@@ -277,6 +277,7 @@ export default function CollectionLog({ rsn }: Props) {
   );
   const [templeLoading, setTempleLoading] = useState(false);
   const [templeSynced, setTempleSynced] = useState<boolean | null>(null);
+  const [templeError, setTempleError] = useState<string | null>(null);
   const [mode, setMode] = useState<Mode>("manual");
 
   useEffect(() => {
@@ -284,26 +285,37 @@ export default function CollectionLog({ rsn }: Props) {
 
     let cancelled = false;
     setTempleLoading(true); // eslint-disable-line react-hooks/set-state-in-effect -- loading state for async fetch
+    setTempleError(null);
 
     (async () => {
-      const [info, clog] = await Promise.all([
-        fetchTemplePlayerInfo(rsn),
-        fetchTempleCollectionLog(rsn),
-      ]);
-      if (cancelled) return;
+      try {
+        const [info, clog] = await Promise.all([
+          fetchTemplePlayerInfo(rsn),
+          fetchTempleCollectionLog(rsn),
+        ]);
+        if (cancelled) return;
 
-      if (!info || !info.clog_synced) {
-        setTempleSynced(false);
+        if (!info || !info.clog_synced) {
+          setTempleSynced(false);
+          setTempleLoading(false);
+          return;
+        }
+
+        setTempleSynced(true);
+        if (clog && Object.keys(clog.categories).length > 0) {
+          setTempleData(clog);
+          setMode("temple");
+        }
         setTempleLoading(false);
-        return;
+      } catch (err: unknown) {
+        if (cancelled) return;
+        const message =
+          err instanceof Error ? err.message : "Failed to reach Temple OSRS";
+        setTempleError(
+          `Failed to reach Temple OSRS. Check your connection and try again. (${message})`
+        );
+        setTempleLoading(false);
       }
-
-      setTempleSynced(true);
-      if (clog && Object.keys(clog.categories).length > 0) {
-        setTempleData(clog);
-        setMode("temple");
-      }
-      setTempleLoading(false);
     })();
 
     return () => {
@@ -346,7 +358,13 @@ export default function CollectionLog({ rsn }: Props) {
         </div>
       )}
 
-      {!templeLoading && rsn && templeSynced === false && (
+      {!templeLoading && templeError && (
+        <div className="text-xs text-danger bg-danger/10 border border-danger/20 rounded px-3 py-2 mb-4">
+          {templeError}
+        </div>
+      )}
+
+      {!templeLoading && !templeError && rsn && templeSynced === false && (
         <div className="text-xs text-text-secondary/50 bg-bg-secondary/50 rounded px-3 py-2 mb-4">
           No Temple collection log found for {rsn}. Sync your account at{" "}
           <span className="text-accent">templeosrs.com</span> to see live data.
