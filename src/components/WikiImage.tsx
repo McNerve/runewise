@@ -8,7 +8,8 @@ interface WikiImageProps {
 }
 
 export default function WikiImage({ src, alt = "", className = "w-4 h-4", fallback }: WikiImageProps) {
-  const [failed, setFailed] = useState(false);
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const failed = failedSrc === src;
 
   if (failed) {
     return fallback ? (
@@ -23,7 +24,7 @@ export default function WikiImage({ src, alt = "", className = "w-4 h-4", fallba
       src={src}
       alt={alt}
       className={className}
-      onError={() => setFailed(true)}
+      onError={() => setFailedSrc(src)}
     />
   );
 }

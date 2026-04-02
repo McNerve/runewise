@@ -55,3 +55,26 @@ export const BOSSES: BossInfo[] = [
 ];
 
 export const BOSS_CATEGORIES = [...new Set(BOSSES.map((b) => b.category))];
+
+export function normalizeBossLookup(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/%27/g, "'")
+    .replace(/^the\s+/, "")
+    .replace(/['’]/g, "")
+    .replace(/_/g, " ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+export function findBossByName(name: string) {
+  const normalized = normalizeBossLookup(name);
+  return BOSSES.find(
+    (boss) =>
+      normalizeBossLookup(boss.name) === normalized ||
+      normalizeBossLookup(
+        decodeURIComponent(boss.wikiPage.split("/")[0]).replace(/_/g, " ")
+      ) === normalized
+  );
+}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { lazy, Suspense, useState, useEffect, useMemo } from "react";
 import {
   searchItems,
   fetchLatestPrices,
@@ -8,110 +8,22 @@ import {
 import {
   fetchTimeseries,
   type TimeseriesPoint,
-  type Timestep,
 } from "../../lib/api/ge-timeseries";
 import { useDebounce } from "../../hooks/useDebounce";
 import { formatGp } from "../../lib/format";
-import Chart from "../../components/Chart";
-import type {
-  LineData,
-  CandlestickData,
-  HistogramData,
-  Time,
-  UTCTimestamp,
-} from "lightweight-charts";
 import { useNavigation } from "../../lib/NavigationContext";
+import {
+  PERIODS,
+  PERIOD_TIMESTEP,
+  filterByPeriod,
+  toCandlestickData,
+  toLineData,
+  toVolumeData,
+  type ChartMode,
+  type Period,
+} from "../market/shared";
 
-type Period = "1D" | "1W" | "1M" | "3M" | "6M" | "1Y";
-
-const PERIODS: Period[] = ["1D", "1W", "1M", "3M", "6M", "1Y"];
-
-const PERIOD_TIMESTEP: Record<Period, Timestep> = {
-  "1D": "5m",
-  "1W": "1h",
-  "1M": "6h",
-  "3M": "24h",
-  "6M": "24h",
-  "1Y": "24h",
-};
-
-const PERIOD_SECONDS: Record<Period, number> = {
-  "1D": 86400,
-  "1W": 7 * 86400,
-  "1M": 30 * 86400,
-  "3M": 90 * 86400,
-  "6M": 180 * 86400,
-  "1Y": 365 * 86400,
-};
-
-type ChartMode = "line" | "candlestick";
-
-function filterByPeriod(
-  points: TimeseriesPoint[],
-  period: Period
-): TimeseriesPoint[] {
-  const cutoff = Math.floor(Date.now() / 1000) - PERIOD_SECONDS[period];
-  return points.filter((p) => p.timestamp >= cutoff);
-}
-
-function toLineData(points: TimeseriesPoint[]): LineData<Time>[] {
-  return points
-    .filter((p) => p.avgHighPrice != null)
-    .map((p) => ({
-      time: p.timestamp as UTCTimestamp,
-      value: p.avgHighPrice!,
-    }));
-}
-
-function toCandlestickData(
-  points: TimeseriesPoint[]
-): CandlestickData<Time>[] {
-  const result: CandlestickData<Time>[] = [];
-  let prevClose: number | null = null;
-
-  for (const p of points) {
-    const high = p.avgHighPrice;
-    const low = p.avgLowPrice;
-    if (high == null && low == null) continue;
-
-    const closeVal = high ?? low!;
-    const openVal = prevClose ?? closeVal;
-    const hiVal = Math.max(high ?? closeVal, low ?? closeVal);
-    const loVal = Math.min(high ?? closeVal, low ?? closeVal);
-
-    result.push({
-      time: p.timestamp as UTCTimestamp,
-      open: openVal,
-      high: hiVal,
-      low: loVal,
-      close: closeVal,
-    });
-
-    prevClose = closeVal;
-  }
-
-  return result;
-}
-
-function toVolumeData(points: TimeseriesPoint[]): HistogramData<Time>[] {
-  const result: HistogramData<Time>[] = [];
-  let prevPrice: number | null = null;
-
-  for (const p of points) {
-    const vol = p.highPriceVolume + p.lowPriceVolume;
-    if (vol === 0) continue;
-    const price = p.avgHighPrice ?? p.avgLowPrice;
-    const up = prevPrice == null || (price != null && price >= prevPrice);
-    result.push({
-      time: p.timestamp as UTCTimestamp,
-      value: vol,
-      color: up ? "#22c55e30" : "#ef444430",
-    });
-    if (price != null) prevPrice = price;
-  }
-
-  return result;
-}
+const Chart = lazy(() => import("../../components/Chart"));
 
 export default function PriceChart() {
   const { params } = useNavigation();
@@ -232,6 +144,34 @@ export default function PriceChart() {
   }, [filtered]);
 
   const current = currentPrice?.high ?? currentPrice?.low ?? null;
+  const chartBody = loading ? (
+    <div className="h-[400px] bg-bg-secondary rounded-lg border border-border flex items-center justify-center">
+      <p className="text-sm text-text-secondary">Loading chart...</p>
+    </div>
+  ) : chartData.length > 0 ? (
+    <Suspense
+      fallback={
+        <div className="h-[400px] bg-bg-secondary rounded-lg border border-border flex items-center justify-center">
+          <p className="text-sm text-text-secondary">Preparing chart...</p>
+        </div>
+      }
+    >
+      <div className="bg-bg-secondary rounded-lg border border-border p-2">
+        <Chart
+          data={chartData}
+          volumeData={volumeData}
+          type={chartMode}
+          height={400}
+        />
+      </div>
+    </Suspense>
+  ) : (
+    <div className="h-[400px] bg-bg-secondary rounded-lg border border-border flex items-center justify-center">
+      <p className="text-sm text-text-secondary">
+        No data available for this period.
+      </p>
+    </div>
+  );
 
   return (
     <div className="max-w-4xl">
@@ -353,26 +293,7 @@ export default function PriceChart() {
           {error && (
             <p className="text-xs text-danger mb-2">{error}</p>
           )}
-          {loading ? (
-            <div className="h-[400px] bg-bg-secondary rounded-lg border border-border flex items-center justify-center">
-              <p className="text-sm text-text-secondary">Loading chart...</p>
-            </div>
-          ) : chartData.length > 0 ? (
-            <div className="bg-bg-secondary rounded-lg border border-border p-2">
-              <Chart
-                data={chartData}
-                volumeData={volumeData}
-                type={chartMode}
-                height={400}
-              />
-            </div>
-          ) : (
-            <div className="h-[400px] bg-bg-secondary rounded-lg border border-border flex items-center justify-center">
-              <p className="text-sm text-text-secondary">
-                No data available for this period.
-              </p>
-            </div>
-          )}
+          {chartBody}
         </>
       )}
 

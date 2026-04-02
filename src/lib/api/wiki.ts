@@ -7,6 +7,15 @@ const WIKI_API = isTauri
 
 const SEARCH_TTL = 60 * 60 * 1000; // 1 hour
 const DROPS_TTL = 30 * 60 * 1000; // 30 minutes
+const DROP_SECTION_NAMES = [
+  "drops",
+  "rewards",
+  "reward chest",
+  "rewards chest",
+  "loot",
+  "unique rewards",
+  "uniques",
+] as const;
 
 export interface DropItem {
   name: string;
@@ -61,9 +70,10 @@ export async function fetchDropTable(
     line: string;
     level: string;
   }[];
-  const dropsSection = sections.find(
-    (s) => s.line.toLowerCase() === "drops"
-  );
+  const dropsSection = sections.find((s) => {
+    const lower = s.line.toLowerCase().trim();
+    return DROP_SECTION_NAMES.some((name) => lower === name || lower.includes(name));
+  });
 
   if (!dropsSection) {
     return { categories: [] };

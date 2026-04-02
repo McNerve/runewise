@@ -24,7 +24,19 @@ export function useSettingsProvider() {
 
   const update = useCallback((patch: Partial<AppSettings>) => {
     setSettings((prev) => {
-      const next = { ...prev, ...patch };
+      const next: AppSettings = {
+        ...prev,
+        ...patch,
+        keybinds: patch.keybinds
+          ? { ...prev.keybinds, ...patch.keybinds }
+          : prev.keybinds,
+        notifications: patch.notifications
+          ? { ...prev.notifications, ...patch.notifications }
+          : prev.notifications,
+        sidebar: patch.sidebar
+          ? { ...prev.sidebar, ...patch.sidebar }
+          : prev.sidebar,
+      };
       persistSettings(next);
       return next;
     });

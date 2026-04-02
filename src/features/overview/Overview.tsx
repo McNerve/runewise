@@ -3,8 +3,9 @@ import { type HiscoreData } from "../../lib/api/hiscores";
 import { fetchWomPlayer, type WomPlayer } from "../../lib/api/wom";
 import { xpForLevel } from "../../lib/formulas/xp";
 import { combatLevel } from "../../lib/formulas/combat";
-import { SKILL_ICONS, bossIconSmall, bossIcon } from "../../lib/sprites";
+import { SKILL_ICONS, NAV_ICONS, bossIconSmall, bossIcon, itemIcon } from "../../lib/sprites";
 import { useNavigation } from "../../lib/NavigationContext";
+import WikiImage from "../../components/WikiImage";
 
 interface Props {
   hiscores: HiscoreData;
@@ -89,17 +90,17 @@ export default function Overview({ hiscores, rsn }: Props) {
 
       {/* Summary cards */}
       <div className="grid grid-cols-4 gap-3 mb-6">
-        <div className="bg-bg-secondary rounded-lg p-3 text-center">
+        <div className="text-center">
           <div className="text-2xl font-bold text-accent">
             {cmb.toFixed(0)}
           </div>
           <div className="text-xs text-text-secondary">Combat</div>
         </div>
-        <div className="bg-bg-secondary rounded-lg p-3 text-center">
+        <div className="text-center">
           <div className="text-2xl font-bold">{totalLevel.toLocaleString()}</div>
           <div className="text-xs text-text-secondary">Total Level</div>
         </div>
-        <div className="bg-bg-secondary rounded-lg p-3 text-center">
+        <div className="text-center">
           <div className="text-2xl font-bold">
             {totalXp >= 1_000_000_000
               ? `${(totalXp / 1_000_000_000).toFixed(1)}B`
@@ -107,7 +108,7 @@ export default function Overview({ hiscores, rsn }: Props) {
           </div>
           <div className="text-xs text-text-secondary">Total XP</div>
         </div>
-        <div className="bg-bg-secondary rounded-lg p-3 text-center">
+        <div className="text-center">
           <div className="text-2xl font-bold text-success">
             {maxedSkills}/24
           </div>
@@ -118,9 +119,9 @@ export default function Overview({ hiscores, rsn }: Props) {
       {/* Activity stats — sourced from hiscores activities */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         {collectionLog != null && collectionLog > 0 && (
-          <div className="bg-bg-secondary rounded-lg p-3 text-center">
+          <div className="p-3 text-center">
             <div className="flex items-center justify-center gap-1.5 mb-1">
-              <img src="https://oldschool.runescape.wiki/images/Collection_log.png" alt="" className="w-4 h-4" />
+              <WikiImage src={NAV_ICONS.tracker} alt="" className="w-4 h-4" fallback="C" />
               <div className="text-lg font-bold">{collectionLog}<span className="text-xs text-text-secondary font-normal">/1,699</span></div>
             </div>
             <div className="text-xs text-text-secondary">Collection Log</div>
@@ -128,11 +129,11 @@ export default function Overview({ hiscores, rsn }: Props) {
         )}
         {totalBossKills > 0 && (
           <button
-            onClick={() => navigate("boss-loot")}
-            className="bg-bg-secondary rounded-lg p-3 text-center hover:bg-bg-tertiary transition-colors"
+            onClick={() => navigate("loot", { tab: "profit" })}
+            className="p-3 text-center rounded-lg transition-colors hover:bg-bg-secondary/50"
           >
             <div className="flex items-center justify-center gap-1.5 mb-1">
-              <img src="https://oldschool.runescape.wiki/images/Slayer_helmet_%28i%29.png" alt="" className="w-4 h-4" />
+              <WikiImage src={NAV_ICONS.bosses} alt="" className="w-4 h-4" fallback="B" />
               <div className="text-lg font-bold">{totalBossKills.toLocaleString()}</div>
             </div>
             <div className="text-xs text-text-secondary">Boss Kills</div>
@@ -141,19 +142,19 @@ export default function Overview({ hiscores, rsn }: Props) {
         {clueScrollsAll != null && clueScrollsAll > 0 && (
           <button
             onClick={() => navigate("clue-helper")}
-            className="bg-bg-secondary rounded-lg p-3 text-center hover:bg-bg-tertiary transition-colors"
+            className="p-3 text-center rounded-lg transition-colors hover:bg-bg-secondary/50"
           >
             <div className="flex items-center justify-center gap-1.5 mb-1">
-              <img src="https://oldschool.runescape.wiki/images/Clue_scroll_%28hard%29.png" alt="" className="w-4 h-4" />
+              <WikiImage src={NAV_ICONS["clue-helper"]} alt="" className="w-4 h-4" fallback="C" />
               <div className="text-lg font-bold">{clueScrollsAll}</div>
             </div>
             <div className="text-xs text-text-secondary">Clue Scrolls</div>
           </button>
         )}
         {colosseumGlory != null && (
-          <div className="bg-bg-secondary rounded-lg p-3 text-center">
+          <div className="p-3 text-center">
             <div className="flex items-center justify-center gap-1.5 mb-1">
-              <img src="https://oldschool.runescape.wiki/images/Dizana%27s_quiver_%28uncharged%29.png" alt="" className="w-4 h-4" />
+              <WikiImage src={itemIcon("Dizana's quiver (uncharged)")} alt="" className="w-4 h-4" fallback="Q" />
               <div className="text-lg font-bold">{colosseumGlory.toLocaleString()}</div>
             </div>
             <div className="text-xs text-text-secondary">Colosseum Glory</div>
@@ -165,13 +166,8 @@ export default function Overview({ hiscores, rsn }: Props) {
       {clueTiers.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mb-4 justify-center">
           {clueTiers.map((c) => (
-            <div key={c.tier} className="bg-bg-secondary rounded px-3 py-2 flex items-center gap-2">
-              <img
-                src={`https://oldschool.runescape.wiki/images/Clue_scroll_%28${c.tier}%29.png`}
-                alt=""
-                className="w-4 h-4"
-                onError={(e) => { e.currentTarget.style.display = "none"; }}
-              />
+            <div key={c.tier} className="px-3 py-2 flex items-center gap-2">
+              <WikiImage src={itemIcon(`Clue scroll (${c.tier})`)} alt="" className="w-4 h-4" fallback="C" />
               <div className="text-sm font-bold">{c.count}</div>
               <div className="text-[10px] text-text-secondary capitalize">{c.tier}</div>
             </div>
@@ -214,7 +210,7 @@ export default function Overview({ hiscores, rsn }: Props) {
               className="bg-bg-secondary rounded px-3 py-2 flex items-center justify-between hover:bg-bg-tertiary transition-colors cursor-pointer text-left"
             >
               <div className="flex items-center gap-2">
-                <img src={SKILL_ICONS[skillName]} alt="" className="w-4 h-4" />
+                <WikiImage src={SKILL_ICONS[skillName]} alt="" className="w-4 h-4" fallback={skillName[0]} />
                 <span
                   className={`text-sm font-medium ${
                     skill.level >= 99 ? "text-success" : ""
@@ -248,25 +244,25 @@ export default function Overview({ hiscores, rsn }: Props) {
           </h3>
           <div className="flex flex-wrap gap-1.5 justify-center">
             {wintertodt > 0 && (
-              <div className="bg-bg-secondary rounded-lg px-4 py-2.5 text-center">
+              <div className="px-4 py-2.5 text-center">
                 <div className="text-sm font-bold">{wintertodt.toLocaleString()}</div>
                 <div className="text-[10px] text-text-secondary">Wintertodt</div>
               </div>
             )}
             {tempoross > 0 && (
-              <div className="bg-bg-secondary rounded-lg px-4 py-2.5 text-center">
+              <div className="px-4 py-2.5 text-center">
                 <div className="text-sm font-bold">{tempoross.toLocaleString()}</div>
                 <div className="text-[10px] text-text-secondary">Tempoross</div>
               </div>
             )}
             {rifts > 0 && (
-              <div className="bg-bg-secondary rounded-lg px-4 py-2.5 text-center">
+              <div className="px-4 py-2.5 text-center">
                 <div className="text-sm font-bold">{rifts.toLocaleString()}</div>
                 <div className="text-[10px] text-text-secondary">GOTR Rifts</div>
               </div>
             )}
             {gauntlet > 0 && (
-              <div className="bg-bg-secondary rounded-lg px-4 py-2.5 text-center">
+              <div className="px-4 py-2.5 text-center">
                 <div className="text-sm font-bold">{gauntlet.toLocaleString()}</div>
                 <div className="text-[10px] text-text-secondary">Corrupted Gauntlet</div>
               </div>

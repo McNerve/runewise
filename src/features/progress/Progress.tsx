@@ -1,0 +1,56 @@
+import { lazy, Suspense, useState } from "react";
+import { useNavigation } from "../../lib/NavigationContext";
+import type { HiscoreData } from "../../lib/api/hiscores";
+import QuestTracker from "../quests/QuestTracker";
+import DiaryTracker from "../diaries/DiaryTracker";
+
+const CombatTasks = lazy(() => import("../combat-tasks/CombatTasks"));
+
+type Tab = "quests" | "diaries" | "combat-tasks";
+
+const TABS: { id: Tab; label: string }[] = [
+  { id: "quests", label: "Quests" },
+  { id: "diaries", label: "Diaries" },
+  { id: "combat-tasks", label: "Combat Tasks" },
+];
+
+interface Props {
+  hiscores?: HiscoreData | null;
+}
+
+export default function Progress({ hiscores }: Props) {
+  const { params } = useNavigation();
+  const initialTab: Tab =
+    params.tab === "diaries" ? "diaries" :
+    params.tab === "combat-tasks" ? "combat-tasks" :
+    "quests";
+  const [activeTab, setActiveTab] = useState<Tab>(initialTab);
+
+  return (
+    <div>
+      <div className="flex gap-1 mb-6">
+        {TABS.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`px-4 py-1.5 rounded text-sm font-medium transition-colors ${
+              activeTab === tab.id
+                ? "bg-accent text-white"
+                : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "quests" && <QuestTracker hiscores={hiscores ?? null} />}
+      {activeTab === "diaries" && <DiaryTracker hiscores={hiscores ?? null} />}
+      {activeTab === "combat-tasks" && (
+        <Suspense fallback={<div className="py-8 text-center text-sm text-text-secondary">Loading...</div>}>
+          <CombatTasks />
+        </Suspense>
+      )}
+    </div>
+  );
+}

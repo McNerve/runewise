@@ -1,5 +1,4 @@
-import { getCached, setCache } from "./cache";
-import { apiFetch } from "./fetch";
+import { fetchJson } from "./client";
 import { isTauri } from "../env";
 
 export interface ItemMapping {
@@ -29,31 +28,29 @@ const MAPPING_TTL = 24 * 60 * 60 * 1000;
 const PRICES_TTL = 5 * 60 * 1000;
 
 export async function fetchMapping(): Promise<ItemMapping[]> {
-  const cached = getCached<ItemMapping[]>("mapping", MAPPING_TTL);
-  if (cached) return cached;
-
-  const res = await apiFetch(`${WIKI_API}/mapping`, {
+  return fetchJson<ItemMapping[]>({
+    url: `${WIKI_API}/mapping`,
+    cacheKey: "mapping",
+    ttlMs: MAPPING_TTL,
+    persist: true,
     headers: { "User-Agent": "runewise - osrs companion app" },
   });
-  if (!res.ok) throw new Error(`Wiki mapping API error: ${res.status}`);
-  const data: ItemMapping[] = await res.json();
-  setCache("mapping", data);
-  return data;
 }
 
 export async function fetchLatestPrices(): Promise<
   Record<string, ItemPrice>
 > {
-  const cached = getCached<Record<string, ItemPrice>>("prices", PRICES_TTL);
-  if (cached) return cached;
-
-  const res = await apiFetch(`${WIKI_API}/latest`, {
+  return fetchJson<Record<string, ItemPrice>>({
+    url: `${WIKI_API}/latest`,
+    cacheKey: "prices",
+    ttlMs: PRICES_TTL,
+    persist: true,
     headers: { "User-Agent": "runewise - osrs companion app" },
+    transform: (json) =>
+      typeof json === "object" && json !== null && "data" in json
+        ? (json as { data: Record<string, ItemPrice> }).data
+        : {},
   });
-  if (!res.ok) throw new Error(`Wiki prices API error: ${res.status}`);
-  const json = await res.json();
-  setCache("prices", json.data);
-  return json.data;
 }
 
 export async function searchItems(query: string): Promise<ItemMapping[]> {

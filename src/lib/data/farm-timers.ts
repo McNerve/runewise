@@ -6,7 +6,7 @@ export interface PatchType {
 }
 
 export const PATCH_TYPES: PatchType[] = [
-  { name: "Herb patch", category: "Herbs", growthMinutes: 80, icon: "Herb_seed_5.png" },
+  { name: "Herb patch", category: "Herbs", growthMinutes: 80, icon: "Ranarr_seed_5.png" },
   { name: "Allotment", category: "Herbs", growthMinutes: 80, icon: "Potato_seed_5.png" },
   { name: "Flower patch", category: "Herbs", growthMinutes: 20, icon: "Marigold_seed_5.png" },
   { name: "Oak tree", category: "Trees", growthMinutes: 200, icon: "Oak_sapling.png" },
@@ -17,7 +17,7 @@ export const PATCH_TYPES: PatchType[] = [
   { name: "Apple tree", category: "Fruit Trees", growthMinutes: 960, icon: "Apple_sapling.png" },
   { name: "Palm tree", category: "Fruit Trees", growthMinutes: 960, icon: "Palm_sapling.png" },
   { name: "Dragonfruit tree", category: "Fruit Trees", growthMinutes: 960, icon: "Dragonfruit_sapling.png" },
-  { name: "Birdhouse", category: "Special", growthMinutes: 50, icon: "Oak_birdhouse.png" },
+  { name: "Birdhouse", category: "Special", growthMinutes: 50, icon: "Oak_bird_house.png" },
   { name: "Calquat tree", category: "Special", growthMinutes: 1280, icon: "Calquat_sapling.png" },
   { name: "Hardwood tree", category: "Special", growthMinutes: 3840, icon: "Teak_sapling.png" },
   { name: "Hespori", category: "Special", growthMinutes: 1920, icon: "Hespori_seed_5.png" },
