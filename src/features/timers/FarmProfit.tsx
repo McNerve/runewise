@@ -130,7 +130,12 @@ export default function FarmProfit() {
                 <td className="px-4 py-1.5">
                   <div className="flex items-center gap-2">
                     <img
-                      src={`${WIKI_IMG}/${crop.seedName.replace(/ /g, "_")}_5.png`}
+                      src={(() => {
+                        const base = crop.seedName.replace(/ /g, "_");
+                        // Saplings don't use _5 suffix; seeds do
+                        const isSapling = crop.seedName.toLowerCase().includes("sapling");
+                        return `${WIKI_IMG}/${base}${isSapling ? "" : "_5"}.png`;
+                      })()}
                       alt=""
                       className="w-5 h-5 shrink-0"
                       onError={(e) => {
