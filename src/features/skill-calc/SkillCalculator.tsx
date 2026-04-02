@@ -6,6 +6,9 @@ import { formatGp } from "../../lib/format";
 import { SKILL_ICONS } from "../../lib/sprites";
 import { useNavigation } from "../../lib/NavigationContext";
 import { TRAINING_METHODS } from "../../lib/data/training-methods";
+import { HERBLORE_RECIPES } from "../../lib/data/herblore-recipes";
+import { CRAFTING_RECIPES } from "../../lib/data/crafting-recipes";
+import RecipeCostTable from "./components/RecipeCostTable";
 
 const SKILLS = [
   "Attack", "Strength", "Defence", "Ranged", "Prayer", "Magic",
@@ -269,6 +272,24 @@ export default function SkillCalculator({ hiscores }: Props) {
               </tbody>
             </table>
           </div>
+
+          {selectedSkill === "Herblore" && xpNeeded > 0 && (
+            <RecipeCostTable
+              recipes={HERBLORE_RECIPES}
+              prices={prices}
+              currentLevel={currentLevel ?? 1}
+              xpNeeded={xpNeeded}
+            />
+          )}
+
+          {selectedSkill === "Crafting" && xpNeeded > 0 && (
+            <RecipeCostTable
+              recipes={CRAFTING_RECIPES}
+              prices={prices}
+              currentLevel={currentLevel ?? 1}
+              xpNeeded={xpNeeded}
+            />
+          )}
         </div>
       )}
     </div>
