@@ -5,6 +5,8 @@ import {
   type WikiSpell,
   type Spellbook,
 } from "../../lib/api/spells";
+import EmptyState from "../../components/EmptyState";
+import { NAV_ICONS } from "../../lib/sprites";
 
 const BOOKS: { id: Spellbook; label: string }[] = [
   { id: "normal", label: "Standard" },
@@ -83,13 +85,16 @@ export default function Spells() {
 
       {/* Spell table */}
       {allSpells.length === 0 ? (
-        <div className="text-center py-12 text-text-secondary">
-          Loading spells...
-        </div>
+        <EmptyState
+          icon={NAV_ICONS.spells}
+          title="Loading spells..."
+        />
       ) : spells.length === 0 ? (
-        <div className="text-center py-12 text-text-secondary">
-          No spells found
-        </div>
+        <EmptyState
+          icon={NAV_ICONS.spells}
+          title="No spells found"
+          description="Try a different search term."
+        />
       ) : (
         <table className="w-full text-left">
           <thead>
