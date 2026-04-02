@@ -1,11 +1,13 @@
 import { useState, useEffect, useMemo } from "react";
 import { searchMonsters, fetchDropTable, type DropItem } from "../../lib/api/wiki";
+import { fetchDropsForMonster, type WikiDrop } from "../../lib/api/drops";
 import { fetchLatestPrices, fetchMapping, type ItemPrice, type ItemMapping } from "../../lib/api/ge";
 import { formatGp } from "../../lib/format";
 import { itemIcon } from "../../lib/sprites";
 import { useDebounce } from "../../hooks/useDebounce";
 import { useNavigation, type View } from "../../lib/NavigationContext";
 import WikiImage from "../../components/WikiImage";
+import DropTable from "../../components/DropTable";
 import { findBossByName, normalizeBossLookup } from "../../lib/data/bosses";
 import { BOSS_DROP_TABLES, type BossDropTable } from "../../lib/data/boss-drops";
 
@@ -99,6 +101,7 @@ function DropTablesTab({
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [selectedMonster, setSelectedMonster] = useState<string | null>(null);
   const [categories, setCategories] = useState<{ name: string; drops: DropItem[] }[]>([]);
+  const [bucketDrops, setBucketDrops] = useState<WikiDrop[]>([]);
   const [loading, setLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const selectedBoss = selectedMonster ? findBossByName(selectedMonster) : null;
@@ -123,8 +126,13 @@ function DropTablesTab({
     setQuery(name);
     setShowSuggestions(false);
     setLoading(true);
-    const data = await fetchDropTable(name);
-    setCategories(data.categories);
+    setBucketDrops([]);
+    const [htmlData, bucketData] = await Promise.all([
+      fetchDropTable(name).catch(() => ({ categories: [] })),
+      fetchDropsForMonster(name).then((t) => t.drops).catch(() => [] as WikiDrop[]),
+    ]);
+    setCategories(htmlData.categories);
+    setBucketDrops(bucketData);
     setLoading(false);
   };
 
@@ -208,11 +216,21 @@ function DropTablesTab({
 
       {loading && <p className="text-sm text-text-secondary">Loading drop table...</p>}
 
-      {selectedMonster && !loading && categories.length === 0 && (
+      {selectedMonster && !loading && categories.length === 0 && bucketDrops.length === 0 && (
         <p className="text-sm text-text-secondary">No drop table found for {selectedMonster}.</p>
       )}
 
-      {categories.map((cat) => (
+      {selectedMonster && !loading && bucketDrops.length > 0 && (
+        <DropTable
+          drops={bucketDrops}
+          prices={prices}
+          itemMap={itemMap}
+          showProfit
+          killsPerHour={20}
+        />
+      )}
+
+      {selectedMonster && !loading && bucketDrops.length === 0 && categories.map((cat) => (
         <div key={cat.name} className="mb-4">
           <h3 className="text-sm font-medium text-text-secondary uppercase tracking-wider mb-2">
             {cat.name}
