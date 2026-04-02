@@ -26,3 +26,7 @@ dist-ssr
 # Tauri
 src-tauri/target/
 CLAUDE.md
+
+# iCloud sync duplicates
+* 2.*
+* 2
