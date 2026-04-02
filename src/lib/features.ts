@@ -45,7 +45,7 @@ export const FEATURE_REGISTRY = {
     family: "Tools",
     sidebar: true,
     search: true,
-    aliases: ["skills", "skill calculator", "training"],
+    aliases: ["skills", "skill calculator", "training", "xp", "level", "training method", "construction"],
   },
   "dps-calc": {
     title: "DPS Calculator",
@@ -53,7 +53,7 @@ export const FEATURE_REGISTRY = {
     family: "Tools",
     sidebar: true,
     search: true,
-    aliases: ["dps", "damage", "max hit"],
+    aliases: ["dps", "damage", "max hit", "combat", "accuracy", "monster", "loadout"],
   },
   "dry-calc": {
     title: "Dry Calculator",
@@ -69,7 +69,7 @@ export const FEATURE_REGISTRY = {
     family: "Planning",
     sidebar: true,
     search: true,
-    aliases: ["training plan", "level plan", "goal", "targets"],
+    aliases: ["training plan", "level plan", "goal", "targets", "efficient", "xp per hour"],
   },
   "gear-compare": {
     title: "Gear Compare",
@@ -157,7 +157,7 @@ export const FEATURE_REGISTRY = {
     family: "Planning",
     sidebar: true,
     search: true,
-    aliases: ["money making", "gp", "methods"],
+    aliases: ["money making", "gp", "methods", "gp per hour", "hourly", "gold"],
   },
   "production-calc": {
     title: "Production Calculator",
@@ -205,7 +205,7 @@ export const FEATURE_REGISTRY = {
     family: "Live",
     sidebar: true,
     search: true,
-    aliases: ["news", "blog"],
+    aliases: ["news", "blog", "updates", "patch notes", "announcements"],
   },
   wiki: {
     title: "Wiki Lookup",
@@ -221,7 +221,7 @@ export const FEATURE_REGISTRY = {
     family: "Planning",
     sidebar: true,
     search: true,
-    aliases: ["timers", "farm timers"],
+    aliases: ["timers", "farm timers", "farming", "crops", "birdhouse", "farm run", "farm profit"],
   },
   "xp-table": {
     title: "XP Table",

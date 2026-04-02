@@ -100,6 +100,18 @@ function parseRewards(raw: string | undefined): QuestReward {
     }
   }
 
+  // Consolidate duplicate skill XP entries
+  if (result.xp.length > 1) {
+    const xpMap = new Map<string, number>();
+    for (const entry of result.xp) {
+      xpMap.set(entry.skill, (xpMap.get(entry.skill) ?? 0) + entry.amount);
+    }
+    result.xp = Array.from(xpMap.entries()).map(([skill, amount]) => ({
+      skill,
+      amount,
+    }));
+  }
+
   return result;
 }
 

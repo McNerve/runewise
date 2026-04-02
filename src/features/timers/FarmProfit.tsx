@@ -7,13 +7,17 @@ const WIKI_IMG = "https://oldschool.runescape.wiki/images";
 
 export default function FarmProfit() {
   const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
+  const [pricesLoaded, setPricesLoaded] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [sortBy, setSortBy] = useState<"profit" | "profitPerHr" | "level">(
     "profitPerHr"
   );
 
   useEffect(() => {
-    fetchLatestPrices().then(setPrices);
+    fetchLatestPrices().then((p) => {
+      setPrices(p);
+      setPricesLoaded(true);
+    });
   }, []);
 
   const crops = useMemo(() => {
@@ -53,6 +57,10 @@ export default function FarmProfit() {
 
   return (
     <div>
+      {!pricesLoaded && (
+        <p className="text-xs text-text-secondary mb-4">Loading live GE prices...</p>
+      )}
+
       <div className="flex items-center gap-3 mb-4 flex-wrap">
         <div className="flex gap-1">
           <button

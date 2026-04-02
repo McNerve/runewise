@@ -133,7 +133,7 @@ export default function BossMetaCard({
           <span className={`text-xs ${combatMet === false ? "text-warning" : "text-text-secondary"}`}>
             {combatMet != null && (
               <span className={combatMet ? "text-success" : "text-warning"}>
-                {combatMet ? "✓ " : "⚠ "}
+                {combatMet ? "✓ " : "✗ "}
               </span>
             )}
             Rec.{" "}

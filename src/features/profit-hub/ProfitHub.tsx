@@ -48,11 +48,15 @@ function methodToEntry(m: MoneyMethod): ProfitEntry {
 export default function ProfitHub() {
   const { navigate } = useNavigation();
   const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
+  const [pricesLoaded, setPricesLoaded] = useState(false);
   const [sourceFilter, setSourceFilter] = useState<Source>("all");
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    fetchLatestPrices().then(setPrices);
+    fetchLatestPrices().then((p) => {
+      setPrices(p);
+      setPricesLoaded(true);
+    });
   }, []);
 
   const entries = useMemo<ProfitEntry[]>(() => {
@@ -114,6 +118,10 @@ export default function ProfitHub() {
         All GP-earning activities ranked by hourly profit. Boss loot uses live
         GE prices.
       </p>
+
+      {!pricesLoaded && (
+        <p className="text-xs text-text-secondary mb-4">Loading live prices for boss loot calculations...</p>
+      )}
 
       <div className="flex gap-3 mb-4 flex-wrap">
         <input

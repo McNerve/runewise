@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import {
   calculateDps,
   DPS_MODIFIERS,
@@ -99,6 +99,7 @@ export default function DpsCalculator({ hiscores }: Props) {
     loadJSON(LOADOUTS_KEY, [])
   );
   const [loadoutName, setLoadoutName] = useState("");
+  const pendingLoadout = useRef<GearLoadout | null>(null);
 
   // Load wiki monsters
   useEffect(() => {
@@ -162,13 +163,23 @@ export default function DpsCalculator({ hiscores }: Props) {
     }
   }, [params.monster, wikiMonsters]);
 
-  // Reset stance and prayer when combat style changes
+  // Reset stance and prayer when combat style changes, or apply pending loadout
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset dependent state on style change
-    setStanceIdx(0);
-    setPrayerIdx(0);
-    setAttackSpeed(DEFAULT_SPEED[combatStyle]);
-    setActiveModifiers(new Set());
+    const loadout = pendingLoadout.current;
+    if (loadout && loadout.combatStyle === combatStyle) {
+      pendingLoadout.current = null;
+      setStanceIdx(loadout.stanceIdx);
+      setPrayerIdx(loadout.prayerIdx);
+      setAttackBonus(loadout.attackBonus);
+      setStrengthBonus(loadout.strengthBonus);
+      setAttackSpeed(loadout.attackSpeed);
+      setActiveModifiers(new Set(loadout.modifiers));
+    } else {
+      setStanceIdx(0);
+      setPrayerIdx(0);
+      setAttackSpeed(DEFAULT_SPEED[combatStyle]);
+      setActiveModifiers(new Set());
+    }
   }, [combatStyle]);
 
   const stances = STANCES[combatStyle];
@@ -271,17 +282,20 @@ export default function DpsCalculator({ hiscores }: Props) {
   }, [loadoutName, combatStyle, stanceIdx, prayerIdx, attackBonus, strengthBonus, attackSpeed, activeModifiers]);
 
   const applyLoadout = useCallback((loadout: GearLoadout) => {
-    setCombatStyle(loadout.combatStyle);
-    // Defer dependent state so combat style effect runs first
-    setTimeout(() => {
+    if (loadout.combatStyle === combatStyle) {
+      // Same style — apply directly, no effect needed
       setStanceIdx(loadout.stanceIdx);
       setPrayerIdx(loadout.prayerIdx);
       setAttackBonus(loadout.attackBonus);
       setStrengthBonus(loadout.strengthBonus);
       setAttackSpeed(loadout.attackSpeed);
       setActiveModifiers(new Set(loadout.modifiers));
-    }, 0);
-  }, []);
+    } else {
+      // Different style — stash loadout and let the combatStyle effect apply it
+      pendingLoadout.current = loadout;
+      setCombatStyle(loadout.combatStyle);
+    }
+  }, [combatStyle]);
 
   const deleteLoadout = useCallback((name: string) => {
     setLoadouts((prev) => {

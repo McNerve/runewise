@@ -174,23 +174,36 @@ export default function PlayerLookup() {
     const l = leftQuery.trim();
     const r = rightQuery.trim();
     if (!l || !r) return;
+    if (l.toLowerCase() === r.toLowerCase()) {
+      setCompareError("Enter two different player names to compare.");
+      return;
+    }
 
     setCompareLoading(true);
     setCompareError(null);
-    try {
-      const [lData, rData] = await Promise.all([
-        fetchHiscores(l),
-        fetchHiscores(r),
-      ]);
-      setLeftData({ rsn: l, data: lData });
-      setRightData({ rsn: r, data: rData });
-    } catch (e) {
-      setCompareError(
-        e instanceof Error ? e.message : "Failed to fetch one or both players"
-      );
-    } finally {
-      setCompareLoading(false);
+    setLeftData(null);
+    setRightData(null);
+
+    const [lResult, rResult] = await Promise.allSettled([
+      fetchHiscores(l),
+      fetchHiscores(r),
+    ]);
+
+    if (lResult.status === "fulfilled") {
+      setLeftData({ rsn: l, data: lResult.value });
     }
+    if (rResult.status === "fulfilled") {
+      setRightData({ rsn: r, data: rResult.value });
+    }
+
+    const failures: string[] = [];
+    if (lResult.status === "rejected") failures.push(l);
+    if (rResult.status === "rejected") failures.push(r);
+    if (failures.length > 0) {
+      setCompareError(`Could not find: ${failures.join(", ")}`);
+    }
+
+    setCompareLoading(false);
   }, [leftQuery, rightQuery]);
 
   useEffect(() => {
@@ -329,12 +342,8 @@ export default function PlayerLookup() {
             </form>
 
             {compareError && (
-              <div className="mt-3">
-                <EmptyState
-                  icon={NAV_ICONS.lookup}
-                  title="Comparison failed"
-                  description={compareError}
-                />
+              <div className="mt-3 text-xs text-danger bg-danger/8 rounded-lg px-4 py-2.5">
+                {compareError}
               </div>
             )}
 
