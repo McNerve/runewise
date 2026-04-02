@@ -1,5 +1,6 @@
 import type { BossMetadata } from "../../../lib/data/boss-metadata";
-import type { HiscoreData } from "../../../lib/api/hiscores";
+import { getSkillLevel, type HiscoreData } from "../../../lib/api/hiscores";
+import { combatLevel as calcCombatLevel } from "../../../lib/formulas/combat";
 
 interface BossMetaCardProps {
   meta: BossMetadata;
@@ -32,36 +33,6 @@ function DifficultyDots({ level }: { level: number }) {
   );
 }
 
-function getPlayerSlayerLevel(hiscores: HiscoreData | null): number | null {
-  if (!hiscores) return null;
-  const skill = hiscores.skills.find(
-    (s) => s.name.toLowerCase() === "slayer"
-  );
-  return skill?.level ?? null;
-}
-
-function getPlayerCombatLevel(hiscores: HiscoreData | null): number | null {
-  if (!hiscores) return null;
-  const get = (name: string) =>
-    hiscores.skills.find((s) => s.name.toLowerCase() === name.toLowerCase())
-      ?.level ?? 1;
-
-  const att = get("Attack");
-  const str = get("Strength");
-  const def = get("Defence");
-  const hp = get("Hitpoints");
-  const prayer = get("Prayer");
-  const ranged = get("Ranged");
-  const magic = get("Magic");
-
-  const base = 0.25 * (def + hp + Math.floor(prayer / 2));
-  const melee = 0.325 * (att + str);
-  const range = 0.325 * Math.floor((3 * ranged) / 2);
-  const mage = 0.325 * Math.floor((3 * magic) / 2);
-
-  return Math.floor(base + Math.max(melee, range, mage));
-}
-
 export default function BossMetaCard({
   meta,
   combatLevel,
@@ -70,8 +41,18 @@ export default function BossMetaCard({
   weakness,
   hiscores,
 }: BossMetaCardProps) {
-  const playerSlayer = getPlayerSlayerLevel(hiscores);
-  const playerCombat = getPlayerCombatLevel(hiscores);
+  const playerSlayer = hiscores ? getSkillLevel(hiscores, "Slayer") : null;
+  const playerCombat = hiscores
+    ? calcCombatLevel({
+        attack: getSkillLevel(hiscores, "Attack"),
+        strength: getSkillLevel(hiscores, "Strength"),
+        defence: getSkillLevel(hiscores, "Defence"),
+        hitpoints: getSkillLevel(hiscores, "Hitpoints"),
+        prayer: getSkillLevel(hiscores, "Prayer"),
+        ranged: getSkillLevel(hiscores, "Ranged"),
+        magic: getSkillLevel(hiscores, "Magic"),
+      })
+    : null;
 
   const slayerMet =
     meta.slayerReq && playerSlayer != null

@@ -1,4 +1,4 @@
-const WIKI_IMG = "https://oldschool.runescape.wiki/images";
+export const WIKI_IMG = "https://oldschool.runescape.wiki/images";
 
 export function skillIcon(skill: string): string {
   const name = skill.charAt(0).toUpperCase() + skill.slice(1).toLowerCase();

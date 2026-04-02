@@ -2,12 +2,12 @@ import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from "react
 import { PATCH_TYPES, PATCH_CATEGORIES, PRESETS } from "../../lib/data/farm-timers";
 import { loadJSON, saveJSON } from "../../lib/localStorage";
 import { sendNotification } from "../../lib/notify";
+import { WIKI_IMG } from "../../lib/sprites";
 import EmptyState from "../../components/EmptyState";
 
 const FarmProfit = lazy(() => import("./FarmProfit"));
 
 const TIMERS_KEY = "runewise_timers";
-const WIKI_IMG = "https://oldschool.runescape.wiki/images";
 
 interface Timer {
   id: string;
@@ -202,15 +202,15 @@ export default function FarmTimers() {
 
   useEffect(() => { saveJSON(TIMERS_KEY, timers); }, [timers]);
 
-  const hasActiveTimers = timers.some((t) => !t.notified);
+  const hasGrowingTimers = timers.some((t) => now < t.readyAt);
 
   useEffect(() => {
-    if (!hasActiveTimers && timers.length === 0) return;
+    if (!hasGrowingTimers) return;
     const interval = setInterval(() => {
       setNow(Date.now());
     }, 1000);
     return () => clearInterval(interval);
-  }, [hasActiveTimers, timers.length]);
+  }, [hasGrowingTimers]);
 
   // Notifications + auto-repeat — runs when `now` ticks
   useEffect(() => {

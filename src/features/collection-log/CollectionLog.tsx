@@ -119,7 +119,7 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
 
               {isExpanded && (
                 <div className="ml-12 mb-3 grid grid-cols-2 gap-1">
-                  {items
+                  {[...items]
                     .sort((a, b) => {
                       if (a.count > 0 !== b.count > 0)
                         return a.count > 0 ? -1 : 1;
@@ -286,7 +286,10 @@ export default function CollectionLog({ rsn }: Props) {
     setTempleLoading(true); // eslint-disable-line react-hooks/set-state-in-effect -- loading state for async fetch
 
     (async () => {
-      const info = await fetchTemplePlayerInfo(rsn);
+      const [info, clog] = await Promise.all([
+        fetchTemplePlayerInfo(rsn),
+        fetchTempleCollectionLog(rsn),
+      ]);
       if (cancelled) return;
 
       if (!info || !info.clog_synced) {
@@ -296,9 +299,6 @@ export default function CollectionLog({ rsn }: Props) {
       }
 
       setTempleSynced(true);
-      const clog = await fetchTempleCollectionLog(rsn);
-      if (cancelled) return;
-
       if (clog && Object.keys(clog.categories).length > 0) {
         setTempleData(clog);
         setMode("temple");

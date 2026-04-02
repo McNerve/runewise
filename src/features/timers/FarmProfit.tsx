@@ -2,8 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { FARM_CROPS, CROP_CATEGORIES } from "../../lib/data/farming-crops";
 import { fetchLatestPrices, type ItemPrice } from "../../lib/api/ge";
 import { formatGp } from "../../lib/format";
-
-const WIKI_IMG = "https://oldschool.runescape.wiki/images";
+import { WIKI_IMG } from "../../lib/sprites";
 
 export default function FarmProfit() {
   const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
