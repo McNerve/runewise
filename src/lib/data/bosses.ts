@@ -27,12 +27,16 @@ export const BOSSES: BossInfo[] = [
   { name: "Grotesque Guardians", wikiPage: "Grotesque_Guardians/Strategies", category: "Slayer" },
   { name: "Kraken", wikiPage: "Kraken/Strategies", category: "Slayer", combatLevel: 291, hitpoints: 255 },
   { name: "Thermonuclear Smoke Devil", wikiPage: "Thermonuclear_smoke_devil/Strategies", category: "Slayer", combatLevel: 301, hitpoints: 240 },
+  { name: "Abyssal Sire", wikiPage: "Abyssal_Sire/Strategies", category: "Slayer", combatLevel: 350, hitpoints: 400 },
 
   // Wilderness
   { name: "Vet'ion", wikiPage: "Vet%27ion/Strategies", category: "Wilderness", combatLevel: 454, hitpoints: 255 },
   { name: "Venenatis", wikiPage: "Venenatis/Strategies", category: "Wilderness", combatLevel: 464, hitpoints: 255 },
   { name: "Callisto", wikiPage: "Callisto/Strategies", category: "Wilderness", combatLevel: 470, hitpoints: 255 },
   { name: "Chaos Elemental", wikiPage: "Chaos_Elemental/Strategies", category: "Wilderness", combatLevel: 305, hitpoints: 250 },
+  { name: "Chaos Fanatic", wikiPage: "Chaos_Fanatic/Strategies", category: "Wilderness", combatLevel: 202, hitpoints: 225 },
+  { name: "Crazy Archaeologist", wikiPage: "Crazy_Archaeologist/Strategies", category: "Wilderness", combatLevel: 204, hitpoints: 225 },
+  { name: "Scorpia", wikiPage: "Scorpia/Strategies", category: "Wilderness", combatLevel: 225, hitpoints: 200 },
 
   // Other
   { name: "Vorkath", wikiPage: "Vorkath/Strategies", category: "Other", combatLevel: 732, hitpoints: 750 },
@@ -47,11 +51,27 @@ export const BOSSES: BossInfo[] = [
   { name: "Araxxor", wikiPage: "Araxxor/Strategies", category: "Other" },
   { name: "Scurrius", wikiPage: "Scurrius/Strategies", category: "Other", combatLevel: 230, hitpoints: 400 },
   { name: "Moons of Peril", wikiPage: "Moons_of_Peril/Strategies", category: "Other" },
+  { name: "Giant Mole", wikiPage: "Giant_Mole/Strategies", category: "Other", combatLevel: 230, hitpoints: 200 },
+  { name: "King Black Dragon", wikiPage: "King_Black_Dragon/Strategies", category: "Other", combatLevel: 276, hitpoints: 255 },
+  { name: "Obor", wikiPage: "Obor/Strategies", category: "Other", combatLevel: 106, hitpoints: 120 },
+  { name: "Bryophyta", wikiPage: "Bryophyta/Strategies", category: "Other", combatLevel: 128, hitpoints: 115 },
+  { name: "Barrows", wikiPage: "Barrows/Strategies", category: "Other" },
+  { name: "Dagannoth Kings", wikiPage: "Dagannoth_Kings/Strategies", category: "Other" },
+  { name: "Kalphite Queen", wikiPage: "Kalphite_Queen/Strategies", category: "Other", combatLevel: 333, hitpoints: 255 },
+  { name: "Skotizo", wikiPage: "Skotizo/Strategies", category: "Other", combatLevel: 321, hitpoints: 450 },
+  { name: "Hespori", wikiPage: "Hespori/Strategies", category: "Other", combatLevel: 284, hitpoints: 600 },
+  { name: "Deranged Archaeologist", wikiPage: "Deranged_Archaeologist/Strategies", category: "Other", combatLevel: 276, hitpoints: 600 },
+  { name: "Sarachnis", wikiPage: "Sarachnis/Strategies", category: "Other", combatLevel: 318, hitpoints: 400 },
+  { name: "Wintertodt", wikiPage: "Wintertodt/Strategies", category: "Other" },
+  { name: "Tempoross", wikiPage: "Tempoross/Strategies", category: "Other" },
+  { name: "Zalcano", wikiPage: "Zalcano/Strategies", category: "Other" },
+  { name: "The Gauntlet", wikiPage: "The_Gauntlet/Strategies", category: "Other" },
 
   // Varlamore
   { name: "Amoxliatl", wikiPage: "Amoxliatl/Strategies", category: "Varlamore" },
   { name: "Hueycoatl", wikiPage: "Hueycoatl/Strategies", category: "Varlamore" },
   { name: "The Fortis Colosseum", wikiPage: "The_Fortis_Colosseum/Strategies", category: "Varlamore" },
+  { name: "Sol Heredit", wikiPage: "Sol_Heredit/Strategies", category: "Varlamore" },
 ];
 
 export const BOSS_CATEGORIES = [...new Set(BOSSES.map((b) => b.category))];
