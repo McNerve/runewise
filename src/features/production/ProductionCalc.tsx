@@ -3,6 +3,7 @@ import { fetchAllRecipes, type WikiRecipe } from "../../lib/api/recipes";
 import { fetchLatestPrices, fetchMapping, type ItemPrice } from "../../lib/api/ge";
 import { formatGp } from "../../lib/format";
 import { itemIcon, skillIcon } from "../../lib/sprites";
+import ErrorState from "../../components/ErrorState";
 
 function getItemPrice(
   name: string,
@@ -60,11 +61,15 @@ export default function ProductionCalc() {
   const [selected, setSelected] = useState<WikiRecipe | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([fetchAllRecipes(), fetchLatestPrices(), fetchMapping()]).then(
-      ([r, p, m]) => {
+    setLoading(true);
+    setLoadError(null);
+    Promise.all([fetchAllRecipes(), fetchLatestPrices(), fetchMapping()])
+      .then(([r, p, m]) => {
         if (cancelled) return;
         setRecipes(r);
         setPrices(p);
@@ -72,10 +77,16 @@ export default function ProductionCalc() {
         for (const item of m) nameToId.set(item.name.toLowerCase(), item.id);
         setItemMap(nameToId);
         setLoading(false);
-      },
-    );
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        const message =
+          err instanceof Error ? err.message : "Failed to load recipe data";
+        setLoadError(message);
+        setLoading(false);
+      });
     return () => { cancelled = true; };
-  }, []);
+  }, [retryCount]);
 
   const results = useMemo(() => {
     if (search.length < 2) return [];
@@ -103,6 +114,18 @@ export default function ProductionCalc() {
     setSearch(r.name);
     setQuantity(1);
   }, []);
+
+  if (loadError) {
+    return (
+      <div className="max-w-4xl">
+        <h2 className="text-xl font-semibold mb-5">Production Calculator</h2>
+        <ErrorState
+          error={loadError}
+          onRetry={() => setRetryCount((n) => n + 1)}
+        />
+      </div>
+    );
+  }
 
   if (loading) {
     return (

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import {
   fetchAllSpells,
   getSpellsByBook,
@@ -6,6 +6,8 @@ import {
   type Spellbook,
 } from "../../lib/api/spells";
 import EmptyState from "../../components/EmptyState";
+import ErrorState from "../../components/ErrorState";
+import { useAsyncData } from "../../hooks/useAsyncData";
 import { NAV_ICONS } from "../../lib/sprites";
 
 const BOOKS: { id: Spellbook; label: string }[] = [
@@ -23,13 +25,10 @@ const BOOK_COLORS: Record<Spellbook, string> = {
 };
 
 export default function Spells() {
-  const [allSpells, setAllSpells] = useState<WikiSpell[]>([]);
+  const { data, loading, error, retry } = useAsyncData(fetchAllSpells, []);
+  const allSpells = data ?? [];
   const [activeBook, setActiveBook] = useState<Spellbook>("normal");
   const [query, setQuery] = useState("");
-
-  useEffect(() => {
-    fetchAllSpells().then(setAllSpells);
-  }, []);
 
   const spells = useMemo(() => {
     let filtered = getSpellsByBook(allSpells, activeBook);
@@ -84,7 +83,9 @@ export default function Spells() {
       />
 
       {/* Spell table */}
-      {allSpells.length === 0 ? (
+      {error ? (
+        <ErrorState error={error} onRetry={retry} />
+      ) : loading ? (
         <EmptyState
           icon={NAV_ICONS.spells}
           title="Loading spells..."
