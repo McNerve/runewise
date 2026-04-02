@@ -125,6 +125,7 @@ export default function BossGuide({ hiscores }: Props) {
   const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
   const [itemMap, setItemMap] = useState<Map<string, number>>(new Map());
   const activeRequest = useRef(0);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   const filteredBosses = useMemo(
     () =>
@@ -263,6 +264,9 @@ export default function BossGuide({ hiscores }: Props) {
     setSelectedBoss(boss);
     setActiveTab("guide");
     setLoading(true);
+    if (window.innerWidth < 1280) {
+      setTimeout(() => contentRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+    }
     setDropsLoading(true);
     setDropCategories([]);
     setWikiDrops([]);
@@ -396,7 +400,7 @@ export default function BossGuide({ hiscores }: Props) {
           </div>
         </aside>
 
-        <div className="space-y-4">
+        <div ref={contentRef} className="space-y-4">
           {!selectedBoss ? (
             <div className="py-10 text-center text-sm text-text-secondary">
               Pick a boss from the left to load a curated strategy view with structured sections and related tools.
