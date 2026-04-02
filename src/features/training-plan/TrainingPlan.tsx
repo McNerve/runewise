@@ -66,6 +66,7 @@ export default function TrainingPlan({ hiscores }: Props) {
       <h2 className="text-xl font-semibold mb-5">Training Plan</h2>
 
       {/* Quick presets */}
+      <div className="section-kicker mb-2">Quick Presets</div>
       <div className="flex gap-2 mb-5">
         <button
           onClick={() => setAllTo(99)}
