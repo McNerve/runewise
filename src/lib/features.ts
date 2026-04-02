@@ -79,6 +79,14 @@ export const FEATURE_REGISTRY = {
     search: true,
     aliases: ["boss", "guide", "strategy"],
   },
+  raids: {
+    title: "Raids",
+    navLabel: "Raids",
+    family: "Bossing",
+    sidebar: true,
+    search: true,
+    aliases: ["raids", "cox", "tob", "toa", "chambers", "theatre", "tombs"],
+  },
   loot: {
     title: "Loot",
     navLabel: "Loot",

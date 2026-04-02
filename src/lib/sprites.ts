@@ -113,6 +113,7 @@ export const NAV_ICONS: Record<string, string> = {
   "xp-table": `${WIKI_IMG}/Book_of_knowledge.png`,
   tracker: `${WIKI_IMG}/Collection_log.png`,
   bosses: `${WIKI_IMG}/Slayer_helmet_%28i%29.png`,
+  raids: `${WIKI_IMG}/Olmlet.png`,
   loot: `${WIKI_IMG}/Looting_bag.png`,
   progress: `${WIKI_IMG}/Character_Summary_tab_icon.png`,
   slayer: `${WIKI_IMG}/Slayer_icon.png`,

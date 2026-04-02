@@ -11,6 +11,7 @@ const FEATURE_ACCENTS: Record<View, string> = {
   "dry-calc": "#f59e0b",
   "pet-calc": "#f472b6",
   bosses: "#f97316",
+  raids: "#e879f9",
   loot: "#facc15",
   "combat-tasks": "#fb7185",
   market: "#22c55e",

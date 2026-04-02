@@ -28,6 +28,7 @@ const PlayerLookup = lazy(() => import("../features/player-lookup/PlayerLookup")
 const Loot = lazy(() => import("../features/loot/Loot"));
 const Progress = lazy(() => import("../features/progress/Progress"));
 const GearCompare = lazy(() => import("../features/gear-compare/GearCompare"));
+const Raids = lazy(() => import("../features/raids/Raids"));
 
 interface AppViewContext {
   hiscores: {
@@ -58,6 +59,7 @@ export const VIEW_RENDERERS: Record<View, ViewRenderer> = {
   "xp-table": renderComponent(XpTable),
   tracker: ({ hiscores }) => <XpTracker rsn={hiscores.rsn} />,
   bosses: ({ hiscores }) => <BossGuide hiscores={hiscores.data} />,
+  raids: renderComponent(Raids),
   loot: () => <Loot key={window.location.hash} />,
   progress: ({ hiscores }) => <Progress key={window.location.hash} hiscores={hiscores.data} />,
   slayer: renderComponent(SlayerHelper),
