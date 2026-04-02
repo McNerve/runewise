@@ -1,8 +1,9 @@
-import { Suspense } from "react";
+import { Suspense, lazy } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import Sidebar from "./components/Sidebar";
 import PlayerBar from "./components/PlayerBar";
 import GlobalSearch from "./components/GlobalSearch";
+const UpdateDialog = lazy(() => import("./components/UpdateDialog"));
 import ErrorBoundary from "./components/ErrorBoundary";
 import { CardSkeleton } from "./components/Skeleton";
 import { useHiscores } from "./hooks/useHiscores";
@@ -63,6 +64,9 @@ function AppContent() {
         </div>
       </div>
       <GlobalSearch />
+      <Suspense fallback={null}>
+        <UpdateDialog />
+      </Suspense>
     </>
   );
 }
