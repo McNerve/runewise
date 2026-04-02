@@ -114,8 +114,8 @@ export const FEATURE_REGISTRY = {
   "combat-tasks": {
     title: "Combat Tasks",
     navLabel: "Combat Tasks",
-    family: "Guides",
-    sidebar: false,
+    family: "Bossing",
+    sidebar: true,
     search: true,
     aliases: ["combat achievements", "ca", "combat tasks"],
   },
@@ -154,7 +154,7 @@ export const FEATURE_REGISTRY = {
   "money-making": {
     title: "Money Making",
     navLabel: "Money Making",
-    family: "Guides",
+    family: "Tools",
     sidebar: true,
     search: true,
     aliases: ["money making", "gp", "methods"],
@@ -186,7 +186,7 @@ export const FEATURE_REGISTRY = {
   timers: {
     title: "Farm Timers",
     navLabel: "Timers",
-    family: "Live",
+    family: "Tools",
     sidebar: true,
     search: true,
     aliases: ["timers", "farm timers"],
@@ -194,7 +194,7 @@ export const FEATURE_REGISTRY = {
   "xp-table": {
     title: "XP Table",
     navLabel: "XP Table",
-    family: "Live",
+    family: "Tools",
     sidebar: true,
     search: true,
     aliases: ["xp table", "levels"],
