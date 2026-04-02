@@ -23,6 +23,14 @@ export const FEATURE_REGISTRY = {
     search: true,
     aliases: ["lookup", "hiscores", "player lookup", "search player"],
   },
+  "collection-log": {
+    title: "Collection Log",
+    navLabel: "Collection Log",
+    family: "Player",
+    sidebar: true,
+    search: true,
+    aliases: ["collection log", "collection", "log", "obtained"],
+  },
   tracker: {
     title: "XP Tracker",
     navLabel: "XP Tracker",

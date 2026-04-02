@@ -3,6 +3,7 @@ import type { View } from "./features";
 const FEATURE_ACCENTS: Record<View, string> = {
   home: "#d6b36a",
   overview: "#60a5fa",
+  "collection-log": "#f59e0b",
   lookup: "#93c5fd",
   tracker: "#34d399",
   "skill-calc": "#c084fc",

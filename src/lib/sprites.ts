@@ -107,6 +107,7 @@ export function bossIconSmall(bossName: string): string {
 
 export const NAV_ICONS: Record<string, string> = {
   overview: `${WIKI_IMG}/Stats_icon.png`,
+  "collection-log": `${WIKI_IMG}/Collection_log.png`,
   lookup: `${WIKI_IMG}/Player-owned_house_portal.png`,
   "skill-calc": `${WIKI_IMG}/Antique_lamp.png`,
   "dry-calc": `${WIKI_IMG}/Ring_of_wealth.png`,

@@ -29,6 +29,7 @@ const Loot = lazy(() => import("../features/loot/Loot"));
 const Progress = lazy(() => import("../features/progress/Progress"));
 const GearCompare = lazy(() => import("../features/gear-compare/GearCompare"));
 const TrainingPlan = lazy(() => import("../features/training-plan/TrainingPlan"));
+const CollectionLog = lazy(() => import("../features/collection-log/CollectionLog"));
 const Raids = lazy(() => import("../features/raids/Raids"));
 
 interface AppViewContext {
@@ -58,6 +59,7 @@ export const VIEW_RENDERERS: Record<View, ViewRenderer> = {
   "skill-calc": ({ hiscores }) => <SkillCalculator hiscores={hiscores.data} />,
   "dry-calc": renderComponent(DryCalculator),
   "xp-table": renderComponent(XpTable),
+  "collection-log": renderComponent(CollectionLog),
   tracker: ({ hiscores }) => <XpTracker rsn={hiscores.rsn} />,
   bosses: ({ hiscores }) => <BossGuide hiscores={hiscores.data} />,
   raids: renderComponent(Raids),
