@@ -39,6 +39,7 @@ export const DEFAULT_KEYBINDS: KeybindMap = {
   "gear-compare": "g",
   raids: "i",
   "training-plan": "l",
+  "world-map": "e",
 };
 
 export const DEFAULT_SETTINGS: AppSettings = {

@@ -28,6 +28,7 @@ const PlayerLookup = lazy(() => import("../features/player-lookup/PlayerLookup")
 const Loot = lazy(() => import("../features/loot/Loot"));
 const Progress = lazy(() => import("../features/progress/Progress"));
 const GearCompare = lazy(() => import("../features/gear-compare/GearCompare"));
+const WorldMap = lazy(() => import("../features/world-map/WorldMap"));
 import EmptyState from "../components/EmptyState";
 import { NAV_ICONS } from "./sprites";
 const TrainingPlan = lazy(() => import("../features/training-plan/TrainingPlan"));
@@ -80,6 +81,7 @@ export const VIEW_RENDERERS: Record<View, ViewRenderer> = {
   "money-making": ({ hiscores }) => <MoneyMaking hiscores={hiscores.data} />,
   "combat-tasks": () => <CombatTasks key={window.location.hash} />,
   "clue-helper": renderComponent(ClueHelper),
+  "world-map": renderComponent(WorldMap),
   stars: renderComponent(ShootingStars),
   wiki: () => <WikiLookup key={window.location.hash} />,
   market: renderComponent(Market),

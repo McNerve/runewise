@@ -159,6 +159,14 @@ export const FEATURE_REGISTRY = {
     search: true,
     aliases: ["money making", "gp", "methods"],
   },
+  "world-map": {
+    title: "World Map",
+    navLabel: "World Map",
+    family: "Live",
+    sidebar: true,
+    search: true,
+    aliases: ["map", "world map", "locations", "bosses map", "fairy rings", "teleports"],
+  },
   stars: {
     title: "Shooting Stars",
     navLabel: "Shooting Stars",

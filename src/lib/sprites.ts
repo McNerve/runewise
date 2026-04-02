@@ -124,6 +124,7 @@ export const NAV_ICONS: Record<string, string> = {
   "gear-compare": `${WIKI_IMG}/Armour_case.png`,
   watchlist: `${WIKI_IMG}/Platinum_token_detail.png`,
   timers: `${WIKI_IMG}/Farming_icon.png`,
+  "world-map": `${WIKI_IMG}/Globe.png`,
   stars: `${WIKI_IMG}/Stardust.png`,
   "clue-helper": `${WIKI_IMG}/Clue_scroll_%28hard%29.png`,
   "combat-tasks": `${WIKI_IMG}/Combat_Achievements_icon.png`,
