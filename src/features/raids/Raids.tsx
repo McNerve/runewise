@@ -3,6 +3,7 @@ import { COX_ROOMS, COX_UNIQUES, type RaidRoom } from "./data/cox";
 import { TOB_ROOMS, TOB_UNIQUES } from "./data/tob";
 import { TOA_ROOMS, TOA_UNIQUES } from "./data/toa";
 import { itemIcon } from "../../lib/sprites";
+import RaidLootCalc from "./components/RaidLootCalc";
 
 type RaidTab = "cox" | "tob" | "toa";
 
@@ -143,32 +144,62 @@ export default function Raids() {
       </div>
 
       {tab === "cox" && (
-        <RaidContent
-          rooms={COX_ROOMS}
-          uniques={COX_UNIQUES}
-          lootDescription="CoX uses a points-based system. Each player earns points from damaging bosses and completing tasks. Unique drop chance scales with total team points. At 30,000 personal points, each unique has approximately a 1/34.5 chance to appear."
-          expandedRoom={expandedRoom}
-          onToggleRoom={(name) => setExpandedRoom(expandedRoom === name ? null : name)}
-        />
+        <>
+          <RaidContent
+            rooms={COX_ROOMS}
+            uniques={COX_UNIQUES}
+            lootDescription="CoX uses a points-based system. Each player earns points from damaging bosses and completing tasks. Unique drop chance scales with total team points. At 30,000 personal points, each unique has approximately a 1/34.5 chance to appear."
+            expandedRoom={expandedRoom}
+            onToggleRoom={(name) => setExpandedRoom(expandedRoom === name ? null : name)}
+          />
+          <RaidLootCalc
+            uniques={COX_UNIQUES}
+            raidName="raid"
+            inputLabel="Personal points"
+            inputDefault={30000}
+            inputDescription="Points earned per raid"
+            calculateRate={(points) => Math.max(1, 867500 / points)}
+          />
+        </>
       )}
 
       {tab === "tob" && (
-        <RaidContent
-          rooms={TOB_ROOMS}
-          uniques={TOB_UNIQUES}
-          lootDescription="ToB uses an MVP-based reward system. The player who deals the most damage across all rooms receives a weighted chance at unique drops. Each completion has approximately a 1/86 chance for a unique."
-          expandedRoom={expandedRoom}
-          onToggleRoom={(name) => setExpandedRoom(expandedRoom === name ? null : name)}
-        />
+        <>
+          <RaidContent
+            rooms={TOB_ROOMS}
+            uniques={TOB_UNIQUES}
+            lootDescription="ToB uses an MVP-based reward system. The player who deals the most damage across all rooms receives a weighted chance at unique drops. Each completion has approximately a 1/86 chance for a unique."
+            expandedRoom={expandedRoom}
+            onToggleRoom={(name) => setExpandedRoom(expandedRoom === name ? null : name)}
+          />
+          <RaidLootCalc
+            uniques={TOB_UNIQUES}
+            raidName="raid"
+            inputLabel="Team size"
+            inputDefault={4}
+            inputDescription="Players in team"
+            calculateRate={(teamSize) => 86 * Math.max(1, teamSize)}
+          />
+        </>
       )}
       {tab === "toa" && (
-        <RaidContent
-          rooms={TOA_ROOMS}
-          uniques={TOA_UNIQUES}
-          lootDescription="ToA uses an invocation-based system. Higher invocation levels increase difficulty and unique drop rates. At 150 invocations, each unique has approximately a 1/48 chance. Expert mode (300+) significantly improves rates."
-          expandedRoom={expandedRoom}
-          onToggleRoom={(name) => setExpandedRoom(expandedRoom === name ? null : name)}
-        />
+        <>
+          <RaidContent
+            rooms={TOA_ROOMS}
+            uniques={TOA_UNIQUES}
+            lootDescription="ToA uses an invocation-based system. Higher invocation levels increase difficulty and unique drop rates. At 150 invocations, each unique has approximately a 1/48 chance. Expert mode (300+) significantly improves rates."
+            expandedRoom={expandedRoom}
+            onToggleRoom={(name) => setExpandedRoom(expandedRoom === name ? null : name)}
+          />
+          <RaidLootCalc
+            uniques={TOA_UNIQUES}
+            raidName="raid"
+            inputLabel="Invocation level"
+            inputDefault={150}
+            inputDescription="Higher = better rates"
+            calculateRate={(invocation) => Math.max(1, 48 * (150 / Math.max(1, invocation)))}
+          />
+        </>
       )}
     </div>
   );
