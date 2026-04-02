@@ -159,6 +159,14 @@ export const FEATURE_REGISTRY = {
     search: true,
     aliases: ["money making", "gp", "methods"],
   },
+  spells: {
+    title: "Spellbook",
+    navLabel: "Spellbook",
+    family: "Guides",
+    sidebar: true,
+    search: true,
+    aliases: ["spells", "spellbook", "magic", "runes", "ancient", "lunar", "arceuus"],
+  },
   "world-map": {
     title: "World Map",
     navLabel: "World Map",

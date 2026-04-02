@@ -22,6 +22,7 @@ const FEATURE_ACCENTS: Record<View, string> = {
   slayer: "#ef4444",
   "clue-helper": "#a78bfa",
   "money-making": "#fbbf24",
+  spells: "#7c3aed",
   "world-map": "#06b6d4",
   stars: "#fbbf24",
   news: "#38bdf8",
