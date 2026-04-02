@@ -339,7 +339,7 @@ export default function PetCalculator({ hiscores }: Props) {
         <div className="bg-bg-secondary rounded-lg p-3 overflow-y-auto max-h-[600px]">
           {tab === "skilling" ? (
             <>
-              <div className="text-xs text-text-secondary mb-2">All Skill Pets</div>
+              <div className="section-kicker mb-2">All Skill Pets</div>
               <div className="space-y-0.5">
                 {SKILL_PETS.map((pet) => (
                   <button
@@ -365,7 +365,7 @@ export default function PetCalculator({ hiscores }: Props) {
                 if (pets.length === 0) return null;
                 return (
                   <div key={cat} className="mb-3">
-                    <div className="text-[9px] uppercase tracking-widest text-text-secondary/40 px-2 pt-2 pb-1">
+                    <div className="section-kicker px-2 pt-2 pb-1">
                       {CATEGORY_LABELS[cat]}
                     </div>
                     <div className="space-y-0.5">

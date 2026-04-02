@@ -1,9 +1,23 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { QUESTS, QUEST_DIFFICULTIES, type Quest } from "../../lib/data/quests";
+import { fetchAllQuests, type WikiQuest } from "../../lib/api/quests";
 import { type HiscoreData } from "../../lib/api/hiscores";
 import { SKILL_ICONS } from "../../lib/sprites";
+import { formatGp } from "../../lib/format";
 import ExternalLink from "../../components/ExternalLink";
 import { useNavigation } from "../../lib/NavigationContext";
+
+function wikiToQuest(w: WikiQuest): Quest {
+  return {
+    name: w.name,
+    difficulty: w.difficulty,
+    length: w.length,
+    questPoints: w.questPoints,
+    members: w.members,
+    skillRequirements: w.skillRequirements,
+    questRequirements: w.questRequirements,
+  };
+}
 
 interface Props {
   hiscores: HiscoreData | null;
@@ -36,13 +50,24 @@ export default function QuestTracker({ hiscores }: Props) {
   const [filter, setFilter] = useState<"all" | "available" | "locked">("all");
   const [diffFilter, setDiffFilter] = useState<string>("all");
   const [search, setSearch] = useState(params.quest ?? "");
+  const [quests, setQuests] = useState<Quest[]>(QUESTS);
+  const [wikiQuests, setWikiQuests] = useState<Map<string, WikiQuest>>(new Map());
+
+  useEffect(() => {
+    fetchAllQuests().then((fetched) => {
+      if (fetched.length > 0) {
+        setQuests(fetched.map(wikiToQuest));
+        setWikiQuests(new Map(fetched.map((w) => [w.name, w])));
+      }
+    });
+  }, []);
 
   const questsWithStatus = useMemo(() => {
-    return QUESTS.map((quest) => ({
+    return quests.map((quest) => ({
       quest,
       ...checkRequirements(quest, hiscores),
     }));
-  }, [hiscores]);
+  }, [hiscores, quests]);
 
   const filtered = useMemo(() => {
     let result = questsWithStatus;
@@ -191,6 +216,55 @@ export default function QuestTracker({ hiscores }: Props) {
                 </span>
               </div>
             )}
+
+            {(() => {
+              const wiki = wikiQuests.get(quest.name);
+              if (!wiki) return null;
+              const details: { label: string; value: string }[] = [];
+              if (wiki.startPoint) details.push({ label: "Start", value: wiki.startPoint });
+              if (wiki.itemsRequired) details.push({ label: "Items", value: wiki.itemsRequired });
+              if (wiki.enemiesToDefeat && wiki.enemiesToDefeat !== "None") details.push({ label: "Enemies", value: wiki.enemiesToDefeat });
+              if (wiki.ironmanConcerns && wiki.ironmanConcerns !== "None") details.push({ label: "Ironman", value: wiki.ironmanConcerns });
+
+              const hasRewards =
+                wiki.rewards.xp.length > 0 ||
+                wiki.rewards.items.length > 0 ||
+                wiki.rewards.other.length > 0;
+
+              if (details.length === 0 && !hasRewards) return null;
+              return (
+                <div className="mt-1.5 ml-4 space-y-0.5">
+                  {details.map((d) => (
+                    <div key={d.label} className="text-xs text-text-secondary">
+                      <span className="font-medium">{d.label}:</span> {d.value}
+                    </div>
+                  ))}
+                  {hasRewards && (
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {wiki.rewards.xp.map((r) => (
+                        <span
+                          key={r.skill}
+                          className="flex items-center gap-1 bg-accent/10 text-accent text-[10px] px-1.5 py-0.5 rounded"
+                        >
+                          {SKILL_ICONS[r.skill] && (
+                            <img src={SKILL_ICONS[r.skill]} alt="" className="w-3 h-3" />
+                          )}
+                          {formatGp(r.amount)} XP
+                        </span>
+                      ))}
+                      {wiki.rewards.other.map((r, i) => (
+                        <span
+                          key={i}
+                          className="text-[10px] bg-success/10 text-success px-1.5 py-0.5 rounded"
+                        >
+                          {r}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </ExternalLink>
         ))}
       </div>

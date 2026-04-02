@@ -1,7 +1,10 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { DIARY_REGIONS, type DiaryRegion, type DiaryTier } from "../../lib/data/diaries";
 import { type HiscoreData } from "../../lib/api/hiscores";
 import { SKILL_ICONS } from "../../lib/sprites";
+import { loadJSON, saveJSON } from "../../lib/localStorage";
+
+const TASKS_KEY = "runewise_diary_tasks";
 
 interface Props {
   hiscores: HiscoreData | null;
@@ -31,6 +34,10 @@ function checkTier(
   return { met, total: tier.requirements.length, missing };
 }
 
+function taskKey(region: string, tier: string, taskIdx: number): string {
+  return `${region}:${tier}:${taskIdx}`;
+}
+
 const TIER_COLORS = {
   Easy: "text-success",
   Medium: "text-warning",
@@ -41,6 +48,31 @@ const TIER_COLORS = {
 export default function DiaryTracker({ hiscores }: Props) {
   const [selectedRegion, setSelectedRegion] = useState<DiaryRegion>(DIARY_REGIONS[0]);
   const [expandedTier, setExpandedTier] = useState<string | null>(null);
+  const [completedTasks, setCompletedTasks] = useState<Set<string>>(() => {
+    const data = loadJSON<string[]>(TASKS_KEY, []);
+    return new Set(data);
+  });
+
+  const toggleTask = useCallback((key: string) => {
+    setCompletedTasks((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      saveJSON(TASKS_KEY, [...next]);
+      return next;
+    });
+  }, []);
+
+  const getTaskCount = useCallback(
+    (region: string, tier: string, totalTasks: number) => {
+      let done = 0;
+      for (let i = 0; i < totalTasks; i++) {
+        if (completedTasks.has(taskKey(region, tier, i))) done++;
+      }
+      return done;
+    },
+    [completedTasks]
+  );
 
   const regionSummaries = useMemo(() => {
     return DIARY_REGIONS.map((region) => {
@@ -49,9 +81,18 @@ export default function DiaryTracker({ hiscores }: Props) {
         return { tier: tier.tier, complete: check.missing.length === 0 };
       });
       const completed = tierStatuses.filter((t) => t.complete).length;
-      return { region: region.name, completed, total: 4 };
+      const tasksCompleted = region.tiers.reduce(
+        (sum, tier) =>
+          sum + getTaskCount(region.name, tier.tier, tier.tasks.length),
+        0
+      );
+      const totalTasks = region.tiers.reduce(
+        (sum, tier) => sum + tier.tasks.length,
+        0
+      );
+      return { region: region.name, completed, total: 4, tasksCompleted, totalTasks };
     });
-  }, [hiscores]);
+  }, [hiscores, getTaskCount]);
 
   return (
     <div className="max-w-4xl">
@@ -79,19 +120,26 @@ export default function DiaryTracker({ hiscores }: Props) {
                   <span className="font-medium text-text-primary text-xs">
                     {region.name}
                   </span>
-                  {hiscores && (
-                    <span
-                      className={`text-[10px] ${
-                        summary.completed === 4
-                          ? "text-success"
-                          : summary.completed > 0
-                            ? "text-warning"
-                            : "text-text-secondary"
-                      }`}
-                    >
-                      {summary.completed}/4
-                    </span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {summary.tasksCompleted > 0 && (
+                      <span className="text-[10px] text-text-secondary/50 tabular-nums">
+                        {summary.tasksCompleted}/{summary.totalTasks}
+                      </span>
+                    )}
+                    {hiscores && (
+                      <span
+                        className={`text-[10px] ${
+                          summary.completed === 4
+                            ? "text-success"
+                            : summary.completed > 0
+                              ? "text-warning"
+                              : "text-text-secondary"
+                        }`}
+                      >
+                        {summary.completed}/4
+                      </span>
+                    )}
+                  </div>
                 </div>
               </button>
             );
@@ -106,6 +154,12 @@ export default function DiaryTracker({ hiscores }: Props) {
             const check = checkTier(tier, hiscores);
             const isExpanded = expandedTier === tier.tier;
             const isComplete = check.missing.length === 0 && hiscores;
+            const tasksDone = getTaskCount(
+              selectedRegion.name,
+              tier.tier,
+              tier.tasks.length
+            );
+            const allTasksDone = tasksDone === tier.tasks.length && tier.tasks.length > 0;
 
             return (
               <div key={tier.tier} className="bg-bg-secondary rounded-lg overflow-hidden">
@@ -130,9 +184,24 @@ export default function DiaryTracker({ hiscores }: Props) {
                       </span>
                     )}
                   </div>
-                  <span className="text-text-secondary text-xs">
-                    {isExpanded ? "▲" : "▼"}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    {tier.tasks.length > 0 && (
+                      <span
+                        className={`text-[10px] tabular-nums ${
+                          allTasksDone
+                            ? "text-success"
+                            : tasksDone > 0
+                              ? "text-accent"
+                              : "text-text-secondary/40"
+                        }`}
+                      >
+                        {tasksDone}/{tier.tasks.length} tasks
+                      </span>
+                    )}
+                    <span className="text-text-secondary text-xs">
+                      {isExpanded ? "▲" : "▼"}
+                    </span>
+                  </div>
                 </button>
 
                 {isExpanded && (
@@ -182,16 +251,46 @@ export default function DiaryTracker({ hiscores }: Props) {
                       <>
                         <div className="mb-1 mt-3">
                           <span className="text-xs text-text-secondary uppercase tracking-wider">
-                            Tasks
+                            Tasks ({tasksDone}/{tier.tasks.length})
                           </span>
                         </div>
-                        <ul className="text-xs text-text-secondary space-y-1 mb-3">
-                          {tier.tasks.map((task, j) => (
-                            <li key={j} className="flex items-start gap-1.5">
-                              <span className="text-text-secondary/50 mt-0.5">-</span>
-                              <span>{task}</span>
-                            </li>
-                          ))}
+                        <ul className="text-xs space-y-1 mb-3">
+                          {tier.tasks.map((task, j) => {
+                            const key = taskKey(
+                              selectedRegion.name,
+                              tier.tier,
+                              j
+                            );
+                            const isDone = completedTasks.has(key);
+                            return (
+                              <li key={j}>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleTask(key);
+                                  }}
+                                  className={`flex items-start gap-2 w-full text-left rounded px-1 py-0.5 transition-colors hover:bg-bg-tertiary ${
+                                    isDone
+                                      ? "text-success/60"
+                                      : "text-text-secondary"
+                                  }`}
+                                >
+                                  <span
+                                    className={`mt-0.5 w-3.5 h-3.5 shrink-0 rounded border flex items-center justify-center text-[9px] ${
+                                      isDone
+                                        ? "border-success bg-success/20 text-success"
+                                        : "border-border"
+                                    }`}
+                                  >
+                                    {isDone && "✓"}
+                                  </span>
+                                  <span className={isDone ? "line-through" : ""}>
+                                    {task}
+                                  </span>
+                                </button>
+                              </li>
+                            );
+                          })}
                         </ul>
                       </>
                     )}

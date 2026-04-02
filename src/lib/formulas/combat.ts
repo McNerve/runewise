@@ -15,7 +15,7 @@ export function combatLevel(stats: CombatStats): number {
   const melee = 0.325 * (stats.attack + stats.strength);
   const ranged = 0.325 * (Math.floor(stats.ranged / 2) + stats.ranged);
   const magic = 0.325 * (Math.floor(stats.magic / 2) + stats.magic);
-  return base + Math.max(melee, ranged, magic);
+  return Math.floor(base + Math.max(melee, ranged, magic));
 }
 
 /** Melee max hit (simplified — see dps.ts for full DPS calculator) */

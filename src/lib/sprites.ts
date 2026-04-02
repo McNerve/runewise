@@ -1,4 +1,4 @@
-const WIKI_IMG = "https://oldschool.runescape.wiki/images";
+export const WIKI_IMG = "https://oldschool.runescape.wiki/images";
 
 export function skillIcon(skill: string): string {
   const name = skill.charAt(0).toUpperCase() + skill.slice(1).toLowerCase();
@@ -107,23 +107,31 @@ export function bossIconSmall(bossName: string): string {
 
 export const NAV_ICONS: Record<string, string> = {
   overview: `${WIKI_IMG}/Stats_icon.png`,
+  "collection-log": `${WIKI_IMG}/Collection_log.png`,
   lookup: `${WIKI_IMG}/Player-owned_house_portal.png`,
   "skill-calc": `${WIKI_IMG}/Antique_lamp.png`,
   "dry-calc": `${WIKI_IMG}/Ring_of_wealth.png`,
   "xp-table": `${WIKI_IMG}/Book_of_knowledge.png`,
   tracker: `${WIKI_IMG}/Collection_log.png`,
   bosses: `${WIKI_IMG}/Slayer_helmet_%28i%29.png`,
+  raids: `${WIKI_IMG}/Olmlet.png`,
   loot: `${WIKI_IMG}/Looting_bag.png`,
   progress: `${WIKI_IMG}/Character_Summary_tab_icon.png`,
   slayer: `${WIKI_IMG}/Slayer_icon.png`,
   news: `${WIKI_IMG}/Newspaper.png`,
   "dps-calc": `${WIKI_IMG}/Dragon_claws_detail.png`,
+  "training-plan": `${WIKI_IMG}/Quest_point_icon.png`,
+  "gear-compare": `${WIKI_IMG}/Armour_case.png`,
   watchlist: `${WIKI_IMG}/Platinum_token_detail.png`,
   timers: `${WIKI_IMG}/Farming_icon.png`,
+  spells: `${WIKI_IMG}/Magic_icon.png`,
+  "world-map": `${WIKI_IMG}/Globe.png`,
   stars: `${WIKI_IMG}/Stardust.png`,
   "clue-helper": `${WIKI_IMG}/Clue_scroll_%28hard%29.png`,
   "combat-tasks": `${WIKI_IMG}/Combat_Achievements_icon.png`,
   "money-making": `${WIKI_IMG}/Coins_detail.png`,
+  "production-calc": `${WIKI_IMG}/Crafting_icon.png`,
+  kingdom: `${WIKI_IMG}/Quest_point_cape_detail.png`,
   wiki: `${WIKI_IMG}/Book_of_knowledge.png`,
   "pet-calc": `${WIKI_IMG}/Heron.png`,
   settings: `${WIKI_IMG}/Options_icon.png`,

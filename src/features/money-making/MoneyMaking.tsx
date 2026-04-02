@@ -1,8 +1,10 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { MONEY_METHODS, type MoneyMethod } from "../../lib/data/money-methods";
+import { fetchAllMoneyMethods, type WikiMoneyMethod } from "../../lib/api/moneyMaking";
 import { type HiscoreData } from "../../lib/api/hiscores";
 import { formatGp } from "../../lib/format";
-import { SKILL_ICONS } from "../../lib/sprites";
+import { SKILL_ICONS, NAV_ICONS } from "../../lib/sprites";
+import EmptyState from "../../components/EmptyState";
 
 interface Props {
   hiscores: HiscoreData | null;
@@ -50,6 +52,14 @@ export default function MoneyMaking({ hiscores }: Props) {
   const [search, setSearch] = useState("");
   const [membersOnly, setMembersOnly] = useState(true);
   const [bestForMe, setBestForMe] = useState(false);
+  const [wikiMethods, setWikiMethods] = useState<WikiMoneyMethod[]>([]);
+  const [showWiki, setShowWiki] = useState(false);
+
+  useEffect(() => {
+    fetchAllMoneyMethods().then((methods) => {
+      if (methods.length > 0) setWikiMethods(methods);
+    });
+  }, []);
 
   const filtered = useMemo(() => {
     let methods = [...MONEY_METHODS];
@@ -88,10 +98,20 @@ export default function MoneyMaking({ hiscores }: Props) {
 
   return (
     <div className="max-w-4xl">
-      <h2 className="text-xl font-semibold mb-1">Money Making Guide</h2>
+      <div className="flex items-center justify-between mb-1">
+        <h2 className="text-xl font-semibold">Money Making Guide</h2>
+        {wikiMethods.length > 0 && (
+          <button
+            onClick={() => setShowWiki(!showWiki)}
+            className={`text-xs transition-colors ${showWiki ? "text-accent" : "text-text-secondary/50 hover:text-text-primary"}`}
+          >
+            {showWiki ? `Wiki Methods (${wikiMethods.length})` : `Show Wiki (${wikiMethods.length})`}
+          </button>
+        )}
+      </div>
       <p className="text-xs text-text-secondary mb-4">
-        {totalMethods} methods
-        {availableCount !== null && ` — ${availableCount} available for your stats`}
+        {showWiki ? wikiMethods.length : totalMethods} methods
+        {!showWiki && availableCount !== null && ` — ${availableCount} available for your stats`}
       </p>
 
       {/* Filters */}
@@ -172,6 +192,16 @@ export default function MoneyMaking({ hiscores }: Props) {
                         F2P
                       </span>
                     )}
+                    {method.intensity && (
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+                        method.intensity === "afk" ? "bg-success/10 text-success" :
+                        method.intensity === "low" ? "bg-accent/10 text-accent" :
+                        method.intensity === "medium" ? "bg-warning/10 text-warning" :
+                        "bg-danger/10 text-danger"
+                      }`}>
+                        {method.intensity.toUpperCase()}
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-text-secondary mt-1">
                     {method.description}
@@ -239,13 +269,63 @@ export default function MoneyMaking({ hiscores }: Props) {
         })}
       </div>
 
-      {filtered.length === 0 && (
-        <p className="text-sm text-text-secondary text-center py-8">
-          No methods match your filters.
-        </p>
+      {!showWiki && filtered.length === 0 && (
+        <EmptyState
+          icon={NAV_ICONS["money-making"]}
+          title="No methods match your filters"
+          description="Try adjusting your search or category."
+        />
       )}
 
-      {!hiscores && (
+      {showWiki && (
+        <div className="space-y-2 mt-2">
+          {wikiMethods
+            .filter((m) => !search || m.activity.toLowerCase().includes(search.toLowerCase()))
+            .slice(0, 100)
+            .map((method) => (
+              <div
+                key={method.name}
+                className="py-3 px-3 rounded-lg hover:bg-bg-secondary/50 transition-colors"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-medium">{method.activity}</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-bg-tertiary text-text-secondary">
+                        {method.category}
+                      </span>
+                      {method.intensity !== "Unknown" && (
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+                          method.intensity === "Low" ? "bg-success/10 text-success" :
+                          method.intensity === "Medium" ? "bg-warning/10 text-warning" :
+                          "bg-danger/10 text-danger"
+                        }`}>
+                          {method.intensity.toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                    {method.skillRequirements && (
+                      <p className="text-xs text-text-secondary/60 mt-0.5 truncate">
+                        {method.skillRequirements}
+                      </p>
+                    )}
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="text-sm font-bold text-success tabular-nums">
+                      {formatGp(method.profitPerHour)}
+                    </div>
+                    <div className="text-[10px] text-text-secondary">GP/hr</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          <p className="text-xs text-text-secondary/40 mt-2 text-right">
+            Data from OSRS Wiki money making guides
+          </p>
+        </div>
+      )}
+
+      {!showWiki && !hiscores && (
         <p className="text-sm text-text-secondary mt-4">
           Look up your RSN above to see which methods you can do and enable "Best for me" filtering.
         </p>

@@ -68,9 +68,10 @@ export default function DryCalculator() {
           </div>
 
           <div className="border-t border-border pt-4">
+            <div className="section-kicker mb-3">Results</div>
             <div className="text-center mb-3">
               <span
-                className={`text-4xl font-bold ${
+                className={`text-4xl font-bold tabular-nums ${
                   chance >= 95
                     ? "text-danger"
                     : chance >= 75
@@ -102,15 +103,15 @@ export default function DryCalculator() {
             <div className="space-y-1.5 text-sm">
               <div className="flex justify-between">
                 <span className="text-text-secondary">50% confidence</span>
-                <span>{kills50.toLocaleString()} kills</span>
+                <span className="tabular-nums">{kills50.toLocaleString()} kills</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-text-secondary">95% confidence</span>
-                <span>{kills95.toLocaleString()} kills</span>
+                <span className="tabular-nums">{kills95.toLocaleString()} kills</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-text-secondary">Expected (1x rate)</span>
-                <span>{Math.round(rate).toLocaleString()} kills</span>
+                <span className="tabular-nums">{Math.round(rate).toLocaleString()} kills</span>
               </div>
             </div>
           </div>
@@ -118,6 +119,7 @@ export default function DryCalculator() {
 
         {/* Presets */}
         <div className="bg-bg-secondary rounded-lg p-3 overflow-y-auto max-h-[500px]">
+          <div className="section-kicker mb-2">Boss Presets</div>
           <div className="flex flex-wrap gap-1 mb-3">
             <button
               onClick={() => setSelectedCategory("All")}

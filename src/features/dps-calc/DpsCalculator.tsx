@@ -1,11 +1,33 @@
-import { useState, useMemo, useEffect } from "react";
-import { calculateDps } from "../../lib/formulas/dps";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import {
+  calculateDps,
+  DPS_MODIFIERS,
+  type DpsModifier,
+} from "../../lib/formulas/dps";
 import { PRAYERS, type Prayer } from "../../lib/data/prayers";
-import { MONSTERS, type Monster } from "../../lib/data/monsters";
+import { MONSTERS } from "../../lib/data/monsters";
+import { fetchAllMonsters, type WikiMonster } from "../../lib/api/monsters";
 import { type HiscoreData } from "../../lib/api/hiscores";
+import { loadJSON, saveJSON } from "../../lib/localStorage";
 import { useNavigation } from "../../lib/NavigationContext";
+import MonsterSearch from "./components/MonsterSearch";
+import ModifierToggles from "./components/ModifierToggles";
+import DpsBreakdown from "./components/DpsBreakdown";
 
 type CombatStyle = "melee" | "ranged" | "magic";
+
+interface GearLoadout {
+  name: string;
+  combatStyle: CombatStyle;
+  stanceIdx: number;
+  prayerIdx: number;
+  attackBonus: number;
+  strengthBonus: number;
+  attackSpeed: number;
+  modifiers: string[];
+}
+
+const LOADOUTS_KEY = "runewise_dps_loadouts";
 
 interface Stance {
   label: string;
@@ -37,18 +59,10 @@ const DEFAULT_SPEED: Record<CombatStyle, number> = {
   magic: 5,
 };
 
-function getDefBonus(monster: Monster, style: CombatStyle): number {
-  if (style === "ranged") return monster.defRanged;
-  if (style === "magic") return monster.defMagic;
-  return Math.min(monster.defStab, monster.defSlash, monster.defCrush);
-}
-
-function formatTtk(seconds: number): string {
-  if (!isFinite(seconds) || seconds <= 0) return "--";
-  if (seconds < 60) return `${seconds.toFixed(1)}s`;
-  const m = Math.floor(seconds / 60);
-  const s = Math.round(seconds % 60);
-  return `${m}m ${s}s`;
+function getDefBonus(m: WikiMonster, style: CombatStyle): number {
+  if (style === "ranged") return m.defRanged;
+  if (style === "magic") return m.defMagic;
+  return Math.min(m.defStab, m.defSlash, m.defCrush);
 }
 
 function getSkillLevel(hiscores: HiscoreData | null, name: string): number {
@@ -76,9 +90,23 @@ export default function DpsCalculator({ hiscores }: Props) {
   const [attackSpeed, setAttackSpeed] = useState(DEFAULT_SPEED.melee);
   const [stanceIdx, setStanceIdx] = useState(0);
   const [prayerIdx, setPrayerIdx] = useState(0);
-  const [monsterIdx, setMonsterIdx] = useState(0);
+  const [selectedMonster, setSelectedMonster] = useState<WikiMonster | null>(null);
   const [customDef, setCustomDef] = useState({ defLevel: 1, defBonus: 0, hp: 100 });
+  const [activeModifiers, setActiveModifiers] = useState<Set<string>>(new Set());
+  const [wikiMonsters, setWikiMonsters] = useState<WikiMonster[]>([]);
+  const [showBreakdown, setShowBreakdown] = useState(false);
+  const [loadouts, setLoadouts] = useState<GearLoadout[]>(() =>
+    loadJSON(LOADOUTS_KEY, [])
+  );
+  const [loadoutName, setLoadoutName] = useState("");
+  const pendingLoadout = useRef<GearLoadout | null>(null);
 
+  // Load wiki monsters
+  useEffect(() => {
+    fetchAllMonsters().then(setWikiMonsters);
+  }, []);
+
+  // Sync hiscores stats
   useEffect(() => {
     if (hiscores) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- sync from external hiscores data
@@ -89,23 +117,69 @@ export default function DpsCalculator({ hiscores }: Props) {
     }
   }, [hiscores]);
 
+  // Handle monster param from cross-nav
   useEffect(() => {
-    if (!params.monster) return;
-    const nextIndex = MONSTERS.findIndex(
-      (monster) => monster.name.toLowerCase() === params.monster?.toLowerCase()
+    if (!params.monster || wikiMonsters.length === 0) return;
+    const match = wikiMonsters.find(
+      (m) => m.name.toLowerCase() === params.monster?.toLowerCase()
     );
-    if (nextIndex >= 0) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- sync the selected target when navigating from boss guides
-      setMonsterIdx(nextIndex);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync target from URL params
+    if (match) setSelectedMonster(match);
+    else {
+      // Fallback to old static monsters
+      const staticMatch = MONSTERS.find(
+        (m) => m.name.toLowerCase() === params.monster?.toLowerCase()
+      );
+      if (staticMatch && staticMatch.name !== "Custom target") {
+        setSelectedMonster({
+          name: staticMatch.name,
+          version: null,
+          combatLevel: 0,
+          hitpoints: staticMatch.hp,
+          maxHit: 0,
+          attackSpeed: 0,
+          attackStyles: [],
+          attackLevel: 0,
+          strengthLevel: 0,
+          defenceLevel: staticMatch.defLevel,
+          magicLevel: 0,
+          rangedLevel: 0,
+          slayerLevel: 0,
+          slayerXp: 0,
+          defStab: staticMatch.defStab,
+          defSlash: staticMatch.defSlash,
+          defCrush: staticMatch.defCrush,
+          defMagic: staticMatch.defMagic,
+          defRanged: staticMatch.defRanged,
+          attackBonus: 0,
+          strengthBonus: 0,
+          magicAttackBonus: 0,
+          rangedAttackBonus: 0,
+          magicDamageBonus: 0,
+          image: null,
+          examine: null,
+        });
+      }
     }
-  }, [params.monster]);
+  }, [params.monster, wikiMonsters]);
 
-  // Reset stance and prayer when combat style changes
+  // Reset stance and prayer when combat style changes, or apply pending loadout
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset dependent state on style change
-    setStanceIdx(0);
-    setPrayerIdx(0);
-    setAttackSpeed(DEFAULT_SPEED[combatStyle]);
+    const loadout = pendingLoadout.current;
+    if (loadout && loadout.combatStyle === combatStyle) {
+      pendingLoadout.current = null;
+      setStanceIdx(loadout.stanceIdx);
+      setPrayerIdx(loadout.prayerIdx);
+      setAttackBonus(loadout.attackBonus);
+      setStrengthBonus(loadout.strengthBonus);
+      setAttackSpeed(loadout.attackSpeed);
+      setActiveModifiers(new Set(loadout.modifiers));
+    } else {
+      setStanceIdx(0);
+      setPrayerIdx(0);
+      setAttackSpeed(DEFAULT_SPEED[combatStyle]);
+      setActiveModifiers(new Set());
+    }
   }, [combatStyle]);
 
   const stances = STANCES[combatStyle];
@@ -115,14 +189,23 @@ export default function DpsCalculator({ hiscores }: Props) {
     [combatStyle]
   );
   const prayer: Prayer = filteredPrayers[prayerIdx] ?? filteredPrayers[0];
-  const monster = MONSTERS[monsterIdx];
-  const isCustom = monster.name === "Custom target";
 
-  const targetDefLevel = isCustom ? customDef.defLevel : monster.defLevel;
+  const isCustom = !selectedMonster;
+  const targetDefLevel = isCustom
+    ? customDef.defLevel
+    : selectedMonster.defenceLevel;
   const targetDefBonus = isCustom
     ? customDef.defBonus
-    : getDefBonus(monster, combatStyle);
-  const targetHp = isCustom ? customDef.hp : monster.hp;
+    : getDefBonus(selectedMonster, combatStyle);
+  const targetHp = isCustom ? customDef.hp : selectedMonster.hitpoints;
+
+  const modifierList = useMemo<DpsModifier[]>(
+    () =>
+      [...activeModifiers]
+        .map((id) => DPS_MODIFIERS[id])
+        .filter((m): m is DpsModifier => m != null),
+    [activeModifiers]
+  );
 
   const result = useMemo(
     () =>
@@ -142,6 +225,8 @@ export default function DpsCalculator({ hiscores }: Props) {
         targetDefLevel,
         targetDefBonus,
         targetHp,
+        targetMagicLevel: selectedMonster?.magicLevel,
+        modifiers: modifierList,
       }),
     [
       attackLevel,
@@ -157,15 +242,75 @@ export default function DpsCalculator({ hiscores }: Props) {
       targetDefLevel,
       targetDefBonus,
       targetHp,
+      selectedMonster?.magicLevel,
+      modifierList,
     ]
   );
 
-  return (
-    <div className="max-w-2xl">
-      <h2 className="text-xl font-semibold mb-4">DPS Calculator</h2>
+  const toggleModifier = useCallback((id: string) => {
+    setActiveModifiers((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
 
-      <div className="space-y-4">
-        {/* Combat Style Selector */}
+  const saveLoadout = useCallback(() => {
+    const name = loadoutName.trim();
+    if (!name) return;
+    const loadout: GearLoadout = {
+      name,
+      combatStyle,
+      stanceIdx,
+      prayerIdx,
+      attackBonus,
+      strengthBonus,
+      attackSpeed,
+      modifiers: [...activeModifiers],
+    };
+    setLoadouts((prev) => {
+      const next = prev.filter((l) => l.name !== name);
+      next.push(loadout);
+      saveJSON(LOADOUTS_KEY, next);
+      return next;
+    });
+    setLoadoutName("");
+  }, [loadoutName, combatStyle, stanceIdx, prayerIdx, attackBonus, strengthBonus, attackSpeed, activeModifiers]);
+
+  const applyLoadout = useCallback((loadout: GearLoadout) => {
+    if (loadout.combatStyle === combatStyle) {
+      // Same style — apply directly, no effect needed
+      setStanceIdx(loadout.stanceIdx);
+      setPrayerIdx(loadout.prayerIdx);
+      setAttackBonus(loadout.attackBonus);
+      setStrengthBonus(loadout.strengthBonus);
+      setAttackSpeed(loadout.attackSpeed);
+      setActiveModifiers(new Set(loadout.modifiers));
+    } else {
+      // Different style — stash loadout and let the combatStyle effect apply it
+      pendingLoadout.current = loadout;
+      setCombatStyle(loadout.combatStyle);
+    }
+  }, [combatStyle]);
+
+  const deleteLoadout = useCallback((name: string) => {
+    setLoadouts((prev) => {
+      const next = prev.filter((l) => l.name !== name);
+      saveJSON(LOADOUTS_KEY, next);
+      return next;
+    });
+  }, []);
+
+  return (
+    <div className="max-w-3xl">
+      <h2 className="text-xl font-semibold mb-5">DPS Calculator</h2>
+
+      <div className="space-y-5">
+        {/* Combat Style */}
         <div className="flex gap-2">
           {(["melee", "ranged", "magic"] as const).map((style) => (
             <button
@@ -182,88 +327,93 @@ export default function DpsCalculator({ hiscores }: Props) {
           ))}
         </div>
 
-        {/* Stats + Equipment */}
-        <div className="grid grid-cols-2 gap-4">
-          {/* Player Stats */}
+        {/* Loadout Presets */}
+        <div>
+          <div className="section-kicker mb-3">Loadouts</div>
+          {loadouts.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-3">
+              {loadouts.map((l) => (
+                <div
+                  key={l.name}
+                  className="flex items-center gap-1 bg-bg-secondary border border-border rounded-lg overflow-hidden"
+                >
+                  <button
+                    onClick={() => applyLoadout(l)}
+                    className="px-3 py-1.5 text-xs font-medium hover:bg-bg-tertiary transition-colors"
+                  >
+                    {l.name}
+                    <span className="ml-1.5 text-text-secondary/50 capitalize">
+                      {l.combatStyle}
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => deleteLoadout(l.name)}
+                    className="px-1.5 py-1.5 text-text-secondary/40 hover:text-danger text-xs transition-colors"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={loadoutName}
+              onChange={(e) => setLoadoutName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && saveLoadout()}
+              placeholder="Loadout name..."
+              className="flex-1 bg-bg-secondary border border-border rounded-lg px-3 py-1.5 text-sm"
+            />
+            <button
+              onClick={saveLoadout}
+              disabled={!loadoutName.trim()}
+              className="px-3 py-1.5 text-xs font-medium bg-accent text-white rounded-lg hover:bg-accent-hover transition-colors disabled:opacity-40"
+            >
+              Save
+            </button>
+          </div>
+        </div>
+
+        {/* Stats + Equipment side by side */}
+        <div className="grid grid-cols-2 gap-5">
           <div>
-            <h3 className="text-xs uppercase tracking-wider text-text-secondary/60 mb-3">
-              Player Stats
-            </h3>
+            <div className="section-kicker mb-3">Player Stats</div>
             <div className="space-y-2">
               {combatStyle === "melee" && (
                 <>
-                  <StatInput
-                    label="Attack"
-                    value={attackLevel}
-                    onChange={setAttackLevel}
-                  />
-                  <StatInput
-                    label="Strength"
-                    value={strengthLevel}
-                    onChange={setStrengthLevel}
-                  />
+                  <StatInput label="Attack" value={attackLevel} onChange={setAttackLevel} />
+                  <StatInput label="Strength" value={strengthLevel} onChange={setStrengthLevel} />
                 </>
               )}
               {combatStyle === "ranged" && (
-                <StatInput
-                  label="Ranged"
-                  value={rangedLevel}
-                  onChange={setRangedLevel}
-                />
+                <StatInput label="Ranged" value={rangedLevel} onChange={setRangedLevel} />
               )}
               {combatStyle === "magic" && (
-                <StatInput
-                  label="Magic"
-                  value={magicLevel}
-                  onChange={setMagicLevel}
-                />
+                <StatInput label="Magic" value={magicLevel} onChange={setMagicLevel} />
               )}
             </div>
             {hiscores && (
               <p className="text-[10px] text-text-secondary/50 mt-2">
-                Loaded from Hiscores
+                Auto-loaded from Hiscores
               </p>
             )}
           </div>
 
-          {/* Equipment Bonuses */}
           <div>
-            <h3 className="text-xs uppercase tracking-wider text-text-secondary/60 mb-3">
-              Equipment Bonuses
-            </h3>
+            <div className="section-kicker mb-3">Equipment Bonuses</div>
             <div className="space-y-2">
-              <StatInput
-                label="Attack bonus"
-                value={attackBonus}
-                onChange={setAttackBonus}
-                min={-64}
-                max={300}
-              />
-              <StatInput
-                label="Strength bonus"
-                value={strengthBonus}
-                onChange={setStrengthBonus}
-                min={0}
-                max={300}
-              />
-              <StatInput
-                label="Attack speed"
-                value={attackSpeed}
-                onChange={setAttackSpeed}
-                min={1}
-                max={12}
-                suffix="ticks"
-              />
+              <StatInput label="Attack bonus" value={attackBonus} onChange={setAttackBonus} min={-64} max={300} />
+              <StatInput label="Strength bonus" value={strengthBonus} onChange={setStrengthBonus} min={0} max={300} />
+              <StatInput label="Attack speed" value={attackSpeed} onChange={setAttackSpeed} min={1} max={12} suffix="ticks" />
             </div>
           </div>
         </div>
 
         {/* Prayer + Stance */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-5">
           <div>
-            <h3 className="text-xs uppercase tracking-wider text-text-secondary/60 mb-3">
-              Prayer
-            </h3>
+            <div className="section-kicker mb-3">Prayer</div>
             <select
               value={prayerIdx}
               onChange={(e) => setPrayerIdx(Number(e.target.value))}
@@ -281,9 +431,7 @@ export default function DpsCalculator({ hiscores }: Props) {
           </div>
 
           <div>
-            <h3 className="text-xs uppercase tracking-wider text-text-secondary/60 mb-3">
-              Stance
-            </h3>
+            <div className="section-kicker mb-3">Stance</div>
             <select
               value={stanceIdx}
               onChange={(e) => setStanceIdx(Number(e.target.value))}
@@ -300,97 +448,71 @@ export default function DpsCalculator({ hiscores }: Props) {
           </div>
         </div>
 
+        {/* Modifiers */}
+        <div>
+          <div className="section-kicker mb-3">Modifiers</div>
+          <ModifierToggles
+            activeIds={activeModifiers}
+            onToggle={toggleModifier}
+            combatStyle={combatStyle}
+          />
+        </div>
+
         {/* Target */}
         <div>
-          <h3 className="text-xs uppercase tracking-wider text-text-secondary/60 mb-3">
-            Target
-          </h3>
-          <select
-            value={monsterIdx}
-            onChange={(e) => setMonsterIdx(Number(e.target.value))}
-            className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm mb-3"
-          >
-            {MONSTERS.map((m, i) => (
-              <option key={m.name} value={i}>
-                {m.name}
-                {m.name !== "Custom target" ? ` (${m.hp} HP)` : ""}
-              </option>
-            ))}
-          </select>
+          <div className="section-kicker mb-3">Target</div>
+          <MonsterSearch
+            monsters={wikiMonsters}
+            selected={selectedMonster}
+            onSelect={setSelectedMonster}
+            combatStyle={combatStyle}
+          />
 
-          {isCustom ? (
-            <div className="grid grid-cols-3 gap-3">
+          {isCustom && (
+            <div className="grid grid-cols-3 gap-3 mt-3">
               <StatInput
                 label="Def level"
                 value={customDef.defLevel}
-                onChange={(v) =>
-                  setCustomDef((p) => ({ ...p, defLevel: v }))
-                }
+                onChange={(v) => setCustomDef((p) => ({ ...p, defLevel: v }))}
                 min={1}
                 max={500}
               />
               <StatInput
                 label="Def bonus"
                 value={customDef.defBonus}
-                onChange={(v) =>
-                  setCustomDef((p) => ({ ...p, defBonus: v }))
-                }
-                min={0}
+                onChange={(v) => setCustomDef((p) => ({ ...p, defBonus: v }))}
+                min={-100}
                 max={500}
               />
               <StatInput
                 label="HP"
                 value={customDef.hp}
-                onChange={(v) =>
-                  setCustomDef((p) => ({ ...p, hp: v }))
-                }
+                onChange={(v) => setCustomDef((p) => ({ ...p, hp: v }))}
                 min={1}
                 max={10000}
               />
-            </div>
-          ) : (
-            <div className="flex gap-4 text-xs text-text-secondary">
-              <span>Def: {targetDefLevel}</span>
-              <span>
-                {combatStyle === "ranged"
-                  ? "Ranged"
-                  : combatStyle === "magic"
-                    ? "Magic"
-                    : "Best melee"}{" "}
-                def: {targetDefBonus}
-              </span>
-              <span>HP: {targetHp}</span>
             </div>
           )}
         </div>
 
         {/* Results */}
-        <div className="grid grid-cols-4 gap-3">
-          <ResultCard
-            label="Max Hit"
-            value={String(result.maxHit)}
-            color="text-accent"
-          />
-          <ResultCard
-            label="Accuracy"
-            value={`${(result.accuracy * 100).toFixed(1)}%`}
-            color={
-              result.accuracy >= 0.8
-                ? "text-success"
-                : result.accuracy >= 0.5
-                  ? "text-warning"
-                  : "text-danger"
-            }
-          />
-          <ResultCard
-            label="DPS"
-            value={result.dps.toFixed(2)}
-            color="text-accent"
-          />
-          <ResultCard
-            label="Time to Kill"
-            value={formatTtk(result.ttk)}
-            color="text-text-primary"
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <div className="section-kicker">Results</div>
+            <button
+              onClick={() => setShowBreakdown((p) => !p)}
+              className="text-xs text-text-secondary hover:text-accent transition-colors"
+            >
+              {showBreakdown ? "Hide" : "Show"} breakdown
+            </button>
+          </div>
+          <DpsBreakdown
+            maxHit={result.maxHit}
+            accuracy={result.accuracy}
+            dps={result.dps}
+            ttk={result.ttk}
+            attackRoll={result.attackRoll}
+            defenseRoll={result.defenseRoll}
           />
         </div>
       </div>
@@ -427,7 +549,7 @@ function StatInput({
           onChange={(e) =>
             onChange(Math.max(min, Math.min(max, Number(e.target.value))))
           }
-          className="w-full bg-bg-tertiary border border-border rounded px-3 py-1.5 text-sm"
+          className="w-full bg-bg-tertiary border border-border rounded px-3 py-1.5 text-sm tabular-nums"
         />
         {suffix && (
           <span className="text-xs text-text-secondary shrink-0">
@@ -435,23 +557,6 @@ function StatInput({
           </span>
         )}
       </div>
-    </div>
-  );
-}
-
-function ResultCard({
-  label,
-  value,
-  color,
-}: {
-  label: string;
-  value: string;
-  color: string;
-}) {
-  return (
-    <div className="text-center">
-      <div className={`text-2xl font-bold ${color}`}>{value}</div>
-      <div className="text-xs text-text-secondary mt-1">{label}</div>
     </div>
   );
 }
