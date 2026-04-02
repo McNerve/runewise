@@ -276,6 +276,33 @@ export default function Settings() {
               </button>
             </div>
           </div>
+
+          <div className="mt-4">
+            <h3 className="section-kicker mb-3">Game Mode</h3>
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <span className="text-sm font-medium text-text-primary">Ironman Mode</span>
+                <p className="mt-1 text-xs text-text-secondary/70">
+                  Filter training methods and calculators to ironman-viable options only.
+                </p>
+              </div>
+              <button
+                role="switch"
+                aria-checked={settings.ironmanMode}
+                aria-label="Ironman mode"
+                onClick={() => update({ ironmanMode: !settings.ironmanMode })}
+                className={`relative h-5 w-10 rounded-full transition-colors ${
+                  settings.ironmanMode ? "bg-accent" : "bg-bg-tertiary"
+                }`}
+              >
+                <span
+                  className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white transition-transform ${
+                    settings.ironmanMode ? "translate-x-5" : ""
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
         </div>
 
         <div>

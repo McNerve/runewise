@@ -222,7 +222,19 @@ export default function SkillCalculator({ hiscores }: Props) {
                         key={method.name}
                         className={`border-b border-border/50 hover:bg-bg-tertiary transition-colors ${!meetsLevel ? "opacity-40" : ""}`}
                       >
-                        <td className="px-4 py-1.5 font-medium">{method.name}</td>
+                        <td className="px-4 py-1.5 font-medium">
+                          {method.name}
+                          {method.intensity && (
+                            <span className={`ml-1.5 px-1 py-0.5 rounded text-[9px] font-normal ${
+                              method.intensity === "afk" ? "bg-success/10 text-success" :
+                              method.intensity === "low" ? "bg-accent/10 text-accent" :
+                              method.intensity === "medium" ? "bg-warning/10 text-warning" :
+                              "bg-danger/10 text-danger"
+                            }`}>
+                              {method.intensity.toUpperCase()}
+                            </span>
+                          )}
+                        </td>
                         <td className="px-4 py-1.5 text-right text-text-secondary text-xs">
                           {method.levelReq ?? "—"}
                         </td>
