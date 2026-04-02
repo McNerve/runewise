@@ -70,15 +70,15 @@ function createRecentEntity(
     };
   }
 
-  if (view === "quests" && params.quest) {
+  if (view === "progress" && params.quest) {
     return {
-      id: `quests:${params.quest.toLowerCase()}`,
+      id: `progress:${params.quest.toLowerCase()}`,
       name: params.quest,
       category: "Quest",
       kind: "Recent",
       view,
-      params: { quest: params.quest },
-      icon: NAV_ICONS.quests,
+      params: { quest: params.quest, tab: "quests" },
+      icon: NAV_ICONS.progress,
     };
   }
 

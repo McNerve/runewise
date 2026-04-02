@@ -583,73 +583,22 @@ export default function Market({
           </div>
         )}
 
-        {tab === "watchlist" ? (
-          <Suspense fallback={<div className="py-8 text-center text-sm text-text-secondary">Loading...</div>}>
-            <Watchlist />
-          </Suspense>
-        ) : tab === "alch" ? (
-          <Suspense fallback={<div className="py-8 text-center text-sm text-text-secondary">Loading...</div>}>
-            <AlchCalculator />
-          </Suspense>
-        ) : (
-        <>
-        {/* Search bar */}
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search items..."
-          className="w-full bg-bg-secondary border border-border rounded-lg px-4 py-2.5 text-sm mb-3"
-        />
-
-        {/* Tabs + filters */}
+        {/* Tab bar — always visible */}
         <div className="flex items-center gap-3 mb-4 flex-wrap">
           <div className="flex bg-bg-secondary rounded-lg p-0.5 border border-border">
-            <button
-              onClick={() => setTab("search")}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                tab === "search"
-                  ? "bg-accent text-white"
-                  : "text-text-secondary hover:text-text-primary"
-              }`}
-            >
-              Search Results
-            </button>
-            <button
-              onClick={() => setTab("browse")}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                tab === "browse"
-                  ? "bg-accent text-white"
-                  : "text-text-secondary hover:text-text-primary"
-              }`}
-            >
-              Browse All
-              {allItems.length > 0 && (
-                <span className="ml-1 text-[10px] opacity-70">
-                  ({allItems.length.toLocaleString()})
-                </span>
-              )}
-            </button>
-            <button
-              onClick={() => setTab("watchlist")}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                tab === "watchlist"
-                  ? "bg-accent text-white"
-                  : "text-text-secondary hover:text-text-primary"
-              }`}
-            >
-              Watchlist
-            </button>
-            <button
-              onClick={() => setTab("alch")}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                tab === "alch"
-                  ? "bg-accent text-white"
-                  : "text-text-secondary hover:text-text-primary"
-              }`}
-            >
-              Alch Profits
-            </button>
+            {(["search", "browse", "watchlist", "alch"] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => setTab(t)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                  tab === t
+                    ? "bg-accent text-white"
+                    : "text-text-secondary hover:text-text-primary"
+                }`}
+              >
+                {t === "search" ? "Search Results" : t === "browse" ? `Browse All${allItems.length > 0 ? ` (${allItems.length.toLocaleString()})` : ""}` : t === "watchlist" ? "Watchlist" : "Alch Profits"}
+              </button>
+            ))}
           </div>
 
           {tab === "browse" && (
@@ -670,6 +619,26 @@ export default function Market({
             </div>
           )}
         </div>
+
+        {/* Tab content */}
+        {tab === "watchlist" ? (
+          <Suspense fallback={<div className="py-8 text-center text-sm text-text-secondary">Loading...</div>}>
+            <Watchlist />
+          </Suspense>
+        ) : tab === "alch" ? (
+          <Suspense fallback={<div className="py-8 text-center text-sm text-text-secondary">Loading...</div>}>
+            <AlchCalculator />
+          </Suspense>
+        ) : (
+        <>
+        {/* Search bar */}
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search items..."
+          className="w-full bg-bg-secondary border border-border rounded-lg px-4 py-2.5 text-sm mb-3"
+        />
 
         {/* Status messages */}
         {error && (

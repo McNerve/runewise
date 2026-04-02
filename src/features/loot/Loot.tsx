@@ -4,7 +4,7 @@ import { fetchLatestPrices, fetchMapping, type ItemPrice, type ItemMapping } fro
 import { formatGp } from "../../lib/format";
 import { itemIcon } from "../../lib/sprites";
 import { useDebounce } from "../../hooks/useDebounce";
-import { useNavigation } from "../../lib/NavigationContext";
+import { useNavigation, type View } from "../../lib/NavigationContext";
 import WikiImage from "../../components/WikiImage";
 import { findBossByName, normalizeBossLookup } from "../../lib/data/bosses";
 import { BOSS_DROP_TABLES, type BossDropTable } from "../../lib/data/boss-drops";
@@ -91,7 +91,7 @@ function DropTablesTab({
 }: {
   prices: Record<string, ItemPrice>;
   itemMap: Map<string, number>;
-  navigate: (view: string, params?: Record<string, string>) => void;
+  navigate: (view: View, params?: Record<string, string>) => void;
   initialMonster: string | undefined;
 }) {
   const [query, setQuery] = useState(initialMonster ?? "");
@@ -278,7 +278,7 @@ function ProfitCalculatorTab({
   prices: Record<string, ItemPrice>;
   mapping: ItemMapping[];
   loading: boolean;
-  navigate: (view: string, params?: Record<string, string>) => void;
+  navigate: (view: View, params?: Record<string, string>) => void;
   initialBoss: string | undefined;
 }) {
   const [selectedBoss, setSelectedBoss] = useState<BossDropTable | null>(BOSS_DROP_TABLES[0]);
