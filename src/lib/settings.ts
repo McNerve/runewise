@@ -28,7 +28,6 @@ export const DEFAULT_KEYBINDS: KeybindMap = {
   lookup: "h",
   "dry-calc": "r",
   "pet-calc": "p",
-  "combat-tasks": "t",
   slayer: "b",
   "clue-helper": "c",
   "money-making": "m",
