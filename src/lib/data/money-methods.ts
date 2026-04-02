@@ -31,7 +31,7 @@ export const MONEY_METHODS: MoneyMethod[] = [
   { name: "Araxxor", category: "Combat", skills: [{ name: "Attack", level: 85 }, { name: "Strength", level: 85 }], baseGpPerHr: 3_500_000, description: "Kill Araxxor for the Noxious halberd pieces", members: true },
   { name: "Duke Sucellus", category: "Combat", skills: [{ name: "Attack", level: 80 }, { name: "Strength", level: 80 }], baseGpPerHr: 2_800_000, description: "Kill Duke Sucellus for Virtus robes and chromium ingots", members: true },
   { name: "Whisperer", category: "Combat", skills: [{ name: "Magic", level: 85 }, { name: "Prayer", level: 77 }], baseGpPerHr: 3_200_000, description: "Kill the Whisperer for Bellator ring and shadow drops", members: true },
-  { name: "Vardorvis", category: "Combat", skills: [{ name: "Attack", level: 85 }, { name: "Strength", level: 85 }], baseGpPerHr: 3_000_000, description: "Kill Vardorvis for Ultor ring and executioner's axe head", members: true },
+  { name: "Vardorvis", category: "Combat", skills: [{ name: "Attack", level: 85 }, { name: "Strength", level: 85 }], baseGpPerHr: 3_000_000, description: "Kill Vardorvis for Ultor ring and executioner's axe head", members: true, intensity: "medium" },
   { name: "Green dragons", category: "Combat", skills: [], baseGpPerHr: 500_000, description: "Kill green dragons in Wilderness for bones and hides", members: false },
   { name: "Sarachnis", category: "Combat", skills: [{ name: "Attack", level: 70 }], baseGpPerHr: 700_000, description: "Kill Sarachnis for the Sarachnis cudgel", members: true },
 
@@ -83,7 +83,6 @@ export const MONEY_METHODS: MoneyMethod[] = [
   // === New additions ===
   { name: "Tombs of Amascut (Expert)", category: "Combat", skills: [{ name: "Attack", level: 90 }, { name: "Strength", level: 90 }, { name: "Ranged", level: 90 }, { name: "Magic", level: 90 }], baseGpPerHr: 7_000_000, description: "Complete expert ToA (300+ invocations) for Tumeken's shadow and fang", members: true, intensity: "high" },
   { name: "Tombs of Amascut (Normal)", category: "Combat", skills: [{ name: "Attack", level: 80 }, { name: "Ranged", level: 80 }, { name: "Magic", level: 80 }], baseGpPerHr: 3_500_000, description: "Complete ToA at 150-250 invocations for consistent GP", members: true, intensity: "medium" },
-  { name: "Vardorvis", category: "Combat", skills: [{ name: "Attack", level: 85 }, { name: "Strength", level: 85 }], baseGpPerHr: 2_500_000, description: "Kill Vardorvis for Ultor ring and chromium ingots", members: true, intensity: "medium" },
   { name: "Leviathan", category: "Combat", skills: [{ name: "Ranged", level: 85 }, { name: "Prayer", level: 77 }], baseGpPerHr: 2_200_000, description: "Kill The Leviathan for Venator ring and chromium ingots", members: true, intensity: "medium" },
   { name: "Sarachnis", category: "Combat", skills: [{ name: "Attack", level: 70 }], baseGpPerHr: 700_000, description: "Kill Sarachnis for cudgel and Giant egg sac — good mid-level boss", members: true, intensity: "low" },
   { name: "Giant Mole", category: "Combat", skills: [{ name: "Attack", level: 60 }], baseGpPerHr: 500_000, description: "Kill Giant Mole with Dharok's for mole claws/skins (buy Falador shield)", members: true, intensity: "low" },

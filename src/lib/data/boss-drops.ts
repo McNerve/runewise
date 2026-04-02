@@ -222,7 +222,7 @@ export const BOSS_DROP_TABLES: BossDropTable[] = [
   },
   {
     bossName: "Nex",
-    killsPerHour: 12,
+    killsPerHour: 3,
     drops: [
       { itemName: "Torva full helm", itemId: 26382, rate: 258, quantity: 1, category: "unique" },
       { itemName: "Torva platebody", itemId: 26384, rate: 258, quantity: 1, category: "unique" },
