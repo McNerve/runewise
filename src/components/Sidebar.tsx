@@ -168,6 +168,11 @@ export default function Sidebar({ currentView, onNavigate }: SidebarProps) {
           </span>
           {!collapsed && <span className="flex-1">Settings</span>}
         </button>
+        {!collapsed && (
+          <div className="text-[10px] text-text-secondary/30 text-center mt-1 tabular-nums">
+            v1.1.0
+          </div>
+        )}
       </div>
     </aside>
     </Tooltip.Provider>
