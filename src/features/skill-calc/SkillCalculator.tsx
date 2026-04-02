@@ -1,14 +1,16 @@
 import { useState, useEffect, useRef } from "react";
 import { xpForLevel } from "../../lib/formulas/xp";
 import { getSkillXp, type HiscoreData } from "../../lib/api/hiscores";
-import { fetchLatestPrices, type ItemPrice } from "../../lib/api/ge";
+import { fetchLatestPrices, fetchMapping, type ItemPrice } from "../../lib/api/ge";
 import { formatGp } from "../../lib/format";
 import { SKILL_ICONS } from "../../lib/sprites";
 import { useNavigation } from "../../lib/NavigationContext";
 import { TRAINING_METHODS } from "../../lib/data/training-methods";
 import { HERBLORE_RECIPES } from "../../lib/data/herblore-recipes";
 import { CRAFTING_RECIPES } from "../../lib/data/crafting-recipes";
+import { fetchRecipesForSkill, type WikiRecipe } from "../../lib/api/recipes";
 import RecipeCostTable from "./components/RecipeCostTable";
+import WikiRecipeTable from "./components/WikiRecipeTable";
 
 const SKILLS = [
   "Attack", "Strength", "Defence", "Ranged", "Prayer", "Magic",
@@ -28,12 +30,20 @@ export default function SkillCalculator({ hiscores }: Props) {
   const [currentXp, setCurrentXp] = useState(0);
   const [targetLevel, setTargetLevel] = useState(99);
   const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
+  const [itemMap, setItemMap] = useState<Map<string, number>>(new Map());
+  const [wikiRecipes, setWikiRecipes] = useState<WikiRecipe[]>([]);
   // Remember custom targets per skill
   const customTargets = useRef<Map<string, number>>(new Map());
 
   useEffect(() => {
     let cancelled = false;
-    fetchLatestPrices().then((p) => { if (!cancelled) setPrices(p); });
+    Promise.all([fetchLatestPrices(), fetchMapping()]).then(([p, m]) => {
+      if (cancelled) return;
+      setPrices(p);
+      const nameToId = new Map<string, number>();
+      for (const item of m) nameToId.set(item.name.toLowerCase(), item.id);
+      setItemMap(nameToId);
+    });
     return () => { cancelled = true; };
   }, []);
 
@@ -61,6 +71,17 @@ export default function SkillCalculator({ hiscores }: Props) {
       setTargetLevel(99);
     }
   }, [hiscores, selectedSkill]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Load wiki recipes for selected skill
+  useEffect(() => {
+    let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- clear stale recipes when skill changes
+    setWikiRecipes([]);
+    fetchRecipesForSkill(selectedSkill).then((recipes) => {
+      if (!cancelled) setWikiRecipes(recipes);
+    });
+    return () => { cancelled = true; };
+  }, [selectedSkill]);
 
   const handleTargetChange = (value: number) => {
     setTargetLevel(value);
@@ -273,7 +294,17 @@ export default function SkillCalculator({ hiscores }: Props) {
             </table>
           </div>
 
-          {selectedSkill === "Herblore" && xpNeeded > 0 && (
+          {wikiRecipes.length > 0 && xpNeeded > 0 && (
+            <WikiRecipeTable
+              recipes={wikiRecipes}
+              prices={prices}
+              itemMap={itemMap}
+              currentLevel={currentLevel ?? 1}
+              xpNeeded={xpNeeded}
+            />
+          )}
+
+          {wikiRecipes.length === 0 && selectedSkill === "Herblore" && xpNeeded > 0 && (
             <RecipeCostTable
               recipes={HERBLORE_RECIPES}
               prices={prices}
@@ -282,7 +313,7 @@ export default function SkillCalculator({ hiscores }: Props) {
             />
           )}
 
-          {selectedSkill === "Crafting" && xpNeeded > 0 && (
+          {wikiRecipes.length === 0 && selectedSkill === "Crafting" && xpNeeded > 0 && (
             <RecipeCostTable
               recipes={CRAFTING_RECIPES}
               prices={prices}
