@@ -5,10 +5,12 @@ import {
   fetchWomAchievements,
   fetchWomRecords,
   fetchWomNameChanges,
+  fetchWomCompetitions,
   type WomGains,
   type WomAchievement,
   type WomRecord,
   type WomNameChange,
+  type WomPlayerCompetition,
   type GainsPeriod,
 } from "../../lib/api/wom";
 
@@ -59,9 +61,11 @@ export default function XpTracker({ rsn }: Props) {
   const [records, setRecords] = useState<WomRecord[]>([]);
   const [nameChanges, setNameChanges] = useState<WomNameChange[]>([]);
   const [loading, setLoading] = useState(false);
-  const [tab, setTab] = useState<"gains" | "achievements" | "records">(
+  const [tab, setTab] = useState<"gains" | "achievements" | "records" | "competitions">(
     "gains"
   );
+  const [competitions, setCompetitions] = useState<WomPlayerCompetition[]>([]);
+  const [competitionsLoaded, setCompetitionsLoaded] = useState(false);
 
   useEffect(() => {
     if (!rsn) return;
@@ -91,6 +95,18 @@ export default function XpTracker({ rsn }: Props) {
       cancelled = true;
     };
   }, [rsn, period]);
+
+  // Lazy-load competitions when tab selected
+  useEffect(() => {
+    if (tab !== "competitions" || !rsn || competitionsLoaded) return;
+    let cancelled = false;
+    fetchWomCompetitions(rsn).then((data) => {
+      if (cancelled) return;
+      setCompetitions(data);
+      setCompetitionsLoaded(true);
+    });
+    return () => { cancelled = true; };
+  }, [tab, rsn, competitionsLoaded]);
 
   if (!rsn) {
     return (
@@ -135,7 +151,7 @@ export default function XpTracker({ rsn }: Props) {
 
       <div className="flex gap-4 mb-4">
         <div className="flex gap-1">
-          {(["gains", "achievements", "records"] as const).map((t) => (
+          {(["gains", "achievements", "records", "competitions"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -321,6 +337,84 @@ export default function XpTracker({ rsn }: Props) {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {tab === "competitions" && (
+        <div>
+          {!competitionsLoaded && (
+            <p className="text-sm text-text-secondary">Loading competitions...</p>
+          )}
+          {competitionsLoaded && competitions.length === 0 && (
+            <p className="text-sm text-text-secondary">No competitions found for this player.</p>
+          )}
+          {competitionsLoaded && competitions.length > 0 && (() => {
+            const now = new Date();
+            const active = competitions.filter((c) => new Date(c.competition.endsAt) > now);
+            const completed = competitions.filter((c) => new Date(c.competition.endsAt) <= now);
+            const sorted = [...active, ...completed].sort(
+              (a, b) => new Date(b.competition.startsAt).getTime() - new Date(a.competition.startsAt).getTime()
+            );
+            return (
+              <div className="space-y-2">
+                {sorted.map((pc) => {
+                  const isActive = new Date(pc.competition.endsAt) > now;
+                  const metric = pc.competition.metric.replace(/_/g, " ");
+                  const start = new Date(pc.competition.startsAt).toLocaleDateString();
+                  const end = new Date(pc.competition.endsAt).toLocaleDateString();
+                  return (
+                    <div
+                      key={pc.competition.id}
+                      className={`bg-bg-secondary rounded-lg px-4 py-3 border-l-2 ${
+                        isActive ? "border-success" : "border-border/30"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-sm font-medium">{pc.competition.title}</span>
+                            {isActive && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-success/20 text-success">
+                                Active
+                              </span>
+                            )}
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-bg-tertiary text-text-secondary capitalize">
+                              {pc.competition.type}
+                            </span>
+                          </div>
+                          <div className="flex gap-3 mt-1 text-xs text-text-secondary">
+                            <span className="capitalize">{metric}</span>
+                            <span>{start} – {end}</span>
+                            {pc.competition.group && (
+                              <span className="text-accent">{pc.competition.group.name}</span>
+                            )}
+                          </div>
+                          {pc.teamName && (
+                            <div className="text-xs text-text-secondary mt-0.5">
+                              Team: <span className="text-text-primary">{pc.teamName}</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-right shrink-0">
+                          <div className="text-sm font-medium tabular-nums">
+                            {pc.progress.gained > 0
+                              ? `+${pc.progress.gained.toLocaleString()}`
+                              : pc.progress.gained.toLocaleString()}
+                          </div>
+                          <div className="text-[10px] text-text-secondary">
+                            Rank #{pc.rank.toLocaleString()}
+                          </div>
+                          <div className="text-[10px] text-text-secondary/50">
+                            {pc.competition.participantCount} participants
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
         </div>
       )}
     </div>

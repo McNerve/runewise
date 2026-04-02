@@ -189,7 +189,7 @@ export default function Kingdom() {
       </div>
 
       {/* Column labels */}
-      <div className="flex items-center gap-3 px-2 mb-1 text-[10px] text-text-secondary/50 uppercase tracking-wider">
+      <div className="flex items-center gap-3 px-2 mb-1 text-[11px] text-text-secondary/60 uppercase tracking-wider">
         <span className="w-5 shrink-0" />
         <span className="w-28 shrink-0">Resource</span>
         <span className="flex-1" />
@@ -203,7 +203,7 @@ export default function Kingdom() {
       <div className="section-kicker mb-2">Daily Summary</div>
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-bg-secondary rounded-lg px-3 py-2">
-          <div className="text-[10px] text-text-secondary uppercase tracking-wider">
+          <div className="text-[11px] text-text-secondary uppercase tracking-wider">
             Gross Income
           </div>
           <div className="text-sm font-semibold tabular-nums mt-0.5">
@@ -211,7 +211,7 @@ export default function Kingdom() {
           </div>
         </div>
         <div className="bg-bg-secondary rounded-lg px-3 py-2">
-          <div className="text-[10px] text-text-secondary uppercase tracking-wider">
+          <div className="text-[11px] text-text-secondary uppercase tracking-wider">
             Coffer Upkeep
           </div>
           <div className="text-sm font-semibold tabular-nums mt-0.5 text-danger">
@@ -219,7 +219,7 @@ export default function Kingdom() {
           </div>
         </div>
         <div className="bg-bg-secondary rounded-lg px-3 py-2">
-          <div className="text-[10px] text-text-secondary uppercase tracking-wider">
+          <div className="text-[11px] text-text-secondary uppercase tracking-wider">
             Net Profit
           </div>
           <div className={`text-sm font-semibold tabular-nums mt-0.5 ${netProfit >= 0 ? "text-success" : "text-danger"}`}>

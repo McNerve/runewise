@@ -214,9 +214,9 @@ export default function ShootingStars() {
   function openStarDetails(star: LiveStar) {
     userDismissedRef.current = false;
     setSelectedStar(star);
-    requestAnimationFrame(() => {
-      detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
+    if (window.innerWidth < 1280) {
+      setTimeout(() => detailRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+    }
   }
 
   return (

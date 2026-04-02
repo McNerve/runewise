@@ -95,9 +95,10 @@ export async function fetchAllMoneyMethods(): Promise<WikiMoneyMethod[]> {
         mmgPromise = null;
         return methods;
       })
-      .catch(() => {
+      .catch((err: unknown) => {
         mmgPromise = null;
-        return [];
+        console.error("[RuneWise] Failed to fetch money making methods:", err);
+        throw err;
       });
   }
 

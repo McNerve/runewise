@@ -8,13 +8,56 @@ import { PRAYERS, type Prayer } from "../../lib/data/prayers";
 import { MONSTERS } from "../../lib/data/monsters";
 import { fetchAllMonsters, type WikiMonster } from "../../lib/api/monsters";
 import { type HiscoreData } from "../../lib/api/hiscores";
+import { type WikiEquipment, type EquipmentSlot } from "../../lib/api/equipment";
 import { loadJSON, saveJSON } from "../../lib/localStorage";
 import { useNavigation } from "../../lib/NavigationContext";
+import { itemIcon } from "../../lib/sprites";
 import MonsterSearch from "./components/MonsterSearch";
 import ModifierToggles from "./components/ModifierToggles";
 import DpsBreakdown from "./components/DpsBreakdown";
+import GearSelector from "./GearSelector";
 
 type CombatStyle = "melee" | "ranged" | "magic";
+type BonusMode = "equipment" | "manual";
+
+const GEAR_SLOTS: Array<{ slot: EquipmentSlot | "2h"; label: string }> = [
+  { slot: "head", label: "Head" },
+  { slot: "cape", label: "Cape" },
+  { slot: "neck", label: "Neck" },
+  { slot: "ammo", label: "Ammo" },
+  { slot: "weapon", label: "Weapon" },
+  { slot: "body", label: "Body" },
+  { slot: "shield", label: "Shield" },
+  { slot: "legs", label: "Legs" },
+  { slot: "hands", label: "Hands" },
+  { slot: "feet", label: "Feet" },
+  { slot: "ring", label: "Ring" },
+];
+
+type EquippedGear = Partial<Record<EquipmentSlot | "2h", WikiEquipment>>;
+
+function sumGearBonuses(gear: EquippedGear): {
+  attackBonus: number;
+  strengthBonus: number;
+  attackSpeed: number;
+  rangedBonus: number;
+  rangedStrength: number;
+  magicBonus: number;
+  magicDamage: number;
+  prayer: number;
+} {
+  const items = Object.values(gear).filter(Boolean) as WikiEquipment[];
+  return {
+    attackBonus: items.reduce((s, i) => s + i.attackStab + i.attackSlash + i.attackCrush, 0),
+    strengthBonus: items.reduce((s, i) => s + i.strengthBonus, 0),
+    attackSpeed: 0, // speed comes from weapon directly
+    rangedBonus: items.reduce((s, i) => s + i.attackRanged, 0),
+    rangedStrength: items.reduce((s, i) => s + i.rangedStrength, 0),
+    magicBonus: items.reduce((s, i) => s + i.attackMagic, 0),
+    magicDamage: items.reduce((s, i) => s + i.magicDamage, 0),
+    prayer: items.reduce((s, i) => s + i.prayerBonus, 0),
+  };
+}
 
 interface GearLoadout {
   name: string;
@@ -101,6 +144,11 @@ export default function DpsCalculator({ hiscores }: Props) {
   const [loadoutName, setLoadoutName] = useState("");
   const pendingLoadout = useRef<GearLoadout | null>(null);
 
+  // Gear selector state
+  const [bonusMode, setBonusMode] = useState<BonusMode>("equipment");
+  const [equippedGear, setEquippedGear] = useState<EquippedGear>({});
+  const [openSlot, setOpenSlot] = useState<EquipmentSlot | "2h" | null>(null);
+
   // Load wiki monsters
   useEffect(() => {
     fetchAllMonsters().then(setWikiMonsters);
@@ -182,6 +230,20 @@ export default function DpsCalculator({ hiscores }: Props) {
     }
   }, [combatStyle]);
 
+  // Compute effective bonuses depending on mode
+  const gearBonuses = useMemo(() => sumGearBonuses(equippedGear), [equippedGear]);
+  const effectiveAttackBonus = bonusMode === "equipment"
+    ? (combatStyle === "ranged" ? gearBonuses.rangedBonus : combatStyle === "magic" ? gearBonuses.magicBonus : gearBonuses.attackBonus)
+    : attackBonus;
+  const effectiveStrengthBonus = bonusMode === "equipment"
+    ? (combatStyle === "ranged" ? gearBonuses.rangedStrength : combatStyle === "magic" ? gearBonuses.magicDamage : gearBonuses.strengthBonus)
+    : strengthBonus;
+  // Weapon attack speed from equipped weapon slot
+  const weaponItem = equippedGear["weapon"] ?? equippedGear["2h"] ?? null;
+  const effectiveAttackSpeed = bonusMode === "equipment" && weaponItem
+    ? attackSpeed // speed is still manual; weapon data doesn't carry tick speed in WikiEquipment
+    : attackSpeed;
+
   const stances = STANCES[combatStyle];
   const stance = stances[stanceIdx] ?? stances[0];
   const filteredPrayers = useMemo(
@@ -214,13 +276,13 @@ export default function DpsCalculator({ hiscores }: Props) {
         strengthLevel,
         rangedLevel,
         magicLevel,
-        attackBonus,
-        strengthBonus,
+        attackBonus: effectiveAttackBonus,
+        strengthBonus: effectiveStrengthBonus,
         prayerAttackMult: prayer.attackMult,
         prayerStrengthMult: prayer.strengthMult,
         stanceAttackBonus: stance.attackBonus,
         stanceStrengthBonus: stance.strengthBonus,
-        attackSpeed,
+        attackSpeed: effectiveAttackSpeed,
         combatStyle,
         targetDefLevel,
         targetDefBonus,
@@ -233,11 +295,11 @@ export default function DpsCalculator({ hiscores }: Props) {
       strengthLevel,
       rangedLevel,
       magicLevel,
-      attackBonus,
-      strengthBonus,
+      effectiveAttackBonus,
+      effectiveStrengthBonus,
       prayer,
       stance,
-      attackSpeed,
+      effectiveAttackSpeed,
       combatStyle,
       targetDefLevel,
       targetDefBonus,
@@ -401,14 +463,114 @@ export default function DpsCalculator({ hiscores }: Props) {
           </div>
 
           <div>
-            <div className="section-kicker mb-3">Equipment Bonuses</div>
-            <div className="space-y-2">
-              <StatInput label="Attack bonus" value={attackBonus} onChange={setAttackBonus} min={-64} max={300} />
-              <StatInput label="Strength bonus" value={strengthBonus} onChange={setStrengthBonus} min={0} max={300} />
-              <StatInput label="Attack speed" value={attackSpeed} onChange={setAttackSpeed} min={1} max={12} suffix="ticks" />
+            <div className="flex items-center justify-between mb-3">
+              <div className="section-kicker">Equipment Bonuses</div>
+              <div className="flex gap-1">
+                {(["equipment", "manual"] as const).map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => setBonusMode(m)}
+                    className={`px-2 py-0.5 rounded text-[10px] capitalize transition-colors ${
+                      bonusMode === m
+                        ? "bg-accent text-white"
+                        : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+                    }`}
+                  >
+                    {m}
+                  </button>
+                ))}
+              </div>
             </div>
+
+            {bonusMode === "equipment" ? (
+              <div>
+                <div className="grid grid-cols-3 gap-1 mb-2">
+                  {GEAR_SLOTS.map(({ slot, label }) => {
+                    const equipped = equippedGear[slot];
+                    return (
+                      <button
+                        key={slot}
+                        onClick={() => setOpenSlot(slot)}
+                        title={equipped?.name ?? label}
+                        className={`flex flex-col items-center justify-center gap-0.5 p-1.5 rounded border transition-colors text-center ${
+                          equipped
+                            ? "border-accent/40 bg-accent/8 hover:bg-accent/15"
+                            : "border-border bg-bg-secondary hover:bg-bg-tertiary"
+                        }`}
+                      >
+                        {equipped ? (
+                          <img
+                            src={itemIcon(equipped.version ? `${equipped.name}_${equipped.version}` : equipped.name)}
+                            alt={equipped.name}
+                            className="w-6 h-6 object-contain"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).src = itemIcon(equipped.name);
+                            }}
+                          />
+                        ) : (
+                          <span className="w-6 h-6 flex items-center justify-center text-[10px] text-text-secondary/30">
+                            +
+                          </span>
+                        )}
+                        <span className="text-[9px] text-text-secondary/60 leading-none truncate w-full text-center">
+                          {label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="text-[10px] text-text-secondary/50 space-y-0.5">
+                  {combatStyle === "melee" && (
+                    <>
+                      <div>Atk: <span className={effectiveAttackBonus >= 0 ? "text-success" : "text-danger"}>{effectiveAttackBonus >= 0 ? "+" : ""}{effectiveAttackBonus}</span></div>
+                      <div>Str: <span className="text-success">+{effectiveStrengthBonus}</span></div>
+                    </>
+                  )}
+                  {combatStyle === "ranged" && (
+                    <>
+                      <div>Rng Atk: <span className={effectiveAttackBonus >= 0 ? "text-success" : "text-danger"}>{effectiveAttackBonus >= 0 ? "+" : ""}{effectiveAttackBonus}</span></div>
+                      <div>Rng Str: <span className="text-success">+{effectiveStrengthBonus}</span></div>
+                    </>
+                  )}
+                  {combatStyle === "magic" && (
+                    <>
+                      <div>Mag Atk: <span className={effectiveAttackBonus >= 0 ? "text-success" : "text-danger"}>{effectiveAttackBonus >= 0 ? "+" : ""}{effectiveAttackBonus}</span></div>
+                      <div>Mag Dmg: <span className="text-success">+{effectiveStrengthBonus}%</span></div>
+                    </>
+                  )}
+                  <div>Prayer: <span className="text-accent">+{gearBonuses.prayer}</span></div>
+                </div>
+                <StatInput label="Atk speed" value={attackSpeed} onChange={setAttackSpeed} min={1} max={12} suffix="ticks" />
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <StatInput label="Attack bonus" value={attackBonus} onChange={setAttackBonus} min={-64} max={300} />
+                <StatInput label="Strength bonus" value={strengthBonus} onChange={setStrengthBonus} min={0} max={300} />
+                <StatInput label="Attack speed" value={attackSpeed} onChange={setAttackSpeed} min={1} max={12} suffix="ticks" />
+              </div>
+            )}
           </div>
         </div>
+
+        {/* Gear selector modal */}
+        {openSlot !== null && (
+          <GearSelector
+            slot={openSlot}
+            onSelect={(item) => {
+              if (item === null) {
+                setEquippedGear((prev) => {
+                  const next = { ...prev };
+                  delete next[openSlot];
+                  return next;
+                });
+              } else {
+                setEquippedGear((prev) => ({ ...prev, [openSlot]: item }));
+              }
+              setOpenSlot(null);
+            }}
+            onClose={() => setOpenSlot(null)}
+          />
+        )}
 
         {/* Prayer + Stance */}
         <div className="grid grid-cols-2 gap-5">

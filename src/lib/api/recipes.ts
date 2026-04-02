@@ -97,9 +97,10 @@ export async function fetchAllRecipes(): Promise<WikiRecipe[]> {
         recipesPromise = null;
         return recipes;
       })
-      .catch(() => {
+      .catch((err: unknown) => {
         recipesPromise = null;
-        return [];
+        console.error("[RuneWise] Failed to fetch recipes:", err);
+        throw err;
       });
   }
 

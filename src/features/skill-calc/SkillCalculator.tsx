@@ -89,9 +89,14 @@ export default function SkillCalculator({ hiscores }: Props) {
     customTargets.current.set(selectedSkill, value);
   };
 
+  const [intensityFilter, setIntensityFilter] = useState<string>("All");
+
   const targetXp = xpForLevel(targetLevel);
   const xpNeeded = Math.max(0, targetXp - currentXp);
-  const methods = TRAINING_METHODS[selectedSkill] ?? [];
+  const allMethods = TRAINING_METHODS[selectedSkill] ?? [];
+  const methods = intensityFilter === "All"
+    ? allMethods
+    : allMethods.filter((m) => m.intensity?.toLowerCase() === intensityFilter.toLowerCase());
 
   return (
     <div className="max-w-3xl">
@@ -215,11 +220,41 @@ export default function SkillCalculator({ hiscores }: Props) {
       </div>
 
       {/* Training Methods */}
-      {methods.length > 0 && xpNeeded > 0 && (
+      {allMethods.length > 0 && xpNeeded > 0 && (
         <div className="mt-4">
-          <h3 className="text-sm font-medium text-text-secondary uppercase tracking-wider mb-2">
-            Training Methods
-          </h3>
+          <div className="flex items-center gap-2 mb-3 flex-wrap">
+            <h3 className="text-sm font-medium text-text-secondary uppercase tracking-wider">
+              Training Methods
+            </h3>
+            <div className="flex gap-1 ml-auto flex-wrap">
+              {(["All", "AFK", "Low", "Medium", "High"] as const).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setIntensityFilter(f)}
+                  className={`px-2.5 py-1 rounded-full text-xs transition-colors ${
+                    intensityFilter === f
+                      ? "bg-accent text-white"
+                      : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+                  }`}
+                >
+                  {f}
+                </button>
+              ))}
+              {intensityFilter !== "All" && (
+                <button
+                  onClick={() => setIntensityFilter("All")}
+                  className="text-xs text-text-secondary hover:text-text-primary transition-colors px-1"
+                >
+                  Reset
+                </button>
+              )}
+            </div>
+          </div>
+          {methods.length === 0 ? (
+            <p className="text-sm text-text-secondary py-4">
+              No {intensityFilter.toLowerCase()} intensity methods for {selectedSkill}.
+            </p>
+          ) : (
           <div className="bg-bg-secondary rounded-lg overflow-hidden">
             <table className="w-full text-sm">
               <thead>
@@ -300,6 +335,7 @@ export default function SkillCalculator({ hiscores }: Props) {
               </tbody>
             </table>
           </div>
+          )}
 
           {wikiRecipes.length > 0 && xpNeeded > 0 && (
             <WikiRecipeTable

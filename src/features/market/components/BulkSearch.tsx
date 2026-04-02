@@ -37,10 +37,11 @@ export default function BulkSearch({ mapping, prices }: BulkSearchProps) {
       if (exact) {
         return { item: exact, price: prices[String(exact.id)] ?? null };
       }
-      // Fuzzy match
-      const match = mapping.find((m) =>
-        m.name.toLowerCase().includes(lower)
-      );
+      // Fuzzy match — prefer shorter names (base items before variants)
+      const matches = mapping.filter((m) => m.name.toLowerCase().includes(lower));
+      const match = matches.length > 0
+        ? matches.sort((a, b) => a.name.length - b.name.length)[0]
+        : undefined;
       if (match) {
         return { item: match, price: prices[String(match.id)] ?? null };
       }

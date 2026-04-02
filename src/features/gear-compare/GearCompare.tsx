@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import {
   fetchAllEquipment,
   searchEquipment,
@@ -8,6 +8,8 @@ import {
 import { itemIcon, NAV_ICONS } from "../../lib/sprites";
 import { useNavigation } from "../../lib/NavigationContext";
 import EmptyState from "../../components/EmptyState";
+import ErrorState from "../../components/ErrorState";
+import { useAsyncData } from "../../hooks/useAsyncData";
 
 const SLOTS: EquipmentSlot[] = [
   "head", "cape", "neck", "ammo", "weapon", "2h", "shield",
@@ -54,16 +56,13 @@ function StatCell({ value }: { value: number }) {
 
 export default function GearCompare() {
   const { navigate } = useNavigation();
-  const [allEquipment, setAllEquipment] = useState<WikiEquipment[]>([]);
+  const { data, loading, error, retry } = useAsyncData(fetchAllEquipment, []);
+  const allEquipment = data ?? [];
   const [selectedSlot, setSelectedSlot] = useState<EquipmentSlot>("weapon");
   const [query, setQuery] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("strengthBonus");
   const [sortAsc, setSortAsc] = useState(false);
   const [selected, setSelected] = useState<WikiEquipment[]>([]);
-
-  useEffect(() => {
-    fetchAllEquipment().then(setAllEquipment);
-  }, []);
 
   const filtered = useMemo(() => {
     const results = searchEquipment(allEquipment, query, selectedSlot, 200);
@@ -179,7 +178,9 @@ export default function GearCompare() {
       )}
 
       {/* Items table */}
-      {allEquipment.length === 0 ? (
+      {error ? (
+        <ErrorState error={error} onRetry={retry} />
+      ) : loading ? (
         <EmptyState
           icon={NAV_ICONS["gear-compare"]}
           title="Loading equipment data..."

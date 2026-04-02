@@ -97,6 +97,29 @@ export const POPULAR_DROPS: DropEntry[] = [
   { item: "Bloodhound", source: "Reward casket (master)", rate: 1000, category: "Clues" },
   { item: "Holy sandals", source: "Reward casket (medium)", rate: 1133, category: "Clues" },
   { item: "Wizard boots", source: "Reward casket (medium)", rate: 1133, category: "Clues" },
+
+  // Wilderness boss rings
+  { item: "Ring of the Gods", source: "Vet'ion", rate: 512, category: "Wilderness" },
+  { item: "Treasonous ring", source: "Venenatis", rate: 512, category: "Wilderness" },
+  { item: "Tyrannical ring", source: "Callisto", rate: 512, category: "Wilderness" },
+
+  // Fight caves / inferno pets
+  { item: "Jad pet (TzRek-Jad)", source: "TzTok-Jad", rate: 200, category: "Other" },
+  { item: "Jad pet (Tzrek-zuk)", source: "TzKal-Zuk", rate: 100, category: "Other" },
+
+  // The Nightmare
+  { item: "Nightmare staff", source: "The Nightmare", rate: 400, category: "Other" },
+  { item: "Inquisitor's great helm", source: "The Nightmare", rate: 600, category: "Other" },
+  { item: "Inquisitor's hauberk", source: "The Nightmare", rate: 600, category: "Other" },
+  { item: "Inquisitor's plateskirt", source: "The Nightmare", rate: 600, category: "Other" },
+
+  // Boss pets
+  { item: "Baby mole", source: "Giant Mole", rate: 3000, category: "Pets" },
+  { item: "Prince black dragon", source: "King Black Dragon", rate: 3000, category: "Pets" },
+  { item: "Kalphite princess", source: "Kalphite Queen", rate: 3000, category: "Pets" },
+
+  // Barrows
+  { item: "Barrows equipment (any piece)", source: "Barrows", rate: 353, category: "Other" },
 ];
 
 export const DROP_CATEGORIES = [...new Set(POPULAR_DROPS.map((d) => d.category))];

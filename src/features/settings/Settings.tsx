@@ -189,6 +189,51 @@ function KeybindRecorder({
   );
 }
 
+function ToggleSwitch({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean;
+  onChange: () => void;
+  label: string;
+}) {
+  return (
+    <button
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      onClick={onChange}
+      className={`relative h-5 w-10 rounded-full transition-colors shrink-0 ${
+        checked ? "bg-accent" : "bg-bg-tertiary"
+      }`}
+    >
+      <span
+        className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white transition-transform ${
+          checked ? "translate-x-5" : ""
+        }`}
+      />
+    </button>
+  );
+}
+
+function SettingsCard({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="bg-bg-secondary rounded-lg p-5">
+      <h3 className="text-xs font-semibold uppercase tracking-wider text-text-secondary mb-3">
+        {title}
+      </h3>
+      {children}
+    </div>
+  );
+}
+
 export default function Settings() {
   const { settings, update, resetAll } = useSettings();
 
@@ -202,281 +247,195 @@ export default function Settings() {
   };
 
   return (
-    <div className="max-w-6xl space-y-4">
+    <div className="max-w-2xl space-y-4">
       <div className="mb-2">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-          <div className="max-w-3xl">
-            <div className="section-kicker">Preferences</div>
-            <h2 className="mt-2 text-2xl font-semibold tracking-tight">Settings</h2>
-            <p className="mt-2 text-sm leading-6 text-text-secondary/90">
-              Tune RuneWise for your workflow, visuals, and desktop setup with a denser,
-              faster control panel.
-            </p>
-          </div>
-          <div className="grid gap-2 sm:grid-cols-3">
-            <div className="px-4 py-3">
-              <div className="section-kicker">Theme</div>
-              <div className="mt-1 text-sm font-medium text-text-primary capitalize">{settings.theme}</div>
-            </div>
-            <div className="px-4 py-3">
-              <div className="section-kicker">Alerts</div>
-              <div className="mt-1 text-sm font-medium text-text-primary">
-                {settings.notifications.priceAlerts ? "Enabled" : "Muted"}
-              </div>
-            </div>
-            <div className="px-4 py-3">
-              <div className="section-kicker">Platform</div>
-              <div className="mt-1 text-sm font-medium text-text-primary">
-                {isTauri ? "Desktop" : "Browser"}
-              </div>
-            </div>
-          </div>
-        </div>
+        <h2 className="text-xl font-semibold tracking-tight">Settings</h2>
+        <p className="mt-1 text-sm text-text-secondary/80">
+          Preferences, notifications, keyboard shortcuts, and system options.
+        </p>
       </div>
 
-      <div className="grid items-start gap-4 xl:grid-cols-[1.1fr_0.95fr_0.95fr]">
+      {/* Appearance */}
+      <SettingsCard title="Appearance">
         <div className="space-y-4">
           <div>
-            <h3 className="section-kicker mb-3">Appearance</h3>
-            <div className="space-y-3">
-              <div>
-                <span className="text-sm font-medium text-text-primary">Theme</span>
-                <p className="mt-1 text-xs text-text-secondary/85">
-                  Choose how RuneWise should render across desktop surfaces.
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {([
-                  {
-                    key: "dark",
-                    label: "Dark",
-                  },
-                  {
-                    key: "light",
-                    label: "Light",
-                  },
-                  {
-                    key: "system",
-                    label: "System",
-                  },
-                ] as const).map((option) => {
-                  const active = settings.theme === option.key;
-                  return (
-                    <button
-                      key={option.key}
-                      type="button"
-                      onClick={() => update({ theme: option.key })}
-                      className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm transition-colors ${
+            <span className="text-sm font-medium text-text-primary">Theme</span>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {([
+                { key: "dark", label: "Dark" },
+                { key: "light", label: "Light" },
+                { key: "system", label: "System" },
+              ] as const).map((option) => {
+                const active = settings.theme === option.key;
+                return (
+                  <button
+                    key={option.key}
+                    type="button"
+                    onClick={() => update({ theme: option.key })}
+                    className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm transition-colors ${
+                      active
+                        ? "border-accent/35 bg-accent/11 text-text-primary"
+                        : "border-border bg-bg-tertiary/45 text-text-secondary hover:bg-bg-tertiary/65 hover:text-text-primary"
+                    }`}
+                  >
+                    <span
+                      className={`inline-flex h-6 w-6 items-center justify-center rounded-full border ${
                         active
-                          ? "border-accent/35 bg-accent/11 text-text-primary"
-                          : "border-border bg-bg-tertiary/45 text-text-secondary hover:border-border hover:bg-bg-tertiary/65 hover:text-text-primary"
+                          ? "border-accent/30 bg-accent/12 text-accent"
+                          : "border-border/80 bg-bg-primary/55 text-text-secondary"
                       }`}
                     >
-                      <span
-                        className={`inline-flex h-6 w-6 items-center justify-center rounded-full border ${
-                          active
-                            ? "border-accent/30 bg-accent/12 text-accent"
-                            : "border-border/80 bg-bg-primary/55 text-text-secondary"
-                        }`}
-                      >
-                        <ThemeGlyph theme={option.key} />
-                      </span>
-                      <span className="font-medium">{option.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-              <p className="text-xs leading-5 text-text-secondary/80">
-                {settings.theme === "dark" && "Dark is best for long sessions and denser data panels."}
-                {settings.theme === "light" && "Light gives higher contrast for wiki reading and workspace scans."}
-                {settings.theme === "system" && "System matches your desktop appearance automatically."}
+                      <ThemeGlyph theme={option.key} />
+                    </span>
+                    <span className="font-medium">{option.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <span className="text-sm font-medium text-text-primary">Ironman Mode</span>
+              <p className="mt-0.5 text-xs text-text-secondary/70">
+                Filter training methods and calculators to ironman-viable options only.
               </p>
             </div>
-          </div>
-
-          <div>
-            <h3 className="section-kicker mb-3">Notifications</h3>
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <span className="text-sm font-medium text-text-primary">Price alerts</span>
-                <p className="mt-1 text-xs text-text-secondary/70">
-                  Notify when watchlist items hit your target prices.
-                </p>
-              </div>
-              <button
-                role="switch"
-                aria-checked={settings.notifications.priceAlerts}
-                aria-label="Price alerts"
-                onClick={() =>
-                  update({
-                    notifications: {
-                      ...settings.notifications,
-                      priceAlerts: !settings.notifications.priceAlerts,
-                    },
-                  })
-                }
-                className={`relative h-5 w-10 rounded-full transition-colors ${
-                  settings.notifications.priceAlerts ? "bg-accent" : "bg-bg-tertiary"
-                }`}
-              >
-                <span
-                  className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white transition-transform ${
-                    settings.notifications.priceAlerts ? "translate-x-5" : ""
-                  }`}
-                />
-              </button>
-            </div>
-          </div>
-
-          <div className="mt-4">
-            <h3 className="section-kicker mb-3">Game Mode</h3>
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <span className="text-sm font-medium text-text-primary">Ironman Mode</span>
-                <p className="mt-1 text-xs text-text-secondary/70">
-                  Filter training methods and calculators to ironman-viable options only.
-                </p>
-              </div>
-              <button
-                role="switch"
-                aria-checked={settings.ironmanMode}
-                aria-label="Ironman mode"
-                onClick={() => update({ ironmanMode: !settings.ironmanMode })}
-                className={`relative h-5 w-10 rounded-full transition-colors ${
-                  settings.ironmanMode ? "bg-accent" : "bg-bg-tertiary"
-                }`}
-              >
-                <span
-                  className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white transition-transform ${
-                    settings.ironmanMode ? "translate-x-5" : ""
-                  }`}
-                />
-              </button>
-            </div>
+            <ToggleSwitch
+              checked={settings.ironmanMode}
+              onChange={() => update({ ironmanMode: !settings.ironmanMode })}
+              label="Ironman mode"
+            />
           </div>
         </div>
+      </SettingsCard>
 
-        <div>
-          <div className="mb-3 flex items-center justify-between">
-            <h3 className="section-kicker">Keyboard Shortcuts</h3>
-            <button
-              onClick={resetKeybinds}
-              className="text-[10px] text-text-secondary/70 hover:text-text-primary transition-colors"
-            >
-              Reset all
-            </button>
-          </div>
-          <div className="space-y-2">
-            {Object.entries(KEYBIND_LABELS).map(([action, label]) => (
-              <div key={action} className="panel-muted rounded-xl px-3 py-2 flex items-center justify-between gap-3">
-                <span className="text-sm text-text-primary/90">{label}</span>
-                <KeybindRecorder
-                  value={settings.keybinds[action] ?? DEFAULT_KEYBINDS[action]}
-                  onChange={(key) => handleKeybindChange(action, key)}
-                />
-              </div>
-            ))}
-          </div>
-          <p className="mt-3 text-[10px] text-text-secondary/65">
-            {isMac ? "⌘" : "Ctrl+"}K to open global search is always available
-          </p>
-        </div>
-
-        <div className="space-y-4">
+      {/* Notifications */}
+      <SettingsCard title="Notifications">
+        <div className="flex items-center justify-between gap-4">
           <div>
-            <h3 className="section-kicker mb-3">System</h3>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <span className="text-sm font-medium text-text-primary">Updates</span>
-                  <p className="mt-1 text-xs text-text-secondary/70">
-                    {isTauri ? `Desktop build v${__APP_VERSION__}` : "Update checks are desktop only."}
-                  </p>
-                </div>
-                {isTauri ? <UpdateButton /> : <span className="text-xs text-text-secondary/70">Browser</span>}
-              </div>
-
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <span className="text-sm font-medium text-text-primary">Reset settings</span>
-                  <p className="mt-1 text-xs text-text-secondary/70">
-                    Clear saved preferences, theme choices, and custom shortcuts.
-                  </p>
-                </div>
-                <button
-                  onClick={() => {
-                    if (confirm("Reset all settings to defaults?")) resetAll();
-                  }}
-                  className="rounded-lg bg-danger/10 px-3 py-1.5 text-xs text-danger transition-colors hover:text-danger/80"
-                >
-                  Reset
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <h3 className="section-kicker mb-3">Attribution</h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between gap-3 py-1">
-                <a
-                  href="https://oldschool.runescape.wiki/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-accent hover:text-accent-hover"
-                >
-                  OSRS Wiki
-                </a>
-                <span className="text-text-secondary/70">CC BY-NC-SA 3.0</span>
-              </div>
-              <div className="flex justify-between gap-3 py-1">
-                <a
-                  href="https://wiseoldman.net/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-accent hover:text-accent-hover"
-                >
-                  Wise Old Man
-                </a>
-                <span className="text-text-secondary/70">MIT</span>
-              </div>
-              <div className="flex justify-between gap-3 py-1">
-                <a
-                  href="https://secure.runescape.com/m=hiscore_oldschool/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-accent hover:text-accent-hover"
-                >
-                  OSRS Hiscores
-                </a>
-                <span className="text-text-secondary/70">Jagex</span>
-              </div>
-            </div>
-            <div className="mt-4 grid gap-2 sm:grid-cols-2">
-              <a
-                href="https://github.com/McNerve/runewise"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm text-accent transition hover:text-accent-hover"
-              >
-                GitHub Repository
-              </a>
-              <a
-                href="https://github.com/McNerve/runewise/issues"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm text-accent transition hover:text-accent-hover"
-              >
-                Report a Bug
-              </a>
-            </div>
-            <p className="mt-3 text-[10px] text-text-secondary/65">
-              RuneWise is not affiliated with or endorsed by Jagex Ltd. Old School
-              RuneScape is a trademark of Jagex Ltd.
+            <span className="text-sm font-medium text-text-primary">Price alerts</span>
+            <p className="mt-0.5 text-xs text-text-secondary/70">
+              Notify when watchlist items hit your target prices.
             </p>
           </div>
+          <ToggleSwitch
+            checked={settings.notifications.priceAlerts}
+            onChange={() =>
+              update({
+                notifications: {
+                  ...settings.notifications,
+                  priceAlerts: !settings.notifications.priceAlerts,
+                },
+              })
+            }
+            label="Price alerts"
+          />
         </div>
-      </div>
+      </SettingsCard>
+
+      {/* Keyboard Shortcuts */}
+      <SettingsCard title="Keyboard Shortcuts">
+        <div className="space-y-2">
+          {Object.entries(KEYBIND_LABELS).map(([action, label]) => (
+            <div key={action} className="flex items-center justify-between gap-3 py-0.5">
+              <span className="text-sm text-text-primary/90">{label}</span>
+              <KeybindRecorder
+                value={settings.keybinds[action] ?? DEFAULT_KEYBINDS[action]}
+                onChange={(key) => handleKeybindChange(action, key)}
+              />
+            </div>
+          ))}
+        </div>
+        <div className="flex items-center justify-between mt-4 pt-3 border-t border-border/30">
+          <p className="text-[10px] text-text-secondary/65">
+            {isMac ? "⌘" : "Ctrl+"}K to open global search is always available
+          </p>
+          <button
+            onClick={resetKeybinds}
+            className="text-xs text-text-secondary/70 hover:text-text-primary transition-colors"
+          >
+            Reset all
+          </button>
+        </div>
+      </SettingsCard>
+
+      {/* System */}
+      <SettingsCard title="System">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <span className="text-sm font-medium text-text-primary">Updates</span>
+              <p className="mt-0.5 text-xs text-text-secondary/70">
+                {isTauri ? `Desktop build v${__APP_VERSION__}` : "Update checks are desktop only."}
+              </p>
+            </div>
+            {isTauri ? <UpdateButton /> : <span className="text-xs text-text-secondary/70">Browser</span>}
+          </div>
+
+          <div className="flex items-center justify-between gap-4 pt-3 border-t border-border/30">
+            <div>
+              <span className="text-sm font-medium text-text-primary">Reset settings</span>
+              <p className="mt-0.5 text-xs text-text-secondary/70">
+                Clear saved preferences, theme choices, and custom shortcuts.
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                if (confirm("Reset all settings to defaults?")) resetAll();
+              }}
+              className="rounded-lg bg-danger/10 px-3 py-1.5 text-xs text-danger transition-colors hover:text-danger/80"
+            >
+              Reset
+            </button>
+          </div>
+        </div>
+      </SettingsCard>
+
+      {/* Attribution */}
+      <SettingsCard title="Attribution">
+        <div className="space-y-1">
+          {[
+            { label: "OSRS Wiki", href: "https://oldschool.runescape.wiki/", license: "CC BY-NC-SA 3.0" },
+            { label: "Wise Old Man", href: "https://wiseoldman.net/", license: "MIT" },
+            { label: "OSRS Hiscores", href: "https://secure.runescape.com/m=hiscore_oldschool/", license: "Jagex" },
+          ].map(({ label, href, license }) => (
+            <div key={label} className="flex justify-between gap-3 py-1">
+              <a
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-accent hover:text-accent-hover"
+              >
+                {label}
+              </a>
+              <span className="text-xs text-text-secondary/70">{license}</span>
+            </div>
+          ))}
+        </div>
+        <div className="mt-3 pt-3 border-t border-border/30 flex gap-4">
+          <a
+            href="https://github.com/McNerve/runewise"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-accent hover:text-accent-hover"
+          >
+            GitHub Repository
+          </a>
+          <a
+            href="https://github.com/McNerve/runewise/issues"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-accent hover:text-accent-hover"
+          >
+            Report a Bug
+          </a>
+        </div>
+        <p className="mt-3 text-[10px] text-text-secondary/65">
+          RuneWise is not affiliated with or endorsed by Jagex Ltd. Old School
+          RuneScape is a trademark of Jagex Ltd.
+        </p>
+      </SettingsCard>
     </div>
   );
 }

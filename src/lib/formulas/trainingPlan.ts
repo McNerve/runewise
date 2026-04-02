@@ -1,5 +1,7 @@
-import { TRAINING_METHODS, type TrainingMethod } from "../data/training-methods";
+import { TRAINING_METHODS, type TrainingMethod, type TrainingIntensity } from "../data/training-methods";
 import { xpForLevel } from "./xp";
+
+export type TrainingPreference = "fastest" | "afk" | "cheapest";
 
 export interface PlanStep {
   skill: string;
@@ -17,9 +19,28 @@ export interface TrainingPlan {
   skills: string[];
 }
 
+const AFK_INTENSITIES: TrainingIntensity[] = ["afk", "low"];
+
+function scoreMethod(method: TrainingMethod, preference: TrainingPreference): number {
+  const xpHr = method.xpPerHour ?? 0;
+  if (preference === "fastest") return xpHr;
+  if (preference === "afk") {
+    // Prefer afk/low intensity — penalize medium/high
+    const intensityBonus = AFK_INTENSITIES.includes(method.intensity ?? "medium") ? 2 : 0;
+    return xpHr * (1 + intensityBonus);
+  }
+  if (preference === "cheapest") {
+    // Prefer methods with no items (no itemId) or lower cost
+    const costPenalty = method.itemId ? 0.5 : 1;
+    return xpHr * costPenalty;
+  }
+  return xpHr;
+}
+
 export function generatePlan(
   currentLevels: Record<string, number>,
-  targetLevels: Record<string, number>
+  targetLevels: Record<string, number>,
+  preference: TrainingPreference = "fastest"
 ): TrainingPlan {
   const steps: PlanStep[] = [];
 
@@ -33,10 +54,10 @@ export function generatePlan(
     const xpNeeded = xpForLevel(target) - xpForLevel(current);
     if (xpNeeded <= 0) continue;
 
-    // Find the best available method at the current level
+    // Find the best available method at the current level given the preference
     const available = methods
       .filter((m) => (m.levelReq ?? 1) <= current && m.xpPerHour && m.xpPerHour > 0)
-      .sort((a, b) => (b.xpPerHour ?? 0) - (a.xpPerHour ?? 0));
+      .sort((a, b) => scoreMethod(b, preference) - scoreMethod(a, preference));
 
     const method = available[0];
     if (!method || !method.xpPerHour) continue;
