@@ -50,7 +50,6 @@ export interface RankedTeleport {
   priority: "best" | "good" | "backup";
 }
 
-const STAR_MAP_BASE = "https://07.gg/images/shooting-stars/locations";
 const STAR_SITE_ALIASES: Array<{ aliases: string[]; canonical: string }> = [
   {
     aliases: ["mage of zamorak mine", "mage of zamorak mine lvl 7 wildy"],
@@ -136,91 +135,15 @@ function tokenizeStarLocation(input: string): string[] {
     );
 }
 
-const STAR_LOCATION_MAPS: Array<{ aliases: string[]; slug: string }> = [
-  { aliases: ["rimmington", "rimmington mine"], slug: "rimmington-mine" },
-  { aliases: ["taverley house portal"], slug: "taverley--white-wolf-tunnel-entrance" },
-  { aliases: ["corsair resource area"], slug: "corsair-resource-area" },
-  { aliases: ["feldip hills", "aks fairy ring", "rantz cave"], slug: "feldip-hunter-area" },
-  { aliases: ["southwest of brimhaven poh"], slug: "south-brimhaven-mine" },
-  { aliases: ["southwest of brimhaven house portal"], slug: "south-brimhaven-mine" },
-  { aliases: ["port khazard"], slug: "port-khazard-mine" },
-  { aliases: ["desert quarry", "sandstorm mine", "sandstorm"], slug: "desert-quarry" },
-  { aliases: ["prifddinas zalcano entrance"], slug: "prifddinas-zalcano-entrance" },
-  { aliases: ["miscellania", "miscellania mine", "cip fairy ring"], slug: "miscellania-mine" },
-  { aliases: ["piscatoris", "akq fairy ring"], slug: "piscatoris--akq-fairy-ring" },
-  { aliases: ["hunter guild", "mine north-west of hunter guild"], slug: "mine-north-west-of-hunter-guild" },
-  { aliases: ["colosseum entrance bank", "varlamore colosseum entrance bank"], slug: "varlamore-colosseum-entrance-bank" },
-  { aliases: ["draynor village"], slug: "draynor-village" },
-  { aliases: ["al kharid", "north of al kharid pvp arena"], slug: "al-kharid-mine" },
-  { aliases: ["al kharid bank"], slug: "al-kharid-bank" },
-  { aliases: ["varrock east mine", "varrock east bank", "southeast varrock mine"], slug: "varrock--east-bank" },
-  { aliases: ["ralos rise"], slug: "ralos-rise-mining-site" },
-  { aliases: ["mount karuulm", "mount karuulm bank"], slug: "mount-karuulm--bank" },
-  { aliases: ["mage arena"], slug: "mage-arena" },
-  { aliases: ["hosidius"], slug: "hosidius-mine" },
-  { aliases: ["arceuus dense essence mine", "dense essence"], slug: "arceuus-dense-essence-mine" },
-  { aliases: ["chambers of xeric bank", "mount quidamortem"], slug: "mount-quidamortem--bank" },
-  { aliases: ["lovakite mine", "lovakengj", "lovakite"], slug: "lovakite-mine" },
-  { aliases: ["shayzien mine", "shayzien mine south of kourend castle"], slug: "shayzien-mine" },
-  { aliases: ["burgh de rott", "burgh de rott bank"], slug: "burgh-de-rott--bank" },
-  { aliases: ["shilo village", "shilo village gem mine", "gem rocks"], slug: "shilo-village-mine" },
-  { aliases: ["grand tree", "west of grand tree", "gnome stronghold spirit tree"], slug: "grand-tree" },
-  { aliases: ["lunar isle"], slug: "lunar-isle-mine-entrance" },
-  { aliases: ["coal trucks"], slug: "coal-trucks" },
-  { aliases: ["dwarven mine", "dwarven mine next to edgeville"], slug: "dwarven-mine-northern-entrance" },
-  { aliases: ["catherby", "catherby bank"], slug: "catherby-bank" },
-  { aliases: ["civitas illa fortis"], slug: "civitas-illa-fortis--east-bank" },
-  { aliases: ["crafting guild"], slug: "crafting-guild-mine" },
-  { aliases: ["falador mine"], slug: "falador-mine" },
-  { aliases: ["west falador mine", "east falador bank", "falador bank east"], slug: "west-falador-mine" },
-  { aliases: ["yanille bank"], slug: "yanille-bank" },
-  { aliases: ["yanille", "yanille mine"], slug: "yanille-mine" },
-  { aliases: ["ardougne monastery", "ardougne monastery mine"], slug: "south-east-ardougne-mine--monastery" },
-  { aliases: ["east lumbridge swamp mine"], slug: "east-lumbridge-swamp-mine" },
-  { aliases: ["west lumbridge swamp mine"], slug: "west-lumbridge-swamp-mine" },
-  { aliases: ["lumbridge swamp"], slug: "east-lumbridge-swamp-mine" },
-  { aliases: ["rellekka"], slug: "rellekka-mine" },
-  { aliases: ["canifis bank"], slug: "canifis--bank" },
-  { aliases: ["canifis", "canifis mine"], slug: "canifis-mine" },
-  { aliases: ["haunted mine"], slug: "haunted-mine" },
-  { aliases: ["arandar"], slug: "arandar-mine" },
-  { aliases: ["lletya"], slug: "lletya-mine" },
-  { aliases: ["prifddinas mine"], slug: "prifddinas-mine" },
-  { aliases: ["wilderness hobgoblin"], slug: "wilderness-hobgoblin-mine" },
-  { aliases: ["mage of zamorak mine", "mage of zamorak mine lvl 7 wildy"], slug: "mage-arena" },
-  { aliases: ["skeleton mine", "skeleton mine lvl 10 wildy"], slug: "south-west-wilderness-mine" },
-  { aliases: ["wilderness runite", "lava maze runite mine"], slug: "wilderness-runite-mine" },
-  { aliases: ["wilderness resource area"], slug: "resource-area" },
-  { aliases: ["nardah"], slug: "nardah-mine" },
-  { aliases: ["uzer"], slug: "uzer-mine" },
-  { aliases: ["mudskipper"], slug: "mudskipper-point" },
-  { aliases: ["brimhaven mine", "brimhaven mine gold", "brimhaven northwest gold mine", "brimhaven northwest"], slug: "brimhaven-mine-gold" },
-  { aliases: ["nature altar", "nature altar mine north of shilo"], slug: "nature-altar-mine" },
-  { aliases: ["crandor"], slug: "crandor-mine" },
-  { aliases: ["jatizso"], slug: "jatizso-mine" },
-  { aliases: ["salvager overlook in varlamore", "salvager overlook"], slug: "salvager-overlook-mine" },
-  { aliases: ["varlamore south east mine"], slug: "varlamore-south-east-mine" },
-];
-
-function inferStarLocationSlug(locationName: string): string {
-  return locationName
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/['.,]/g, "")
-    .replace(/&/g, " and ")
-    .replace(/\s*\(([^)]+)\)\s*/g, (_, inner: string) => `--${inner}-`)
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/-{3,}/g, "--")
-    .replace(/^-+|-+$/g, "");
-}
-
 const WIKI_MAP_TILES: Record<string, string> = {
   "dwarven mine": "0_46_54",
   "ice": "0_46_54",
   "dwarf mine": "0_46_54",
   "mining guild": "0_46_52",
   "west falador": "0_45_52",
+  "east falador": "0_45_52",
   "falador mine": "0_45_52",
+  "falador bank": "0_45_52",
   "taverley": "0_44_54",
   "crafting guild": "0_45_51",
   "rimmington": "0_46_51",
@@ -261,6 +184,7 @@ const WIKI_MAP_TILES: Record<string, string> = {
   "kebos": "0_18_57",
   "mount karuulm": "0_19_60",
   "quidamortem": "0_19_56",
+  "chambers of xeric": "0_19_56",
   "al kharid mine": "0_51_51",
   "al kharid bank": "0_50_49",
   "al kharid": "0_51_51",
@@ -315,27 +239,42 @@ const WIKI_MAP_BASE = "https://maps.runescape.wiki/osrs/versions/2026-03-04_a/ti
 
 function getWikiMapTile(locationName: string): string | null {
   const lower = normalizeStarLocation(locationName);
+
+  // Exact substring match first
   for (const [key, tile] of Object.entries(WIKI_MAP_TILES)) {
     if (lower.includes(key)) {
       return `${WIKI_MAP_BASE}/${tile}.png`;
     }
   }
+
+  // Fuzzy token match — find the tile key that shares the most tokens
+  const inputTokens = tokenizeStarLocation(locationName);
+  if (inputTokens.length === 0) return null;
+
+  let bestKey: string | null = null;
+  let bestScore = 0;
+
+  for (const key of Object.keys(WIKI_MAP_TILES)) {
+    const keyTokens = key.split(/[\s']+/).filter(Boolean);
+    const matches = inputTokens.filter((t) =>
+      keyTokens.some((k) => k.includes(t) || t.includes(k))
+    ).length;
+    const score = matches / Math.max(inputTokens.length, keyTokens.length);
+    if (score > bestScore && matches >= 2) {
+      bestScore = score;
+      bestKey = key;
+    }
+  }
+
+  if (bestKey) {
+    return `${WIKI_MAP_BASE}/${WIKI_MAP_TILES[bestKey]}.png`;
+  }
+
   return null;
 }
 
-export function getStarLocationMap(locationName: string, large = false): string | null {
-  // Try wiki map tiles first (always available)
-  const wikiTile = getWikiMapTile(locationName);
-  if (wikiTile) return wikiTile;
-
-  // Fall back to 07.gg images
-  const lower = normalizeStarLocation(locationName);
-  const match = STAR_LOCATION_MAPS.find((entry) =>
-    entry.aliases.some((alias) => lower.includes(alias))
-  );
-  const slug = match?.slug ?? inferStarLocationSlug(locationName);
-  if (!slug) return null;
-  return `${STAR_MAP_BASE}/${slug}${large ? "-lg" : ""}.webp`;
+export function getStarLocationMap(locationName: string): string | null {
+  return getWikiMapTile(locationName);
 }
 
 export function getStarLocationBadge(locationName: string): string {

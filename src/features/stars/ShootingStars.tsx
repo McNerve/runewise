@@ -65,7 +65,7 @@ function StarLocationPreview({
   large?: boolean;
 }) {
   const previewName = site?.name ?? locationName;
-  const mapSrc = getStarLocationMap(previewName, large);
+  const mapSrc = getStarLocationMap(previewName);
   const fallback = getStarLocationBadge(locationName);
 
   if (site?.mapPreview) {
@@ -511,7 +511,7 @@ export default function ShootingStars() {
                     </a>
                   </div>
                   <p className="mt-3 text-[10px] text-text-secondary/45">
-                    Map preview from 07.gg when available, with OSRS Wiki fallback.
+                    Map preview from OSRS Wiki map tiles.
                   </p>
                 </div>
               );

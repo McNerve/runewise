@@ -1,27 +1,22 @@
-import DOMPurify from "dompurify";
 import { fetchJson } from "../api/client";
 import { setCache, getCached } from "../api/cache";
-import { isTauri } from "../env";
 import type { WikiGuideBlock, WikiGuideTemplate } from "./blocks";
 import { classifyWikiPage } from "./classify";
-
-const WIKI_API = isTauri
-  ? "https://oldschool.runescape.wiki/api.php"
-  : "/api/wiki-content";
+import {
+  WIKI_API,
+  slugify,
+  normalizeImages,
+  normalizeGalleries,
+  extractSummary,
+  sanitizeHtmlStrict,
+  type WikiTextResponse,
+} from "./helpers";
 
 const GUIDE_TTL = 60 * 60 * 1000;
 
 interface WikiSection {
   number: string;
   line: string;
-}
-
-interface WikiTextResponse {
-  parse?: {
-    text?: {
-      "*": string;
-    };
-  };
 }
 
 export interface BossGuideSection {
@@ -59,70 +54,6 @@ const SECTION_LABELS = [
   "attacks",
   "drops",
 ] as const;
-
-function slugify(input: string): string {
-  return input
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-}
-
-function extractSummary(root: Element): string | null {
-  const paragraph = Array.from(root.querySelectorAll("p")).find(
-    (node) => (node.textContent ?? "").trim().length > 60
-  );
-  return paragraph?.textContent?.trim() ?? null;
-}
-
-function normalizeImages(root: Element): void {
-  root.querySelectorAll("img").forEach((img) => {
-    const dataSrc = img.getAttribute("data-src");
-    if (dataSrc) {
-      img.setAttribute("src", dataSrc);
-      img.removeAttribute("data-src");
-    }
-
-    const src = img.getAttribute("src") || "";
-    if (src.startsWith("//")) {
-      img.setAttribute("src", `https:${src}`);
-    } else if (src.startsWith("/")) {
-      img.setAttribute("src", `https://oldschool.runescape.wiki${src}`);
-    }
-
-    img.removeAttribute("srcset");
-    img.removeAttribute("data-file-width");
-    img.removeAttribute("data-file-height");
-    img.setAttribute("loading", "lazy");
-  });
-}
-
-function normalizeGalleries(root: Element): void {
-  root.querySelectorAll("ul.gallery").forEach((gallery) => {
-    const normalizedList = document.createElement("ul");
-
-    gallery.querySelectorAll("li.gallerybox").forEach((entry) => {
-      const item = document.createElement("li");
-      const image = entry.querySelector("img");
-      const captionText = entry.querySelector(".gallerytext")?.textContent?.trim() ?? "";
-
-      if (image) {
-        item.appendChild(image.cloneNode(true));
-      }
-
-      if (captionText) {
-        const caption = document.createElement("p");
-        caption.textContent = captionText.replace(/\s+/g, " ").trim();
-        item.appendChild(caption);
-      }
-
-      if (item.childNodes.length > 0) {
-        normalizedList.appendChild(item);
-      }
-    });
-
-    gallery.replaceWith(normalizedList);
-  });
-}
 
 function cleanSectionHtml(
   rawHtml: string,
@@ -179,32 +110,7 @@ function cleanSectionHtml(
   normalizeImages(content);
 
   const summary = extractSummary(content);
-  const sanitized = DOMPurify.sanitize(content.innerHTML.trim(), {
-    ALLOWED_TAGS: [
-      "p",
-      "ul",
-      "ol",
-      "li",
-      "table",
-      "thead",
-      "tbody",
-      "tr",
-      "th",
-      "td",
-      "strong",
-      "em",
-      "b",
-      "i",
-      "br",
-      "img",
-      "blockquote",
-      "details",
-      "summary",
-      "h4",
-      "h5",
-    ],
-    ALLOWED_ATTR: ["src", "alt", "loading", "colspan", "rowspan"],
-  });
+  const sanitized = sanitizeHtmlStrict(content);
 
   return { html: sanitized, summary };
 }
