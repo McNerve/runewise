@@ -11,6 +11,7 @@ export interface AppSettings {
   keybinds: KeybindMap;
   notifications: { priceAlerts: boolean };
   sidebar: { collapsed: boolean };
+  ironmanMode: boolean;
 }
 
 export const DEFAULT_KEYBINDS: KeybindMap = {
@@ -35,6 +36,9 @@ export const DEFAULT_KEYBINDS: KeybindMap = {
   timers: "f",
   "xp-table": "x",
   watchlist: "w",
+  "gear-compare": "g",
+  raids: "i",
+  "training-plan": "l",
 };
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -42,6 +46,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   keybinds: DEFAULT_KEYBINDS,
   notifications: { priceAlerts: true },
   sidebar: { collapsed: false },
+  ironmanMode: false,
 };
 
 export function loadSettings(): AppSettings {
@@ -52,6 +57,7 @@ export function loadSettings(): AppSettings {
     keybinds: { ...DEFAULT_KEYBINDS, ...saved.keybinds },
     notifications: { ...DEFAULT_SETTINGS.notifications, ...saved.notifications },
     sidebar: { ...DEFAULT_SETTINGS.sidebar, ...saved.sidebar },
+    ironmanMode: saved.ironmanMode ?? false,
   };
 }
 
