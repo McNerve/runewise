@@ -19,7 +19,11 @@ export const PATCH_TYPES: PatchType[] = [
   { name: "Dragonfruit tree", category: "Fruit Trees", growthMinutes: 960, icon: "Dragonfruit_sapling.png" },
   { name: "Birdhouse", category: "Special", growthMinutes: 50, icon: "Oak_bird_house.png" },
   { name: "Calquat tree", category: "Special", growthMinutes: 1280, icon: "Calquat_sapling.png" },
-  { name: "Hardwood tree", category: "Special", growthMinutes: 3840, icon: "Teak_sapling.png" },
+  { name: "Teak tree", category: "Hardwood", growthMinutes: 4480, icon: "Teak_sapling.png" },
+  { name: "Mahogany tree", category: "Hardwood", growthMinutes: 5120, icon: "Mahogany_sapling.png" },
+  { name: "Celastrus tree", category: "Special", growthMinutes: 800, icon: "Celastrus_sapling.png" },
+  { name: "Redwood tree", category: "Special", growthMinutes: 6400, icon: "Redwood_sapling.png" },
+  { name: "Spirit tree", category: "Special", growthMinutes: 3520, icon: "Spirit_sapling.png" },
   { name: "Hespori", category: "Special", growthMinutes: 1920, icon: "Hespori_seed_5.png" },
   { name: "Seaweed", category: "Special", growthMinutes: 40, icon: "Seaweed_spore_5.png" },
 ];
@@ -29,4 +33,7 @@ export const PRESETS: { name: string; patches: string[] }[] = [
   { name: "Tree Run", patches: ["Oak tree", "Willow tree", "Maple tree", "Yew tree", "Magic tree"] },
   { name: "Fruit Tree Run", patches: ["Apple tree", "Palm tree", "Dragonfruit tree"] },
   { name: "Birdhouse Run", patches: ["Birdhouse", "Birdhouse", "Birdhouse", "Birdhouse"] },
+  { name: "Hardwood Run", patches: ["Teak tree", "Mahogany tree", "Mahogany tree"] },
+  { name: "Full Tree Run", patches: ["Oak tree", "Willow tree", "Maple tree", "Yew tree", "Magic tree", "Celastrus tree"] },
+  { name: "Seaweed Run", patches: ["Seaweed", "Seaweed", "Seaweed", "Seaweed", "Seaweed"] },
 ];
