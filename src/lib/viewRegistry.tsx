@@ -35,6 +35,7 @@ import { NAV_ICONS } from "./sprites";
 const TrainingPlan = lazy(() => import("../features/training-plan/TrainingPlan"));
 const CollectionLog = lazy(() => import("../features/collection-log/CollectionLog"));
 const Raids = lazy(() => import("../features/raids/Raids"));
+const ProductionCalc = lazy(() => import("../features/production/ProductionCalc"));
 
 interface AppViewContext {
   hiscores: {
@@ -87,6 +88,7 @@ export const VIEW_RENDERERS: Record<View, ViewRenderer> = {
   stars: renderComponent(ShootingStars),
   wiki: () => <WikiLookup key={window.location.hash} />,
   market: renderComponent(Market),
+  "production-calc": renderComponent(ProductionCalc),
   about: renderComponent(About),
   settings: renderComponent(Settings),
 };

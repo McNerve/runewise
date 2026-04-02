@@ -17,6 +17,7 @@ const FEATURE_ACCENTS: Record<View, string> = {
   loot: "#facc15",
   "combat-tasks": "#fb7185",
   market: "#22c55e",
+  "production-calc": "#10b981",
   watchlist: "#22c55e",
   progress: "#2dd4bf",
   slayer: "#ef4444",

@@ -159,6 +159,14 @@ export const FEATURE_REGISTRY = {
     search: true,
     aliases: ["money making", "gp", "methods"],
   },
+  "production-calc": {
+    title: "Production Calculator",
+    navLabel: "Production",
+    family: "Tools",
+    sidebar: true,
+    search: true,
+    aliases: ["production", "crafting", "recipes", "cost calculator", "profit calculator", "herblore", "smithing"],
+  },
   spells: {
     title: "Spellbook",
     navLabel: "Spellbook",

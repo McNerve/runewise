@@ -130,6 +130,7 @@ export const NAV_ICONS: Record<string, string> = {
   "clue-helper": `${WIKI_IMG}/Clue_scroll_%28hard%29.png`,
   "combat-tasks": `${WIKI_IMG}/Combat_Achievements_icon.png`,
   "money-making": `${WIKI_IMG}/Coins_detail.png`,
+  "production-calc": `${WIKI_IMG}/Crafting_icon.png`,
   wiki: `${WIKI_IMG}/Book_of_knowledge.png`,
   "pet-calc": `${WIKI_IMG}/Heron.png`,
   settings: `${WIKI_IMG}/Options_icon.png`,
