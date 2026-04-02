@@ -1,15 +1,12 @@
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   COMBAT_TASKS,
   COMBAT_TIERS,
   COMBAT_TIER_COUNTS,
   type CombatTier,
 } from "../../lib/data/combat-achievements";
-import { type HiscoreData } from "../../lib/api/hiscores";
-
-interface Props {
-  hiscores: HiscoreData | null;
-}
+import { useNavigation } from "../../lib/NavigationContext";
+import { findBossByName } from "../../lib/data/bosses";
 
 const TIER_COLORS: Record<CombatTier, { tab: string; badge: string }> = {
   Easy: {
@@ -41,17 +38,10 @@ const TIER_COLORS: Record<CombatTier, { tab: string; badge: string }> = {
 const TIER_INACTIVE =
   "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary";
 
-export default function CombatTasks({ hiscores }: Props) {
+export default function CombatTasks() {
+  const { params, navigate } = useNavigation();
   const [selectedTier, setSelectedTier] = useState<CombatTier>("Easy");
-  const [search, setSearch] = useState("");
-
-  const completedTotal = useMemo(() => {
-    if (!hiscores) return null;
-    const ca = hiscores.activities.find((a) =>
-      a.name.toLowerCase().includes("combat achievement")
-    );
-    return ca?.score ?? 0;
-  }, [hiscores]);
+  const [search, setSearch] = useState(params.search ?? "");
 
   const totalTasks = Object.values(COMBAT_TIER_COUNTS).reduce(
     (sum, n) => sum + n,
@@ -85,31 +75,19 @@ export default function CombatTasks({ hiscores }: Props) {
 
   return (
     <div className="max-w-4xl">
-      <h2 className="text-xl font-semibold mb-1">
-        Combat Achievements Tracker
-      </h2>
-      {completedTotal !== null ? (
-        <div className="flex items-center gap-3 mb-4">
-          <p className="text-xs text-text-secondary">
-            {completedTotal}/{totalTasks} completed
-          </p>
-          <div className="flex-1 max-w-[200px] h-1.5 bg-bg-tertiary rounded-full overflow-hidden">
-            <div
-              className="h-full bg-accent rounded-full transition-all"
-              style={{
-                width: `${(completedTotal / totalTasks) * 100}%`,
-              }}
-            />
-          </div>
-          <span className="text-[10px] text-text-secondary">
-            {((completedTotal / totalTasks) * 100).toFixed(1)}%
-          </span>
-        </div>
-      ) : (
-        <p className="text-xs text-text-secondary mb-4">
-          {totalTasks} total tasks across 6 tiers
+      <div className="mb-4">
+        <h2 className="text-xl font-semibold mb-1">
+          Combat Tasks Reference
+        </h2>
+        <p className="text-sm text-text-secondary">
+          Boss-linked combat achievement tasks for planning runs, checking requirements,
+          and jumping into related boss workflows. Task completion is not synced from an
+          official API.
         </p>
-      )}
+        <p className="mt-2 text-xs text-text-secondary">
+          {totalTasks} total official tasks across 6 tiers. The list below is a curated in-app reference sample, not a synced completion tracker.
+        </p>
+      </div>
 
       {/* Tier tabs */}
       <div className="flex gap-1.5 mb-4 flex-wrap">
@@ -158,7 +136,7 @@ export default function CombatTasks({ hiscores }: Props) {
       <div className="space-y-4">
         {groupedByBoss.map(([boss, tasks]) => (
           <div key={boss}>
-            <div className="flex items-center gap-2 mb-2">
+            <div className="mb-2 flex flex-wrap items-center gap-2">
               <span
                 className={`text-[10px] px-1.5 py-0.5 rounded ${TIER_COLORS[selectedTier].badge}`}
               >
@@ -167,6 +145,25 @@ export default function CombatTasks({ hiscores }: Props) {
               <span className="text-[10px] text-text-secondary/40">
                 {tasks.length} {tasks.length === 1 ? "task" : "tasks"}
               </span>
+              {findBossByName(boss) ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => navigate("bosses", { boss, tab: "tasks" })}
+                    className="text-[10px] text-accent transition hover:text-accent-hover"
+                  >
+                    Boss Workspace
+                  </button>
+                  <span className="text-[10px] text-text-secondary/25">•</span>
+                  <button
+                    type="button"
+                    onClick={() => navigate("bosses", { boss, tab: "drops" })}
+                    className="text-[10px] text-accent transition hover:text-accent-hover"
+                  >
+                    Drops
+                  </button>
+                </>
+              ) : null}
             </div>
             <div className="space-y-1">
               {tasks.map((task) => (
@@ -192,12 +189,6 @@ export default function CombatTasks({ hiscores }: Props) {
       {groupedByBoss.length === 0 && (
         <p className="text-sm text-text-secondary text-center py-8">
           No tasks match your search.
-        </p>
-      )}
-
-      {!hiscores && (
-        <p className="text-sm text-text-secondary mt-4">
-          Look up your RSN above to see your combat achievement progress.
         </p>
       )}
     </div>

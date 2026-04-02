@@ -3,6 +3,7 @@ import { calculateDps } from "../../lib/formulas/dps";
 import { PRAYERS, type Prayer } from "../../lib/data/prayers";
 import { MONSTERS, type Monster } from "../../lib/data/monsters";
 import { type HiscoreData } from "../../lib/api/hiscores";
+import { useNavigation } from "../../lib/NavigationContext";
 
 type CombatStyle = "melee" | "ranged" | "magic";
 
@@ -64,6 +65,7 @@ interface Props {
 }
 
 export default function DpsCalculator({ hiscores }: Props) {
+  const { params } = useNavigation();
   const [combatStyle, setCombatStyle] = useState<CombatStyle>("melee");
   const [attackLevel, setAttackLevel] = useState(99);
   const [strengthLevel, setStrengthLevel] = useState(99);
@@ -86,6 +88,17 @@ export default function DpsCalculator({ hiscores }: Props) {
       setMagicLevel(getSkillLevel(hiscores, "Magic"));
     }
   }, [hiscores]);
+
+  useEffect(() => {
+    if (!params.monster) return;
+    const nextIndex = MONSTERS.findIndex(
+      (monster) => monster.name.toLowerCase() === params.monster?.toLowerCase()
+    );
+    if (nextIndex >= 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- sync the selected target when navigating from boss guides
+      setMonsterIdx(nextIndex);
+    }
+  }, [params.monster]);
 
   // Reset stance and prayer when combat style changes
   useEffect(() => {
@@ -172,7 +185,7 @@ export default function DpsCalculator({ hiscores }: Props) {
         {/* Stats + Equipment */}
         <div className="grid grid-cols-2 gap-4">
           {/* Player Stats */}
-          <div className="bg-bg-secondary rounded-lg p-4">
+          <div>
             <h3 className="text-xs uppercase tracking-wider text-text-secondary/60 mb-3">
               Player Stats
             </h3>
@@ -214,7 +227,7 @@ export default function DpsCalculator({ hiscores }: Props) {
           </div>
 
           {/* Equipment Bonuses */}
-          <div className="bg-bg-secondary rounded-lg p-4">
+          <div>
             <h3 className="text-xs uppercase tracking-wider text-text-secondary/60 mb-3">
               Equipment Bonuses
             </h3>
@@ -247,7 +260,7 @@ export default function DpsCalculator({ hiscores }: Props) {
 
         {/* Prayer + Stance */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="bg-bg-secondary rounded-lg p-4">
+          <div>
             <h3 className="text-xs uppercase tracking-wider text-text-secondary/60 mb-3">
               Prayer
             </h3>
@@ -267,7 +280,7 @@ export default function DpsCalculator({ hiscores }: Props) {
             </select>
           </div>
 
-          <div className="bg-bg-secondary rounded-lg p-4">
+          <div>
             <h3 className="text-xs uppercase tracking-wider text-text-secondary/60 mb-3">
               Stance
             </h3>
@@ -288,7 +301,7 @@ export default function DpsCalculator({ hiscores }: Props) {
         </div>
 
         {/* Target */}
-        <div className="bg-bg-secondary rounded-lg p-4">
+        <div>
           <h3 className="text-xs uppercase tracking-wider text-text-secondary/60 mb-3">
             Target
           </h3>
@@ -436,7 +449,7 @@ function ResultCard({
   color: string;
 }) {
   return (
-    <div className="bg-bg-secondary rounded-lg p-4 text-center">
+    <div className="text-center">
       <div className={`text-2xl font-bold ${color}`}>{value}</div>
       <div className="text-xs text-text-secondary mt-1">{label}</div>
     </div>

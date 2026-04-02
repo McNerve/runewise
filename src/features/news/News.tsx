@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import DOMPurify from "dompurify";
 import { apiFetch } from "../../lib/api/fetch";
 import { isTauri } from "../../lib/env";
 
@@ -156,7 +157,15 @@ function extractArticleHtml(html: string): string {
     a.replaceWith(text);
   });
 
-  return content.innerHTML;
+  return DOMPurify.sanitize(content.innerHTML, {
+    ALLOWED_TAGS: [
+      "p", "h2", "h3", "h4", "h5", "ul", "ol", "li", "img",
+      "strong", "em", "b", "i", "br", "table", "thead", "tbody",
+      "tr", "th", "td", "span", "div", "figure", "figcaption",
+      "blockquote", "dl", "dt", "dd", "sup", "sub",
+    ],
+    ALLOWED_ATTR: ["src", "alt", "loading", "colspan", "rowspan", "class"],
+  });
 }
 
 async function fetchArticleContent(url: string): Promise<string> {

@@ -1,84 +1,14 @@
 import { useMemo } from "react";
+import * as Tooltip from "@radix-ui/react-tooltip";
 import type { View } from "../lib/NavigationContext";
 import { isMac } from "../lib/env";
-import { NAV_ICONS } from "../lib/sprites";
 import { useSettings } from "../hooks/useSettings";
-
-declare const __APP_VERSION__: string;
+import { FEATURE_FAMILIES, SIDEBAR_FEATURES } from "../lib/features";
+import { getFeatureAccent } from "../lib/featureAccent";
+import ShellIcon from "./ShellIcon";
 
 const mod = isMac ? "⌘" : "Ctrl+";
-
-interface NavItem {
-  id: View;
-  label: string;
-}
-
-interface NavSection {
-  label: string | null;
-  items: NavItem[];
-}
-
-const NAV_SECTIONS: NavSection[] = [
-  {
-    label: "Player",
-    items: [
-      { id: "overview", label: "Overview" },
-      { id: "tracker", label: "XP Tracker" },
-    ],
-  },
-  {
-    label: "Calculators",
-    items: [
-      { id: "skill-calc", label: "Skill Calcs" },
-      { id: "combat-calc", label: "Combat" },
-      { id: "dry-calc", label: "Dry Calc" },
-      { id: "dps-calc", label: "DPS Calc" },
-      { id: "pet-calc", label: "Pet Chance" },
-    ],
-  },
-  {
-    label: "Market",
-    items: [
-      { id: "market", label: "Market" },
-      { id: "alch-calc", label: "Alch Profits" },
-      { id: "watchlist", label: "Watchlist" },
-    ],
-  },
-  {
-    label: "Combat",
-    items: [
-      { id: "bosses", label: "Boss Guides" },
-      { id: "drops", label: "Drop Tables" },
-      { id: "boss-loot", label: "Loot Calculator" },
-      { id: "combat-tasks", label: "Combat Tasks" },
-    ],
-  },
-  {
-    label: "Guides",
-    items: [
-      { id: "quests", label: "Quests" },
-      { id: "diaries", label: "Diaries" },
-      { id: "slayer", label: "Slayer" },
-      { id: "clue-helper", label: "Clue Helper" },
-      { id: "money-making", label: "Money Making" },
-    ],
-  },
-  {
-    label: "Tools",
-    items: [
-      { id: "xp-table", label: "XP Table" },
-      { id: "timers", label: "Timers" },
-      { id: "runelite", label: "RuneLite" },
-      { id: "stars", label: "Stars" },
-    ],
-  },
-  {
-    label: null,
-    items: [
-      { id: "news", label: "News" },
-    ],
-  },
-];
+const OPEN_SEARCH_EVENT = "runewise:open-search";
 
 interface SidebarProps {
   currentView: View;
@@ -93,7 +23,10 @@ export default function Sidebar({ currentView, onNavigate }: SidebarProps) {
     update({ sidebar: { collapsed: !collapsed } });
   };
 
-  // Build reverse map: view -> display key string
+  const openGlobalSearch = () => {
+    window.dispatchEvent(new Event(OPEN_SEARCH_EVENT));
+  };
+
   const viewKeys = useMemo(() => {
     const map: Record<string, string> = {};
     for (const [view, key] of Object.entries(settings.keybinds)) {
@@ -102,18 +35,38 @@ export default function Sidebar({ currentView, onNavigate }: SidebarProps) {
     return map;
   }, [settings.keybinds]);
 
+  const groupedFeatures = useMemo(
+    () =>
+      FEATURE_FAMILIES.map((family) => ({
+        family,
+        items: SIDEBAR_FEATURES.filter((feature) => feature.family === family),
+      })),
+    []
+  );
+
+  const getIconStyle = (view: View, active: boolean) => {
+    const accent = getFeatureAccent(view);
+    return {
+      color: active ? accent : `color-mix(in srgb, ${accent} 72%, var(--color-text-secondary))`,
+    };
+  };
+
   return (
-    <aside className={`${collapsed ? "w-14" : "w-56"} bg-bg-secondary border-r border-border flex flex-col transition-all duration-200`}>
-      <div className={`${collapsed ? "px-2 py-3" : "p-4"} border-b border-border flex items-center`}>
+    <Tooltip.Provider delayDuration={200}>
+    <aside
+      className={`sidebar-shell ${collapsed ? "w-16" : "w-56"} flex flex-col overflow-hidden border-r border-border transition-all duration-200`}
+    >
+      <div
+        className={`${collapsed ? "px-3 py-3 justify-center" : "px-4 py-3"} flex items-center border-b border-border/80`}
+      >
         {!collapsed && (
           <div className="flex-1 min-w-0">
-            <h1 className="text-lg font-bold tracking-tight">RuneWise</h1>
-            <p className="text-xs text-text-secondary mt-0.5">OSRS Companion</p>
+            <h1 className="text-lg font-semibold tracking-tight">RuneWise</h1>
           </div>
         )}
         <button
           onClick={toggleCollapse}
-          className="text-text-secondary/60 hover:text-text-secondary transition-colors shrink-0"
+          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-text-secondary/70 transition-colors hover:bg-bg-secondary/50 hover:text-text-primary"
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -125,74 +78,98 @@ export default function Sidebar({ currentView, onNavigate }: SidebarProps) {
           </svg>
         </button>
       </div>
-      <nav className="flex-1 overflow-y-auto p-2">
-        {NAV_SECTIONS.map((section, si) => (
-          <div key={si}>
-            {section.label && !collapsed && (
-              <div className="text-[9px] uppercase tracking-widest text-text-secondary/60 px-3 pt-3 pb-1 select-none">
-                {section.label}
-              </div>
+      <nav
+        className={`sidebar-scroll flex-1 overflow-y-auto overflow-x-hidden ${collapsed ? "compact-sidebar-scroll px-2 py-2" : "px-2 py-2"}`}
+      >
+        {groupedFeatures.map((section, index) => (
+          <div key={section.family}>
+            {index > 0 && (
+              <div className={`border-t border-border/25 ${collapsed ? "my-1 mx-1" : "my-1.5 mx-2"}`} />
             )}
-            {section.label && collapsed && si > 0 && (
-              <div className="border-t border-border/30 my-1 mx-1" />
-            )}
-            <div className="space-y-0.5">
-              {section.items.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => onNavigate(item.id)}
-                  title={collapsed ? item.label : undefined}
-                  className={`w-full text-left ${collapsed ? "px-2 py-1.5 justify-center" : "px-3 py-1.5"} rounded-md text-sm flex items-center gap-2 transition-colors ${
-                    currentView === item.id
-                      ? "bg-accent/15 text-accent"
-                      : "text-text-secondary hover:bg-bg-tertiary hover:text-text-primary"
-                  }`}
-                >
-                  <img
-                    src={NAV_ICONS[item.id]}
-                    alt=""
-                    className="w-4 h-4 shrink-0"
-                    onError={(e) => {
-                      const el = e.currentTarget;
-                      el.style.display = "none";
-                      if (el.nextElementSibling) el.nextElementSibling.classList.remove("hidden");
-                    }}
-                  />
-                  <span className="hidden w-4 h-4 rounded bg-bg-tertiary text-[9px] font-bold flex items-center justify-center text-text-secondary">
-                    {item.label[0]}
-                  </span>
-                  {!collapsed && <span className="flex-1">{item.label}</span>}
-                  {!collapsed && viewKeys[item.id] && (
-                    <span className="text-[10px] text-text-secondary/30">{viewKeys[item.id]}</span>
-                  )}
-                </button>
-              ))}
+            <div>
+              {section.items.map((item) => {
+                const accent = getFeatureAccent(item.id);
+                const navButton = (
+                  <button
+                    key={item.id}
+                    onClick={() => onNavigate(item.id)}
+                    aria-current={currentView === item.id ? "page" : undefined}
+                    style={{ "--item-accent": accent } as React.CSSProperties}
+                    className={`sidebar-nav-item w-full text-left ${collapsed ? "mx-auto h-9 w-9 justify-center px-0 py-0" : "px-2.5 py-[3px]"} rounded-lg text-[13px] flex items-center gap-2.5 transition-colors ${
+                      currentView === item.id
+                        ? "font-medium"
+                        : "text-text-secondary hover:text-text-primary"
+                    }`}
+                  >
+                    <span
+                      className={`inline-flex shrink-0 items-center justify-center ${collapsed ? "h-7 w-7" : "h-5 w-5"}`}
+                      style={getIconStyle(item.id, currentView === item.id)}
+                    >
+                      <ShellIcon view={item.id} className={`${collapsed ? "h-4.5 w-4.5" : "h-[18px] w-[18px]"} shrink-0`} />
+                    </span>
+                    {!collapsed && (
+                      <span className="min-w-0 flex-1 truncate">{item.navLabel}</span>
+                    )}
+                    {!collapsed && viewKeys[item.id] && (
+                      <span className="text-[10px] text-text-secondary/45 tabular-nums">{viewKeys[item.id]}</span>
+                    )}
+                  </button>
+                );
+
+                if (collapsed) {
+                  return (
+                    <Tooltip.Root key={item.id} delayDuration={200}>
+                      <Tooltip.Trigger asChild>{navButton}</Tooltip.Trigger>
+                      <Tooltip.Portal>
+                        <Tooltip.Content className="tooltip-content" side="right" sideOffset={8}>
+                          {item.navLabel}
+                          <Tooltip.Arrow className="fill-bg-tertiary" />
+                        </Tooltip.Content>
+                      </Tooltip.Portal>
+                    </Tooltip.Root>
+                  );
+                }
+
+                return navButton;
+              })}
             </div>
           </div>
         ))}
       </nav>
-      <div className={`${collapsed ? "p-1" : "p-3"} border-t border-border space-y-1`}>
+      <div className={`${collapsed ? "p-2" : "p-2.5"} space-y-2 border-t border-border/80`}>
+        {!collapsed && (
+          <button
+            type="button"
+            onClick={openGlobalSearch}
+            className="flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-[11px] text-text-secondary/70 transition hover:bg-bg-secondary/40 hover:text-text-primary"
+          >
+            <span>Search</span>
+            <span className="rounded-md border border-border/80 px-1.5 py-0.5 font-mono text-[10px] text-text-secondary/65">
+              {mod}K
+            </span>
+          </button>
+        )}
         <button
           onClick={() => onNavigate("settings")}
           title={collapsed ? "Settings" : undefined}
-          className={`w-full text-left ${collapsed ? "px-2 py-1.5 justify-center" : "px-3 py-1.5"} rounded-md text-sm flex items-center gap-2 transition-colors ${
+          aria-current={currentView === "settings" ? "page" : undefined}
+          style={{ "--item-accent": getFeatureAccent("settings") } as React.CSSProperties}
+          className={`sidebar-nav-item w-full text-left ${collapsed ? "mx-auto h-9 w-9 justify-center px-0 py-0" : "px-2.5 py-[3px]"} rounded-lg text-[13px] flex items-center gap-2.5 transition-colors ${
             currentView === "settings"
-              ? "bg-accent/15 text-accent"
-              : "text-text-secondary hover:bg-bg-tertiary hover:text-text-primary"
+              ? "font-medium"
+              : "text-text-secondary hover:text-text-primary"
           }`}
         >
-          <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-          </svg>
+          <span
+            className={`inline-flex shrink-0 items-center justify-center ${collapsed ? "h-7 w-7" : "h-5 w-5"}`}
+            style={getIconStyle("settings", currentView === "settings")}
+          >
+            <ShellIcon view="settings" className={`${collapsed ? "h-4.5 w-4.5" : "h-[18px] w-[18px]"} shrink-0`} />
+          </span>
           {!collapsed && <span className="flex-1">Settings</span>}
         </button>
-        {!collapsed && (
-          <div className="text-[10px] text-text-secondary/60 text-center py-0.5">
-            v{__APP_VERSION__}
-          </div>
-        )}
       </div>
     </aside>
+    </Tooltip.Provider>
   );
 }

@@ -1,6 +1,19 @@
-import { useState, useEffect, useMemo } from "react";
-import { STAR_TIERS, STAR_SITES, STARDUST_REWARDS, getTeleportsForLocation } from "../../lib/data/stars";
+import { useState, useEffect, useMemo, useRef } from "react";
+import {
+  STAR_TIERS,
+  STAR_SITES,
+  STARDUST_REWARDS,
+  type StarSite,
+  findStarSiteMatch,
+  getRankedTeleportsForLocation,
+  getRankedTeleportsForLocationFromSites,
+  getStarLocationBadge,
+  getStarLocationMap,
+} from "../../lib/data/stars";
+import WikiImage from "../../components/WikiImage";
 import { fetchLiveStars, type LiveStar } from "../../lib/api/stars";
+import { fetchStarLandingSites } from "../../lib/api/stars-reference";
+import { useNavigation } from "../../lib/NavigationContext";
 
 type Tab = "live" | "reference";
 
@@ -42,11 +55,74 @@ function tierColor(tier: number): string {
   return "text-text-primary";
 }
 
+function StarLocationPreview({
+  locationName,
+  site,
+  large = false,
+}: {
+  locationName: string;
+  site: StarSite | null;
+  large?: boolean;
+}) {
+  const previewName = site?.name ?? locationName;
+  const mapSrc = getStarLocationMap(previewName, large);
+  const fallback = getStarLocationBadge(locationName);
+
+  if (site?.mapPreview) {
+    const targetWidth = large ? 320 : 80;
+    const targetHeight = large ? 160 : 56;
+    const scale = Math.min(
+      targetWidth / site.mapPreview.width,
+      targetHeight / site.mapPreview.height
+    );
+
+    return (
+      <div
+        className="relative overflow-hidden bg-bg-primary/40"
+        style={{ width: targetWidth, height: targetHeight }}
+      >
+        <div
+          style={{
+            width: site.mapPreview.width,
+            height: site.mapPreview.height,
+            backgroundImage: site.mapPreview.backgroundImage,
+            backgroundPosition: site.mapPreview.backgroundPosition,
+            backgroundRepeat: site.mapPreview.backgroundRepeat,
+            transform: `scale(${scale})`,
+            transformOrigin: "top left",
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (mapSrc) {
+    return (
+      <WikiImage
+        src={mapSrc}
+        alt=""
+        className={large ? "h-40 w-full object-cover" : "h-14 w-20 object-cover"}
+        fallback={fallback}
+      />
+    );
+  }
+
+  return (
+    <span className={`flex items-center justify-center rounded-xl bg-bg-primary text-xs font-semibold tracking-[0.16em] text-text-secondary ${large ? "h-40 w-full" : "h-14 w-20"}`}>
+      {fallback}
+    </span>
+  );
+}
+
 export default function ShootingStars() {
+  const { navigate } = useNavigation();
+  const detailRef = useRef<HTMLDivElement | null>(null);
   const [tab, setTab] = useState<Tab>("live");
   const [stars, setStars] = useState<LiveStar[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedStar, setSelectedStar] = useState<LiveStar | null>(null);
+  const userDismissedRef = useRef(false);
+  const [referenceSites, setReferenceSites] = useState<StarSite[]>([]);
 
   // Reference tab state
   const [regionFilter, setRegionFilter] = useState("All");
@@ -69,6 +145,21 @@ export default function ShootingStars() {
     return () => { cancelled = true; clearInterval(interval); };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    fetchStarLandingSites()
+      .then((sites) => {
+        if (!cancelled && sites.length > 0) {
+          setReferenceSites(sites);
+        }
+      })
+      .catch(() => undefined);
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // Sort stars by estimated time remaining (most time left first)
   const sortedStars = useMemo(() =>
     [...stars]
@@ -79,32 +170,62 @@ export default function ShootingStars() {
   );
 
   // Reference tab
+  const effectiveSites = referenceSites.length > 0 ? referenceSites : STAR_SITES;
   const regions = useMemo(
-    () => ["All", ...Array.from(new Set(STAR_SITES.map((s) => s.region))).sort()],
-    []
+    () => ["All", ...Array.from(new Set(effectiveSites.map((s) => s.region))).sort()],
+    [effectiveSites]
   );
   const filteredSites = useMemo(() => {
-    let sites = STAR_SITES;
+    let sites = effectiveSites;
     if (regionFilter !== "All") sites = sites.filter((s) => s.region === regionFilter);
     if (siteQuery.length >= 2) {
       const q = siteQuery.toLowerCase();
       sites = sites.filter((s) => s.name.toLowerCase().includes(q));
     }
     return sites;
-  }, [regionFilter, siteQuery]);
+  }, [effectiveSites, regionFilter, siteQuery]);
   const groupedSites = useMemo(() => {
     const groups: Record<string, typeof filteredSites> = {};
     for (const site of filteredSites) (groups[site.region] ??= []).push(site);
     return groups;
   }, [filteredSites]);
 
+  const topStar = sortedStars[0] ?? null;
+  const activeCount = sortedStars.filter((star) => star._est.seconds > 0).length;
+  const urgentCount = sortedStars.filter((star) => star._est.seconds > 0 && star._est.seconds < 10 * 60).length;
+  const highTierCount = sortedStars.filter((star) => star.tier >= 7 && star._est.seconds > 0).length;
+
+  const bestTeleport = topStar
+    ? (referenceSites.length > 0
+        ? getRankedTeleportsForLocationFromSites(
+            topStar.calledLocation,
+            referenceSites,
+            topStar.locationKey
+          )
+        : getRankedTeleportsForLocation(topStar.calledLocation))[0]
+    : null;
+
+  useEffect(() => {
+    if (!selectedStar && topStar && !userDismissedRef.current) {
+      setSelectedStar(topStar);
+    }
+  }, [selectedStar, topStar]);
+
+  function openStarDetails(star: LiveStar) {
+    userDismissedRef.current = false;
+    setSelectedStar(star);
+    requestAnimationFrame(() => {
+      detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
+
   return (
     <div className="max-w-3xl">
-      <div className="flex items-center gap-3 mb-4">
+      <div className="mb-4 flex items-center gap-3">
         <h2 className="text-xl font-semibold">Shooting Stars</h2>
         {tab === "live" && !loading && (
           <span className="text-[10px] text-text-secondary/50">
-            {stars.length} active · refreshes every 30s
+            {activeCount} active · refreshes every 30s
           </span>
         )}
       </div>
@@ -132,6 +253,68 @@ export default function ShootingStars() {
       {/* Live Tracker Tab */}
       {tab === "live" && (
         <>
+          {!loading && sortedStars.length > 0 && (
+            <div className="mb-5 grid gap-3 md:grid-cols-4">
+              <div className="px-4 py-3">
+                <div className="section-kicker">Active Stars</div>
+                <div className="mt-1 text-lg font-semibold text-text-primary">{activeCount}</div>
+              </div>
+              <div className="px-4 py-3">
+                <div className="section-kicker">Urgent</div>
+                <div className={`mt-1 text-lg font-semibold ${urgentCount > 0 ? "text-warning" : "text-text-primary"}`}>
+                  {urgentCount}
+                </div>
+              </div>
+              <div className="px-4 py-3">
+                <div className="section-kicker">High Tier</div>
+                <div className="mt-1 text-lg font-semibold text-text-primary">{highTierCount}</div>
+              </div>
+              <div className="px-4 py-3">
+                <div className="section-kicker">Best Right Now</div>
+                <div className="mt-1 truncate text-sm font-semibold text-text-primary">
+                  {topStar ? `T${topStar.tier} · W${topStar.world}` : "—"}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {!loading && topStar && (
+            <div className="mb-5">
+              <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <div className="section-kicker">Best Star Right Now</div>
+                  <h3 className="mt-2 text-xl font-semibold tracking-tight">
+                    {topStar.calledLocation}
+                  </h3>
+                  <p className="mt-1 text-sm text-text-secondary">
+                    World {topStar.world} · Tier {topStar.tier} · spotted {timeAgo(topStar.calledAt)}
+                  </p>
+                  {bestTeleport ? (
+                    <p className="mt-2 text-sm text-text-secondary">
+                      Best teleport: <span className="font-medium text-text-primary">{bestTeleport.label}</span>
+                    </p>
+                  ) : null}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => openStarDetails(topStar)}
+                    className="rounded-xl bg-accent px-3 py-2 text-xs font-medium text-white transition hover:bg-accent-hover"
+                  >
+                    Open Details
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate("wiki", { query: topStar.calledLocation })}
+                    className="rounded-xl border border-border bg-bg-primary/60 px-3 py-2 text-xs font-medium text-text-secondary transition hover:border-accent/35 hover:text-text-primary"
+                  >
+                    Wiki Lookup
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {loading && (
             <p className="text-sm text-text-secondary animate-pulse">Loading live stars...</p>
           )}
@@ -144,29 +327,46 @@ export default function ShootingStars() {
           )}
 
           {!loading && sortedStars.length > 0 && (
-            <div className={selectedStar ? "grid grid-cols-[1fr_300px] gap-4" : ""}>
+            <div className={selectedStar ? "grid gap-4 xl:grid-cols-[1fr_320px]" : ""}>
             <div className="space-y-1.5">
               {sortedStars.map((star) => {
                 const est = star._est;
                 const isExpired = est.seconds <= 0;
                 const isSelected = selectedStar?.world === star.world && selectedStar?.calledAt === star.calledAt;
+                const matchedSite =
+                  referenceSites.length > 0
+                    ? findStarSiteMatch(star.calledLocation, referenceSites, star.locationKey)
+                    : null;
                 return (
                   <button
                     key={`${star.world}-${star.calledAt}`}
-                    onClick={() => setSelectedStar(isSelected ? null : star)}
-                    className={`w-full text-left bg-bg-secondary rounded-lg px-4 py-3 transition-colors ${
+                    onClick={() => {
+                      if (isSelected) {
+                        userDismissedRef.current = true;
+                        setSelectedStar(null);
+                        return;
+                      }
+                      openStarDetails(star);
+                    }}
+                    className={`w-full rounded-2xl bg-bg-secondary px-4 py-3 text-left transition-colors ${
                       isExpired ? "opacity-40" : "hover:bg-bg-tertiary"
                     } ${isSelected ? "ring-1 ring-accent" : ""}`}
                   >
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-3">
+                    <div className="mb-1 flex items-center justify-between gap-3">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <span className="hidden overflow-hidden rounded-xl border border-border/70 bg-bg-primary/50 sm:block">
+                          <StarLocationPreview
+                            locationName={star.calledLocation}
+                            site={matchedSite}
+                          />
+                        </span>
                         <span className={`text-lg font-bold ${tierColor(star.tier)}`}>
                           T{star.tier}
                         </span>
                         <span className="bg-bg-tertiary px-2 py-0.5 rounded text-xs">
                           W{star.world}
                         </span>
-                        <span className="text-sm font-medium">{star.calledLocation}</span>
+                        <span className="truncate text-sm font-medium">{star.calledLocation}</span>
                       </div>
                       <span className={`text-sm font-semibold ${
                         isExpired ? "text-danger" : est.seconds < 600 ? "text-warning" : "text-success"
@@ -188,19 +388,44 @@ export default function ShootingStars() {
 
             {/* Detail panel */}
             {selectedStar && (() => {
-              const teleports = getTeleportsForLocation(selectedStar.calledLocation);
               const est = estimateRemaining(selectedStar);
               const wikiSearch = encodeURIComponent(selectedStar.calledLocation.split("(")[0].trim());
+              const starTier = STAR_TIERS.find(t => t.tier === selectedStar.tier);
+              const matchedSite =
+                referenceSites.length > 0
+                  ? findStarSiteMatch(
+                      selectedStar.calledLocation,
+                      referenceSites,
+                      selectedStar.locationKey
+                    )
+                  : null;
+              const teleports =
+                referenceSites.length > 0
+                  ? getRankedTeleportsForLocationFromSites(
+                      selectedStar.calledLocation,
+                      referenceSites,
+                      selectedStar.locationKey
+                    )
+                  : getRankedTeleportsForLocation(selectedStar.calledLocation);
+              const best = teleports[0] ?? null;
               return (
-                <div className="bg-bg-secondary rounded-lg p-4 sticky top-0 h-fit">
+                <div ref={detailRef} className="sticky top-0 h-fit">
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-sm font-semibold">{selectedStar.calledLocation}</h3>
                     <button
-                      onClick={() => setSelectedStar(null)}
+                      onClick={() => { userDismissedRef.current = true; setSelectedStar(null); }}
                       className="text-text-secondary hover:text-text-primary text-sm"
                     >
                       ✕
                     </button>
+                  </div>
+
+                  <div className="mb-4 overflow-hidden rounded-2xl border border-border/70 bg-bg-primary/50">
+                    <StarLocationPreview
+                      locationName={selectedStar.calledLocation}
+                      site={matchedSite}
+                      large
+                    />
                   </div>
 
                   <div className="space-y-2 mb-4">
@@ -218,12 +443,22 @@ export default function ShootingStars() {
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-text-secondary">Mining Lvl</span>
-                      <span>{STAR_TIERS.find(t => t.tier === selectedStar.tier)?.miningLevel ?? "?"}</span>
+                      <span>{starTier?.miningLevel ?? "?"}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-text-secondary">XP/Dust</span>
-                      <span>{STAR_TIERS.find(t => t.tier === selectedStar.tier)?.xpPerStardust ?? "?"}</span>
+                      <span>{starTier?.xpPerStardust ?? "?"}</span>
                     </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-text-secondary">Dust/Layer</span>
+                      <span>{starTier?.stardustPerLayer ?? "?"}</span>
+                    </div>
+                    {best ? (
+                      <div className="flex justify-between gap-3 text-sm">
+                        <span className="text-text-secondary">Best Teleport</span>
+                        <span className="text-right font-medium text-text-primary">{best.label}</span>
+                      </div>
+                    ) : null}
                   </div>
 
                   {teleports.length > 0 && (
@@ -232,10 +467,20 @@ export default function ShootingStars() {
                         How to Get There
                       </h4>
                       <div className="space-y-1.5">
-                        {teleports.map((tp, i) => (
+                        {teleports.map((teleport, i) => (
                           <div key={i} className="flex items-start gap-2 text-sm">
-                            <span className="text-accent mt-0.5 shrink-0">→</span>
-                            <span>{tp}</span>
+                            <span
+                              className={`mt-0.5 shrink-0 rounded-full px-1.5 py-0.5 text-[10px] uppercase tracking-[0.14em] ${
+                                teleport.priority === "best"
+                                  ? "bg-accent/15 text-accent"
+                                  : teleport.priority === "good"
+                                    ? "bg-warning/15 text-warning"
+                                    : "bg-bg-tertiary text-text-secondary"
+                              }`}
+                            >
+                              {teleport.priority}
+                            </span>
+                            <span>{teleport.label}</span>
                           </div>
                         ))}
                       </div>
@@ -248,14 +493,26 @@ export default function ShootingStars() {
                     </p>
                   )}
 
-                  <a
-                    href={`https://oldschool.runescape.wiki/w/Special:Search?search=${wikiSearch}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block text-center text-xs text-accent hover:text-accent-hover transition-colors"
-                  >
-                    View on Wiki Map →
-                  </a>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => navigate("wiki", { query: selectedStar.calledLocation })}
+                      className="rounded-xl bg-accent px-3 py-2 text-xs font-medium text-white transition hover:bg-accent-hover"
+                    >
+                      Open Wiki Lookup
+                    </button>
+                    <a
+                      href={`https://oldschool.runescape.wiki/w/Special:Search?search=${wikiSearch}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-xl border border-border bg-bg-primary/60 px-3 py-2 text-xs font-medium text-text-secondary transition hover:border-accent/35 hover:text-text-primary"
+                    >
+                      Wiki Map
+                    </a>
+                  </div>
+                  <p className="mt-3 text-[10px] text-text-secondary/45">
+                    Map preview from 07.gg when available, with OSRS Wiki fallback.
+                  </p>
                 </div>
               );
             })()}
@@ -275,7 +532,7 @@ export default function ShootingStars() {
           <h3 className="text-sm font-medium text-text-secondary uppercase tracking-wider mb-2">
             Star Tiers
           </h3>
-          <div className="bg-bg-secondary rounded-lg overflow-hidden mb-6">
+          <div className="mb-6 overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-text-secondary text-xs">
@@ -306,7 +563,7 @@ export default function ShootingStars() {
           <h3 className="text-sm font-medium text-text-secondary uppercase tracking-wider mb-2">
             Stardust Shop
           </h3>
-          <div className="bg-bg-secondary rounded-lg overflow-hidden mb-6">
+          <div className="mb-6 overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-text-secondary text-xs">
@@ -328,7 +585,7 @@ export default function ShootingStars() {
           </div>
 
           {/* Celestial ring */}
-          <div className="bg-bg-secondary rounded-lg p-4 mb-6">
+          <div className="mb-6">
             <h4 className="text-sm font-medium text-accent mb-2">Celestial Ring</h4>
             <p className="text-xs text-text-secondary leading-relaxed">
               Provides an invisible +4 Mining level boost when charged with stardust (10 stardust per charge, 1 charge per ore mined).
@@ -362,15 +619,25 @@ export default function ShootingStars() {
             {Object.entries(groupedSites).map(([region, sites]) => (
               <div key={region}>
                 <div className="text-xs text-text-secondary/50 uppercase tracking-wider px-1 mb-1">{region}</div>
-                <div className="bg-bg-secondary rounded-lg divide-y divide-border/30">
+                <div className="divide-y divide-border/30">
                   {sites.map((site) => (
-                    <div key={site.name} className="px-4 py-2 text-sm text-text-primary hover:bg-bg-tertiary transition-colors">
+                    <button
+                      key={site.name}
+                      type="button"
+                      onClick={() => navigate("wiki", { query: site.name })}
+                      className="w-full px-4 py-2 text-left text-sm text-text-primary transition-colors hover:bg-bg-tertiary"
+                    >
                       {site.name}
-                    </div>
+                    </button>
                   ))}
                 </div>
               </div>
             ))}
+            {filteredSites.length === 0 && (
+              <div className="px-4 py-6 text-center text-sm text-text-secondary">
+                No landing sites match your current filters.
+              </div>
+            )}
           </div>
         </>
       )}

@@ -5,6 +5,8 @@ import { formatGp } from "../../lib/format";
 import { itemIcon } from "../../lib/sprites";
 import { useDebounce } from "../../hooks/useDebounce";
 import { useNavigation } from "../../lib/NavigationContext";
+import WikiImage from "../../components/WikiImage";
+import { findBossByName } from "../../lib/data/bosses";
 
 function RarityBar({ rarity }: { rarity: string }) {
   // Match patterns like "1/128", "~1/115", "~8/115"
@@ -36,6 +38,7 @@ export default function DropTable() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
   const [itemMap, setItemMap] = useState<Map<string, number>>(new Map());
+  const selectedBoss = selectedMonster ? findBossByName(selectedMonster) : null;
 
   useEffect(() => {
     Promise.all([fetchLatestPrices(), fetchMapping()]).then(([p, mapping]) => {
@@ -106,7 +109,51 @@ export default function DropTable() {
 
   return (
     <div className="max-w-3xl">
-      <h2 className="text-xl font-semibold mb-4">Monster Drop Tables</h2>
+      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <div>
+          <h2 className="text-xl font-semibold">Loot & Drops</h2>
+          <p className="mt-1 text-sm text-text-secondary">
+            Search monsters, inspect wiki drop tables, and jump into related combat workflows.
+          </p>
+        </div>
+        {selectedMonster ? (
+          <div className="flex flex-wrap gap-2">
+            {selectedBoss ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => navigate("bosses", { boss: selectedBoss.name, tab: "drops" })}
+                  className="rounded-xl border border-border bg-bg-secondary px-3 py-2 text-xs font-medium text-text-secondary transition hover:border-accent/35 hover:text-text-primary"
+                >
+                  Open Boss Workspace
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate("bosses", { boss: selectedBoss.name, tab: "tasks" })}
+                  className="rounded-xl border border-border bg-bg-secondary px-3 py-2 text-xs font-medium text-text-secondary transition hover:border-accent/35 hover:text-text-primary"
+                >
+                  Combat Tasks
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate("dps-calc", { monster: selectedBoss.name })}
+                  className="rounded-xl border border-border bg-bg-secondary px-3 py-2 text-xs font-medium text-text-secondary transition hover:border-accent/35 hover:text-text-primary"
+                >
+                  DPS
+                </button>
+              </>
+            ) : null}
+            <a
+              href={`https://oldschool.runescape.wiki/w/${encodeURIComponent(selectedMonster.replace(/ /g, "_"))}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-xl border border-border bg-bg-secondary px-3 py-2 text-xs font-medium text-text-secondary transition hover:border-accent/35 hover:text-text-primary"
+            >
+              Open Wiki
+            </a>
+          </div>
+        ) : null}
+      </div>
 
       <div className="relative mb-4">
         <input
@@ -169,14 +216,14 @@ export default function DropTable() {
                   >
                     <td className="px-4 py-1.5 font-medium">
                       <button
-                        onClick={() => navigate("ge", { query: drop.name })}
+                        onClick={() => navigate("market", { query: drop.name })}
                         className="hover:text-accent transition-colors text-left flex items-center gap-2"
                       >
-                        <img
+                        <WikiImage
                           src={itemIcon(drop.name)}
                           alt=""
                           className="w-5 h-5 shrink-0"
-                          onError={(e) => { e.currentTarget.style.display = "none"; }}
+                          fallback={drop.name[0]}
                         />
                         {drop.name}
                       </button>

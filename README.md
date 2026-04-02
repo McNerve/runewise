@@ -15,37 +15,35 @@ A lightweight desktop companion app for Old School RuneScape. All the tools you 
 - **Overview** — Look up any RSN. Combat level, total level, EHP/EHB, quest points, collection log, boss kill counts with sprites, clue scroll breakdown, minigame KCs, and all 24 skills.
 - **XP Tracker** — XP gains, boss kills, achievements, records, and name history via Wise Old Man.
 
-### Calculators
+### Tools
 - **Skill Calculators** — All 24 skills including Sailing. Auto-fills XP from Hiscores. 120+ training methods with XP/hr, level requirements, cost estimates.
 - **Combat Calculator** — Combat level with dominant style detection.
 - **Dry Calculator** — Drop probability with 68 boss presets and confidence levels.
 - **DPS Calculator** — Damage-per-second calculations with monster database.
 - **Pet Chance** — 60+ pets (skilling, boss, raid, minigame) with kill count and action-based calculators.
+- **XP Table** — Full level 1-99 XP reference.
+- **Farm Timers** — Growth cycle tracking for farming patches.
+
+### Bossing
+- **Boss Guides** — Requirements, equipment setups, and strategy for 30+ bosses. Shows your KC from Hiscores. Wiki content with images.
+- **Loot** — Drop tables with item icons, rarity bars, and live GE prices. Boss loot calculator with expected GP/kill and GP/hour.
+- **Combat Tasks** — All 637 combat achievements organized by tier.
 
 ### Market
 - **Market** — Unified item search with live GE prices, buy/sell margins, price charts (line + candlestick), high alch values, and Add to Watchlist — all in one view.
 - **Alch Profits** — High alchemy profit table with sorting and filtering.
 - **Watchlist** — Track item prices with configurable alert thresholds.
 
-### Combat
-- **Boss Guides** — Requirements, equipment setups, and strategy for 30+ bosses. Shows your KC from Hiscores. Wiki content with images.
-- **Drop Tables** — Full drop table for any monster with item icons, rarity bars, and live GE prices.
-- **Loot Calculator** — Expected GP/kill and GP/hour for 30 bosses with live prices.
-- **Combat Tasks** — All 637 combat achievements organized by tier.
-
 ### Guides
-- **Quest Tracker** — 179 quests with skill requirements checked against your stats.
-- **Achievement Diaries** — All 13 regions with requirement tracking and reward info.
+- **Progress** — 179 quests with skill requirement tracking + all 13 diary regions with reward info, in a merged tabbed view.
 - **Slayer Helper** — Task weights for 5 masters with per-master block list calculator.
 - **Clue Helper** — 730 clue scroll entries (anagrams, ciphers, coordinates, cryptics, emotes, maps) with solutions.
 - **Money Making** — 62 methods with GP/hr and skill requirements.
 
-### Tools
-- **XP Table** — Full level 1-99 XP reference.
-- **Farm Timers** — Growth cycle tracking for farming patches.
-- **RuneLite Integration** — Reads loot tracker data from RuneLite profiles. Email addresses auto-redacted for privacy.
+### Live
 - **Shooting Stars** — Live star tracker via Star Miners API with world, tier, time remaining, and teleport suggestions. Reference guide with stardust shop rewards.
 - **OSRS News** — Official blog posts with inline reading and status filters.
+- **RuneLite Integration** — Reads loot tracker data from RuneLite profiles. Email addresses auto-redacted for privacy.
 
 ### App
 - **Settings** — Dark/Light/System theme, configurable keyboard shortcuts, notification preferences.

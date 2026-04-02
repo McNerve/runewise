@@ -1,12 +1,7 @@
 import { useState, useMemo } from "react";
 import { petChance, actionsForChance } from "../../lib/formulas/pet";
 import { SKILL_PETS, BOSS_PETS, type SkillPet, type BossPet } from "../../lib/data/pets";
-import { itemIcon, skillIcon } from "../../lib/sprites";
-
-const WIKI_IMG = "https://oldschool.runescape.wiki/images";
-function petIcon(iconFile: string): string {
-  return `${WIKI_IMG}/${iconFile}`;
-}
+import { petIcon } from "../../lib/sprites";
 import type { HiscoreData } from "../../lib/api/hiscores";
 
 interface Props {
@@ -196,7 +191,7 @@ export default function PetCalculator({ hiscores }: Props) {
                 <label className="block text-xs text-text-secondary mb-1">Pet</label>
                 <div className="flex items-center gap-2">
                   <img
-                    src={itemIcon(selectedPet.name)}
+                    src={petIcon(selectedPet.icon)}
                     alt=""
                     className="w-6 h-6"
                     onError={(e) => { e.currentTarget.style.display = "none"; }}
@@ -349,12 +344,12 @@ export default function PetCalculator({ hiscores }: Props) {
                 {SKILL_PETS.map((pet) => (
                   <button
                     key={pet.name}
-                    onClick={() => handlePetChange(pet.name)}
-                    className={`w-full text-left px-2 py-1.5 rounded text-xs transition-colors flex items-center gap-2 ${
+                        onClick={() => handlePetChange(pet.name)}
+                        className={`w-full text-left px-2 py-1.5 rounded text-xs transition-colors flex items-center gap-2 ${
                       selectedPet.name === pet.name ? "bg-accent/15 text-accent" : "hover:bg-bg-tertiary text-text-secondary"
                     }`}
                   >
-                    <img src={skillIcon(pet.skill)} alt="" className="w-4 h-4" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                    <img src={petIcon(pet.icon)} alt="" className="w-4 h-4" onError={(e) => { e.currentTarget.style.display = "none"; }} />
                     <div>
                       <div className="font-medium text-text-primary">{pet.name}</div>
                       <div>{pet.skill}</div>
