@@ -48,7 +48,6 @@ export async function bucketQuery<T extends Record<string, unknown>>(
     )}&format=json`,
     cacheKey,
     ttlMs: BUCKET_TTL,
-    persist: true,
     transform: (json) => {
       if (
         typeof json === "object" &&
@@ -84,7 +83,6 @@ export async function bucketQueryAll<T extends Record<string, unknown>>(
       )}&format=json`,
       cacheKey,
       ttlMs: BUCKET_TTL,
-      persist: true,
       transform: (json) => {
         if (
           typeof json === "object" &&
