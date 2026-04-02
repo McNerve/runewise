@@ -33,7 +33,7 @@ function gameToLatLng(x: number, y: number): L.LatLng {
 
 const ALL_CATEGORIES: MarkerCategory[] = [
   "boss", "city", "fairy-ring", "spirit-tree", "teleport",
-  "slayer", "skilling", "minigame", "quest",
+  "slayer", "skilling", "minigame", "quest", "shortcut", "boat",
 ];
 
 interface WikiMapFeature {

@@ -1,8 +1,10 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from "react";
 import { PATCH_TYPES, PATCH_CATEGORIES, PRESETS } from "../../lib/data/farm-timers";
 import { loadJSON, saveJSON } from "../../lib/localStorage";
 import { sendNotification } from "../../lib/notify";
 import EmptyState from "../../components/EmptyState";
+
+const FarmProfit = lazy(() => import("./FarmProfit"));
 
 const TIMERS_KEY = "runewise_timers";
 const WIKI_IMG = "https://oldschool.runescape.wiki/images";
@@ -17,7 +19,7 @@ interface Timer {
   repeat?: boolean;
 }
 
-type Tab = "timers" | "overview";
+type Tab = "timers" | "overview" | "profit";
 
 function formatCountdown(ms: number): string {
   if (ms <= 0) return "Ready!";
@@ -292,6 +294,7 @@ export default function FarmTimers() {
           [
             { id: "timers", label: "Timers" },
             { id: "overview", label: "Overview" },
+            { id: "profit", label: "Profit" },
           ] as const
         ).map((t) => (
           <button
@@ -313,7 +316,11 @@ export default function FarmTimers() {
         ))}
       </div>
 
-      {tab === "overview" ? (
+      {tab === "profit" ? (
+        <Suspense fallback={<div className="py-8 text-center text-sm text-text-secondary">Loading...</div>}>
+          <FarmProfit />
+        </Suspense>
+      ) : tab === "overview" ? (
         <FarmOverview timers={timers} now={now} />
       ) : (
         <>

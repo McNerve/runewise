@@ -7,7 +7,9 @@ export type MarkerCategory =
   | "slayer"
   | "skilling"
   | "minigame"
-  | "quest";
+  | "quest"
+  | "shortcut"
+  | "boat";
 
 export interface MapMarker {
   name: string;
@@ -72,6 +74,40 @@ export const MAP_MARKERS: MapMarker[] = [
   { name: "The Gauntlet", category: "minigame", x: 3033, y: 6124, description: "Prifddinas challenge", wikiPage: "The Gauntlet" },
   { name: "Fight Caves", category: "minigame", x: 2438, y: 5168, description: "TzTok-Jad", wikiPage: "TzHaar Fight Cave" },
   { name: "Inferno", category: "minigame", x: 2438, y: 5116, description: "TzKal-Zuk", wikiPage: "The Inferno" },
+
+  // Agility Shortcuts
+  { name: "Taverly dungeon pipe", category: "shortcut", x: 2886, y: 9799, description: "70 Agility", wikiPage: "Agility shortcut" },
+  { name: "GE shortcut", category: "shortcut", x: 3143, y: 3514, description: "21 Agility — GE to Edgeville", wikiPage: "Agility shortcut" },
+  { name: "Falador wall", category: "shortcut", x: 2935, y: 3355, description: "5 Agility", wikiPage: "Agility shortcut" },
+  { name: "Karamja stepping stones", category: "shortcut", x: 2924, y: 2946, description: "12 Agility — Shilo Village", wikiPage: "Agility shortcut" },
+  { name: "Slayer Tower chain", category: "shortcut", x: 3422, y: 3550, description: "61 Agility", wikiPage: "Agility shortcut" },
+  { name: "Yanille wall", category: "shortcut", x: 2556, y: 3072, description: "65 Agility", wikiPage: "Agility shortcut" },
+  { name: "Trollheim rocks", category: "shortcut", x: 2869, y: 3673, description: "47 Agility — shortcut to GWD", wikiPage: "Agility shortcut" },
+  { name: "Arandar pass", category: "shortcut", x: 2334, y: 3288, description: "85 Agility — to Tirannwn", wikiPage: "Agility shortcut" },
+  { name: "Cosmic altar shortcut", category: "shortcut", x: 2399, y: 4403, description: "66 Agility", wikiPage: "Agility shortcut" },
+  { name: "Arceuus essence mine", category: "shortcut", x: 1755, y: 3872, description: "73 Agility", wikiPage: "Agility shortcut" },
+  { name: "Brimhaven dungeon vines", category: "shortcut", x: 2672, y: 9544, description: "87 Agility", wikiPage: "Agility shortcut" },
+  { name: "Kalphite lair shortcut", category: "shortcut", x: 3226, y: 3109, description: "86 Agility — to KQ", wikiPage: "Agility shortcut" },
+
+  // Boats & Transport
+  { name: "Port Sarim → Karamja", category: "boat", x: 3029, y: 3217, description: "30gp charter", wikiPage: "Port Sarim" },
+  { name: "Ardougne → Brimhaven", category: "boat", x: 2681, y: 3275, description: "30gp charter", wikiPage: "Ardougne" },
+  { name: "Rellekka → Neitiznot", category: "boat", x: 2645, y: 3710, description: "Free — The Fremennik Isles", wikiPage: "Rellekka" },
+  { name: "Rellekka → Waterbirth", category: "boat", x: 2620, y: 3682, description: "Free — DKS access", wikiPage: "Rellekka" },
+  { name: "Port Piscarilius → Land's End", category: "boat", x: 1824, y: 3691, description: "Free Kourend boat", wikiPage: "Port Piscarilius" },
+  { name: "Gnome glider — Al Kharid", category: "boat", x: 3278, y: 3212, description: "Glider network", wikiPage: "Gnome glider" },
+  { name: "Gnome glider — Karamja", category: "boat", x: 2970, y: 2972, description: "Glider network", wikiPage: "Gnome glider" },
+  { name: "Gnome glider — Feldip Hills", category: "boat", x: 2544, y: 2970, description: "Glider network", wikiPage: "Gnome glider" },
+  { name: "Gnome glider — White Wolf", category: "boat", x: 2848, y: 3497, description: "Glider network", wikiPage: "Gnome glider" },
+  { name: "Gnome glider — Grand Tree", category: "boat", x: 2465, y: 3501, description: "Glider hub", wikiPage: "Gnome glider" },
+  { name: "Magic carpet — Shantay", category: "boat", x: 3311, y: 3109, description: "200gp carpet ride", wikiPage: "Magic carpet" },
+  { name: "Magic carpet — Pollnivneach", category: "boat", x: 3351, y: 2942, description: "200gp carpet ride", wikiPage: "Magic carpet" },
+  { name: "Magic carpet — Nardah", category: "boat", x: 3400, y: 2916, description: "200gp carpet ride", wikiPage: "Magic carpet" },
+  { name: "Charter ship — Port Sarim", category: "boat", x: 3038, y: 3192, description: "Charter ship network", wikiPage: "Charter ship" },
+  { name: "Charter ship — Catherby", category: "boat", x: 2792, y: 3414, description: "Charter ship network", wikiPage: "Charter ship" },
+  { name: "Charter ship — Brimhaven", category: "boat", x: 2763, y: 3237, description: "Charter ship network", wikiPage: "Charter ship" },
+  { name: "Charter ship — Port Khazard", category: "boat", x: 2674, y: 3141, description: "Charter ship network", wikiPage: "Charter ship" },
+  { name: "Charter ship — Corsair Cove", category: "boat", x: 2587, y: 2851, description: "Charter ship network", wikiPage: "Charter ship" },
 ];
 
 export const MARKER_COLORS: Record<MarkerCategory, string> = {
@@ -84,6 +120,8 @@ export const MARKER_COLORS: Record<MarkerCategory, string> = {
   skilling: "#2dd4bf",
   minigame: "#e879f9",
   quest: "#fbbf24",
+  shortcut: "#06b6d4",
+  boat: "#8b5cf6",
 };
 
 export const MARKER_LABELS: Record<MarkerCategory, string> = {
@@ -96,4 +134,6 @@ export const MARKER_LABELS: Record<MarkerCategory, string> = {
   skilling: "Skilling",
   minigame: "Minigames",
   quest: "Quests",
+  shortcut: "Shortcuts",
+  boat: "Boats & Gliders",
 };
