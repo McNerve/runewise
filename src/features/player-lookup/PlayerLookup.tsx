@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import Overview from "../overview/Overview";
 import { fetchHiscores, type HiscoreData } from "../../lib/api/hiscores";
 import { useNavigation } from "../../lib/NavigationContext";
+import EmptyState from "../../components/EmptyState";
+import { NAV_ICONS } from "../../lib/sprites";
 
 export default function PlayerLookup() {
   const { params } = useNavigation();
@@ -77,13 +79,23 @@ export default function PlayerLookup() {
           </button>
         </form>
 
-        {error ? <p className="mt-3 text-sm text-danger">{error}</p> : null}
+        {error ? (
+          <div className="mt-3">
+            <EmptyState
+              icon={NAV_ICONS.lookup}
+              title={`Could not find "${lookupRsn}"`}
+              description={error}
+            />
+          </div>
+        ) : null}
       </div>
 
-      {!lookupRsn && !loading ? (
-        <div className="py-8 text-center text-sm text-text-secondary">
-          Search for any player to open a full profile snapshot here. Your saved RSN in the command bar will stay untouched.
-        </div>
+      {!lookupRsn && !loading && !error ? (
+        <EmptyState
+          icon={NAV_ICONS.lookup}
+          title="Search for a player"
+          description="Look up any player to open a full profile snapshot. Your saved RSN in the command bar stays untouched."
+        />
       ) : null}
 
       {loading && lookupRsn ? (

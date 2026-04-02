@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { PATCH_TYPES, PRESETS } from "../../lib/data/farm-timers";
 import { loadJSON, saveJSON } from "../../lib/localStorage";
 import { sendNotification } from "../../lib/notify";
+import EmptyState from "../../components/EmptyState";
 
 const TIMERS_KEY = "runewise_timers";
 const WIKI_IMG = "https://oldschool.runescape.wiki/images";
@@ -107,6 +108,7 @@ export default function FarmTimers() {
     <div className="max-w-3xl">
       <h2 className="text-xl font-semibold mb-4">Farm & Birdhouse Timers</h2>
 
+      <div className="section-kicker mb-2">Quick Presets</div>
       <div className="flex flex-wrap gap-2 mb-4">
         {PRESETS.map((preset) => (
           <button
@@ -149,11 +151,15 @@ export default function FarmTimers() {
       )}
 
       {timers.length === 0 ? (
-        <div className="text-center py-12 text-text-secondary">
-          <p className="text-sm">No active timers.</p>
-          <p className="text-xs mt-1">Start a timer or use a preset above.</p>
-        </div>
+        <EmptyState
+          title="No active timers"
+          description="Start a timer or use a preset above to track your farm runs."
+        />
       ) : (
+        <>
+        <div className="section-kicker mb-3">
+          Active Timers ({timers.length})
+        </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
           {timers.map((timer) => {
             const total = timer.readyAt - timer.startedAt;
@@ -206,6 +212,7 @@ export default function FarmTimers() {
             );
           })}
         </div>
+        </>
       )}
     </div>
   );

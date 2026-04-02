@@ -3,6 +3,8 @@ import { useNavigation } from "../../lib/NavigationContext";
 import type { HiscoreData } from "../../lib/api/hiscores";
 import QuestTracker from "../quests/QuestTracker";
 import DiaryTracker from "../diaries/DiaryTracker";
+import EmptyState from "../../components/EmptyState";
+import { NAV_ICONS } from "../../lib/sprites";
 
 const CombatTasks = lazy(() => import("../combat-tasks/CombatTasks"));
 const QuestUnlock = lazy(() => import("./components/QuestUnlock"));
@@ -60,9 +62,11 @@ export default function Progress({ hiscores }: Props) {
         </Suspense>
       )}
       {activeTab === "unlock" && !hiscores && (
-        <div className="py-10 text-center text-sm text-text-secondary">
-          Look up your RSN above to see which quests you can tackle.
-        </div>
+        <EmptyState
+          icon={NAV_ICONS.progress}
+          title="No hiscores loaded"
+          description="Look up your RSN above to see which quests you can tackle."
+        />
       )}
     </div>
   );

@@ -7,6 +7,7 @@ import {
 } from "../../lib/data/combat-achievements";
 import { useNavigation } from "../../lib/NavigationContext";
 import { findBossByName } from "../../lib/data/bosses";
+import EmptyState from "../../components/EmptyState";
 
 const TIER_COLORS: Record<CombatTier, { tab: string; badge: string }> = {
   Easy: {
@@ -121,16 +122,16 @@ export default function CombatTasks() {
       />
 
       {/* Task count for current tier */}
-      <p className="text-xs text-text-secondary mb-3">
+      <div className="section-kicker mb-3">
         Showing {tierTasks.length} of {COMBAT_TIER_COUNTS[selectedTier]}{" "}
         {selectedTier} tasks
         {tierTasks.length < COMBAT_TIER_COUNTS[selectedTier] && !search && (
-          <span className="text-text-secondary/50">
+          <span className="opacity-50">
             {" "}
             (representative sample)
           </span>
         )}
-      </p>
+      </div>
 
       {/* Tasks grouped by boss */}
       <div className="space-y-4">
@@ -187,9 +188,10 @@ export default function CombatTasks() {
       </div>
 
       {groupedByBoss.length === 0 && (
-        <p className="text-sm text-text-secondary text-center py-8">
-          No tasks match your search.
-        </p>
+        <EmptyState
+          title="No tasks found"
+          description={search ? `No tasks match "${search}"` : `No ${selectedTier} tasks available`}
+        />
       )}
     </div>
   );
