@@ -37,6 +37,7 @@ const CollectionLog = lazy(() => import("../features/collection-log/CollectionLo
 const Raids = lazy(() => import("../features/raids/Raids"));
 const ProductionCalc = lazy(() => import("../features/production/ProductionCalc"));
 const Kingdom = lazy(() => import("../features/kingdom/Kingdom"));
+const ProfitHub = lazy(() => import("../features/profit-hub/ProfitHub"));
 
 interface AppViewContext {
   hiscores: {
@@ -91,6 +92,7 @@ export const VIEW_RENDERERS: Record<View, ViewRenderer> = {
   market: renderComponent(Market),
   "production-calc": renderComponent(ProductionCalc),
   kingdom: renderComponent(Kingdom),
+  "profit-hub": renderComponent(ProfitHub),
   about: renderComponent(About),
   settings: renderComponent(Settings),
 };

@@ -11,6 +11,7 @@ import { CRAFTING_RECIPES } from "../../lib/data/crafting-recipes";
 import { fetchRecipesForSkill, type WikiRecipe } from "../../lib/api/recipes";
 import RecipeCostTable from "./components/RecipeCostTable";
 import WikiRecipeTable from "./components/WikiRecipeTable";
+import ConstructionPlanner from "./components/ConstructionPlanner";
 
 const SKILLS = [
   "Attack", "Strength", "Defence", "Ranged", "Prayer", "Magic",
@@ -325,6 +326,14 @@ export default function SkillCalculator({ hiscores }: Props) {
               prices={prices}
               currentLevel={currentLevel ?? 1}
               xpNeeded={xpNeeded}
+            />
+          )}
+
+          {selectedSkill === "Construction" && xpNeeded > 0 && (
+            <ConstructionPlanner
+              prices={prices}
+              xpNeeded={xpNeeded}
+              currentLevel={currentLevel ?? 1}
             />
           )}
         </div>

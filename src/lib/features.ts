@@ -231,6 +231,14 @@ export const FEATURE_REGISTRY = {
     search: true,
     aliases: ["xp table", "levels"],
   },
+  "profit-hub": {
+    title: "Profit Rankings",
+    navLabel: "Profit Rankings",
+    family: "Market",
+    sidebar: true,
+    search: true,
+    aliases: ["profit", "rankings", "gp per hour", "best money", "profit comparison"],
+  },
   watchlist: {
     title: "Watchlist",
     navLabel: "Watchlist",

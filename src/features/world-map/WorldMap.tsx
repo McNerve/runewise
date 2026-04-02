@@ -142,7 +142,7 @@ export default function WorldMap() {
         const marker = L.circleMarker(gameToLatLng(x, y), {
           radius: 4,
           fillColor: MARKER_COLORS[category] ?? "#94a3b8",
-          color: "#0f1117",
+          color: "var(--color-bg-primary)",
           weight: 1,
           fillOpacity: 0.7,
           className: `wiki-marker wiki-cat-${category}`,
@@ -184,7 +184,7 @@ export default function WorldMap() {
       const circle = L.circleMarker(gameToLatLng(marker.x, marker.y), {
         radius: 7,
         fillColor: color,
-        color: "#fff",
+        color: "var(--color-text-primary)",
         weight: 2,
         fillOpacity: 0.9,
       });
@@ -192,7 +192,7 @@ export default function WorldMap() {
       circle.bindPopup(
         `<div style="font-family:Inter,system-ui,sans-serif;min-width:120px">
           <div style="font-weight:600;font-size:13px;margin-bottom:2px">${marker.name}</div>
-          ${marker.description ? `<div style="font-size:11px;color:#a1a1aa">${marker.description}</div>` : ""}
+          ${marker.description ? `<div style="font-size:11px;opacity:0.6">${marker.description}</div>` : ""}
         </div>`,
         { closeButton: false }
       );
@@ -276,7 +276,7 @@ export default function WorldMap() {
       <div
         ref={mapRef}
         className="flex-1 rounded-lg overflow-hidden border border-border"
-        style={{ minHeight: 400, background: "#0a0c10" }}
+        style={{ minHeight: 400, background: "var(--color-bg-primary)" }}
       />
     </div>
   );
