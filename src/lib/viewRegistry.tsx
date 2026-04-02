@@ -28,6 +28,8 @@ const PlayerLookup = lazy(() => import("../features/player-lookup/PlayerLookup")
 const Loot = lazy(() => import("../features/loot/Loot"));
 const Progress = lazy(() => import("../features/progress/Progress"));
 const GearCompare = lazy(() => import("../features/gear-compare/GearCompare"));
+import EmptyState from "../components/EmptyState";
+import { NAV_ICONS } from "./sprites";
 const TrainingPlan = lazy(() => import("../features/training-plan/TrainingPlan"));
 const CollectionLog = lazy(() => import("../features/collection-log/CollectionLog"));
 const Raids = lazy(() => import("../features/raids/Raids"));
@@ -51,9 +53,11 @@ export const VIEW_RENDERERS: Record<View, ViewRenderer> = {
     hiscores.data ? (
       <Overview hiscores={hiscores.data} rsn={hiscores.rsn} />
     ) : (
-      <div className="py-10 text-center text-sm text-text-secondary">
-        Set your saved RSN above to turn RuneWise into a personalized command center.
-      </div>
+      <EmptyState
+        icon={NAV_ICONS.overview}
+        title="Set your RSN to get started"
+        description="Enter your RuneScape name above to turn RuneWise into a personalized command center."
+      />
     ),
   lookup: renderComponent(PlayerLookup),
   "skill-calc": ({ hiscores }) => <SkillCalculator hiscores={hiscores.data} />,
