@@ -1,7 +1,8 @@
 import { useState, useMemo, useCallback } from "react";
 import { COLLECTION_CATEGORIES, getTotalSlots } from "./data/slots";
 import { loadJSON, saveJSON } from "../../lib/localStorage";
-import { itemIcon } from "../../lib/sprites";
+import { itemIcon, NAV_ICONS } from "../../lib/sprites";
+import EmptyState from "../../components/EmptyState";
 
 const STORAGE_KEY = "runewise_collection_log";
 
@@ -79,18 +80,25 @@ export default function CollectionLog() {
         Track your collection log manually. Click items to toggle obtained.
       </p>
 
-      {/* Overall progress */}
-      <div className="flex items-center gap-4 mb-6">
-        <ProgressRing obtained={totalObtained} total={totalSlots} size={48} />
-        <div>
-          <div className="text-lg font-bold tabular-nums">
-            {totalObtained} / {totalSlots}
-          </div>
-          <div className="text-xs text-text-secondary">
-            {((totalObtained / totalSlots) * 100).toFixed(1)}% complete
+      {totalObtained === 0 ? (
+        <EmptyState
+          icon={NAV_ICONS["collection-log"]}
+          title="No items collected yet"
+          description="Expand a category below and click items to start tracking."
+        />
+      ) : (
+        <div className="flex items-center gap-4 mb-6">
+          <ProgressRing obtained={totalObtained} total={totalSlots} size={48} />
+          <div>
+            <div className="text-lg font-bold tabular-nums">
+              {totalObtained} / {totalSlots}
+            </div>
+            <div className="text-xs text-text-secondary">
+              {((totalObtained / totalSlots) * 100).toFixed(1)}% complete
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Categories */}
       <div className="space-y-2">

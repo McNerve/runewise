@@ -3,7 +3,8 @@ import { MONEY_METHODS, type MoneyMethod } from "../../lib/data/money-methods";
 import { fetchAllMoneyMethods, type WikiMoneyMethod } from "../../lib/api/moneyMaking";
 import { type HiscoreData } from "../../lib/api/hiscores";
 import { formatGp } from "../../lib/format";
-import { SKILL_ICONS } from "../../lib/sprites";
+import { SKILL_ICONS, NAV_ICONS } from "../../lib/sprites";
+import EmptyState from "../../components/EmptyState";
 
 interface Props {
   hiscores: HiscoreData | null;
@@ -269,9 +270,11 @@ export default function MoneyMaking({ hiscores }: Props) {
       </div>
 
       {!showWiki && filtered.length === 0 && (
-        <p className="text-sm text-text-secondary text-center py-8">
-          No methods match your filters.
-        </p>
+        <EmptyState
+          icon={NAV_ICONS["money-making"]}
+          title="No methods match your filters"
+          description="Try adjusting your search or category."
+        />
       )}
 
       {showWiki && (

@@ -5,8 +5,9 @@ import {
   type WikiEquipment,
   type EquipmentSlot,
 } from "../../lib/api/equipment";
-import { itemIcon } from "../../lib/sprites";
+import { itemIcon, NAV_ICONS } from "../../lib/sprites";
 import { useNavigation } from "../../lib/NavigationContext";
+import EmptyState from "../../components/EmptyState";
 
 const SLOTS: EquipmentSlot[] = [
   "head", "cape", "neck", "ammo", "weapon", "2h", "shield",
@@ -179,13 +180,15 @@ export default function GearCompare() {
 
       {/* Items table */}
       {allEquipment.length === 0 ? (
-        <div className="text-center py-12 text-text-secondary">
-          Loading equipment data...
-        </div>
+        <EmptyState
+          icon={NAV_ICONS["gear-compare"]}
+          title="Loading equipment data..."
+        />
       ) : filtered.length === 0 ? (
-        <div className="text-center py-12 text-text-secondary">
-          No {SLOT_LABELS[selectedSlot].toLowerCase()} items found
-        </div>
+        <EmptyState
+          icon={NAV_ICONS["gear-compare"]}
+          title={`No ${SLOT_LABELS[selectedSlot].toLowerCase()} items found`}
+        />
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-left">
