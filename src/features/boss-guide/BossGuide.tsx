@@ -566,6 +566,7 @@ export default function BossGuide({ hiscores }: Props) {
                   hitpoints={selectedBoss.hitpoints}
                   maxHit={selectedBoss.maxHit}
                   weakness={selectedBoss.weakness}
+                  hiscores={hiscores}
                 />
               )}
             <div className="grid gap-4 xl:grid-cols-[220px_minmax(0,1fr)]">

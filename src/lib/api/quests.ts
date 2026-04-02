@@ -1,7 +1,7 @@
 import { bucketQueryAll } from "./bucket";
 import { getCached, setCache } from "./cache";
 
-const CACHE_KEY = "wiki-quests:v1";
+const CACHE_KEY = "wiki-quests:v2";
 const CACHE_TTL = 24 * 60 * 60 * 1000;
 
 const QUEST_FIELDS = [
@@ -13,6 +13,7 @@ const QUEST_FIELDS = [
   "official_difficulty",
   "official_length",
   "requirements",
+  "reward",
   "start_point",
   "json",
 ] as const;
@@ -26,8 +27,15 @@ interface RawBucketQuest {
   official_difficulty?: string;
   official_length?: string;
   requirements?: string;
+  reward?: string;
   start_point?: string;
   json?: string;
+}
+
+export interface QuestReward {
+  xp: Array<{ skill: string; amount: number }>;
+  items: string[];
+  other: string[];
 }
 
 export interface WikiQuest {
@@ -43,6 +51,56 @@ export interface WikiQuest {
   questRequirements: string[];
   members: boolean;
   questPoints: number;
+  rewards: QuestReward;
+}
+
+const SKILLS = new Set([
+  "Attack", "Strength", "Defence", "Ranged", "Prayer", "Magic",
+  "Runecraft", "Hitpoints", "Crafting", "Mining", "Smithing",
+  "Fishing", "Cooking", "Firemaking", "Woodcutting", "Agility",
+  "Herblore", "Thieving", "Fletching", "Slayer", "Farming",
+  "Construction", "Hunter", "Sailing",
+]);
+
+function parseRewards(raw: string | undefined): QuestReward {
+  const result: QuestReward = { xp: [], items: [], other: [] };
+  if (!raw) return result;
+
+  // Clean wiki markup
+  const clean = raw
+    .replace(/\[\[([^\]|]*\|)?([^\]]*)\]\]/g, "$2")
+    .replace(/'''|''|<[^>]*>/g, "");
+
+  const lines = clean.split(/\n|<br\s*\/?>/).map((l) => l.trim()).filter(Boolean);
+
+  for (const line of lines) {
+    // XP pattern: "1,000 Attack experience" or "10000 Cooking XP"
+    const xpMatch = line.match(/^([\d,]+)\s+(\w+)\s+(?:experience|xp|exp)/i);
+    if (xpMatch) {
+      const amount = parseInt(xpMatch[1].replace(/,/g, ""), 10);
+      const skill = xpMatch[2].charAt(0).toUpperCase() + xpMatch[2].slice(1).toLowerCase();
+      if (SKILLS.has(skill) && amount > 0) {
+        result.xp.push({ skill, amount });
+        continue;
+      }
+    }
+
+    // Quest point lines already captured elsewhere, skip
+    if (/quest\s*point/i.test(line)) continue;
+
+    // Access/unlock lines
+    if (/access|unlock|ability|can now|permission/i.test(line)) {
+      result.other.push(line);
+      continue;
+    }
+
+    // Remaining lines with item-like content
+    if (line.length > 2 && line.length < 200) {
+      result.items.push(line);
+    }
+  }
+
+  return result;
 }
 
 interface QuestJson {
@@ -122,6 +180,7 @@ function toWikiQuest(raw: RawBucketQuest): WikiQuest {
     questRequirements: parseQuestRequirements(raw.requirements, json),
     members: json?.members ?? true,
     questPoints: json?.quest_points ?? 1,
+    rewards: parseRewards(raw.reward),
   };
 }
 

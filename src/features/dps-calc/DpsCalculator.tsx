@@ -8,12 +8,26 @@ import { PRAYERS, type Prayer } from "../../lib/data/prayers";
 import { MONSTERS } from "../../lib/data/monsters";
 import { fetchAllMonsters, type WikiMonster } from "../../lib/api/monsters";
 import { type HiscoreData } from "../../lib/api/hiscores";
+import { loadJSON, saveJSON } from "../../lib/localStorage";
 import { useNavigation } from "../../lib/NavigationContext";
 import MonsterSearch from "./components/MonsterSearch";
 import ModifierToggles from "./components/ModifierToggles";
 import DpsBreakdown from "./components/DpsBreakdown";
 
 type CombatStyle = "melee" | "ranged" | "magic";
+
+interface GearLoadout {
+  name: string;
+  combatStyle: CombatStyle;
+  stanceIdx: number;
+  prayerIdx: number;
+  attackBonus: number;
+  strengthBonus: number;
+  attackSpeed: number;
+  modifiers: string[];
+}
+
+const LOADOUTS_KEY = "runewise_dps_loadouts";
 
 interface Stance {
   label: string;
@@ -81,6 +95,10 @@ export default function DpsCalculator({ hiscores }: Props) {
   const [activeModifiers, setActiveModifiers] = useState<Set<string>>(new Set());
   const [wikiMonsters, setWikiMonsters] = useState<WikiMonster[]>([]);
   const [showBreakdown, setShowBreakdown] = useState(false);
+  const [loadouts, setLoadouts] = useState<GearLoadout[]>(() =>
+    loadJSON(LOADOUTS_KEY, [])
+  );
+  const [loadoutName, setLoadoutName] = useState("");
 
   // Load wiki monsters
   useEffect(() => {
@@ -230,6 +248,49 @@ export default function DpsCalculator({ hiscores }: Props) {
     });
   }, []);
 
+  const saveLoadout = useCallback(() => {
+    const name = loadoutName.trim();
+    if (!name) return;
+    const loadout: GearLoadout = {
+      name,
+      combatStyle,
+      stanceIdx,
+      prayerIdx,
+      attackBonus,
+      strengthBonus,
+      attackSpeed,
+      modifiers: [...activeModifiers],
+    };
+    setLoadouts((prev) => {
+      const next = prev.filter((l) => l.name !== name);
+      next.push(loadout);
+      saveJSON(LOADOUTS_KEY, next);
+      return next;
+    });
+    setLoadoutName("");
+  }, [loadoutName, combatStyle, stanceIdx, prayerIdx, attackBonus, strengthBonus, attackSpeed, activeModifiers]);
+
+  const applyLoadout = useCallback((loadout: GearLoadout) => {
+    setCombatStyle(loadout.combatStyle);
+    // Defer dependent state so combat style effect runs first
+    setTimeout(() => {
+      setStanceIdx(loadout.stanceIdx);
+      setPrayerIdx(loadout.prayerIdx);
+      setAttackBonus(loadout.attackBonus);
+      setStrengthBonus(loadout.strengthBonus);
+      setAttackSpeed(loadout.attackSpeed);
+      setActiveModifiers(new Set(loadout.modifiers));
+    }, 0);
+  }, []);
+
+  const deleteLoadout = useCallback((name: string) => {
+    setLoadouts((prev) => {
+      const next = prev.filter((l) => l.name !== name);
+      saveJSON(LOADOUTS_KEY, next);
+      return next;
+    });
+  }, []);
+
   return (
     <div className="max-w-3xl">
       <h2 className="text-xl font-semibold mb-5">DPS Calculator</h2>
@@ -250,6 +311,54 @@ export default function DpsCalculator({ hiscores }: Props) {
               {style}
             </button>
           ))}
+        </div>
+
+        {/* Loadout Presets */}
+        <div>
+          <div className="section-kicker mb-3">Loadouts</div>
+          {loadouts.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-3">
+              {loadouts.map((l) => (
+                <div
+                  key={l.name}
+                  className="flex items-center gap-1 bg-bg-secondary border border-border rounded-lg overflow-hidden"
+                >
+                  <button
+                    onClick={() => applyLoadout(l)}
+                    className="px-3 py-1.5 text-xs font-medium hover:bg-bg-tertiary transition-colors"
+                  >
+                    {l.name}
+                    <span className="ml-1.5 text-text-secondary/50 capitalize">
+                      {l.combatStyle}
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => deleteLoadout(l.name)}
+                    className="px-1.5 py-1.5 text-text-secondary/40 hover:text-danger text-xs transition-colors"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={loadoutName}
+              onChange={(e) => setLoadoutName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && saveLoadout()}
+              placeholder="Loadout name..."
+              className="flex-1 bg-bg-secondary border border-border rounded-lg px-3 py-1.5 text-sm"
+            />
+            <button
+              onClick={saveLoadout}
+              disabled={!loadoutName.trim()}
+              className="px-3 py-1.5 text-xs font-medium bg-accent text-white rounded-lg hover:bg-accent-hover transition-colors disabled:opacity-40"
+            >
+              Save
+            </button>
+          </div>
         </div>
 
         {/* Stats + Equipment side by side */}

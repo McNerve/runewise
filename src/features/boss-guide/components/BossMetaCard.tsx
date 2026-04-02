@@ -1,4 +1,5 @@
 import type { BossMetadata } from "../../../lib/data/boss-metadata";
+import type { HiscoreData } from "../../../lib/api/hiscores";
 
 interface BossMetaCardProps {
   meta: BossMetadata;
@@ -6,6 +7,7 @@ interface BossMetaCardProps {
   hitpoints?: number;
   maxHit?: number;
   weakness?: string | null;
+  hiscores?: HiscoreData | null;
 }
 
 const TEAM_LABELS: Record<string, string> = {
@@ -30,13 +32,56 @@ function DifficultyDots({ level }: { level: number }) {
   );
 }
 
+function getPlayerSlayerLevel(hiscores: HiscoreData | null): number | null {
+  if (!hiscores) return null;
+  const skill = hiscores.skills.find(
+    (s) => s.name.toLowerCase() === "slayer"
+  );
+  return skill?.level ?? null;
+}
+
+function getPlayerCombatLevel(hiscores: HiscoreData | null): number | null {
+  if (!hiscores) return null;
+  const get = (name: string) =>
+    hiscores.skills.find((s) => s.name.toLowerCase() === name.toLowerCase())
+      ?.level ?? 1;
+
+  const att = get("Attack");
+  const str = get("Strength");
+  const def = get("Defence");
+  const hp = get("Hitpoints");
+  const prayer = get("Prayer");
+  const ranged = get("Ranged");
+  const magic = get("Magic");
+
+  const base = 0.25 * (def + hp + Math.floor(prayer / 2));
+  const melee = 0.325 * (att + str);
+  const range = 0.325 * Math.floor((3 * ranged) / 2);
+  const mage = 0.325 * Math.floor((3 * magic) / 2);
+
+  return Math.floor(base + Math.max(melee, range, mage));
+}
+
 export default function BossMetaCard({
   meta,
   combatLevel,
   hitpoints,
   maxHit,
   weakness,
+  hiscores,
 }: BossMetaCardProps) {
+  const playerSlayer = getPlayerSlayerLevel(hiscores);
+  const playerCombat = getPlayerCombatLevel(hiscores);
+
+  const slayerMet =
+    meta.slayerReq && playerSlayer != null
+      ? playerSlayer >= meta.slayerReq
+      : null;
+  const combatMet =
+    meta.recommendedCombatLevel && playerCombat != null
+      ? playerCombat >= meta.recommendedCombatLevel
+      : null;
+
   return (
     <div className="mb-5">
       {/* Stat row */}
@@ -69,13 +114,35 @@ export default function BossMetaCard({
           </span>
         )}
         {meta.slayerReq && (
-          <span className="text-xs text-text-secondary">
-            Slayer <span className="text-text-primary font-medium">{meta.slayerReq}</span>
+          <span className={`text-xs ${slayerMet === false ? "text-danger" : "text-text-secondary"}`}>
+            {slayerMet != null && (
+              <span className={slayerMet ? "text-success" : "text-danger"}>
+                {slayerMet ? "✓ " : "✗ "}
+              </span>
+            )}
+            Slayer{" "}
+            <span className={`font-medium ${slayerMet === true ? "text-success" : slayerMet === false ? "text-danger" : "text-text-primary"}`}>
+              {meta.slayerReq}
+            </span>
+            {slayerMet === false && playerSlayer != null && (
+              <span className="text-danger/60"> ({playerSlayer})</span>
+            )}
           </span>
         )}
         {meta.recommendedCombatLevel && (
-          <span className="text-xs text-text-secondary">
-            Rec. <span className="text-text-primary font-medium">{meta.recommendedCombatLevel}+</span>
+          <span className={`text-xs ${combatMet === false ? "text-warning" : "text-text-secondary"}`}>
+            {combatMet != null && (
+              <span className={combatMet ? "text-success" : "text-warning"}>
+                {combatMet ? "✓ " : "⚠ "}
+              </span>
+            )}
+            Rec.{" "}
+            <span className={`font-medium ${combatMet === true ? "text-success" : combatMet === false ? "text-warning" : "text-text-primary"}`}>
+              {meta.recommendedCombatLevel}+
+            </span>
+            {combatMet === false && playerCombat != null && (
+              <span className="text-warning/60"> ({playerCombat})</span>
+            )}
           </span>
         )}
       </div>
