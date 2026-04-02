@@ -99,9 +99,10 @@ export async function fetchAllSpells(): Promise<WikiSpell[]> {
         spellsPromise = null;
         return spells;
       })
-      .catch(() => {
+      .catch((err: unknown) => {
         spellsPromise = null;
-        return [];
+        console.error("[RuneWise] Failed to fetch spells:", err);
+        throw err;
       });
   }
 

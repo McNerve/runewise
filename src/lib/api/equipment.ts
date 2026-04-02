@@ -150,9 +150,10 @@ export async function fetchAllEquipment(): Promise<WikiEquipment[]> {
         equipmentPromise = null;
         return equipment;
       })
-      .catch(() => {
+      .catch((err: unknown) => {
         equipmentPromise = null;
-        return [];
+        console.error("[RuneWise] Failed to fetch equipment:", err);
+        throw err;
       });
   }
 
