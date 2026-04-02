@@ -66,7 +66,7 @@ export const FEATURE_REGISTRY = {
   "training-plan": {
     title: "Training Plan",
     navLabel: "Training Plan",
-    family: "Tools",
+    family: "Planning",
     sidebar: true,
     search: true,
     aliases: ["training plan", "level plan", "goal", "targets"],
@@ -74,7 +74,7 @@ export const FEATURE_REGISTRY = {
   "gear-compare": {
     title: "Gear Compare",
     navLabel: "Gear Compare",
-    family: "Tools",
+    family: "Planning",
     sidebar: true,
     search: true,
     aliases: ["gear", "equipment", "compare", "bis", "best in slot"],
@@ -154,7 +154,7 @@ export const FEATURE_REGISTRY = {
   "money-making": {
     title: "Money Making",
     navLabel: "Money Making",
-    family: "Tools",
+    family: "Planning",
     sidebar: true,
     search: true,
     aliases: ["money making", "gp", "methods"],
@@ -166,6 +166,14 @@ export const FEATURE_REGISTRY = {
     sidebar: true,
     search: true,
     aliases: ["production", "crafting", "recipes", "cost calculator", "profit calculator", "herblore", "smithing"],
+  },
+  kingdom: {
+    title: "Kingdom of Miscellania",
+    navLabel: "Kingdom",
+    family: "Tools",
+    sidebar: true,
+    search: true,
+    aliases: ["kingdom", "miscellania", "managing miscellania", "throne of miscellania", "workers", "kingdom calculator"],
   },
   spells: {
     title: "Spellbook",
@@ -210,7 +218,7 @@ export const FEATURE_REGISTRY = {
   timers: {
     title: "Farm Timers",
     navLabel: "Timers",
-    family: "Tools",
+    family: "Planning",
     sidebar: true,
     search: true,
     aliases: ["timers", "farm timers"],
