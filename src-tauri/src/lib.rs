@@ -180,6 +180,9 @@ fn runelite_read_profiles() -> Result<Vec<RuneLiteProfile>, String> {
 
 #[tauri::command]
 fn runelite_read_loot_tracker(profile_id: String) -> Result<Vec<LootEntry>, String> {
+    if profile_id.contains("..") || profile_id.contains('/') || profile_id.contains('\\') {
+        return Err("Invalid profile ID".to_string());
+    }
     let (profiles_file, _) = runelite_paths()?;
     let Some(path) = profiles_file else {
         return Ok(Vec::new());
