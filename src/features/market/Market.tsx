@@ -29,10 +29,11 @@ import {
   type Period,
 } from "./shared";
 
-type Tab = "search" | "browse" | "watchlist" | "alch";
+type Tab = "search" | "browse" | "watchlist" | "alch" | "bulk";
 const Chart = lazy(() => import("../../components/Chart"));
 const Watchlist = lazy(() => import("../watchlist/Watchlist"));
 const AlchCalculator = lazy(() => import("../alch-calc/AlchCalculator"));
+const BulkSearch = lazy(() => import("./components/BulkSearch"));
 
 // --- Detail panel ---
 
@@ -276,7 +277,7 @@ export default function Market({
   const debouncedQuery = useDebounce(query, 250);
 
   const paramTab = params.tab as Tab | undefined;
-  const resolvedInitial: Tab = paramTab === "watchlist" || paramTab === "alch" || paramTab === "browse" ? paramTab : initialTab;
+  const resolvedInitial: Tab = paramTab === "watchlist" || paramTab === "alch" || paramTab === "browse" || paramTab === "bulk" ? paramTab : initialTab;
   const [tab, setTab] = useState<Tab>(resolvedInitial);
   const [membersFilter, setMembersFilter] = useState<"all" | "f2p" | "p2p">(
     "all"
@@ -586,7 +587,7 @@ export default function Market({
         {/* Tab bar — always visible */}
         <div className="flex items-center gap-3 mb-4 flex-wrap">
           <div className="flex bg-bg-secondary rounded-lg p-0.5 border border-border">
-            {(["search", "browse", "watchlist", "alch"] as const).map((t) => (
+            {(["search", "browse", "watchlist", "alch", "bulk"] as const).map((t) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
@@ -596,7 +597,7 @@ export default function Market({
                     : "text-text-secondary hover:text-text-primary"
                 }`}
               >
-                {t === "search" ? "Search Results" : t === "browse" ? `Browse All${allItems.length > 0 ? ` (${allItems.length.toLocaleString()})` : ""}` : t === "watchlist" ? "Watchlist" : "Alch Profits"}
+                {t === "search" ? "Search Results" : t === "browse" ? `Browse All${allItems.length > 0 ? ` (${allItems.length.toLocaleString()})` : ""}` : t === "watchlist" ? "Watchlist" : t === "alch" ? "Alch Profits" : "Bulk Lookup"}
               </button>
             ))}
           </div>
@@ -628,6 +629,10 @@ export default function Market({
         ) : tab === "alch" ? (
           <Suspense fallback={<div className="py-8 text-center text-sm text-text-secondary">Loading...</div>}>
             <AlchCalculator />
+          </Suspense>
+        ) : tab === "bulk" ? (
+          <Suspense fallback={<div className="py-8 text-center text-sm text-text-secondary">Loading...</div>}>
+            <BulkSearch mapping={allItems} prices={prices} />
           </Suspense>
         ) : (
         <>
