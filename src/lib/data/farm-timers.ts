@@ -85,7 +85,14 @@ export const PATCH_TYPES: PatchType[] = [
   { name: "Compost bin", category: "Compost", growthMinutes: 80, stages: 2, icon: "Compost.png" },
 
   // Birdhouses (50 min fixed)
-  { name: "Birdhouse", category: "Birdhouse", growthMinutes: 50, icon: "Oak_bird_house.png" },
+  { name: "Regular birdhouse", category: "Birdhouse", growthMinutes: 50, icon: "Bird_house.png" },
+  { name: "Oak birdhouse", category: "Birdhouse", growthMinutes: 50, icon: "Oak_bird_house.png" },
+  { name: "Willow birdhouse", category: "Birdhouse", growthMinutes: 50, icon: "Willow_bird_house.png" },
+  { name: "Teak birdhouse", category: "Birdhouse", growthMinutes: 50, icon: "Teak_bird_house.png" },
+  { name: "Maple birdhouse", category: "Birdhouse", growthMinutes: 50, icon: "Maple_bird_house.png" },
+  { name: "Yew birdhouse", category: "Birdhouse", growthMinutes: 50, icon: "Yew_bird_house.png" },
+  { name: "Magic birdhouse", category: "Birdhouse", growthMinutes: 50, icon: "Magic_bird_house.png" },
+  { name: "Redwood birdhouse", category: "Birdhouse", growthMinutes: 50, icon: "Redwood_bird_house.png" },
 ];
 
 export const PATCH_CATEGORIES = [...new Set(PATCH_TYPES.map((p) => p.category))];
@@ -94,7 +101,7 @@ export const PRESETS: { name: string; patches: string[] }[] = [
   { name: "Herb Run", patches: ["Herb patch", "Herb patch", "Herb patch", "Herb patch", "Herb patch", "Herb patch", "Flower patch"] },
   { name: "Tree Run", patches: ["Oak tree", "Willow tree", "Maple tree", "Yew tree", "Magic tree"] },
   { name: "Fruit Tree Run", patches: ["Apple tree", "Palm tree", "Dragonfruit tree", "Papaya tree"] },
-  { name: "Birdhouse Run", patches: ["Birdhouse", "Birdhouse", "Birdhouse", "Birdhouse"] },
+  { name: "Birdhouse Run", patches: ["Maple birdhouse", "Maple birdhouse", "Maple birdhouse", "Maple birdhouse"] },
   { name: "Hardwood Run", patches: ["Teak tree", "Mahogany tree", "Mahogany tree"] },
   { name: "Full Tree Run", patches: ["Oak tree", "Willow tree", "Maple tree", "Yew tree", "Magic tree", "Celastrus tree"] },
   { name: "Seaweed Run", patches: ["Seaweed", "Seaweed", "Seaweed", "Seaweed", "Seaweed"] },

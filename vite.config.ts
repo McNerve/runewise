@@ -55,6 +55,18 @@ export default defineConfig({
           Authorization: "1E15qy2D4M4G",
         },
       },
+      "/api/maps": {
+        target: "https://maps.runescape.wiki",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/maps/, ""),
+        headers: { "User-Agent": "runewise - osrs companion app" },
+      },
+      "/api/wikisync": {
+        target: "https://sync.runescape.wiki",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/wikisync/, ""),
+        headers: { "User-Agent": "runewise - osrs companion app" },
+      },
     },
   },
 });

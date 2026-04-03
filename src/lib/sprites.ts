@@ -68,6 +68,24 @@ const BOSS_SMALL_ICON: Record<string, string> = {
   "TzKal-Zuk": "TzKal-Zuk_icon.png",
   "Vardorvis": "Vardorvis.png",
   "The Whisperer": "The_Whisperer.png",
+  "Blood Moon": "Blood_Moon.png",
+  "Blue Moon": "Blue_Moon.png",
+  "Eclipse Moon": "Eclipse_Moon.png",
+  "Calvar'ion": "Calvar%27ion.png",
+  "Spindel": "Spindel.png",
+  "Artio": "Artio.png",
+  "Scorpia": "Scorpia.png",
+  "Obor": "Obor.png",
+  "Bryophyta": "Bryophyta.png",
+  "Hespori": "Hespori.png",
+  "Phosani's Nightmare": "Phosani%27s_Nightmare.png",
+  "Tempoross": "Tempoross.png",
+  "Zalcano": "Zalcano.png",
+  "The Mimic": "Mimic.png",
+  "Dagannoth Rex": "Dagannoth_Rex.png",
+  "Dagannoth Prime": "Dagannoth_Prime.png",
+  "Dagannoth Supreme": "Dagannoth_Supreme.png",
+  "Giant Mole": "Giant_Mole.png",
 };
 
 // Larger images (used in boss guide sidebar)
@@ -91,6 +109,16 @@ const BOSS_LARGE_ICON: Record<string, string> = {
   "Moons of Peril": "Blood_Moon.png",
   "The Fortis Colosseum": "Sol_Heredit.png",
   "Zulrah": "Zulrah.png",
+  "Blood Moon": "Blood_Moon.png",
+  "Blue Moon": "Blue_Moon.png",
+  "Eclipse Moon": "Eclipse_Moon.png",
+  "Calvar'ion": "Calvar%27ion.png",
+  "Spindel": "Spindel.png",
+  "Artio": "Artio.png",
+  "Giant Mole": "Giant_Mole.png",
+  "Dagannoth Rex": "Dagannoth_Rex.png",
+  "Dagannoth Prime": "Dagannoth_Prime.png",
+  "Dagannoth Supreme": "Dagannoth_Supreme.png",
 };
 
 export function bossIcon(bossName: string): string {

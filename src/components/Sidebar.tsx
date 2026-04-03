@@ -1,4 +1,6 @@
 import { useMemo } from "react";
+
+declare const __APP_VERSION__: string;
 import * as Tooltip from "@radix-ui/react-tooltip";
 import type { View } from "../lib/NavigationContext";
 import { isMac } from "../lib/env";
@@ -170,7 +172,7 @@ export default function Sidebar({ currentView, onNavigate }: SidebarProps) {
         </button>
         {!collapsed && (
           <div className="text-[10px] text-text-secondary/30 text-center mt-1 tabular-nums">
-            v1.1.0
+            v{__APP_VERSION__}
           </div>
         )}
       </div>

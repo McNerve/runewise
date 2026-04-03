@@ -20,6 +20,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 export default function PetCalculator({ hiscores }: Props) {
   const [tab, setTab] = useState<Tab>("skilling");
+  const [bossFilter, setBossFilter] = useState<string>("all");
 
   // Skilling state
   const [selectedPet, setSelectedPet] = useState<SkillPet>(SKILL_PETS[0]);
@@ -163,7 +164,7 @@ export default function PetCalculator({ hiscores }: Props) {
       <h2 className="text-xl font-semibold mb-4">Pet Chance Calculator</h2>
 
       {/* Tabs */}
-      <div className="flex gap-1.5 mb-4">
+      <div className="flex gap-1.5 mb-3">
         <button
           onClick={() => setTab("skilling")}
           className={`px-3 py-1.5 rounded text-xs transition-colors ${
@@ -173,7 +174,7 @@ export default function PetCalculator({ hiscores }: Props) {
           Skilling Pets ({SKILL_PETS.length})
         </button>
         <button
-          onClick={() => setTab("boss")}
+          onClick={() => { setTab("boss"); setBossFilter("all"); }}
           className={`px-3 py-1.5 rounded text-xs transition-colors ${
             tab === "boss" ? "bg-accent text-white" : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
           }`}
@@ -181,6 +182,34 @@ export default function PetCalculator({ hiscores }: Props) {
           Boss & Other Pets ({BOSS_PETS.length})
         </button>
       </div>
+
+      {tab === "boss" && (
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          <button
+            onClick={() => setBossFilter("all")}
+            className={`px-2.5 py-1 rounded text-xs transition-colors ${
+              bossFilter === "all" ? "bg-accent text-white" : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+            }`}
+          >
+            All ({BOSS_PETS.length})
+          </button>
+          {BOSS_CATEGORIES.map((cat) => {
+            const count = BOSS_PETS.filter((p) => p.category === cat).length;
+            if (count === 0) return null;
+            return (
+              <button
+                key={cat}
+                onClick={() => setBossFilter(cat)}
+                className={`px-2.5 py-1 rounded text-xs transition-colors ${
+                  bossFilter === cat ? "bg-accent text-white" : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+                }`}
+              >
+                {CATEGORY_LABELS[cat]} ({count})
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       <div className="grid grid-cols-[1fr_260px] gap-4">
         {/* Left panel - calculator */}
@@ -361,7 +390,9 @@ export default function PetCalculator({ hiscores }: Props) {
           ) : (
             <>
               {BOSS_CATEGORIES.map((cat) => {
-                const pets = BOSS_PETS.filter((p) => p.category === cat);
+                const pets = BOSS_PETS.filter(
+                  (p) => p.category === cat && (bossFilter === "all" || bossFilter === cat)
+                );
                 if (pets.length === 0) return null;
                 return (
                   <div key={cat} className="mb-3">

@@ -20,7 +20,7 @@ function buildBucketQueryString(
   let query = `bucket("${bucket}").select(${selectList})`;
 
   if (where) {
-    query += `.where({"${where.field}","${where.value}"})`;
+    query += `.where({"${where.field}":"${where.value}"})`;
   }
 
   query += `.limit(${limit ?? MAX_PER_QUERY})`;
@@ -49,6 +49,9 @@ export async function bucketQuery<T extends Record<string, unknown>>(
     cacheKey,
     ttlMs: BUCKET_TTL,
     transform: (json) => {
+      if (Array.isArray(json)) return json as T[];
+      const obj = json as Record<string, unknown>;
+      if (obj?.results && Array.isArray(obj.results)) return obj.results as T[];
       if (
         typeof json === "object" &&
         json !== null &&
@@ -60,6 +63,7 @@ export async function bucketQuery<T extends Record<string, unknown>>(
       ) {
         return json.bucket.results as T[];
       }
+      console.warn("[RuneWise] Unexpected bucket response shape:", typeof json, json !== null && typeof json === "object" ? Object.keys(json as Record<string, unknown>).join(",") : "");
       return [];
     },
   });
@@ -84,6 +88,9 @@ export async function bucketQueryAll<T extends Record<string, unknown>>(
       cacheKey,
       ttlMs: BUCKET_TTL,
       transform: (json) => {
+        if (Array.isArray(json)) return json as T[];
+        const obj = json as Record<string, unknown>;
+        if (obj?.results && Array.isArray(obj.results)) return obj.results as T[];
         if (
           typeof json === "object" &&
           json !== null &&
@@ -95,6 +102,7 @@ export async function bucketQueryAll<T extends Record<string, unknown>>(
         ) {
           return json.bucket.results as T[];
         }
+        console.warn("[RuneWise] Unexpected bucket response shape:", typeof json, json !== null && typeof json === "object" ? Object.keys(json as Record<string, unknown>).join(",") : "");
         return [];
       },
     });

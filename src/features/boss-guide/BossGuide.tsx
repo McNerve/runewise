@@ -35,7 +35,7 @@ import WikiImage from "../../components/WikiImage";
 import StructuredSection from "./StructuredSection";
 import BossMetaCard from "./components/BossMetaCard";
 import { BOSS_METADATA } from "../../lib/data/boss-metadata";
-import { fetchDropsForMonster, type WikiDrop } from "../../lib/api/drops";
+import { fetchDropsForMonster, fetchBossDropsFromWiki, type WikiDrop, type BossWikiDrop } from "../../lib/api/drops";
 import DropTable from "../../components/DropTable";
 
 interface Props {
@@ -122,6 +122,7 @@ export default function BossGuide({ hiscores }: Props) {
   const [loading, setLoading] = useState(false);
   const [dropsLoading, setDropsLoading] = useState(false);
   const [wikiDrops, setWikiDrops] = useState<WikiDrop[]>([]);
+  const [bucketFallbackDrops, setBucketFallbackDrops] = useState<BossWikiDrop[]>([]);
   const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
   const [itemMap, setItemMap] = useState<Map<string, number>>(new Map());
   const activeRequest = useRef(0);
@@ -270,7 +271,11 @@ export default function BossGuide({ hiscores }: Props) {
     setDropsLoading(true);
     setDropCategories([]);
     setWikiDrops([]);
+    setBucketFallbackDrops([]);
     const requestId = ++activeRequest.current;
+    const hasStaticDrops = BOSS_DROP_TABLES.some(
+      (t) => normalizeBossLookup(t.bossName) === normalizeBossLookup(boss.name)
+    );
     try {
       const [nextGuide, nextDrops, nextWikiDrops] = await Promise.all([
         fetchBossGuideDocument(boss.wikiPage),
@@ -281,6 +286,13 @@ export default function BossGuide({ hiscores }: Props) {
         setGuide(nextGuide);
         setDropCategories(nextDrops.categories);
         setWikiDrops(nextWikiDrops);
+        if (!hasStaticDrops && nextWikiDrops.length === 0) {
+          fetchBossDropsFromWiki(boss.name)
+            .then((rows) => {
+              if (requestId === activeRequest.current) setBucketFallbackDrops(rows);
+            })
+            .catch(() => {});
+        }
       }
     } finally {
       if (requestId === activeRequest.current) {
@@ -848,6 +860,49 @@ export default function BossGuide({ hiscores }: Props) {
                       </div>
                     </div>
                   ))}
+                </div>
+              ) : bucketFallbackDrops.length > 0 ? (
+                <div className="overflow-hidden">
+                  <p className="mb-3 text-xs text-text-secondary">
+                    Wiki bucket drop data for {selectedBoss.name}.
+                  </p>
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border text-text-secondary text-xs">
+                        <th className="px-4 py-2 text-left">Item</th>
+                        <th className="px-4 py-2 text-right">Qty</th>
+                        <th className="px-4 py-2 text-right">Rate</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {bucketFallbackDrops.map((drop, i) => (
+                        <tr
+                          key={`bucket-drop-${drop.item}-${i}`}
+                          className="border-b border-border/50 even:bg-bg-secondary/35"
+                        >
+                          <td className="px-4 py-2">
+                            <button
+                              type="button"
+                              onClick={() => navigate("market", { query: drop.item })}
+                              className="flex items-center gap-2 text-left text-text-primary transition hover:text-accent"
+                            >
+                              <WikiImage
+                                src={itemIcon(drop.item)}
+                                alt=""
+                                className="h-5 w-5 shrink-0"
+                                fallback={drop.item[0]}
+                              />
+                              <span>{drop.item}</span>
+                            </button>
+                          </td>
+                          <td className="px-4 py-2 text-right text-text-secondary">{drop.quantity}</td>
+                          <td className="px-4 py-2 text-right text-text-secondary">
+                            {drop.rate === 1 ? "Always" : drop.rate > 0 ? `1/${drop.rate.toLocaleString()}` : "Varies"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               ) : (
                 <div className="py-6 text-sm text-text-secondary">

@@ -171,6 +171,7 @@ export default function QuestTracker({ hiscores }: Props) {
             className="w-3.5 h-3.5 accent-accent"
           />
           Hide completed
+          <span className="text-[10px] text-text-secondary/40 ml-1">(click quests to mark)</span>
         </label>
       </div>
 
@@ -211,7 +212,7 @@ export default function QuestTracker({ hiscores }: Props) {
             className={`absolute left-1 top-1/2 -translate-y-1/2 z-10 w-5 h-5 flex items-center justify-center rounded text-[10px] transition-colors ${
               isCompleted
                 ? "bg-success/20 text-success"
-                : "opacity-0 group-hover:opacity-100 bg-bg-tertiary text-text-secondary/40 hover:text-text-secondary"
+                : "bg-bg-tertiary text-text-secondary/40 hover:text-text-secondary"
             }`}
           >
             {isCompleted ? "✓" : "○"}

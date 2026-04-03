@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { searchMonsters, fetchDropTable, type DropItem } from "../../lib/api/wiki";
-import { fetchDropsForMonster, type WikiDrop } from "../../lib/api/drops";
+import { fetchDropsForMonster, fetchBossDropsFromWiki, type WikiDrop } from "../../lib/api/drops";
 import { fetchLatestPrices, fetchMapping, type ItemPrice, type ItemMapping } from "../../lib/api/ge";
 import { formatGp } from "../../lib/format";
 import { itemIcon } from "../../lib/sprites";
@@ -428,8 +428,25 @@ function ProfitCalculatorTab({
       setSelectedBoss(null);
       setWikiFallbackBoss(routedBoss.name);
       setWikiFallbackLoading(true);
-      void fetchDropTable(routedBoss.name)
-        .then((result) => {
+      void fetchBossDropsFromWiki(routedBoss.name)
+        .then(async (bucketRows) => {
+          if (cancelled) return;
+          if (bucketRows.length > 0) {
+            // bucket drop_table had data — convert to category format for wikiRows
+            setWikiDropCategories([{
+              name: "Drops",
+              drops: bucketRows.map((r) => ({
+                name: r.item,
+                quantity: r.quantity,
+                rarity: r.rate === 1 ? "Always" : r.rate > 0 ? `1/${r.rate}` : "Varies",
+                price: "",
+                category: "drop",
+              })),
+            }]);
+            return;
+          }
+          // No bucket data — fall back to HTML wiki drop table
+          const result = await fetchDropTable(routedBoss.name).catch(() => ({ categories: [] }));
           if (cancelled) return;
           if (result.categories.length === 0) {
             setUnsupportedBoss(routedBoss.name);

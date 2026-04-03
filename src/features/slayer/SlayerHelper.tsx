@@ -102,20 +102,23 @@ export default function SlayerHelper() {
             </span>
           )}
         </div>
-        {blockedTasks.size > 0 && (
-          <button
-            onClick={() => {
-              setBlockedMap((prev) => {
-                const updated = { ...prev, [selectedMaster.name]: [] };
-                localStorage.setItem(BLOCKED_KEY, JSON.stringify(updated));
-                return updated;
-              });
-            }}
-            className="text-xs text-text-secondary hover:text-text-primary transition-colors"
-          >
-            Clear All Blocks
-          </button>
-        )}
+        <button
+          onClick={() => {
+            setBlockedMap((prev) => {
+              const updated = { ...prev, [selectedMaster.name]: [] };
+              localStorage.setItem(BLOCKED_KEY, JSON.stringify(updated));
+              return updated;
+            });
+          }}
+          disabled={blockedTasks.size === 0}
+          className={`text-xs transition-colors ${
+            blockedTasks.size > 0
+              ? "text-text-secondary hover:text-text-primary cursor-pointer"
+              : "text-text-secondary/20 cursor-not-allowed"
+          }`}
+        >
+          Clear All Blocks
+        </button>
       </div>
 
       <div className="bg-bg-secondary rounded-lg overflow-hidden">

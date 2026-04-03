@@ -155,8 +155,9 @@ export async function fetchAllMonsters(): Promise<WikiMonster[]> {
         monstersPromise = null;
         return monsters;
       })
-      .catch(() => {
+      .catch((err: unknown) => {
         monstersPromise = null;
+        console.error("[RuneWise] Failed to fetch monsters:", err);
         return getFallbackMonsters();
       });
   }

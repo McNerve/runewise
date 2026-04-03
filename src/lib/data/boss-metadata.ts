@@ -85,6 +85,27 @@ export const BOSS_METADATA: Record<string, BossMetadata> = {
 
   // Raids
   "Chambers of Xeric": { difficulty: 5, teamSize: "small", mechanicsSummary: "Randomized raid with combat rooms, puzzle rooms, and Great Olm final boss. Points-based reward system. Scales with team size." },
+  "Chambers of Xeric: Challenge Mode": { difficulty: 5, teamSize: "small", mechanicsSummary: "Harder version of CoX with increased boss HP, reduced healing, and tighter enrage thresholds. Requires experienced team coordination." },
   "Theatre of Blood": { difficulty: 5, teamSize: "small", mechanicsSummary: "Five-boss linear raid. Maiden, Bloat, Nylocas, Sotetseg, Xarpus, Verzik. MVP-based reward system. Hardest group content.", recommendedCombatLevel: 100 },
+  "Theatre of Blood: Hard Mode": { difficulty: 5, teamSize: "small", mechanicsSummary: "ToB with all mechanics amplified. Bosses hit harder with extra phases. Dropped loot scaling. Requires highly experienced 4-5 player team." },
   "Tombs of Amascut": { difficulty: 4, teamSize: "small", mechanicsSummary: "Invocation-based raid. Choose difficulty modifiers. Four path bosses plus Wardens. Scales from beginner to expert.", recommendedCombatLevel: 90 },
+  "Tombs of Amascut: Expert Mode": { difficulty: 5, teamSize: "small", mechanicsSummary: "ToA with maximum invocations active. Wardens have full DPS windows, all boss modifiers on, and Baba/Zebak/Kephri/Ba-Ba at hardest settings." },
+
+  // Name aliases to match bosses.ts keys
+  "Nightmare": { difficulty: 4, teamSize: "small", mechanicsSummary: "Multi-phase boss with sleepwalker mechanics. Kill sleepwalkers, avoid grasping claws, prayer switch during totems. Group boss.", recommendedCombatLevel: 100 },
+  "Barrows Chests": { difficulty: 2, teamSize: "solo", mechanicsSummary: "Six brothers with unique mechanics. Prayer switch per brother. Tunnel puzzle. Runs take 3-5 minutes each.", recommendedCombatLevel: 70 },
+  "The Corrupted Gauntlet": { difficulty: 5, teamSize: "solo", mechanicsSummary: "Harder Gauntlet with faster Hunllef, more damage, less prep time. T3 armour and weapons required for consistency. Top-tier PVM challenge." },
+
+  // Individual Moons of Peril
+  "Blood Moon": { difficulty: 4, teamSize: "solo", mechanicsSummary: "Melee moon boss in Varlamore. High-damage melee attacks with bleed mechanics. Prayer switching and movement required." },
+  "Blue Moon": { difficulty: 4, teamSize: "solo", mechanicsSummary: "Magic moon boss in Varlamore. Long-range magic attacks with area effects. Protect from Magic and dodge patterns." },
+  "Eclipse Moon": { difficulty: 4, teamSize: "solo", mechanicsSummary: "Ranged moon boss in Varlamore. Fires volley attacks and places hazard zones. Protect from Missiles and move frequently." },
+
+  // F2P bosses
+  "Obor": { difficulty: 1, teamSize: "solo", mechanicsSummary: "Giant boss in the Hill Giant lair. Requires giant key from hill giants. Low-level beginner boss. Simple melee fight.", recommendedCombatLevel: 40 },
+  "Bryophyta": { difficulty: 1, teamSize: "solo", mechanicsSummary: "Moss Giant boss requiring mossy key. Spawns Mossy Rocks that must be killed to remove shield. Beginner boss.", recommendedCombatLevel: 45 },
+
+  // Other missing
+  "Hespori": { difficulty: 2, teamSize: "solo", mechanicsSummary: "Farming boss in Farming Guild. Kill four flowers at corners then DPS the main boss. Has an instant-kill flower; step away quickly.", questReqs: ["Farming Guild access"] },
+  "The Mimic": { difficulty: 2, teamSize: "solo", mechanicsSummary: "Rare boss from elite/master clue scroll caskets. Spawns Mimic and minions. Prayer switch and DPS. Short fight." },
 };

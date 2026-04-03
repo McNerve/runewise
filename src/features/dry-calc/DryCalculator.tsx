@@ -31,11 +31,19 @@ export default function DryCalculator() {
         {/* Calculator */}
         <div className="bg-bg-secondary rounded-lg p-4 space-y-4">
           {selectedDrop && (
-            <div className="text-sm text-text-secondary">
-              <span className="text-text-primary font-medium">
-                {selectedDrop.item}
-              </span>{" "}
-              from {selectedDrop.source} (1/{Math.round(selectedDrop.rate)})
+            <div className="flex items-center justify-between text-sm text-text-secondary">
+              <span>
+                <span className="text-text-primary font-medium">
+                  {selectedDrop.item}
+                </span>{" "}
+                from {selectedDrop.source} (1/{Math.round(selectedDrop.rate)})
+              </span>
+              <button
+                onClick={() => { setSelectedDrop(null); setRate(512); setKills(0); }}
+                className="text-xs text-text-secondary/50 hover:text-text-primary transition-colors cursor-pointer ml-2"
+              >
+                ×
+              </button>
             </div>
           )}
 

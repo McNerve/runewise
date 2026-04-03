@@ -11,6 +11,7 @@ export interface PlanStep {
   xpNeeded: number;
   actions: number;
   hours: number;
+  alternatives: TrainingMethod[];
 }
 
 export interface TrainingPlan {
@@ -73,6 +74,7 @@ export function generatePlan(
       xpNeeded,
       actions,
       hours,
+      alternatives: available,
     });
   }
 

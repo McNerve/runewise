@@ -10,6 +10,7 @@ import {
 import { useNavigation } from "../../lib/NavigationContext";
 import { getCached, setCache } from "../../lib/api/cache";
 import { apiFetch } from "../../lib/api/fetch";
+import { isTauri } from "../../lib/env";
 
 // Wiki map tile configuration
 // Two tile formats available:
@@ -17,13 +18,14 @@ import { apiFetch } from "../../lib/api/fetch";
 // 2. Versioned: versions/{ver}/tiles/rendered/{p}/{z}/{p}_{x}_{y}.png (supports 0 to 3)
 // Using versioned format for reliability
 const MAP_VERSION = "2026-03-04_a";
-const TILE_URL = `https://maps.runescape.wiki/osrs/versions/${MAP_VERSION}/tiles/rendered/0/{z}/0_{x}_{y}.png`;
+const MAP_BASE = isTauri ? "https://maps.runescape.wiki" : "/api/maps";
+const TILE_URL = `${MAP_BASE}/osrs/versions/${MAP_VERSION}/tiles/rendered/0/{z}/0_{x}_{y}.png`;
 const MIN_ZOOM = 0;
 const MAX_ZOOM = 3;
 const DEFAULT_ZOOM = 1;
 
 // Wiki GeoJSON markers endpoint
-const GEOJSON_URL = "https://maps.runescape.wiki/osrs/data/MainMapIconLoc.json";
+const GEOJSON_URL = `${MAP_BASE}/osrs/data/MainMapIconLoc.json`;
 const GEOJSON_CACHE_KEY = "wiki-map-geojson:v1";
 const GEOJSON_TTL = 7 * 24 * 60 * 60 * 1000; // 1 week (markers rarely change)
 
