@@ -212,7 +212,17 @@ function handleGuideClick(e: React.MouseEvent) {
 
   const overlay = document.createElement("div");
   overlay.className = "wiki-lightbox";
-  overlay.onclick = (ev) => { if (ev.target === overlay) overlay.remove(); };
+
+  const cleanup = () => {
+    overlay.remove();
+    document.removeEventListener("keydown", onKey);
+  };
+
+  const onKey = (ev: KeyboardEvent) => {
+    if (ev.key === "Escape") cleanup();
+  };
+
+  overlay.onclick = (ev) => { if (ev.target === overlay) cleanup(); };
 
   const img = document.createElement("img");
   img.src = src;
@@ -232,9 +242,6 @@ function handleGuideClick(e: React.MouseEvent) {
     overlay.appendChild(labelEl);
   }
 
-  const onKey = (ev: KeyboardEvent) => {
-    if (ev.key === "Escape") { overlay.remove(); document.removeEventListener("keydown", onKey); }
-  };
   document.addEventListener("keydown", onKey);
   document.body.appendChild(overlay);
 }
