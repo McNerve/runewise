@@ -5,7 +5,7 @@ import { fetchLatestPrices, type ItemPrice } from "../../lib/api/ge";
 import { formatGp } from "../../lib/format";
 import { useNavigation } from "../../lib/NavigationContext";
 
-type Source = "all" | "boss" | "money" | "skilling";
+type Source = "all" | "combat" | "skilling";
 
 interface ProfitEntry {
   name: string;
@@ -88,10 +88,8 @@ export default function ProfitHub() {
   const filtered = useMemo(() => {
     let result = entries;
 
-    if (sourceFilter === "boss")
-      result = result.filter((e) => e.source === "Boss Loot");
-    else if (sourceFilter === "money")
-      result = result.filter((e) => e.source === "Money Method" && e.category === "Combat");
+    if (sourceFilter === "combat")
+      result = result.filter((e) => e.category === "Combat" || e.source === "Boss Loot");
     else if (sourceFilter === "skilling")
       result = result.filter(
         (e) => e.category === "Skilling" || e.category === "Processing" || e.category === "Collecting"
@@ -141,8 +139,7 @@ export default function ProfitHub() {
           {(
             [
               { id: "all", label: "All" },
-              { id: "boss", label: "Boss Loot" },
-              { id: "money", label: "Combat" },
+              { id: "combat", label: "Combat & Bosses" },
               { id: "skilling", label: "Skilling" },
             ] as const
           ).map((f) => (
