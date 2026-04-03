@@ -705,9 +705,10 @@ export default function DpsCalculator({ hiscores }: Props) {
         </div>
 
         {/* Stats + Equipment side by side */}
+        <div className="rounded-xl border border-border/40 bg-bg-primary/20 p-4">
         <div className="grid grid-cols-2 gap-5">
           <div>
-            <div className="section-kicker mb-3">Player Stats</div>
+            <div className="section-kicker mb-2">Player Stats</div>
             <div className="space-y-2">
               {combatStyle === "melee" && (
                 <>
@@ -730,7 +731,7 @@ export default function DpsCalculator({ hiscores }: Props) {
           </div>
 
           <div>
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-2">
               <div className="section-kicker">Equipment Bonuses</div>
               <div className="flex items-center gap-2">
                 <button
@@ -855,6 +856,7 @@ export default function DpsCalculator({ hiscores }: Props) {
             )}
           </div>
         </div>
+        </div>
 
         {/* Gear selector modal */}
         {openSlot !== null && (
@@ -877,6 +879,7 @@ export default function DpsCalculator({ hiscores }: Props) {
         )}
 
         {/* Prayer + Stance */}
+        <div className="rounded-xl border border-border/40 bg-bg-primary/20 p-4">
         <div className="grid grid-cols-2 gap-5">
           <div>
             <div className="section-kicker mb-2">Prayer</div>
@@ -984,6 +987,7 @@ export default function DpsCalculator({ hiscores }: Props) {
             )}
           </div>
         </div>
+        </div>
 
         {/* Spell Selection (magic only) */}
         {combatStyle === "magic" && (
@@ -1034,7 +1038,7 @@ export default function DpsCalculator({ hiscores }: Props) {
 
         {/* Modifiers */}
         <div>
-          <div className="section-kicker mb-3">Modifiers</div>
+          <div className="section-kicker mb-2">Modifiers</div>
           <ModifierToggles
             activeIds={activeModifiers}
             onToggle={toggleModifier}
@@ -1049,8 +1053,8 @@ export default function DpsCalculator({ hiscores }: Props) {
       <div className="lg:sticky lg:top-4 lg:self-start space-y-5">
 
         {/* Target */}
-        <div>
-          <div className="section-kicker mb-3">Target</div>
+        <div className="rounded-xl border border-border/40 bg-bg-primary/20 p-4">
+          <div className="section-kicker mb-2">Target</div>
           <MonsterSearch
             monsters={wikiMonsters}
             selected={selectedMonster}
@@ -1107,7 +1111,7 @@ export default function DpsCalculator({ hiscores }: Props) {
               max={10}
               value={defReductions}
               onChange={(e) => setDefReductions(Math.min(10, Math.max(0, Number(e.target.value))))}
-              className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm mt-1"
+              className="w-full bg-bg-tertiary border border-border rounded-lg px-3 py-1.5 text-sm mt-1"
             />
           </div>
 
@@ -1123,11 +1127,11 @@ export default function DpsCalculator({ hiscores }: Props) {
                 <div className="mt-2 grid grid-cols-2 gap-2">
                   <div>
                     <label className="text-[10px] text-text-secondary/50">ToA Invocations</label>
-                    <input type="number" min={0} max={600} value={toaInvocation} onChange={(e) => setToaInvocation(Number(e.target.value))} className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm mt-1" />
+                    <input type="number" min={0} max={600} value={toaInvocation} onChange={(e) => setToaInvocation(Number(e.target.value))} className="w-full bg-bg-tertiary border border-border rounded-lg px-3 py-1.5 text-sm mt-1" />
                   </div>
                   <div>
                     <label className="text-[10px] text-text-secondary/50">CoX Party Size</label>
-                    <input type="number" min={1} max={100} value={coxPartySize} onChange={(e) => setCoxPartySize(Number(e.target.value))} className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm mt-1" />
+                    <input type="number" min={1} max={100} value={coxPartySize} onChange={(e) => setCoxPartySize(Number(e.target.value))} className="w-full bg-bg-tertiary border border-border rounded-lg px-3 py-1.5 text-sm mt-1" />
                   </div>
                 </div>
                 {(toaInvocation !== 0 || coxPartySize !== 1) && (
@@ -1194,8 +1198,8 @@ export default function DpsCalculator({ hiscores }: Props) {
         </div>
 
         {/* Results */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
+        <div className="rounded-xl border border-border/40 bg-bg-primary/20 p-4">
+          <div className="flex items-center justify-between mb-2">
             <div className="section-kicker">Results</div>
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
@@ -1203,7 +1207,7 @@ export default function DpsCalculator({ hiscores }: Props) {
                 <select
                   value={poisonType}
                   onChange={(e) => setPoisonType(e.target.value as "none" | "poison" | "venom")}
-                  className="bg-bg-tertiary border border-border rounded px-2 py-1 text-xs"
+                  className="bg-bg-tertiary border border-border rounded-lg px-2 py-1 text-xs"
                 >
                   <option value="none">None</option>
                   <option value="poison">Poison (+)</option>
@@ -1240,7 +1244,7 @@ export default function DpsCalculator({ hiscores }: Props) {
             </div>
           )}
           {phaseResults.length > 1 && (
-            <div className="mt-4 rounded-xl border border-border/60 overflow-hidden">
+            <div className="mt-4 rounded-lg border border-border/40 overflow-hidden">
               <div className="px-3 py-2 text-[10px] uppercase tracking-wider text-text-secondary/50 border-b border-border/40">
                 Per-Phase Breakdown
               </div>
@@ -1309,7 +1313,7 @@ export default function DpsCalculator({ hiscores }: Props) {
                     const l = loadouts.find((lo) => lo.name === e.target.value) ?? null;
                     setCompareLoadout(l);
                   }}
-                  className="flex-1 bg-bg-tertiary border border-border rounded px-2 py-1 text-xs"
+                  className="flex-1 bg-bg-tertiary border border-border rounded-lg px-2 py-1 text-xs"
                 >
                   <option value="">Select loadout...</option>
                   {loadouts.map((l) => (
@@ -1384,8 +1388,8 @@ function StatInput({
   suffix?: string;
 }) {
   return (
-    <div className="flex items-center gap-3">
-      <label className="w-28 text-sm text-text-secondary shrink-0">
+    <div className="flex items-center gap-2">
+      <label className="w-20 text-xs text-text-secondary shrink-0">
         {label}
       </label>
       <div className="flex-1 flex items-center gap-2">
@@ -1397,10 +1401,10 @@ function StatInput({
           onChange={(e) =>
             onChange(Math.max(min, Math.min(max, Number(e.target.value))))
           }
-          className="w-full bg-bg-tertiary border border-border rounded px-3 py-1.5 text-sm tabular-nums"
+          className="w-full bg-bg-tertiary border border-border rounded-lg px-3 py-1.5 text-sm tabular-nums"
         />
         {suffix && (
-          <span className="text-xs text-text-secondary shrink-0">
+          <span className="text-[10px] text-text-secondary/50 shrink-0">
             {suffix}
           </span>
         )}
