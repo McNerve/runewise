@@ -5,6 +5,11 @@ export function skillIcon(skill: string): string {
   return `${WIKI_IMG}/${name}_icon.png`;
 }
 
+/** Encode a raw GE mapping icon filename for use in a wiki image URL. */
+export function encodeIconFilename(filename: string): string {
+  return filename.replace(/ /g, "_").replace(/'/g, "%27");
+}
+
 export function itemIcon(itemName: string): string {
   const name = itemName
     .replace(/ \((\d)\)/g, "($1)")  // "Prayer potion (4)" → "Prayer potion(4)" (dose only)

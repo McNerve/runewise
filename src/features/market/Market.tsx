@@ -14,7 +14,7 @@ import {
 import { useDebounce } from "../../hooks/useDebounce";
 import { useWatchlist } from "../../hooks/useWatchlist";
 import { formatGp, timeAgo } from "../../lib/format";
-import { itemIcon } from "../../lib/sprites";
+import { itemIcon, encodeIconFilename, WIKI_IMG } from "../../lib/sprites";
 import { useNavigation } from "../../lib/NavigationContext";
 import WikiImage from "../../components/WikiImage";
 import { Skeleton, TableSkeleton } from "../../components/Skeleton";
@@ -134,7 +134,7 @@ function MarketDetail({
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
           <WikiImage
-            src={`https://oldschool.runescape.wiki/images/${item.icon}`}
+            src={`${WIKI_IMG}/${encodeIconFilename(item.icon)}`}
             alt={item.name}
             className="w-8 h-8"
             fallback={item.name[0]}
@@ -735,7 +735,7 @@ export default function Market({
                       <td className="px-4 py-2">
                         <div className="flex items-center gap-2">
                           <WikiImage
-                            src={`https://oldschool.runescape.wiki/images/${item.icon}`}
+                            src={`${WIKI_IMG}/${encodeIconFilename(item.icon)}`}
                             alt=""
                             className="w-5 h-5 shrink-0"
                             fallback={item.name[0]}

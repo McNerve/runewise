@@ -2,6 +2,7 @@ import { type ReactNode, useState } from "react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { fetchMapping, fetchLatestPrices, type ItemMapping, type ItemPrice } from "../lib/api/ge";
 import { formatGp } from "../lib/format";
+import { encodeIconFilename, WIKI_IMG } from "../lib/sprites";
 
 let mappingCache: Map<string, ItemMapping> | null = null;
 let pricesCache: Record<string, ItemPrice> | null = null;
@@ -46,7 +47,7 @@ export default function ItemTooltip({ itemName, children }: Props) {
         {item ? (
           <div className="flex gap-3 items-start">
             <img
-              src={`https://oldschool.runescape.wiki/images/${item.icon}`}
+              src={`${WIKI_IMG}/${encodeIconFilename(item.icon)}`}
               alt=""
               className="w-8 h-8 shrink-0 mt-0.5"
               onError={(e) => { e.currentTarget.style.display = "none"; }}

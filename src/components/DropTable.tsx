@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import type { WikiDrop } from "../lib/api/drops";
 import { formatGp } from "../lib/format";
-import { itemIcon } from "../lib/sprites";
+import { itemIcon, encodeIconFilename, WIKI_IMG } from "../lib/sprites";
 import { useNavigation } from "../lib/NavigationContext";
 import WikiImage from "./WikiImage";
 import ItemTooltip from "./ItemTooltip";
@@ -76,7 +76,7 @@ export default function DropTable({
 
   const getIconUrl = (name: string) => {
     const icon = iconMap?.get(name.toLowerCase());
-    return icon ? `https://oldschool.runescape.wiki/images/${icon}` : itemIcon(name);
+    return icon ? `${WIKI_IMG}/${encodeIconFilename(icon)}` : itemIcon(name);
   };
   const [sortKey, setSortKey] = useState<SortKey>("rarity");
   const [sortAsc, setSortAsc] = useState(true);
