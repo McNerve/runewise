@@ -137,6 +137,16 @@ export default function DryCalculator() {
 
         {/* Presets */}
         <div className="bg-bg-secondary rounded-lg p-3 overflow-y-auto max-h-[500px]">
+          <button
+            onClick={() => { setSelectedDrop(null); setRate(512); setKills(0); }}
+            className={`w-full mb-3 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+              !selectedDrop
+                ? "bg-accent text-white"
+                : "bg-bg-tertiary text-text-secondary hover:bg-bg-tertiary/80"
+            }`}
+          >
+            Manual Input
+          </button>
           <div className="section-kicker mb-2">Drop Presets</div>
           <div className="flex flex-wrap gap-1 mb-3">
             <button
