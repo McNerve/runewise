@@ -6,7 +6,7 @@ export function skillIcon(skill: string): string {
 }
 
 export function itemIcon(itemName: string): string {
-  const name = itemName.replace(/ /g, "_");
+  const name = itemName.replace(/ /g, "_").replace(/'/g, "%27");
   return `${WIKI_IMG}/${name}.png`;
 }
 

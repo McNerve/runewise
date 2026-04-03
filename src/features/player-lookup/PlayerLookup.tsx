@@ -94,8 +94,9 @@ function StatCompare({
           { rsn: leftRsn, data: left },
           { rsn: rightRsn, data: right },
         ].map(({ rsn, data }) => {
-          const totalXp = data.skills.reduce((s, sk) => s + sk.xp, 0);
-          const totalLevel = data.skills.reduce((s, sk) => s + sk.level, 0);
+          const overall = data.skills.find((sk) => sk.name === "Overall");
+          const totalXp = overall?.xp ?? data.skills.filter((sk) => sk.name !== "Overall").reduce((s, sk) => s + sk.xp, 0);
+          const totalLevel = overall?.level ?? data.skills.filter((sk) => sk.name !== "Overall").reduce((s, sk) => s + sk.level, 0);
           return (
             <div
               key={rsn}
@@ -255,6 +256,7 @@ export default function PlayerLookup() {
             <form
               onSubmit={(event) => {
                 event.preventDefault();
+                (document.activeElement as HTMLElement)?.blur();
                 void handleLookup(query);
               }}
               className="mt-4 flex flex-col gap-3 md:flex-row"

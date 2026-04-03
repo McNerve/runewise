@@ -8,6 +8,21 @@ import { useNavigation } from "../../lib/NavigationContext";
 import WikiImage from "../../components/WikiImage";
 import { TRAINING_METHODS } from "../../lib/data/training-methods";
 
+function ProgressRing({ obtained, total, size = 22 }: { obtained: number; total: number; size?: number }) {
+  const pct = total > 0 ? obtained / total : 0;
+  const r = (size - 3) / 2;
+  const c = 2 * Math.PI * r;
+  return (
+    <svg width={size} height={size} className="shrink-0">
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--color-bg-tertiary)" strokeWidth={2} />
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none"
+        stroke={pct >= 1 ? "var(--color-success)" : "var(--color-accent)"}
+        strokeWidth={2} strokeDasharray={c} strokeDashoffset={c * (1 - pct)}
+        strokeLinecap="round" transform={`rotate(-90 ${size / 2} ${size / 2})`} />
+    </svg>
+  );
+}
+
 interface Props {
   hiscores: HiscoreData;
   rsn: string;
@@ -105,17 +120,20 @@ export default function Overview({ hiscores, rsn }: Props) {
 
       {/* Summary cards */}
       <div className="grid grid-cols-4 gap-3 mb-6">
-        <div className="text-center">
+        <div className="flex flex-col items-center gap-1">
+          <img src={`${WIKI_IMG}/Attack_style_icon.png`} alt="" className="w-5 h-5 opacity-50" onError={(e) => { e.currentTarget.style.display = "none"; }} />
           <div className="text-2xl font-bold text-accent">
             {cmb.toFixed(0)}
           </div>
           <div className="text-xs text-text-secondary">Combat</div>
         </div>
-        <div className="text-center">
+        <div className="flex flex-col items-center gap-1">
+          <img src={`${WIKI_IMG}/Stats_icon.png`} alt="" className="w-5 h-5 opacity-50" onError={(e) => { e.currentTarget.style.display = "none"; }} />
           <div className="text-2xl font-bold">{totalLevel.toLocaleString()}</div>
           <div className="text-xs text-text-secondary">Total Level</div>
         </div>
-        <div className="text-center">
+        <div className="flex flex-col items-center gap-1">
+          <img src={`${WIKI_IMG}/Antique_lamp.png`} alt="" className="w-5 h-5 opacity-50" onError={(e) => { e.currentTarget.style.display = "none"; }} />
           <div className="text-2xl font-bold">
             {totalXp >= 1_000_000_000
               ? `${(totalXp / 1_000_000_000).toFixed(1)}B`
@@ -123,8 +141,13 @@ export default function Overview({ hiscores, rsn }: Props) {
           </div>
           <div className="text-xs text-text-secondary">Total XP</div>
         </div>
-        <div className="text-center">
-          <div className="text-2xl font-bold text-success">
+        <div className="flex flex-col items-center gap-1">
+          {maxedSkills >= 24 ? (
+            <img src={`${WIKI_IMG}/Max_cape.png`} alt="" className="w-5 h-5 opacity-50" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+          ) : (
+            <ProgressRing obtained={maxedSkills} total={24} size={22} />
+          )}
+          <div className={`text-2xl font-bold ${maxedSkills >= 24 ? "text-success" : ""}`}>
             {maxedSkills}/24
           </div>
           <div className="text-xs text-text-secondary">Maxed Skills</div>
@@ -176,19 +199,6 @@ export default function Overview({ hiscores, rsn }: Props) {
           </div>
         )}
       </div>
-
-      {/* Clue scroll breakdown */}
-      {clueTiers.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mb-4 justify-center">
-          {clueTiers.map((c) => (
-            <div key={c.tier} className="px-3 py-2 flex items-center gap-2">
-              <WikiImage src={itemIcon(`Clue scroll (${c.tier})`)} alt="" className="w-4 h-4" fallback="C" />
-              <div className="text-sm font-bold">{c.count}</div>
-              <div className="text-[10px] text-text-secondary capitalize">{c.tier}</div>
-            </div>
-          ))}
-        </div>
-      )}
 
       {/* WOM data: EHP, EHB, account type */}
       <div className="flex items-center gap-3 mb-4 text-xs text-text-secondary">
@@ -259,6 +269,25 @@ export default function Overview({ hiscores, rsn }: Props) {
           );
         })}
       </div>
+      {/* Clue scroll breakdown */}
+      {clueTiers.length > 0 && (
+        <div className="mt-6">
+          <h3 className="text-xs uppercase tracking-wider text-text-secondary/60 mb-2">
+            Clue Scrolls
+          </h3>
+          <div className="flex flex-wrap gap-2 justify-center">
+            {clueTiers.map((c) => (
+              <div key={c.tier} className="flex items-center gap-2 px-4 py-2.5">
+                <WikiImage src={itemIcon(`Clue scroll (${c.tier})`)} alt="" className="w-5 h-5" fallback="C" />
+                <div>
+                  <div className="text-sm font-bold">{c.count}</div>
+                  <div className="text-[10px] text-text-secondary capitalize">{c.tier}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       {/* Minigames */}
       {hasMinigames && (
         <div className="mt-6">
@@ -286,7 +315,7 @@ export default function Overview({ hiscores, rsn }: Props) {
             )}
             {rifts > 0 && (
               <div className="flex items-center gap-2 px-4 py-2.5">
-                <img src={`${WIKI_IMG}/Guardian_of_the_Rift_icon.png`} alt="" className="w-5 h-5" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                <img src={`${WIKI_IMG}/Guardians_of_the_Rift_logo.png`} alt="" className="w-5 h-5" onError={(e) => { e.currentTarget.style.display = "none"; }} />
                 <div>
                   <div className="text-sm font-bold">{rifts.toLocaleString()}</div>
                   <div className="text-[10px] text-text-secondary">GOTR Rifts</div>

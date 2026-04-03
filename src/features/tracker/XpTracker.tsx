@@ -1,5 +1,11 @@
 import { useState, useEffect } from "react";
 import { useNavigation } from "../../lib/NavigationContext";
+import { WIKI_IMG, skillIcon, bossIconSmall } from "../../lib/sprites";
+
+function skillIconUrl(name: string): string {
+  if (name === "Overall") return `${WIKI_IMG}/Stats_icon.png`;
+  return skillIcon(name);
+}
 import {
   fetchWomGains,
   fetchWomAchievements,
@@ -53,6 +59,56 @@ const SKILL_NAMES: Record<string, string> = {
   sailing: "Sailing",
 };
 
+const formatBossName = (key: string) =>
+  key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+
+// WOM metric keys → display names that match our sprite maps
+const METRIC_FIXUPS: Record<string, string> = {
+  kril_tsutsaroth: "K'ril Tsutsaroth",
+  kreearra: "Kree'Arra",
+  tztok_jad: "TzTok-Jad",
+  tzkal_zuk: "TzKal-Zuk",
+  vetion: "Vet'ion",
+  calvarion: "Calvar'ion",
+  phosanis_nightmare: "Phosani's Nightmare",
+  theatre_of_blood: "Theatre of Blood",
+  chambers_of_xeric: "Chambers of Xeric",
+  tombs_of_amascut: "Tombs of Amascut",
+  the_corrupted_gauntlet: "The Corrupted Gauntlet",
+  the_gauntlet: "The Gauntlet",
+  the_leviathan: "The Leviathan",
+  the_whisperer: "The Whisperer",
+  moons_of_peril: "Moons of Peril",
+  the_royal_titans: "The Royal Titans",
+  fortis_colosseum: "The Fortis Colosseum",
+  sol_heredit: "Sol Heredit",
+  collections_logged: "Collection Log",
+  last_man_standing: "Last Man Standing",
+  soul_wars_zeal: "Soul Wars",
+  bounty_hunter_hunter: "Bounty Hunter",
+  bounty_hunter_rogue: "Bounty Hunter",
+  league_points: "League Points",
+  ehp: "Overall",
+  ehb: "Overall",
+};
+
+// Resolve WOM metric to icon URL
+function metricIconUrl(rawMetric: string): string | null {
+  const fixedName = METRIC_FIXUPS[rawMetric];
+  if (fixedName) {
+    if (rawMetric in SKILL_NAMES || fixedName === "Overall" || fixedName === "Collection Log") {
+      return skillIconUrl(fixedName);
+    }
+    return bossIconSmall(fixedName);
+  }
+  if (rawMetric in SKILL_NAMES) return skillIconUrl(SKILL_NAMES[rawMetric]!);
+  return bossIconSmall(formatBossName(rawMetric));
+}
+
+function metricDisplayName(rawMetric: string): string {
+  return METRIC_FIXUPS[rawMetric] ?? SKILL_NAMES[rawMetric] ?? formatBossName(rawMetric);
+}
+
 function CompetitionsView({ competitions }: { competitions: WomPlayerCompetition[] }) {
   const now = new Date();
   const sorted = [...competitions].sort(
@@ -65,21 +121,27 @@ function CompetitionsView({ competitions }: { competitions: WomPlayerCompetition
         const comp = pc.competition;
         if (!comp) return null;
         const isActive = new Date(comp.endsAt ?? 0) > now;
-        const metric = (comp.metric ?? "").replace(/_/g, " ");
+        const rawMetric = comp.metric ?? "";
+        const metric = rawMetric.replace(/_/g, " ");
+        const compIcon = metricIconUrl(rawMetric);
         const start = comp.startsAt ? new Date(comp.startsAt).toLocaleDateString() : "—";
         const end = comp.endsAt ? new Date(comp.endsAt).toLocaleDateString() : "—";
         const gained = pc.progress?.gained ?? 0;
         const rank = pc.rank ?? 0;
         return (
-          <div
+          <a
             key={comp.id}
-            className={`bg-bg-secondary rounded-lg px-4 py-3 border-l-2 ${
-              isActive ? "border-success" : "border-border/30"
+            href={`https://wiseoldman.net/competitions/${comp.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`block bg-bg-secondary rounded-lg px-4 py-3 border-l-2 transition-colors hover:bg-bg-tertiary ${
+              isActive ? "border-success" : "border-border/30 opacity-50"
             }`}
           >
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
+                  <img src={compIcon ?? ""} alt="" className="w-4 h-4" onError={(e) => { e.currentTarget.style.display = "none"; }} />
                   <span className="text-sm font-medium">{comp.title ?? "Untitled"}</span>
                   {isActive && (
                     <span className="text-[10px] px-1.5 py-0.5 rounded bg-success/20 text-success">Active</span>
@@ -100,9 +162,11 @@ function CompetitionsView({ competitions }: { competitions: WomPlayerCompetition
                 )}
               </div>
               <div className="text-right shrink-0">
-                <div className="text-sm font-medium tabular-nums">
-                  {gained > 0 ? `+${gained.toLocaleString()}` : gained.toLocaleString()}
-                </div>
+                {gained !== 0 && (
+                  <div className={`text-sm font-medium tabular-nums ${gained > 0 ? "text-success" : ""}`}>
+                    {gained > 0 ? `+${gained.toLocaleString()}` : gained.toLocaleString()}
+                  </div>
+                )}
                 {rank > 0 && (
                   <div className="text-[10px] text-text-secondary">Rank #{rank.toLocaleString()}</div>
                 )}
@@ -111,7 +175,7 @@ function CompetitionsView({ competitions }: { competitions: WomPlayerCompetition
                 </div>
               </div>
             </div>
-          </div>
+          </a>
         );
       })}
     </div>
@@ -197,10 +261,6 @@ export default function XpTracker({ rsn }: Props) {
         .sort((a, b) => b[1].kills.gained - a[1].kills.gained)
     : [];
 
-  const formatBossName = (key: string) =>
-    key
-      .replace(/_/g, " ")
-      .replace(/\b\w/g, (c) => c.toUpperCase());
 
   return (
     <div className="max-w-3xl">
@@ -289,15 +349,18 @@ export default function XpTracker({ rsn }: Props) {
                         <td className="px-4 py-1.5 font-medium">
                           <button
                             onClick={() => navigate("skill-calc", { skill: SKILL_NAMES[key] ?? key })}
-                            className="hover:text-accent transition-colors"
+                            className="flex items-center gap-2 hover:text-accent transition-colors"
                           >
+                            <img src={skillIconUrl(SKILL_NAMES[key] ?? key)} alt="" className="w-4 h-4" onError={(e) => { e.currentTarget.style.display = "none"; }} />
                             {SKILL_NAMES[key] ?? key}
                           </button>
                         </td>
-                        <td className="px-4 py-1.5 text-right text-success">
+                        <td className="px-4 py-1.5 text-right text-success tabular-nums">
                           +{data.experience.gained.toLocaleString()}
                         </td>
-                        <td className="px-4 py-1.5 text-right text-text-secondary">
+                        <td className={`px-4 py-1.5 text-right tabular-nums ${
+                          data.rank.gained < 0 ? "text-success" : data.rank.gained > 0 ? "text-danger" : "text-text-secondary"
+                        }`}>
                           {data.rank.gained > 0
                             ? `+${data.rank.gained.toLocaleString()}`
                             : data.rank.gained < 0
@@ -332,9 +395,15 @@ export default function XpTracker({ rsn }: Props) {
                         className="border-b border-border/50 even:bg-bg-primary/30 hover:bg-bg-tertiary"
                       >
                         <td className="px-4 py-1.5 font-medium">
-                          {formatBossName(key)}
+                          <button
+                            onClick={() => navigate("bosses", { boss: formatBossName(key) })}
+                            className="flex items-center gap-2 hover:text-accent transition-colors"
+                          >
+                            <img src={bossIconSmall(formatBossName(key))} alt="" className="w-4 h-4" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                            {formatBossName(key)}
+                          </button>
                         </td>
-                        <td className="px-4 py-1.5 text-right text-success">
+                        <td className="px-4 py-1.5 text-right text-success tabular-nums">
                           +{data.kills.gained.toLocaleString()}
                         </td>
                       </tr>
@@ -370,8 +439,11 @@ export default function XpTracker({ rsn }: Props) {
                   className="border-b border-border/50 even:bg-bg-primary/30 hover:bg-bg-tertiary"
                 >
                   <td className="px-4 py-1.5 font-medium">{a.name}</td>
-                  <td className="px-4 py-1.5 text-text-secondary capitalize">
-                    {a.metric}
+                  <td className="px-4 py-1.5 text-text-secondary">
+                    <span className="flex items-center gap-2">
+                      <img src={metricIconUrl(a.metric) ?? ""} alt="" className="w-4 h-4" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                      {metricDisplayName(a.metric)}
+                    </span>
                   </td>
                   <td className="px-4 py-1.5 text-right text-text-secondary">
                     {new Date(a.createdAt).toLocaleDateString()}
@@ -383,37 +455,71 @@ export default function XpTracker({ rsn }: Props) {
         </div>
       )}
 
-      {tab === "records" && !loading && (
-        <div className="bg-bg-secondary rounded-lg overflow-hidden max-h-[500px] overflow-y-auto">
-          <table className="w-full text-sm">
-            <thead className="sticky top-0 bg-bg-secondary">
-              <tr className="border-b border-border text-text-secondary text-xs">
-                <th scope="col" className="text-left px-4 py-2">Activity</th>
-                <th scope="col" className="text-left px-4 py-2">Period</th>
-                <th scope="col" className="text-right px-4 py-2">Record</th>
-              </tr>
-            </thead>
-            <tbody>
-              {records.slice(0, 50).map((r, i) => (
-                <tr
-                  key={i}
-                  className="border-b border-border/50 even:bg-bg-primary/30 hover:bg-bg-tertiary"
-                >
-                  <td className="px-4 py-1.5 font-medium capitalize">
-                    {r.metric.replace(/_/g, " ")}
-                  </td>
-                  <td className="px-4 py-1.5 text-text-secondary capitalize">
-                    {r.period}
-                  </td>
-                  <td className="px-4 py-1.5 text-right text-success">
-                    {r.value.toLocaleString()}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      {tab === "records" && !loading && (() => {
+        const PERIOD_ORDER = ["five_min", "day", "week", "month", "year"];
+        const PERIOD_LABELS: Record<string, string> = { five_min: "5 Min", day: "Day", week: "Week", month: "Month", year: "Year" };
+        // Group records by metric
+        const grouped = new Map<string, typeof records>();
+        for (const r of records) {
+          const group = grouped.get(r.metric) ?? [];
+          group.push(r);
+          grouped.set(r.metric, group);
+        }
+        // Sort groups: skills first (by SKILL_NAMES key order), then bosses
+        const sortedGroups = [...grouped.entries()].sort(([a], [b]) => {
+          const aSkill = a in SKILL_NAMES;
+          const bSkill = b in SKILL_NAMES;
+          if (aSkill && !bSkill) return -1;
+          if (!aSkill && bSkill) return 1;
+          return metricDisplayName(a).localeCompare(metricDisplayName(b));
+        });
+
+        function formatValue(v: number): string {
+          if (v >= 1_000_000) return `+${(v / 1_000_000).toFixed(2)}m`;
+          if (v >= 1_000) return `+${(v / 1_000).toFixed(v >= 10_000 ? 0 : 1)}k`;
+          return `+${v.toLocaleString()}`;
+        }
+
+        return (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {sortedGroups.map(([metric, recs]) => (
+              <div key={metric}>
+                <div className="flex items-center gap-2 mb-2">
+                  <img src={metricIconUrl(metric) ?? ""} alt="" className="w-5 h-5" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                  <span className="text-sm font-semibold">{metricDisplayName(metric)}</span>
+                </div>
+                <div className="space-y-1">
+                  {PERIOD_ORDER.map((period) => {
+                    const rec = recs.find((r) => r.period === period);
+                    return (
+                      <div
+                        key={period}
+                        className="flex items-center justify-between px-3 py-2 rounded-lg border border-border/30 bg-bg-secondary/40"
+                      >
+                        <span className="text-xs text-text-secondary">{PERIOD_LABELS[period] ?? period}</span>
+                        <div className="text-right">
+                          {rec && rec.value > 0 ? (
+                            <>
+                              <div className="text-sm font-semibold text-success tabular-nums">
+                                {formatValue(rec.value)}
+                              </div>
+                              <div className="text-[10px] text-text-secondary/50">
+                                {new Date(rec.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                              </div>
+                            </>
+                          ) : (
+                            <span className="text-xs text-text-secondary/30">N/A</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      })()}
 
       {tab === "competitions" && (
         <div>
