@@ -20,6 +20,14 @@ import ModifierToggles from "./components/ModifierToggles";
 import DpsBreakdown from "./components/DpsBreakdown";
 import GearSelector from "./GearSelector";
 import { getPhaseBoss, type BossPhase } from "../../lib/data/boss-phases";
+import { getSpecWeaponsForStyle, type SpecWeapon } from "../../lib/data/spec-weapons";
+import { calculateSpecDps } from "../../lib/formulas/dps";
+import {
+  COMBAT_SPELLS,
+  spellMaxHit,
+  magicDartBaseMaxHit,
+  type CombatSpell,
+} from "../../lib/data/combat-spells";
 
 type CombatStyle = "melee" | "ranged" | "magic";
 type BonusMode = "equipment" | "manual";
@@ -124,6 +132,8 @@ export default function DpsCalculator({ hiscores }: Props) {
     loadJSON(LOADOUTS_KEY, [])
   );
   const [loadoutName, setLoadoutName] = useState("");
+  const [selectedSpec, setSelectedSpec] = useState<SpecWeapon | null>(null);
+  const [selectedSpell, setSelectedSpell] = useState<CombatSpell | null>(null);
   const pendingLoadout = useRef<GearLoadout | null>(null);
 
   // Gear selector state
@@ -233,6 +243,8 @@ export default function DpsCalculator({ hiscores }: Props) {
       setPrayerIdx(0);
       setAttackSpeed(DEFAULT_SPEED[combatStyle]);
       setActiveModifiers(new Set());
+      setSelectedSpec(null);
+      setSelectedSpell(null);
     }
   }, [combatStyle]);
 
@@ -296,6 +308,13 @@ export default function DpsCalculator({ hiscores }: Props) {
     [activeModifiers]
   );
 
+  // Spell-based max hit for magic combat style
+  const activeSpellBase = useMemo(() => {
+    if (combatStyle !== "magic" || !selectedSpell) return undefined;
+    if (selectedSpell.id === "magic_dart") return magicDartBaseMaxHit(magicLevel);
+    return selectedSpell.baseMaxHit;
+  }, [combatStyle, selectedSpell, magicLevel]);
+
   /* eslint-disable react-hooks/preserve-manual-memoization */
   const result = useMemo(
     () =>
@@ -318,6 +337,7 @@ export default function DpsCalculator({ hiscores }: Props) {
         targetMagicLevel: selectedMonster?.magicLevel,
         modifiers: modifierList,
         defReductions,
+        spellBaseMaxHit: activeSpellBase,
       }),
     [
       attackLevel,
@@ -336,6 +356,7 @@ export default function DpsCalculator({ hiscores }: Props) {
       selectedMonster?.magicLevel,
       modifierList,
       defReductions,
+      activeSpellBase,
     ]
   );
   /* eslint-enable react-hooks/preserve-manual-memoization */
@@ -372,6 +393,40 @@ export default function DpsCalculator({ hiscores }: Props) {
       }),
     }));
   }, [phaseMonsters, attackLevel, strengthLevel, rangedLevel, magicLevel, effectiveAttackBonus, effectiveStrengthBonus, prayerAttackMult, prayerStrengthMult, stanceAttackBonus, stanceStrengthBonus, effectiveAttackSpeed, combatStyle, modifierList, defReductions]);
+
+  const specWeapons = useMemo(
+    () => getSpecWeaponsForStyle(combatStyle),
+    [combatStyle]
+  );
+
+  const specResult = useMemo(() => {
+    if (!selectedSpec) return null;
+    return calculateSpecDps({
+      attackLevel,
+      strengthLevel,
+      rangedLevel,
+      magicLevel,
+      attackBonus: effectiveAttackBonus,
+      strengthBonus: effectiveStrengthBonus,
+      prayerAttackMult,
+      prayerStrengthMult,
+      stanceAttackBonus,
+      stanceStrengthBonus,
+      attackSpeed: effectiveAttackSpeed,
+      combatStyle,
+      targetDefLevel,
+      targetDefBonus,
+      targetHp,
+      targetMagicLevel: selectedMonster?.magicLevel,
+      modifiers: modifierList,
+      defReductions,
+      specAccuracyMult: selectedSpec.accuracyMult,
+      specDamageMult: selectedSpec.damageMult,
+      specHits: selectedSpec.hits,
+      specGuaranteedHit: selectedSpec.guaranteedHit,
+      specSpeed: effectiveAttackSpeed,
+    });
+  }, [selectedSpec, attackLevel, strengthLevel, rangedLevel, magicLevel, effectiveAttackBonus, effectiveStrengthBonus, prayerAttackMult, prayerStrengthMult, stanceAttackBonus, stanceStrengthBonus, effectiveAttackSpeed, combatStyle, targetDefLevel, targetDefBonus, targetHp, selectedMonster?.magicLevel, modifierList, defReductions]);
 
   const toggleModifier = useCallback((id: string) => { // eslint-disable-line react-hooks/preserve-manual-memoization
     setActiveModifiers((prev) => {
@@ -825,13 +880,10 @@ export default function DpsCalculator({ hiscores }: Props) {
                         : "bg-bg-tertiary/40 text-text-secondary hover:bg-bg-tertiary border border-border/20"
                     }`}
                   >
-                    <div className="flex items-center justify-between gap-1">
-                      <span className="font-medium">{s.name}</span>
-                      <span className={`text-[9px] uppercase tracking-wider ${isActive ? typeColor : "text-text-secondary/35"}`}>
-                        {s.attackType}
-                      </span>
-                    </div>
-                    <div className={`text-[10px] mt-0.5 ${isActive ? "text-accent" : "text-text-secondary/40"}`}>
+                    <div className="font-medium truncate">{s.name}</div>
+                    <div className={`text-[9px] mt-0.5 ${isActive ? "text-accent" : "text-text-secondary/40"}`}>
+                      <span className={isActive ? typeColor : ""}>{s.attackType}</span>
+                      <span className="mx-0.5">·</span>
                       {s.style}
                     </div>
                     {bonusParts.length > 0 && (
@@ -852,6 +904,53 @@ export default function DpsCalculator({ hiscores }: Props) {
             )}
           </div>
         </div>
+
+        {/* Spell Selection (magic only) */}
+        {combatStyle === "magic" && (
+          <div>
+            <div className="section-kicker mb-2">Spell</div>
+            <select
+              value={selectedSpell?.id ?? ""}
+              onChange={(e) => {
+                const spell = COMBAT_SPELLS.find((s) => s.id === e.target.value) ?? null;
+                setSelectedSpell(spell);
+              }}
+              className="w-full bg-bg-tertiary border border-border rounded-lg px-3 py-1.5 text-sm"
+            >
+              <option value="">Powered staff (level-based)</option>
+              <optgroup label="Standard">
+                {COMBAT_SPELLS.filter((s) => s.spellbook === "standard").map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name} — Base {s.id === "magic_dart" ? `${magicDartBaseMaxHit(magicLevel)}` : s.baseMaxHit} (Lvl {s.magicLevel})
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label="Ancient Magicks">
+                {COMBAT_SPELLS.filter((s) => s.spellbook === "ancient").map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name} — Base {s.baseMaxHit} (Lvl {s.magicLevel})
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label="Arceuus">
+                {COMBAT_SPELLS.filter((s) => s.spellbook === "arceuus").map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name} — Base {s.baseMaxHit} (Lvl {s.magicLevel})
+                  </option>
+                ))}
+              </optgroup>
+            </select>
+            {selectedSpell && (
+              <div className="mt-1.5 text-[10px] text-text-secondary">
+                <span className="text-text-primary font-medium">{selectedSpell.name}</span>
+                <span className="text-text-secondary/40"> · base {activeSpellBase} · with gear {spellMaxHit(activeSpellBase ?? 0, effectiveStrengthBonus)}</span>
+                {selectedSpell.notes && (
+                  <span className="text-text-secondary/30"> · {selectedSpell.notes}</span>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Modifiers */}
         <div>
@@ -961,6 +1060,54 @@ export default function DpsCalculator({ hiscores }: Props) {
               </div>
             )}
           </div>
+        </div>
+
+        {/* Spec Weapon */}
+        <div>
+          <div className="section-kicker mb-2">Special Attack</div>
+          <select
+            value={selectedSpec?.id ?? ""}
+            onChange={(e) => {
+              const spec = specWeapons.find((s) => s.id === e.target.value) ?? null;
+              setSelectedSpec(spec);
+            }}
+            className="w-full bg-bg-tertiary border border-border rounded-lg px-3 py-1.5 text-sm"
+          >
+            <option value="">None</option>
+            {specWeapons.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name} — {s.specName} ({s.specCost}%)
+              </option>
+            ))}
+          </select>
+          {selectedSpec && specResult && (
+            <div className="mt-2 rounded-lg border border-border/40 bg-bg-tertiary/30 p-3">
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div>
+                  <div className="text-lg font-bold text-accent tabular-nums">{specResult.specMaxHit}</div>
+                  <div className="text-[10px] text-text-secondary">Spec Max</div>
+                </div>
+                <div>
+                  <div className={`text-lg font-bold tabular-nums ${
+                    specResult.specAccuracy >= 0.8 ? "text-success" : specResult.specAccuracy >= 0.5 ? "text-warning" : "text-danger"
+                  }`}>
+                    {(specResult.specAccuracy * 100).toFixed(1)}%
+                  </div>
+                  <div className="text-[10px] text-text-secondary">Spec Acc</div>
+                </div>
+                <div>
+                  <div className="text-lg font-bold text-accent tabular-nums">{specResult.specDps.toFixed(2)}</div>
+                  <div className="text-[10px] text-text-secondary">Spec DPS</div>
+                </div>
+              </div>
+              {selectedSpec.hits > 1 && (
+                <div className="mt-1.5 text-[10px] text-text-secondary/50 text-center">
+                  {selectedSpec.hits} hits × {Math.floor(specResult.specMaxHit / selectedSpec.hits)} each
+                </div>
+              )}
+              <div className="mt-1.5 text-[10px] text-text-secondary/40 text-center">{selectedSpec.notes}</div>
+            </div>
+          )}
         </div>
 
         {/* Results */}

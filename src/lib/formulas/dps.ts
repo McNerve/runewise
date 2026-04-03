@@ -17,6 +17,7 @@ export interface DpsInput {
   targetMagicLevel?: number;
   modifiers?: DpsModifier[];
   defReductions?: number; // number of successful DWH/BGS specs (each reduces def by 30%)
+  spellBaseMaxHit?: number; // when set, overrides level-based max hit with spell-based formula
 }
 
 export interface DpsModifier {
@@ -281,7 +282,11 @@ export function calculateDps(input: DpsInput) {
     input.stanceStrengthBonus
   );
 
-  let mh = maxHit(effStr, input.strengthBonus);
+  // When a spell is selected, use spell base max hit + magic damage %
+  // instead of level-based formula. strengthBonus holds magic damage % for magic style.
+  let mh = input.spellBaseMaxHit != null
+    ? Math.floor(input.spellBaseMaxHit * (1 + input.strengthBonus / 100))
+    : maxHit(effStr, input.strengthBonus);
   let ar = attackRoll(effAtk, input.attackBonus);
 
   if (input.modifiers && input.modifiers.length > 0) {
@@ -308,6 +313,35 @@ export function calculateDps(input: DpsInput) {
   const ttk = timeToKill(input.targetHp, d);
 
   return { maxHit: mh, accuracy: acc, dps: d, ttk, attackRoll: ar, defenseRoll: dr };
+}
+
+export interface SpecDpsInput extends DpsInput {
+  specAccuracyMult: number;
+  specDamageMult: number;
+  specHits: number;
+  specGuaranteedHit: boolean;
+  specSpeed: number;
+}
+
+export function calculateSpecDps(input: SpecDpsInput) {
+  const base = calculateDps(input);
+  const specMaxHit = Math.floor(base.maxHit * input.specDamageMult);
+  const specAttackRoll = Math.floor(base.attackRoll * input.specAccuracyMult);
+  const specAccuracy = input.specGuaranteedHit
+    ? 1.0
+    : hitChance(specAttackRoll, base.defenseRoll);
+  const specDpsPerHit = dps(specMaxHit, specAccuracy, input.specSpeed);
+  const specTotalDps = specDpsPerHit * input.specHits;
+  const specTotalMaxHit = specMaxHit * input.specHits;
+
+  return {
+    ...base,
+    specMaxHit: specTotalMaxHit,
+    specAccuracy,
+    specDps: specTotalDps,
+    specTtk: input.targetHp > 0 && specTotalDps > 0 ? input.targetHp / specTotalDps : Infinity,
+    specAttackRoll,
+  };
 }
 
 export function poisonDps(type: "none" | "poison" | "venom"): number {
