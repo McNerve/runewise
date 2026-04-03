@@ -11,6 +11,7 @@ import {
   type TempleClogSchema,
 } from "../../lib/api/temple";
 import { clearCacheKey } from "../../lib/api/cache";
+import { useNavigation } from "../../lib/NavigationContext";
 import EmptyState from "../../components/EmptyState";
 
 const STORAGE_KEY = "runewise_collection_log";
@@ -68,9 +69,40 @@ function ProgressRing({
 }
 
 
+// Temple title-cases names ("Smashed Mirror") but wiki uses game casing ("Smashed_mirror.png")
+// Try original first, fall back to wiki-convention casing
+function itemIconWithFallback(name: string): { primary: string; fallback: string } {
+  const primary = itemIcon(name);
+  const wikiCased = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+  const fallback = itemIcon(wikiCased);
+  return { primary, fallback };
+}
+
+function ClogItemImage({ name, className }: { name: string; className?: string }) {
+  const { primary, fallback } = itemIconWithFallback(name);
+  return (
+    <img
+      src={primary}
+      alt={name}
+      className={className}
+      onError={(e) => {
+        const el = e.currentTarget;
+        if (el.src !== fallback) {
+          el.src = fallback;
+        } else {
+          el.style.display = "none";
+          const next = el.nextElementSibling;
+          if (next instanceof HTMLElement) next.style.display = "flex";
+        }
+      }}
+    />
+  );
+}
+
 type ItemFilter = "all" | "obtained" | "missing";
 
 function TempleView({ data }: { data: TempleCollectionLog }) {
+  const { navigate } = useNavigation();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [itemFilter, setItemFilter] = useState<ItemFilter>("all");
   const [activeTab, setActiveTab] = useState<string>("bosses");
@@ -188,20 +220,28 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
     <>
       {/* ── Summary stats ── */}
       <div className="grid grid-cols-3 gap-px rounded-xl overflow-hidden border border-border/40 mb-6">
-        <div className="bg-bg-secondary/50 px-4 py-3 text-center">
-          <div className="text-[10px] uppercase tracking-wider text-text-secondary/50">Collections</div>
-          <div className="text-lg font-bold tabular-nums mt-1">{data.finished} / {data.total}</div>
-          <div className="text-[10px] text-text-secondary/40">{((data.finished / data.total) * 100).toFixed(1)}%</div>
+        <div className="bg-bg-secondary/50 px-5 py-4 flex items-center gap-3">
+          <img src={NAV_ICONS["collection-log"]} alt="" className="w-8 h-8 shrink-0 opacity-60" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+          <div>
+            <div className="text-[10px] uppercase tracking-wider text-text-secondary/50">Collections</div>
+            <div className="text-lg font-bold tabular-nums">{data.finished} / {data.total}</div>
+            <div className="text-[10px] text-text-secondary/40">{((data.finished / data.total) * 100).toFixed(1)}%</div>
+          </div>
         </div>
-        <div className="bg-bg-secondary/50 px-4 py-3 text-center">
-          <div className="text-[10px] uppercase tracking-wider text-text-secondary/50">Categories</div>
-          <div className="text-lg font-bold tabular-nums mt-1">{completedCats} / {totalCats}</div>
-          <div className="text-[10px] text-text-secondary/40">completed</div>
+        <div className="bg-bg-secondary/50 px-5 py-4 flex items-center gap-3">
+          <ProgressRing obtained={completedCats} total={totalCats} size={32} />
+          <div>
+            <div className="text-[10px] uppercase tracking-wider text-text-secondary/50">Categories</div>
+            <div className="text-lg font-bold tabular-nums">{completedCats} / {totalCats}</div>
+            <div className="text-[10px] text-text-secondary/40">completed</div>
+          </div>
         </div>
-        <div className="bg-bg-secondary/50 px-4 py-3 text-center">
-          <div className="text-[10px] uppercase tracking-wider text-text-secondary/50">Source</div>
-          <div className="text-sm font-medium mt-1 text-accent">TempleOSRS</div>
-          <div className="text-[10px] text-text-secondary/40">live sync</div>
+        <div className="bg-bg-secondary/50 px-5 py-4 flex items-center gap-3 justify-center">
+          <div className="text-center">
+            <div className="text-[10px] uppercase tracking-wider text-text-secondary/50">Source</div>
+            <div className="text-sm font-medium mt-1 text-accent">TempleOSRS</div>
+            <div className="text-[10px] text-text-secondary/40">live sync</div>
+          </div>
         </div>
       </div>
 
@@ -209,28 +249,32 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
       {recentItems.length > 0 && (
         <div className="mb-6">
           <div className="text-[10px] uppercase tracking-wider text-text-secondary/50 mb-2">Recently Obtained</div>
-          <div className="flex gap-3 overflow-x-auto pb-2">
+          <div className="flex gap-2 overflow-x-auto pb-2">
             {recentItems.map((item) => {
               const name = resolveName(item);
               const date = item.obtained_at ? new Date(item.obtained_at + " UTC") : null;
               return (
-                <div key={`recent-${item.id}-${item.obtained_at}`} className="flex flex-col items-center gap-1.5 min-w-[80px]">
+                <div
+                  key={`recent-${item.id}-${item.obtained_at}`}
+                  className="flex flex-col items-center gap-1.5 min-w-[110px] max-w-[110px] p-2.5 rounded-lg bg-bg-secondary/30 hover:bg-bg-secondary/50 transition-colors cursor-pointer"
+                  onClick={() => navigate("wiki", { query: name })}
+                >
                   <div className="relative">
-                    <div className="w-12 h-12 rounded-xl bg-bg-tertiary/50 border border-border/30 flex items-center justify-center">
-                      <img
-                        src={itemIcon(name)}
-                        alt=""
-                        className="w-8 h-8 object-contain"
-                        onError={(e) => { e.currentTarget.style.display = "none"; }}
-                      />
+                    <div className="w-14 h-14 rounded-xl bg-bg-tertiary/40 border border-border/30 flex items-center justify-center">
+                      <ClogItemImage name={name} className="w-10 h-10 object-contain" />
+                      <span className="hidden w-10 h-10 items-center justify-center text-sm text-text-secondary/30">
+                        {name[0]}
+                      </span>
                     </div>
                     {item.count > 1 && (
-                      <span className="absolute -top-1 -right-1 bg-accent text-white text-[9px] font-bold rounded-full px-1 min-w-[16px] text-center">
+                      <span className="absolute -top-1.5 -right-1.5 bg-accent text-white text-[10px] font-bold rounded-full px-1.5 min-w-[18px] text-center leading-[18px] shadow-sm shadow-black/30">
                         {item.count}
                       </span>
                     )}
                   </div>
-                  <span className="text-[10px] text-text-primary text-center truncate max-w-[80px]">{name}</span>
+                  <span className="text-[10px] text-text-primary text-center leading-tight w-full line-clamp-2">
+                    {name}
+                  </span>
                   {date && (
                     <span className="text-[9px] text-text-secondary/40">
                       {date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
@@ -357,7 +401,8 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
                   return (
                     <div
                       key={item.id}
-                      className={`group flex flex-col items-center gap-1 p-2 rounded-lg transition-all cursor-default ${
+                      onClick={() => navigate("wiki", { query: name })}
+                      className={`group flex flex-col items-center gap-1 p-2 rounded-lg transition-all cursor-pointer ${
                         isObtained
                           ? "bg-success/6 hover:bg-success/12 hover:scale-105"
                           : "opacity-35 hover:opacity-80 hover:scale-105"
@@ -370,17 +415,13 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
                             ? "bg-bg-tertiary/40 border-success/20 group-hover:border-success/50 group-hover:bg-bg-tertiary/70"
                             : "bg-bg-tertiary/15 border-border/15 group-hover:border-border/40 group-hover:bg-bg-tertiary/30"
                         }`}>
-                          <img
-                            src={itemIcon(name)}
-                            alt=""
+                          <ClogItemImage
+                            name={name}
                             className={`w-8 h-8 object-contain transition-all ${isObtained ? "group-hover:scale-110" : "grayscale group-hover:grayscale-0"}`}
-                            onError={(e) => {
-                              e.currentTarget.style.display = "none";
-                            }}
                           />
                         </div>
                         {isObtained && item.count > 1 && (
-                          <span className="absolute -top-1 -right-1.5 bg-success text-white text-[8px] font-bold rounded-full px-1 min-w-[14px] text-center leading-[14px]">
+                          <span className="absolute -top-1.5 -right-2 bg-accent text-white text-[10px] font-bold rounded-full px-1.5 min-w-[18px] text-center leading-[18px] shadow-sm shadow-black/30">
                             {item.count}
                           </span>
                         )}
