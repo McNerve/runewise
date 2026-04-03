@@ -1225,6 +1225,7 @@ export default function DpsCalculator({ hiscores }: Props) {
             ttk={result.ttk}
             attackRoll={result.attackRoll}
             defenseRoll={result.defenseRoll}
+            showDetails={showBreakdown}
           />
           {poisonType !== "none" && (
             <div className="mt-3 flex gap-6 items-start">

@@ -5,6 +5,7 @@ interface DpsBreakdownProps {
   ttk: number;
   attackRoll: number;
   defenseRoll: number;
+  showDetails?: boolean;
 }
 
 function formatTtk(seconds: number): string {
@@ -28,6 +29,7 @@ export default function DpsBreakdown({
   ttk,
   attackRoll,
   defenseRoll,
+  showDetails = false,
 }: DpsBreakdownProps) {
   const accPct = (accuracy * 100).toFixed(1);
   const accColor =
@@ -84,20 +86,22 @@ export default function DpsBreakdown({
       </div>
 
       {/* Roll breakdown */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="bg-bg-tertiary/50 rounded px-3 py-2">
-          <div className="text-xs text-text-secondary">Attack Roll</div>
-          <div className="text-sm font-medium tabular-nums">
-            {formatRoll(attackRoll)}
+      {showDetails && (
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-bg-tertiary/50 rounded px-3 py-2">
+            <div className="text-xs text-text-secondary">Attack Roll</div>
+            <div className="text-sm font-medium tabular-nums">
+              {formatRoll(attackRoll)}
+            </div>
+          </div>
+          <div className="bg-bg-tertiary/50 rounded px-3 py-2">
+            <div className="text-xs text-text-secondary">Defence Roll</div>
+            <div className="text-sm font-medium tabular-nums">
+              {formatRoll(defenseRoll)}
+            </div>
           </div>
         </div>
-        <div className="bg-bg-tertiary/50 rounded px-3 py-2">
-          <div className="text-xs text-text-secondary">Defence Roll</div>
-          <div className="text-sm font-medium tabular-nums">
-            {formatRoll(defenseRoll)}
-          </div>
-        </div>
-      </div>
+      )}
     </div>
   );
 }
