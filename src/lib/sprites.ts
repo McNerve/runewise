@@ -7,7 +7,7 @@ export function skillIcon(skill: string): string {
 
 export function itemIcon(itemName: string): string {
   const name = itemName
-    .replace(/ \(/g, "(")   // "Prayer potion (4)" → "Prayer potion(4)" (wiki convention)
+    .replace(/ \((\d)\)/g, "($1)")  // "Prayer potion (4)" → "Prayer potion(4)" (dose only)
     .replace(/ /g, "_")
     .replace(/'/g, "%27")
     .replace(/\(/g, "%28")

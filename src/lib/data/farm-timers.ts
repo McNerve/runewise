@@ -10,7 +10,20 @@ export interface PatchType {
 // Formula: growthMinutes = tickRate * stages
 export const PATCH_TYPES: PatchType[] = [
   // Herbs (20 min tick × 4 stages = 80 min)
-  { name: "Herb patch", category: "Herbs", growthMinutes: 80, stages: 4, icon: "Ranarr_seed_5.png" },
+  { name: "Guam", category: "Herbs", growthMinutes: 80, stages: 4, icon: "Guam_seed_5.png" },
+  { name: "Marrentill", category: "Herbs", growthMinutes: 80, stages: 4, icon: "Marrentill_seed_5.png" },
+  { name: "Tarromin", category: "Herbs", growthMinutes: 80, stages: 4, icon: "Tarromin_seed_5.png" },
+  { name: "Harralander", category: "Herbs", growthMinutes: 80, stages: 4, icon: "Harralander_seed_5.png" },
+  { name: "Ranarr", category: "Herbs", growthMinutes: 80, stages: 4, icon: "Ranarr_seed_5.png" },
+  { name: "Toadflax", category: "Herbs", growthMinutes: 80, stages: 4, icon: "Toadflax_seed_5.png" },
+  { name: "Irit", category: "Herbs", growthMinutes: 80, stages: 4, icon: "Irit_seed_5.png" },
+  { name: "Avantoe", category: "Herbs", growthMinutes: 80, stages: 4, icon: "Avantoe_seed_5.png" },
+  { name: "Kwuarm", category: "Herbs", growthMinutes: 80, stages: 4, icon: "Kwuarm_seed_5.png" },
+  { name: "Snapdragon", category: "Herbs", growthMinutes: 80, stages: 4, icon: "Snapdragon_seed_5.png" },
+  { name: "Cadantine", category: "Herbs", growthMinutes: 80, stages: 4, icon: "Cadantine_seed_5.png" },
+  { name: "Lantadyme", category: "Herbs", growthMinutes: 80, stages: 4, icon: "Lantadyme_seed_5.png" },
+  { name: "Dwarf weed", category: "Herbs", growthMinutes: 80, stages: 4, icon: "Dwarf_weed_seed_5.png" },
+  { name: "Torstol", category: "Herbs", growthMinutes: 80, stages: 4, icon: "Torstol_seed_5.png" },
 
   // Allotments (10 min tick × variable stages)
   { name: "Potato / Onion / Cabbage", category: "Allotments", growthMinutes: 40, stages: 4, icon: "Potato_seed_5.png" },
@@ -21,7 +34,12 @@ export const PATCH_TYPES: PatchType[] = [
   { name: "Snape grass", category: "Allotments", growthMinutes: 70, stages: 7, icon: "Snape_grass_seed_5.png" },
 
   // Flowers (5 min tick × 4 stages = 20 min)
-  { name: "Flower patch", category: "Flowers", growthMinutes: 20, stages: 4, icon: "Marigold_seed_5.png" },
+  { name: "Marigold", category: "Flowers", growthMinutes: 20, stages: 4, icon: "Marigold_seed_5.png" },
+  { name: "Rosemary", category: "Flowers", growthMinutes: 20, stages: 4, icon: "Rosemary_seed_5.png" },
+  { name: "Nasturtium", category: "Flowers", growthMinutes: 20, stages: 4, icon: "Nasturtium_seed_5.png" },
+  { name: "Woad", category: "Flowers", growthMinutes: 20, stages: 4, icon: "Woad_seed_5.png" },
+  { name: "Limpwurt", category: "Flowers", growthMinutes: 20, stages: 4, icon: "Limpwurt_seed_5.png" },
+  { name: "White lily", category: "Flowers", growthMinutes: 20, stages: 4, icon: "White_lily_seed_5.png" },
 
   // Trees (40 min tick × variable stages)
   { name: "Oak tree", category: "Trees", growthMinutes: 200, stages: 5, icon: "Oak_sapling.png" },
@@ -98,7 +116,7 @@ export const PATCH_TYPES: PatchType[] = [
 export const PATCH_CATEGORIES = [...new Set(PATCH_TYPES.map((p) => p.category))];
 
 export const PRESETS: { name: string; patches: string[] }[] = [
-  { name: "Herb Run", patches: ["Herb patch", "Herb patch", "Herb patch", "Herb patch", "Herb patch", "Herb patch", "Flower patch"] },
+  { name: "Herb Run", patches: ["Ranarr", "Ranarr", "Ranarr", "Ranarr", "Ranarr", "Ranarr", "Limpwurt"] },
   { name: "Tree Run", patches: ["Oak tree", "Willow tree", "Maple tree", "Yew tree", "Magic tree"] },
   { name: "Fruit Tree Run", patches: ["Apple tree", "Palm tree", "Dragonfruit tree", "Papaya tree"] },
   { name: "Birdhouse Run", patches: ["Maple birdhouse", "Maple birdhouse", "Maple birdhouse", "Maple birdhouse"] },
