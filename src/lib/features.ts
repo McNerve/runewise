@@ -1,6 +1,6 @@
 export const FEATURE_REGISTRY = {
   home: {
-    title: "Command Center",
+    title: "Home",
     navLabel: "Home",
     family: "Home",
     sidebar: true,

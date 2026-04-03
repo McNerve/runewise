@@ -75,20 +75,29 @@ export default function Home({ hiscores }: HomeProps) {
         </div>
       </header>
 
-      {/* Stats row — minimal, no card wrapper */}
+      {/* Stats row */}
       {savedRsn && (
-        <div className="grid grid-cols-3 gap-px rounded-xl overflow-hidden border border-border/60">
-          <div className="stat-card bg-bg-secondary/40 px-4 py-3" data-accent="green">
-            <div className="text-[11px] uppercase tracking-wider text-text-secondary/70">Total Level</div>
-            <div className="mt-0.5 text-lg font-semibold tabular-nums">{totalLevel?.toLocaleString() ?? "—"}</div>
+        <div className="grid grid-cols-3 gap-3">
+          <div className="rounded-xl border border-border/60 bg-bg-primary/45 px-4 py-3 flex items-center gap-3">
+            <img src={NAV_ICONS["skill-calc"]} alt="" className="w-6 h-6 shrink-0 opacity-70" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+            <div>
+              <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/50">Total Level</div>
+              <div className="mt-0.5 text-lg font-semibold tabular-nums text-success">{totalLevel?.toLocaleString() ?? "—"}</div>
+            </div>
           </div>
-          <div className="stat-card bg-bg-secondary/40 px-4 py-3" data-accent="red">
-            <div className="text-[11px] uppercase tracking-wider text-text-secondary/70">Boss KC</div>
-            <div className="mt-0.5 text-lg font-semibold tabular-nums">{totalBossKills?.toLocaleString() ?? "—"}</div>
+          <div className="rounded-xl border border-border/60 bg-bg-primary/45 px-4 py-3 flex items-center gap-3">
+            <img src={NAV_ICONS.bosses} alt="" className="w-6 h-6 shrink-0 opacity-70" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+            <div>
+              <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/50">Boss KC</div>
+              <div className="mt-0.5 text-lg font-semibold tabular-nums text-danger">{totalBossKills?.toLocaleString() ?? "—"}</div>
+            </div>
           </div>
-          <div className="stat-card bg-bg-secondary/40 px-4 py-3" data-accent="purple">
-            <div className="text-[11px] uppercase tracking-wider text-text-secondary/70">Maxed Skills</div>
-            <div className="mt-0.5 text-lg font-semibold tabular-nums">{maxedSkills != null ? `${maxedSkills}/24` : "—"}</div>
+          <div className="rounded-xl border border-border/60 bg-bg-primary/45 px-4 py-3 flex items-center gap-3">
+            <img src={NAV_ICONS.overview} alt="" className="w-6 h-6 shrink-0 opacity-70" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+            <div>
+              <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/50">Maxed Skills</div>
+              <div className="mt-0.5 text-lg font-semibold tabular-nums text-[#a78bfa]">{maxedSkills != null ? `${maxedSkills}/24` : "—"}</div>
+            </div>
           </div>
         </div>
       )}

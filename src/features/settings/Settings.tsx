@@ -5,26 +5,32 @@ import { isTauri, isMac } from "../../lib/env";
 
 declare const __APP_VERSION__: string;
 
-const KEYBIND_LABELS: Record<string, string> = {
-  overview: "Profile",
-  tracker: "XP Tracker",
-  "skill-calc": "Skill Calc",
-  "dps-calc": "DPS Calc",
-  "dry-calc": "Dry Calc",
-  "pet-calc": "Pet Calc",
-  bosses: "Boss Guides",
-  loot: "Loot",
-  market: "Items",
-  watchlist: "Watchlist",
-  progress: "Progress",
-  slayer: "Slayer Blocks",
-  "clue-helper": "Clue Helper",
-  "money-making": "Money Making",
-  stars: "Star Helper",
-  news: "News",
-  wiki: "Wiki",
-  timers: "Timers",
-  "xp-table": "XP Table",
+const KEYBIND_LABELS: Record<string, { label: string; family: string }> = {
+  overview: { label: "Profile", family: "Player" },
+  tracker: { label: "XP Tracker", family: "Player" },
+  "collection-log": { label: "Collection Log", family: "Player" },
+  "skill-calc": { label: "Skill Calc", family: "Tools" },
+  "dps-calc": { label: "DPS Calc", family: "Tools" },
+  "dry-calc": { label: "Dry Calc", family: "Tools" },
+  "pet-calc": { label: "Pet Calc", family: "Tools" },
+  "gear-compare": { label: "Gear Compare", family: "Tools" },
+  "money-making": { label: "Money Making", family: "Tools" },
+  timers: { label: "Farm Timers", family: "Tools" },
+  "xp-table": { label: "XP Table", family: "Tools" },
+  "training-plan": { label: "Training Plan", family: "Tools" },
+  "production-calc": { label: "Recipe Calc", family: "Tools" },
+  bosses: { label: "Boss Guides", family: "Bossing" },
+  raids: { label: "Raid Guides", family: "Bossing" },
+  market: { label: "Items", family: "Market" },
+  loot: { label: "Loot & Drops", family: "Market" },
+  spells: { label: "Spells", family: "Market" },
+  progress: { label: "Progress", family: "Guides" },
+  slayer: { label: "Slayer Helper", family: "Guides" },
+  "clue-helper": { label: "Clue Helper", family: "Guides" },
+  stars: { label: "Star Helper", family: "Guides" },
+  "world-map": { label: "World Map", family: "Live" },
+  news: { label: "OSRS News", family: "Live" },
+  wiki: { label: "OSRS Wiki", family: "Live" },
 };
 
 function ThemeGlyph({ theme }: { theme: "dark" | "light" | "system" }) {
@@ -336,17 +342,47 @@ export default function Settings() {
 
       {/* Keyboard Shortcuts */}
       <SettingsCard title="Keyboard Shortcuts">
-        <div className="space-y-2">
-          {Object.entries(KEYBIND_LABELS).map(([action, label]) => (
-            <div key={action} className="flex items-center justify-between gap-3 py-0.5">
-              <span className="text-sm text-text-primary/90">{label}</span>
-              <KeybindRecorder
-                value={settings.keybinds[action] ?? DEFAULT_KEYBINDS[action]}
-                onChange={(key) => handleKeybindChange(action, key)}
-              />
+        {(() => {
+          const families = new Map<string, [string, { label: string; family: string }][]>();
+          for (const [action, info] of Object.entries(KEYBIND_LABELS)) {
+            const list = families.get(info.family) ?? [];
+            list.push([action, info]);
+            families.set(info.family, list);
+          }
+          const usedKeys = new Map<string, string>();
+          for (const [action] of Object.entries(KEYBIND_LABELS)) {
+            const key = (settings.keybinds[action] ?? DEFAULT_KEYBINDS[action] ?? "").toLowerCase();
+            if (key && usedKeys.has(key)) {
+              // conflict detected
+            }
+            if (key) usedKeys.set(key, action);
+          }
+          return Array.from(families.entries()).map(([family, entries]) => (
+            <div key={family} className="mb-4 last:mb-0">
+              <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/50 mb-2">{family}</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1">
+                {entries.map(([action, info]) => {
+                  const key = (settings.keybinds[action] ?? DEFAULT_KEYBINDS[action] ?? "").toLowerCase();
+                  const conflict = Array.from(Object.entries(KEYBIND_LABELS)).some(
+                    ([a]) => a !== action && (settings.keybinds[a] ?? DEFAULT_KEYBINDS[a] ?? "").toLowerCase() === key && key
+                  );
+                  return (
+                    <div key={action} className="flex items-center justify-between gap-3 py-1">
+                      <span className="text-sm text-text-primary/90">{info.label}</span>
+                      <div className="flex items-center gap-1">
+                        {conflict && <span className="text-[9px] text-warning" title="Duplicate keybind">⚠</span>}
+                        <KeybindRecorder
+                          value={settings.keybinds[action] ?? DEFAULT_KEYBINDS[action]}
+                          onChange={(key) => handleKeybindChange(action, key)}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          ))}
-        </div>
+          ));
+        })()}
         <div className="flex items-center justify-between mt-4 pt-3 border-t border-border/30">
           <p className="text-[10px] text-text-secondary/65">
             {isMac ? "⌘" : "Ctrl+"}K to open global search is always available

@@ -224,6 +224,7 @@ export function bossIconSmall(bossName: string): string {
 }
 
 export const NAV_ICONS: Record<string, string> = {
+  home: `${WIKI_IMG}/Teleport_to_House_icon_%28mobile%29.png`,
   overview: `${WIKI_IMG}/Character_Summary_tab_icon.png`,
   "collection-log": `${WIKI_IMG}/Collection_log.png`,
   lookup: `${WIKI_IMG}/Magnifying_glass.png`,
