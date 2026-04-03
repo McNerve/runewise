@@ -186,6 +186,7 @@ function MarketDetail({
             <button
               key={p}
               onClick={() => setPeriod(p)}
+              aria-pressed={period === p}
               className={`px-2 py-1 text-[10px] font-medium rounded-md transition-colors ${
                 period === p
                   ? "bg-accent text-white"
@@ -199,6 +200,7 @@ function MarketDetail({
         <div className="flex bg-bg-primary rounded-lg p-0.5 border border-border">
           <button
             onClick={() => setChartMode("line")}
+            aria-pressed={chartMode === "line"}
             className={`px-2 py-1 text-[10px] font-medium rounded-md transition-colors ${
               chartMode === "line"
                 ? "bg-accent text-white"
@@ -209,6 +211,7 @@ function MarketDetail({
           </button>
           <button
             onClick={() => setChartMode("candlestick")}
+            aria-pressed={chartMode === "candlestick"}
             className={`px-2 py-1 text-[10px] font-medium rounded-md transition-colors ${
               chartMode === "candlestick"
                 ? "bg-accent text-white"
@@ -600,6 +603,7 @@ export default function Market({
               <button
                 key={t}
                 onClick={() => setTab(t)}
+                aria-pressed={tab === t}
                 className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
                   tab === t
                     ? "bg-accent text-white"
@@ -617,6 +621,7 @@ export default function Market({
                 <button
                   key={f}
                   onClick={() => setMembersFilter(f)}
+                  aria-pressed={membersFilter === f}
                   className={`px-3 py-1.5 rounded text-xs uppercase transition-colors ${
                     membersFilter === f
                       ? "bg-accent text-white"
@@ -632,15 +637,15 @@ export default function Market({
 
         {/* Tab content */}
         {tab === "watchlist" ? (
-          <Suspense fallback={<div className="py-8 text-center text-sm text-text-secondary">Loading...</div>}>
+          <Suspense fallback={<div className="py-8 text-center"><div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4 mx-auto" /></div>}>
             <Watchlist />
           </Suspense>
         ) : tab === "alch" ? (
-          <Suspense fallback={<div className="py-8 text-center text-sm text-text-secondary">Loading...</div>}>
+          <Suspense fallback={<div className="py-8 text-center"><div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4 mx-auto" /></div>}>
             <AlchCalculator />
           </Suspense>
         ) : tab === "bulk" ? (
-          <Suspense fallback={<div className="py-8 text-center text-sm text-text-secondary">Loading...</div>}>
+          <Suspense fallback={<div className="py-8 text-center"><div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4 mx-auto" /></div>}>
             <BulkSearch mapping={allItems} prices={prices} />
           </Suspense>
         ) : (
@@ -651,6 +656,7 @@ export default function Market({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search items..."
+          aria-label="Search items"
           className="w-full bg-bg-secondary border border-border rounded-lg px-4 py-2.5 text-sm mb-3"
         />
 
@@ -693,13 +699,13 @@ export default function Market({
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-text-secondary text-xs">
-                  <th className="text-left px-4 py-2">Item</th>
-                  <th className="text-right px-4 py-2">Buy</th>
-                  <th className="text-right px-4 py-2">Sell</th>
-                  <th className="text-right px-4 py-2">Margin</th>
-                  <th className="text-right px-4 py-2">Volume</th>
-                  <th className="text-right px-4 py-2">High Alch</th>
-                  <th className="text-right px-4 py-2">Limit</th>
+                  <th scope="col" className="text-left px-4 py-2">Item</th>
+                  <th scope="col" className="text-right px-4 py-2">Buy</th>
+                  <th scope="col" className="text-right px-4 py-2">Sell</th>
+                  <th scope="col" className="text-right px-4 py-2">Margin</th>
+                  <th scope="col" className="text-right px-4 py-2">Volume</th>
+                  <th scope="col" className="text-right px-4 py-2">High Alch</th>
+                  <th scope="col" className="text-right px-4 py-2">Limit</th>
                 </tr>
               </thead>
               <tbody>

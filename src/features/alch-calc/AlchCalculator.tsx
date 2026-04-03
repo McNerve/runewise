@@ -130,8 +130,10 @@ export default function AlchCalculator() {
 
   if (loading) {
     return (
-      <div className="text-text-secondary text-sm">
-        Loading alch profit data...
+      <div className="space-y-2 py-4">
+        <div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4" />
+        <div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-1/2" />
+        <div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-2/3" />
       </div>
     );
   }
@@ -189,6 +191,7 @@ export default function AlchCalculator() {
             <button
               key={f}
               onClick={() => setMembersFilter(f)}
+              aria-pressed={membersFilter === f}
               className={`px-3 py-2 rounded text-xs uppercase ${
                 membersFilter === f
                   ? "bg-accent text-white"
@@ -224,36 +227,42 @@ export default function AlchCalculator() {
             <thead>
               <tr className="border-b border-border text-text-secondary text-xs">
                 <th
+                  scope="col"
                   className="text-left px-4 py-2 cursor-pointer hover:text-text-primary"
                   onClick={() => handleSort("name")}
                 >
                   Item{sortIndicator("name")}
                 </th>
                 <th
+                  scope="col"
                   className="text-right px-4 py-2 cursor-pointer hover:text-text-primary"
                   onClick={() => handleSort("buyPrice")}
                 >
                   GE Buy{sortIndicator("buyPrice")}
                 </th>
                 <th
+                  scope="col"
                   className="text-right px-4 py-2 cursor-pointer hover:text-text-primary"
                   onClick={() => handleSort("highalch")}
                 >
                   High Alch{sortIndicator("highalch")}
                 </th>
                 <th
+                  scope="col"
                   className="text-right px-4 py-2 cursor-pointer hover:text-text-primary"
                   onClick={() => handleSort("profit")}
                 >
                   Profit{sortIndicator("profit")}
                 </th>
                 <th
+                  scope="col"
                   className="text-right px-4 py-2 cursor-pointer hover:text-text-primary"
                   onClick={() => handleSort("roi")}
                 >
                   Profit%{sortIndicator("roi")}
                 </th>
                 <th
+                  scope="col"
                   className="text-right px-4 py-2 cursor-pointer hover:text-text-primary"
                   onClick={() => handleSort("limit")}
                 >

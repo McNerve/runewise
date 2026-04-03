@@ -131,6 +131,7 @@ export default function DryCalculator() {
           <div className="flex flex-wrap gap-1 mb-3">
             <button
               onClick={() => setSelectedCategory("All")}
+              aria-pressed={selectedCategory === "All"}
               className={`px-2 py-0.5 rounded text-xs ${
                 selectedCategory === "All"
                   ? "bg-accent text-white"
@@ -143,6 +144,7 @@ export default function DryCalculator() {
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
+                aria-pressed={selectedCategory === cat}
                 className={`px-2 py-0.5 rounded text-xs ${
                   selectedCategory === cat
                     ? "bg-accent text-white"

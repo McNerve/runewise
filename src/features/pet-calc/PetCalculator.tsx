@@ -167,6 +167,7 @@ export default function PetCalculator({ hiscores }: Props) {
       <div className="flex gap-1.5 mb-3">
         <button
           onClick={() => setTab("skilling")}
+          aria-pressed={tab === "skilling"}
           className={`px-3 py-1.5 rounded text-xs transition-colors ${
             tab === "skilling" ? "bg-accent text-white" : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
           }`}
@@ -175,6 +176,7 @@ export default function PetCalculator({ hiscores }: Props) {
         </button>
         <button
           onClick={() => { setTab("boss"); setBossFilter("all"); }}
+          aria-pressed={tab === "boss"}
           className={`px-3 py-1.5 rounded text-xs transition-colors ${
             tab === "boss" ? "bg-accent text-white" : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
           }`}
@@ -187,6 +189,7 @@ export default function PetCalculator({ hiscores }: Props) {
         <div className="flex flex-wrap gap-1.5 mb-3">
           <button
             onClick={() => setBossFilter("all")}
+            aria-pressed={bossFilter === "all"}
             className={`px-2.5 py-1 rounded text-xs transition-colors ${
               bossFilter === "all" ? "bg-accent text-white" : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
             }`}
@@ -200,6 +203,7 @@ export default function PetCalculator({ hiscores }: Props) {
               <button
                 key={cat}
                 onClick={() => setBossFilter(cat)}
+                aria-pressed={bossFilter === cat}
                 className={`px-2.5 py-1 rounded text-xs transition-colors ${
                   bossFilter === cat ? "bg-accent text-white" : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
                 }`}
@@ -258,6 +262,7 @@ export default function PetCalculator({ hiscores }: Props) {
                 <div className="flex gap-2 mb-2">
                   <button
                     onClick={() => setInputMode("actions")}
+                    aria-pressed={inputMode === "actions"}
                     className={`px-3 py-1 rounded text-xs ${
                       inputMode === "actions" ? "bg-accent text-white" : "bg-bg-tertiary text-text-secondary"
                     }`}
@@ -267,6 +272,7 @@ export default function PetCalculator({ hiscores }: Props) {
                   {selectedAction.xpPerAction > 0 && (
                     <button
                       onClick={() => setInputMode("xp")}
+                      aria-pressed={inputMode === "xp"}
                       className={`px-3 py-1 rounded text-xs ${
                         inputMode === "xp" ? "bg-accent text-white" : "bg-bg-tertiary text-text-secondary"
                       }`}

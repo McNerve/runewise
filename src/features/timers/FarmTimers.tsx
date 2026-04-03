@@ -332,6 +332,7 @@ export default function FarmTimers() {
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
+            aria-pressed={tab === t.id}
             className={`px-4 py-1.5 rounded text-sm font-medium transition-colors ${
               tab === t.id
                 ? "bg-accent text-white"
@@ -349,7 +350,7 @@ export default function FarmTimers() {
       </div>
 
       {tab === "profit" ? (
-        <Suspense fallback={<div className="py-8 text-center text-sm text-text-secondary">Loading...</div>}>
+        <Suspense fallback={<div className="py-8 text-center"><div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4 mx-auto" /></div>}>
           <FarmProfit />
         </Suspense>
       ) : tab === "overview" ? (

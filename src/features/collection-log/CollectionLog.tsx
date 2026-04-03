@@ -101,6 +101,7 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
                 onClick={() =>
                   setExpandedCategory(isExpanded ? null : catName)
                 }
+                aria-expanded={isExpanded}
                 className="w-full flex items-center gap-3 py-2 px-2 rounded hover:bg-bg-secondary/50 transition-colors"
               >
                 <ProgressRing obtained={catObtained} total={items.length} />
@@ -215,6 +216,7 @@ function ManualView() {
                 onClick={() =>
                   setExpandedCategory(isExpanded ? null : cat.name)
                 }
+                aria-expanded={isExpanded}
                 className="w-full flex items-center gap-3 py-2 px-2 rounded hover:bg-bg-secondary/50 transition-colors"
               >
                 <ProgressRing obtained={catObtained} total={cat.slots.length} />
@@ -340,6 +342,7 @@ export default function CollectionLog({ rsn }: Props) {
             <button
               key={m}
               onClick={() => setMode(m)}
+              aria-pressed={mode === m}
               className={`px-4 py-1.5 rounded text-sm font-medium transition-colors ${
                 mode === m
                   ? "bg-accent text-white"
@@ -353,8 +356,9 @@ export default function CollectionLog({ rsn }: Props) {
       )}
 
       {templeLoading && (
-        <div className="text-xs text-text-secondary/60 mb-4">
-          Loading Temple data...
+        <div className="mb-4 space-y-2">
+          <div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4" />
+          <div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-1/2" />
         </div>
       )}
 

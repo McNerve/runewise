@@ -378,6 +378,7 @@ export default function DpsCalculator({ hiscores }: Props) {
             <button
               key={style}
               onClick={() => setCombatStyle(style)}
+              aria-pressed={combatStyle === style}
               className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium capitalize transition-colors ${
                 combatStyle === style
                   ? "bg-accent text-white"
@@ -425,6 +426,7 @@ export default function DpsCalculator({ hiscores }: Props) {
               onChange={(e) => setLoadoutName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && saveLoadout()}
               placeholder="Loadout name..."
+              aria-label="Loadout name"
               className="flex-1 bg-bg-secondary border border-border rounded-lg px-3 py-1.5 text-sm"
             />
             <button
@@ -470,6 +472,7 @@ export default function DpsCalculator({ hiscores }: Props) {
                   <button
                     key={m}
                     onClick={() => setBonusMode(m)}
+                    aria-pressed={bonusMode === m}
                     className={`px-2 py-0.5 rounded text-[10px] capitalize transition-colors ${
                       bonusMode === m
                         ? "bg-accent text-white"

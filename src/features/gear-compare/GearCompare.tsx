@@ -107,6 +107,7 @@ export default function GearCompare() {
               setSelectedSlot(slot);
               setQuery("");
             }}
+            aria-pressed={selectedSlot === slot}
             className={`px-2.5 py-1 rounded text-xs transition-colors ${
               selectedSlot === slot
                 ? "bg-accent/20 text-accent border border-accent/30"
@@ -124,6 +125,7 @@ export default function GearCompare() {
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder={`Search ${SLOT_LABELS[selectedSlot].toLowerCase()} items...`}
+        aria-label={`Search ${SLOT_LABELS[selectedSlot].toLowerCase()} items`}
         className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm mb-4"
       />
 
@@ -195,8 +197,9 @@ export default function GearCompare() {
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-border">
-                <th className="px-2 py-2 text-xs text-text-secondary font-normal w-8" />
+                <th scope="col" className="px-2 py-2 text-xs text-text-secondary font-normal w-8" />
                 <th
+                  scope="col"
                   className="px-2 py-2 text-xs text-text-secondary font-normal cursor-pointer hover:text-text-primary"
                   onClick={() => handleSort("name")}
                 >
@@ -205,6 +208,7 @@ export default function GearCompare() {
                 {STAT_COLUMNS.map((col) => (
                   <th
                     key={col.key}
+                    scope="col"
                     className="px-2 py-2 text-xs text-text-secondary font-normal text-right cursor-pointer hover:text-text-primary"
                     onClick={() => handleSort(col.key)}
                     title={col.label}

@@ -168,6 +168,7 @@ export default function Raids() {
           <button
             key={t.id}
             onClick={() => { setTab(t.id); setExpandedRoom(null); }}
+            aria-pressed={tab === t.id}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               tab === t.id
                 ? "bg-accent text-white"

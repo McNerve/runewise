@@ -131,6 +131,7 @@ export default function ProfitHub() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search methods..."
+          aria-label="Search profit methods"
           className="flex-1 min-w-[180px] bg-bg-secondary border border-border rounded-lg px-3 py-1.5 text-sm"
         />
         <div className="flex gap-1">
@@ -145,6 +146,7 @@ export default function ProfitHub() {
             <button
               key={f.id}
               onClick={() => setSourceFilter(f.id)}
+              aria-pressed={sourceFilter === f.id}
               className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
                 sourceFilter === f.id
                   ? "bg-accent text-white"

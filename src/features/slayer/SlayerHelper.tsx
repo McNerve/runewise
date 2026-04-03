@@ -78,6 +78,7 @@ export default function SlayerHelper() {
           <button
             key={master.name}
             onClick={() => setSelectedMaster(master)}
+            aria-pressed={selectedMaster.name === master.name}
             className={`px-3 py-1.5 rounded text-sm ${
               selectedMaster.name === master.name
                 ? "bg-accent text-white"
@@ -125,12 +126,12 @@ export default function SlayerHelper() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border text-text-secondary text-xs">
-              <th className="text-left px-4 py-2 w-8">Block</th>
-              <th className="text-left px-4 py-2">Monster</th>
-              <th className="text-right px-4 py-2">Amount</th>
-              <th className="text-right px-4 py-2">Weight</th>
-              <th className="text-right px-4 py-2">Chance</th>
-              <th className="text-right px-4 py-2">Slayer Lvl</th>
+              <th scope="col" className="text-left px-4 py-2 w-8">Block</th>
+              <th scope="col" className="text-left px-4 py-2">Monster</th>
+              <th scope="col" className="text-right px-4 py-2">Amount</th>
+              <th scope="col" className="text-right px-4 py-2">Weight</th>
+              <th scope="col" className="text-right px-4 py-2">Chance</th>
+              <th scope="col" className="text-right px-4 py-2">Slayer Lvl</th>
             </tr>
           </thead>
           <tbody>

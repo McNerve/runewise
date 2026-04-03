@@ -286,6 +286,7 @@ export default function News() {
         <button
           key={f}
           onClick={() => setFilter(f)}
+          aria-pressed={filter === f}
           className={`px-3 py-1.5 rounded text-xs transition-colors ${
             filter === f
               ? f === "all"

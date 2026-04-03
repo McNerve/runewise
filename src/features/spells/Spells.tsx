@@ -56,6 +56,7 @@ export default function Spells() {
           <button
             key={book.id}
             onClick={() => { setActiveBook(book.id); setQuery(""); }}
+            aria-pressed={activeBook === book.id}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               activeBook === book.id
                 ? "text-white"
@@ -78,6 +79,7 @@ export default function Spells() {
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Search spells..."
+        aria-label="Search spells"
         className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm mb-4"
       />
 
@@ -99,14 +101,14 @@ export default function Spells() {
         <table className="w-full text-left">
           <thead>
             <tr className="border-b border-border text-text-secondary text-xs">
-              <th className="px-3 py-2 text-left">Spell</th>
-              <th className="px-3 py-2 text-right">Level</th>
-              <th className="px-3 py-2 text-right">XP</th>
+              <th scope="col" className="px-3 py-2 text-left">Spell</th>
+              <th scope="col" className="px-3 py-2 text-right">Level</th>
+              <th scope="col" className="px-3 py-2 text-right">XP</th>
               {spells.some((s) => s.damage) && (
-                <th className="px-3 py-2 text-right">Max Hit</th>
+                <th scope="col" className="px-3 py-2 text-right">Max Hit</th>
               )}
-              <th className="px-3 py-2 text-left">Type</th>
-              <th className="px-3 py-2 text-center">Members</th>
+              <th scope="col" className="px-3 py-2 text-left">Type</th>
+              <th scope="col" className="px-3 py-2 text-center">Members</th>
             </tr>
           </thead>
           <tbody>

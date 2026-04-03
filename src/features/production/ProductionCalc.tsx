@@ -129,7 +129,7 @@ export default function ProductionCalc() {
     return (
       <div className="max-w-4xl">
         <h2 className="text-xl font-semibold mb-1">Production Calculator</h2>
-        <p className="text-xs text-text-secondary">Loading recipes...</p>
+        <div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4" />
       </div>
     );
   }
@@ -151,6 +151,7 @@ export default function ProductionCalc() {
           if (selected && e.target.value !== selected.name) setSelected(null);
         }}
         placeholder="Search recipes (e.g. Rune platebody, Shark, Prayer potion)..."
+        aria-label="Search recipes"
         className="w-full bg-bg-secondary border border-border rounded px-3 py-2 text-sm mb-1"
         autoFocus
       />
@@ -341,6 +342,7 @@ export default function ProductionCalc() {
                   <button
                     key={q}
                     onClick={() => setQuantity(q)}
+                    aria-pressed={quantity === q}
                     className={`px-2 py-1 rounded text-xs transition-colors ${
                       quantity === q
                         ? "bg-accent text-white"

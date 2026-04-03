@@ -113,6 +113,7 @@ export default function TrainingPlan({ hiscores }: Props) {
             key={p.id}
             onClick={() => setPreference(p.id)}
             title={p.desc}
+            aria-pressed={preference === p.id}
             className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
               preference === p.id
                 ? "bg-accent text-white"

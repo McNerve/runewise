@@ -199,6 +199,7 @@ function DropTablesTab({
           }}
           onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
           placeholder="Search monsters..."
+          aria-label="Search monsters"
           className="w-full bg-bg-secondary border border-border rounded-lg px-4 py-2.5 text-sm"
         />
         {showSuggestions && suggestions.length > 0 && (
@@ -241,10 +242,10 @@ function DropTablesTab({
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-text-secondary text-xs">
-                  <th className="text-left px-4 py-2">Item</th>
-                  <th className="text-right px-4 py-2">Qty</th>
-                  <th className="text-right px-4 py-2">Rate</th>
-                  <th className="text-right px-4 py-2">Price</th>
+                  <th scope="col" className="text-left px-4 py-2">Item</th>
+                  <th scope="col" className="text-right px-4 py-2">Qty</th>
+                  <th scope="col" className="text-right px-4 py-2">Rate</th>
+                  <th scope="col" className="text-right px-4 py-2">Price</th>
                 </tr>
               </thead>
               <tbody>
@@ -572,12 +573,12 @@ function ProfitCalculatorTab({
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border text-text-secondary text-xs">
-                <th className="text-left px-4 py-2">Item</th>
-                <th className="text-right px-4 py-2">Rate</th>
-                <th className="text-right px-4 py-2">Qty</th>
-                <th className="text-right px-4 py-2">GE Price</th>
-                <th className="text-right px-4 py-2">GP/Kill</th>
-                <th className="text-right px-4 py-2">GP/Hr</th>
+                <th scope="col" className="text-left px-4 py-2">Item</th>
+                <th scope="col" className="text-right px-4 py-2">Rate</th>
+                <th scope="col" className="text-right px-4 py-2">Qty</th>
+                <th scope="col" className="text-right px-4 py-2">GE Price</th>
+                <th scope="col" className="text-right px-4 py-2">GP/Kill</th>
+                <th scope="col" className="text-right px-4 py-2">GP/Hr</th>
               </tr>
             </thead>
             <tbody>
@@ -662,6 +663,7 @@ export default function Loot() {
       <div className="flex bg-bg-secondary rounded-lg p-0.5 border border-border mb-4 w-fit">
         <button
           onClick={() => setTab("drops")}
+          aria-pressed={tab === "drops"}
           className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
             tab === "drops" ? "bg-accent text-white" : "text-text-secondary hover:text-text-primary"
           }`}
@@ -670,6 +672,7 @@ export default function Loot() {
         </button>
         <button
           onClick={() => setTab("profit")}
+          aria-pressed={tab === "profit"}
           className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
             tab === "profit" ? "bg-accent text-white" : "text-text-secondary hover:text-text-primary"
           }`}
@@ -678,6 +681,7 @@ export default function Loot() {
         </button>
         <button
           onClick={() => setTab("ranking")}
+          aria-pressed={tab === "ranking"}
           className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
             tab === "ranking" ? "bg-accent text-white" : "text-text-secondary hover:text-text-primary"
           }`}

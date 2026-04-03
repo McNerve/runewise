@@ -22,6 +22,7 @@ export default function XpTable() {
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder="Search by level or XP..."
+        aria-label="Search by level or XP"
         className="w-full bg-bg-secondary border border-border rounded-lg px-4 py-2 text-sm mb-4"
       />
 
@@ -39,9 +40,9 @@ export default function XpTable() {
           <table className="w-full text-sm">
             <thead className="sticky top-0 bg-bg-secondary">
               <tr className="border-b border-border text-text-secondary text-xs">
-                <th className="text-left px-4 py-2">Level</th>
-                <th className="text-right px-4 py-2">Total XP</th>
-                <th className="text-right px-4 py-2">XP to Next</th>
+                <th scope="col" className="text-left px-4 py-2">Level</th>
+                <th scope="col" className="text-right px-4 py-2">Total XP</th>
+                <th scope="col" className="text-right px-4 py-2">XP to Next</th>
               </tr>
             </thead>
             <tbody>

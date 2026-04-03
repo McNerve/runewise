@@ -111,7 +111,7 @@ export default function Kingdom() {
     return (
       <div className="max-w-3xl">
         <h2 className="text-xl font-semibold mb-1">Kingdom of Miscellania</h2>
-        <p className="text-xs text-text-secondary">Loading GE prices...</p>
+        <div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4" />
       </div>
     );
   }

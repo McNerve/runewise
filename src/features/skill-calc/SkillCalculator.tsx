@@ -109,6 +109,7 @@ export default function SkillCalculator({ hiscores }: Props) {
             <button
               key={skill}
               onClick={() => setSelectedSkill(skill)}
+              aria-pressed={selectedSkill === skill}
               className={`px-2 py-1.5 rounded text-xs transition-colors relative flex items-center gap-1.5 ${
                 selectedSkill === skill
                   ? "bg-accent text-white"
@@ -170,6 +171,7 @@ export default function SkillCalculator({ hiscores }: Props) {
               {currentLevel !== null && currentLevel < 99 && (
                 <button
                   onClick={() => handleTargetChange(currentLevel + 1)}
+                  aria-pressed={targetLevel === currentLevel + 1}
                   className={`px-2 py-1 rounded text-xs transition-colors ${
                     targetLevel === currentLevel + 1
                       ? "bg-accent text-white"
@@ -181,6 +183,7 @@ export default function SkillCalculator({ hiscores }: Props) {
               )}
               <button
                 onClick={() => handleTargetChange(99)}
+                aria-pressed={targetLevel === 99}
                 className={`px-2 py-1 rounded text-xs transition-colors ${
                   targetLevel === 99
                     ? "bg-accent text-white"
@@ -231,6 +234,7 @@ export default function SkillCalculator({ hiscores }: Props) {
                 <button
                   key={f}
                   onClick={() => setIntensityFilter(f)}
+                  aria-pressed={intensityFilter === f}
                   className={`px-2.5 py-1 rounded-full text-xs transition-colors ${
                     intensityFilter === f
                       ? "bg-accent text-white"
@@ -259,14 +263,14 @@ export default function SkillCalculator({ hiscores }: Props) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-text-secondary text-xs">
-                  <th className="text-left px-4 py-2">Method</th>
-                  <th className="text-right px-4 py-2">Lvl</th>
-                  <th className="text-right px-4 py-2">XP Each</th>
-                  <th className="text-right px-4 py-2">XP/hr</th>
-                  <th className="text-right px-4 py-2">Actions</th>
-                  <th className="text-right px-4 py-2">Time</th>
-                  <th className="text-right px-4 py-2">GP/XP</th>
-                  <th className="text-right px-4 py-2">Cost</th>
+                  <th scope="col" className="text-left px-4 py-2">Method</th>
+                  <th scope="col" className="text-right px-4 py-2">Lvl</th>
+                  <th scope="col" className="text-right px-4 py-2">XP Each</th>
+                  <th scope="col" className="text-right px-4 py-2">XP/hr</th>
+                  <th scope="col" className="text-right px-4 py-2">Actions</th>
+                  <th scope="col" className="text-right px-4 py-2">Time</th>
+                  <th scope="col" className="text-right px-4 py-2">GP/XP</th>
+                  <th scope="col" className="text-right px-4 py-2">Cost</th>
                 </tr>
               </thead>
               <tbody>

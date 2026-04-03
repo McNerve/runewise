@@ -121,6 +121,7 @@ export default function MoneyMaking({ hiscores }: Props) {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search methods..."
+          aria-label="Search money making methods"
           className="flex-1 min-w-[200px] bg-bg-secondary border border-border rounded px-3 py-1.5 text-sm"
         />
 
@@ -129,6 +130,7 @@ export default function MoneyMaking({ hiscores }: Props) {
             <button
               key={c}
               onClick={() => setCategory(c)}
+              aria-pressed={category === c}
               className={`px-2.5 py-1.5 rounded text-xs transition-colors ${
                 category === c
                   ? "bg-accent text-white"

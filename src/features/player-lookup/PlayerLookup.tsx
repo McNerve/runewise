@@ -28,10 +28,10 @@ function StatCompare({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border text-xs text-text-secondary">
-              <th className="text-left px-4 py-2">Skill</th>
-              <th className="text-right px-3 py-2">{leftRsn}</th>
-              <th className="text-center px-2 py-2">Diff</th>
-              <th className="text-right px-3 py-2">{rightRsn}</th>
+              <th scope="col" className="text-left px-4 py-2">Skill</th>
+              <th scope="col" className="text-right px-3 py-2">{leftRsn}</th>
+              <th scope="col" className="text-center px-2 py-2">Diff</th>
+              <th scope="col" className="text-right px-3 py-2">{rightRsn}</th>
             </tr>
           </thead>
           <tbody>
@@ -237,6 +237,7 @@ export default function PlayerLookup() {
               <button
                 key={m.id}
                 onClick={() => setMode(m.id)}
+                aria-pressed={mode === m.id}
                 className={`px-4 py-1.5 rounded text-sm font-medium transition-colors ${
                   mode === m.id
                     ? "bg-accent text-white"
@@ -263,6 +264,7 @@ export default function PlayerLookup() {
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Search any player..."
+                aria-label="Search player by RSN"
                 className="flex-1 rounded-xl border border-border bg-bg-primary px-4 py-3 text-sm outline-none transition focus:border-accent"
               />
               <button
@@ -295,8 +297,10 @@ export default function PlayerLookup() {
             ) : null}
 
             {loading && lookupRsn ? (
-              <div className="py-8 text-sm text-text-secondary">
-                Loading profile for {lookupRsn}...
+              <div className="py-8 space-y-3">
+                <div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4" />
+                <div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-1/2" />
+                <div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-2/3" />
               </div>
             ) : null}
 
@@ -318,6 +322,7 @@ export default function PlayerLookup() {
                 value={leftQuery}
                 onChange={(e) => setLeftQuery(e.target.value)}
                 placeholder="Player 1..."
+                aria-label="Search player 1 by RSN"
                 className="flex-1 rounded-xl border border-border bg-bg-primary px-4 py-3 text-sm outline-none transition focus:border-accent"
               />
               <span className="self-center text-xs text-text-secondary/50">
@@ -328,6 +333,7 @@ export default function PlayerLookup() {
                 value={rightQuery}
                 onChange={(e) => setRightQuery(e.target.value)}
                 placeholder="Player 2..."
+                aria-label="Search player 2 by RSN"
                 className="flex-1 rounded-xl border border-border bg-bg-primary px-4 py-3 text-sm outline-none transition focus:border-accent"
               />
               <button

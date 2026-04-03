@@ -155,6 +155,7 @@ export default function XpTracker({ rsn }: Props) {
             <button
               key={t}
               onClick={() => setTab(t)}
+              aria-pressed={tab === t}
               className={`px-3 py-1.5 rounded text-xs capitalize ${
                 tab === t
                   ? "bg-accent text-white"
@@ -172,6 +173,7 @@ export default function XpTracker({ rsn }: Props) {
               <button
                 key={p.id}
                 onClick={() => setPeriod(p.id)}
+                aria-pressed={period === p.id}
                 className={`px-2 py-1 rounded text-xs ${
                   period === p.id
                     ? "bg-success/20 text-success"
@@ -186,7 +188,11 @@ export default function XpTracker({ rsn }: Props) {
       </div>
 
       {loading && (
-        <p className="text-sm text-text-secondary">Loading data...</p>
+        <div className="space-y-3">
+          <div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4" />
+          <div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-1/2" />
+          <div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-2/3" />
+        </div>
       )}
 
       {tab === "gains" && !loading && gains && (
@@ -200,9 +206,9 @@ export default function XpTracker({ rsn }: Props) {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border text-text-secondary text-xs">
-                      <th className="text-left px-4 py-2">Skill</th>
-                      <th className="text-right px-4 py-2">XP Gained</th>
-                      <th className="text-right px-4 py-2">Rank Change</th>
+                      <th scope="col" className="text-left px-4 py-2">Skill</th>
+                      <th scope="col" className="text-right px-4 py-2">XP Gained</th>
+                      <th scope="col" className="text-right px-4 py-2">Rank Change</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -246,8 +252,8 @@ export default function XpTracker({ rsn }: Props) {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border text-text-secondary text-xs">
-                      <th className="text-left px-4 py-2">Boss</th>
-                      <th className="text-right px-4 py-2">Kills</th>
+                      <th scope="col" className="text-left px-4 py-2">Boss</th>
+                      <th scope="col" className="text-right px-4 py-2">Kills</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -283,9 +289,9 @@ export default function XpTracker({ rsn }: Props) {
           <table className="w-full text-sm">
             <thead className="sticky top-0 bg-bg-secondary">
               <tr className="border-b border-border text-text-secondary text-xs">
-                <th className="text-left px-4 py-2">Achievement</th>
-                <th className="text-left px-4 py-2">Skill</th>
-                <th className="text-right px-4 py-2">Date</th>
+                <th scope="col" className="text-left px-4 py-2">Achievement</th>
+                <th scope="col" className="text-left px-4 py-2">Skill</th>
+                <th scope="col" className="text-right px-4 py-2">Date</th>
               </tr>
             </thead>
             <tbody>
@@ -313,9 +319,9 @@ export default function XpTracker({ rsn }: Props) {
           <table className="w-full text-sm">
             <thead className="sticky top-0 bg-bg-secondary">
               <tr className="border-b border-border text-text-secondary text-xs">
-                <th className="text-left px-4 py-2">Activity</th>
-                <th className="text-left px-4 py-2">Period</th>
-                <th className="text-right px-4 py-2">Record</th>
+                <th scope="col" className="text-left px-4 py-2">Activity</th>
+                <th scope="col" className="text-left px-4 py-2">Period</th>
+                <th scope="col" className="text-right px-4 py-2">Record</th>
               </tr>
             </thead>
             <tbody>
@@ -343,7 +349,10 @@ export default function XpTracker({ rsn }: Props) {
       {tab === "competitions" && (
         <div>
           {!competitionsLoaded && (
-            <p className="text-sm text-text-secondary">Loading competitions...</p>
+            <div className="space-y-3">
+              <div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4" />
+              <div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-1/2" />
+            </div>
           )}
           {competitionsLoaded && competitions.length === 0 && (
             <p className="text-sm text-text-secondary">No competitions found for this player.</p>
