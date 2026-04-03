@@ -59,7 +59,7 @@ export const BOSS_PETS: BossPet[] = [
   { name: "Parasitic egg", source: "The Nightmare (Phosani)", icon: "Parasitic_egg.png", baseRate: 1400, category: "boss" },
   { name: "Scurry", source: "Scurrius", icon: "Scurry.png", baseRate: 3000, category: "boss" },
   { name: "Nid", source: "Araxxor", icon: "Nid.png", baseRate: 3000, category: "boss" },
-  { name: "Smol heredit", source: "Fortis Colosseum", icon: "Smol_heredit.png", baseRate: 200, category: "minigame" },
+  { name: "Smol heredit", source: "Fortis Colosseum", icon: "Smol_heredit.png", baseRate: 200, category: "boss" },
   { name: "Lil' creator", source: "Soul Wars (Spoils of war)", icon: "Lil%27_creator.png", baseRate: 400, category: "minigame" },
   { name: "Tiny tempor", source: "Tempoross", icon: "Tiny_tempor.png", baseRate: 8000, category: "minigame" },
   // Other pets

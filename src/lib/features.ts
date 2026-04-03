@@ -160,8 +160,8 @@ export const FEATURE_REGISTRY = {
     aliases: ["money making", "gp", "methods", "gp per hour", "hourly", "gold"],
   },
   "production-calc": {
-    title: "Production Calculator",
-    navLabel: "Production",
+    title: "Recipe Calculator",
+    navLabel: "Recipes",
     family: "Tools",
     sidebar: true,
     search: true,

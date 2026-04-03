@@ -30,17 +30,22 @@ function calcRecipe(
   itemMap: Map<string, number>,
   prices: Record<string, ItemPrice>,
 ): RecipeCalc {
+  const materials = Array.isArray(r.materials) ? r.materials : [];
+  const output = Array.isArray(r.output) ? r.output : [];
+
   let materialCost: number | null = 0;
-  for (const mat of r.materials) {
+  for (const mat of materials) {
+    if (!mat?.name) continue;
     const price = getItemPrice(mat.name, itemMap, prices);
     if (price == null) { materialCost = null; break; }
-    materialCost += price * mat.quantity;
+    materialCost += price * (mat.quantity ?? 1);
   }
 
   let outputValue: number | null = 0;
-  for (const out of r.output) {
+  for (const out of output) {
+    if (!out?.name) continue;
     const price = getItemPrice(out.name, itemMap, prices);
-    if (price != null && outputValue != null) outputValue += price * out.quantity;
+    if (price != null && outputValue != null) outputValue += price * (out.quantity ?? 1);
     else outputValue = null;
   }
 
@@ -118,7 +123,7 @@ export default function ProductionCalc() {
   if (loadError) {
     return (
       <div className="max-w-4xl">
-        <h2 className="text-xl font-semibold mb-5">Production Calculator</h2>
+        <h2 className="text-xl font-semibold mb-5">Recipe Calculator</h2>
         <ErrorState
           error={loadError}
           onRetry={() => setRetryCount((n) => n + 1)}
@@ -130,7 +135,7 @@ export default function ProductionCalc() {
   if (loading) {
     return (
       <div className="max-w-4xl">
-        <h2 className="text-xl font-semibold mb-1">Production Calculator</h2>
+        <h2 className="text-xl font-semibold mb-1">Recipe Calculator</h2>
         <div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4" />
       </div>
     );
@@ -138,7 +143,7 @@ export default function ProductionCalc() {
 
   return (
     <div className="max-w-4xl">
-      <h2 className="text-xl font-semibold mb-1">Production Calculator</h2>
+      <h2 className="text-xl font-semibold mb-1">Recipe Calculator</h2>
       <p className="text-xs text-text-secondary mb-4">
         {recipes.length.toLocaleString()} recipes — search any craftable item to
         see costs, XP, and profit
@@ -233,7 +238,7 @@ export default function ProductionCalc() {
           <div>
             <div className="section-kicker mb-2">Materials</div>
             <div className="space-y-1">
-              {selected.materials.map((mat) => {
+              {(Array.isArray(selected.materials) ? selected.materials : []).map((mat) => {
                 const price = getItemPrice(mat.name, itemMap, prices);
                 return (
                   <div
@@ -265,7 +270,7 @@ export default function ProductionCalc() {
                   </div>
                 );
               })}
-              {selected.materials.length === 0 && (
+              {(!Array.isArray(selected.materials) || selected.materials.length === 0) && (
                 <p className="text-xs text-text-secondary/50">No materials required</p>
               )}
             </div>
@@ -275,7 +280,7 @@ export default function ProductionCalc() {
           <div>
             <div className="section-kicker mb-2">Output</div>
             <div className="space-y-1">
-              {selected.output.map((out) => {
+              {(Array.isArray(selected.output) ? selected.output : []).map((out) => {
                 const price = getItemPrice(out.name, itemMap, prices);
                 return (
                   <div
