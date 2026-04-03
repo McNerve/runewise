@@ -70,9 +70,19 @@ export default function MoneyMaking({ hiscores }: Props) {
       methods = methods.filter((m) => m.category === category);
     }
 
+    // "Members only" unchecked = F2P only
     if (!membersOnly) {
       methods = methods.filter((m) => !m.members);
     }
+
+    // Deduplicate by name (keep highest GP/hr)
+    const seen = new Map<string, MoneyMethod>();
+    for (const m of methods) {
+      const key = m.name.toLowerCase();
+      const existing = seen.get(key);
+      if (!existing || m.baseGpPerHr > existing.baseGpPerHr) seen.set(key, m);
+    }
+    methods = [...seen.values()];
 
     if (bestForMe && hiscores) {
       methods = methods.filter((m) => meetsRequirements(m, hiscores));
@@ -170,6 +180,7 @@ export default function MoneyMaking({ hiscores }: Props) {
       </div>
 
       {/* Methods list */}
+      {!showWiki && (
       <div className="space-y-1.5">
         {filtered.map((method) => {
           const canDo = hiscores ? meetsRequirements(method, hiscores) : true;
@@ -281,6 +292,7 @@ export default function MoneyMaking({ hiscores }: Props) {
           );
         })}
       </div>
+      )}
 
       {!showWiki && filtered.length === 0 && (
         <EmptyState
@@ -300,6 +312,14 @@ export default function MoneyMaking({ hiscores }: Props) {
             if (!membersOnly) {
               methods = methods.filter((m) => !m.members);
             }
+            // Deduplicate wiki methods by activity name
+            const wikiSeen = new Set<string>();
+            methods = methods.filter((m) => {
+              const key = m.activity.toLowerCase();
+              if (wikiSeen.has(key)) return false;
+              wikiSeen.add(key);
+              return true;
+            });
             if (search.length >= 2) {
               const s = search.toLowerCase();
               methods = methods.filter((m) => m.activity.toLowerCase().includes(s));
