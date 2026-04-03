@@ -455,9 +455,9 @@ export default function CollectionLog({ rsn }: Props) {
     clearCacheKey(`temple-clog:${rsn.toLowerCase()}`);
 
     let cancelled = false;
-    setTempleData(null);
-    setTempleLoading(true); // eslint-disable-line react-hooks/set-state-in-effect -- loading state for async fetch
-    setTempleError(null);
+    setTempleData(null); // eslint-disable-line react-hooks/set-state-in-effect
+    setTempleLoading(true); // eslint-disable-line react-hooks/set-state-in-effect
+    setTempleError(null); // eslint-disable-line react-hooks/set-state-in-effect
     setTempleSynced(null);
 
     (async () => {

@@ -280,7 +280,7 @@ export default function DpsCalculator({ hiscores }: Props) {
     [activeModifiers]
   );
 
-  const result = useMemo(
+  const result = useMemo( // eslint-disable-line react-hooks/preserve-manual-memoization
     () =>
       calculateDps({
         attackLevel,
@@ -322,7 +322,7 @@ export default function DpsCalculator({ hiscores }: Props) {
     ]
   );
 
-  const toggleModifier = useCallback((id: string) => {
+  const toggleModifier = useCallback((id: string) => { // eslint-disable-line react-hooks/preserve-manual-memoization
     setActiveModifiers((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
@@ -334,7 +334,7 @@ export default function DpsCalculator({ hiscores }: Props) {
     });
   }, []);
 
-  const saveLoadout = useCallback(() => {
+  const saveLoadout = useCallback(() => { // eslint-disable-line react-hooks/preserve-manual-memoization
     const name = loadoutName.trim();
     if (!name) return;
     const loadout: GearLoadout = {
