@@ -2,7 +2,7 @@ import { bucketQueryAll } from "./bucket";
 import { getCached, setCache } from "./cache";
 import { MONSTERS as FALLBACK_MONSTERS } from "../data/monsters";
 
-const CACHE_KEY = "wiki-monsters:v1";
+const CACHE_KEY = "wiki-monsters:v2";
 const CACHE_TTL = 24 * 60 * 60 * 1000;
 
 const MONSTER_FIELDS = [

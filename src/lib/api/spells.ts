@@ -1,7 +1,7 @@
 import { bucketQueryAll } from "./bucket";
 import { getCached, setCache } from "./cache";
 
-const CACHE_KEY = "wiki-spells:v1";
+const CACHE_KEY = "wiki-spells:v2";
 const CACHE_TTL = 24 * 60 * 60 * 1000;
 
 const SPELL_FIELDS = [

@@ -1,7 +1,7 @@
 import { bucketQueryAll, type BucketWhere } from "./bucket";
 import { getCached, setCache } from "./cache";
 
-const CACHE_KEY = "wiki-recipes:v1";
+const CACHE_KEY = "wiki-recipes:v2";
 const CACHE_TTL = 24 * 60 * 60 * 1000;
 
 const RECIPE_FIELDS = [

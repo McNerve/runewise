@@ -1,7 +1,7 @@
 import { bucketQueryAll, type BucketWhere } from "./bucket";
 import { getCached, setCache } from "./cache";
 
-const CACHE_KEY = "wiki-equipment:v1";
+const CACHE_KEY = "wiki-equipment:v2";
 const CACHE_TTL = 24 * 60 * 60 * 1000;
 
 export type EquipmentSlot =
