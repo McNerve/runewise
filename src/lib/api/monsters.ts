@@ -2,7 +2,7 @@ import { bucketQueryAll } from "./bucket";
 import { getCached, setCache } from "./cache";
 import { MONSTERS as FALLBACK_MONSTERS } from "../data/monsters";
 
-const CACHE_KEY = "wiki-monsters:v1";
+const CACHE_KEY = "wiki-monsters:v2";
 const CACHE_TTL = 24 * 60 * 60 * 1000;
 
 const MONSTER_FIELDS = [
@@ -99,8 +99,8 @@ function num(value: string | undefined): number {
   return isNaN(n) ? 0 : n;
 }
 
-function parseAttackStyles(raw: string | undefined): string[] {
-  if (!raw) return [];
+function parseAttackStyles(raw: unknown): string[] {
+  if (!raw || typeof raw !== "string") return [];
   return raw
     .split(",")
     .map((s) => s.trim())
@@ -151,12 +151,13 @@ export async function fetchAllMonsters(): Promise<WikiMonster[]> {
     )
       .then((raw) => {
         const monsters = raw.map(toWikiMonster);
-        setCache(CACHE_KEY, monsters, { persist: true });
+        if (monsters.length > 0) setCache(CACHE_KEY, monsters, { persist: true });
         monstersPromise = null;
         return monsters;
       })
-      .catch(() => {
+      .catch((err: unknown) => {
         monstersPromise = null;
+        console.error("[RuneWise] Failed to fetch monsters:", err);
         return getFallbackMonsters();
       });
   }

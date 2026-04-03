@@ -35,8 +35,10 @@ import WikiImage from "../../components/WikiImage";
 import StructuredSection from "./StructuredSection";
 import BossMetaCard from "./components/BossMetaCard";
 import { BOSS_METADATA } from "../../lib/data/boss-metadata";
-import { fetchDropsForMonster, type WikiDrop } from "../../lib/api/drops";
+import { fetchDropsForMonster, fetchBossDropsFromWiki, type WikiDrop, type BossWikiDrop } from "../../lib/api/drops";
 import DropTable from "../../components/DropTable";
+import { Skeleton, TableSkeleton, CardSkeleton } from "../../components/Skeleton";
+import EmptyState from "../../components/EmptyState";
 
 interface Props {
   hiscores?: HiscoreData | null;
@@ -109,6 +111,134 @@ function scrollToGuideSection(sectionId: string) {
   element.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+function initWikiTabbers(container: HTMLElement) {
+  container.querySelectorAll(".tabber").forEach((tabber) => {
+    // Skip if already initialized
+    if (tabber.querySelector(".tabber-nav")) return;
+
+    const tabs = Array.from(tabber.querySelectorAll(":scope > .tabbertab"));
+    if (tabs.length === 0) return;
+
+    // Create nav bar
+    const nav = document.createElement("div");
+    nav.className = "tabber-nav";
+    nav.style.cssText = "display:flex;flex-wrap:wrap;gap:0.25rem;margin-bottom:0.5rem;";
+
+    tabs.forEach((tab, i) => {
+      const title = tab.getAttribute("data-title") || tab.getAttribute("title") || `Tab ${i + 1}`;
+      const btn = document.createElement("button");
+      btn.textContent = title;
+      btn.style.cssText = `padding:0.35rem 0.75rem;border-radius:0.5rem;font-size:0.75rem;font-weight:500;border:1px solid #2e3345;background:${i === 0 ? "rgba(59,130,246,0.15)" : "rgba(26,29,39,0.6)"};color:${i === 0 ? "#3b82f6" : "#a1a1aa"};cursor:pointer;transition:all 0.15s;`;
+
+      btn.addEventListener("click", () => {
+        tabs.forEach((t) => t.classList.remove("tabbertab--active"));
+        tab.classList.add("tabbertab--active");
+        // Re-init tooltips for newly visible tab content
+        setTimeout(() => initTooltips(tab as HTMLElement), 50);
+        nav.querySelectorAll("button").forEach((b, j) => {
+          b.style.background = j === tabs.indexOf(tab) ? "rgba(59,130,246,0.15)" : "rgba(26,29,39,0.6)";
+          b.style.color = j === tabs.indexOf(tab) ? "#3b82f6" : "#a1a1aa";
+          b.style.borderColor = j === tabs.indexOf(tab) ? "rgba(59,130,246,0.4)" : "#2e3345";
+        });
+      });
+
+      nav.appendChild(btn);
+    });
+
+    // Activate first tab
+    tabs[0].classList.add("tabbertab--active");
+    tabber.prepend(nav);
+  });
+}
+
+function initTooltips(container: HTMLElement) {
+  container.querySelectorAll("img").forEach((img) => {
+    if (img.getAttribute("data-tooltip-init")) return;
+    img.setAttribute("data-tooltip-init", "1");
+
+    // Use alt text, or parse item name from src filename
+    const label = img.getAttribute("alt")
+      || img.getAttribute("title")
+      || decodeURIComponent(img.getAttribute("src")?.split("/").pop()?.replace(/\.png.*/, "").replace(/_/g, " ") || "");
+
+    if (!label || label.length < 2) return;
+
+    img.style.cursor = "help";
+    const parent = img.parentElement;
+    if (!parent) return;
+    if (getComputedStyle(parent).position === "static") parent.style.position = "relative";
+
+    img.addEventListener("mouseenter", () => {
+      const tip = document.createElement("div");
+      tip.className = "wiki-tooltip";
+      tip.textContent = label;
+      parent.appendChild(tip);
+    });
+
+    img.addEventListener("mouseleave", () => {
+      parent.querySelectorAll(".wiki-tooltip").forEach((t) => t.remove());
+    });
+  });
+}
+
+function handleGuideClick(e: React.MouseEvent) {
+  const target = e.target;
+
+  // Handle tile marker copy button
+  if (target instanceof HTMLButtonElement && target.classList.contains("tile-marker-copy")) {
+    const tiles = target.getAttribute("data-tiles");
+    if (tiles) {
+      navigator.clipboard.writeText(tiles).then(() => {
+        const original = target.textContent;
+        target.textContent = "✓ Copied!";
+        target.style.color = "#22c55e";
+        target.style.borderColor = "rgba(34,197,94,0.3)";
+        setTimeout(() => {
+          target.textContent = original;
+          target.style.color = "#3b82f6";
+          target.style.borderColor = "#2e3345";
+        }, 2000);
+      });
+    }
+    return;
+  }
+
+  if (!(target instanceof HTMLImageElement)) return;
+
+  const src = target.src;
+  if (!src) return;
+
+  const label = target.alt || target.title || "";
+
+  const overlay = document.createElement("div");
+  overlay.className = "wiki-lightbox";
+  overlay.onclick = (ev) => { if (ev.target === overlay) overlay.remove(); };
+
+  const img = document.createElement("img");
+  img.src = src;
+  img.alt = label;
+  let scale = 1;
+  img.addEventListener("wheel", (ev) => {
+    ev.preventDefault();
+    scale = Math.max(0.5, Math.min(5, scale + (ev.deltaY > 0 ? -0.2 : 0.2)));
+    img.style.transform = `scale(${scale})`;
+  });
+  overlay.appendChild(img);
+
+  if (label) {
+    const labelEl = document.createElement("div");
+    labelEl.className = "wiki-lightbox-label";
+    labelEl.textContent = label;
+    overlay.appendChild(labelEl);
+  }
+
+  const onKey = (ev: KeyboardEvent) => {
+    if (ev.key === "Escape") { overlay.remove(); document.removeEventListener("keydown", onKey); }
+  };
+  document.addEventListener("keydown", onKey);
+  document.body.appendChild(overlay);
+}
+
 export default function BossGuide({ hiscores }: Props) {
   const { navigate, params } = useNavigation();
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -122,10 +252,12 @@ export default function BossGuide({ hiscores }: Props) {
   const [loading, setLoading] = useState(false);
   const [dropsLoading, setDropsLoading] = useState(false);
   const [wikiDrops, setWikiDrops] = useState<WikiDrop[]>([]);
+  const [bucketFallbackDrops, setBucketFallbackDrops] = useState<BossWikiDrop[]>([]);
   const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
   const [itemMap, setItemMap] = useState<Map<string, number>>(new Map());
   const activeRequest = useRef(0);
   const contentRef = useRef<HTMLDivElement>(null);
+  const guideContentRef = useRef<HTMLDivElement>(null);
 
   const filteredBosses = useMemo(
     () =>
@@ -137,22 +269,47 @@ export default function BossGuide({ hiscores }: Props) {
 
   const bossKc = useMemo(() => {
     if (!selectedBoss || !hiscores?.activities) return null;
-    const activity = hiscores.activities.find(
-      (item) =>
-        item.name.toLowerCase() === selectedBoss.name.toLowerCase() ||
-        selectedBoss.name.toLowerCase().includes(item.name.toLowerCase()) ||
-        item.name.toLowerCase().includes(selectedBoss.name.toLowerCase())
-    );
+    const bossName = selectedBoss.name.toLowerCase();
+    const altName = selectedBoss.hiscoresName?.toLowerCase();
+    const activity = hiscores.activities.find((item) => {
+      const actName = item.name.toLowerCase();
+      return (
+        actName === bossName ||
+        (altName && actName === altName) ||
+        bossName.includes(actName) ||
+        actName.includes(bossName)
+      );
+    });
     return activity && activity.score > 0 ? activity.score : null;
   }, [hiscores, selectedBoss]);
 
   const bossTasks = useMemo(() => {
     if (!selectedBoss) return [];
 
+    // Map boss names to their combat task boss names (handles mismatches)
+    const TASK_ALIASES: Record<string, string[]> = {
+      "Dagannoth Rex": ["Dagannoth Kings"],
+      "Dagannoth Prime": ["Dagannoth Kings"],
+      "Dagannoth Supreme": ["Dagannoth Kings"],
+      "TzKal-Zuk": ["The Inferno"],
+      "TzTok-Jad": ["TzHaar Fight Cave"],
+      "Barrows Chests": ["Barrows"],
+      "The Gauntlet": ["Gauntlet"],
+      "The Corrupted Gauntlet": ["Corrupted Gauntlet"],
+      "Nightmare": ["The Nightmare"],
+    };
+
+    const selected = normalizeBossLookup(selectedBoss.name);
+    const aliases = (TASK_ALIASES[selectedBoss.name] ?? []).map(normalizeBossLookup);
+
     return COMBAT_TASKS.filter((task) => {
       const taskBoss = normalizeBossLookup(task.boss);
-      const selected = normalizeBossLookup(selectedBoss.name);
-      return taskBoss === selected || taskBoss.includes(selected) || selected.includes(taskBoss);
+      return (
+        taskBoss === selected ||
+        taskBoss.includes(selected) ||
+        selected.includes(taskBoss) ||
+        aliases.some((alias) => taskBoss === alias || taskBoss.includes(alias))
+      );
     });
   }, [selectedBoss]);
 
@@ -270,7 +427,11 @@ export default function BossGuide({ hiscores }: Props) {
     setDropsLoading(true);
     setDropCategories([]);
     setWikiDrops([]);
+    setBucketFallbackDrops([]);
     const requestId = ++activeRequest.current;
+    const hasStaticDrops = BOSS_DROP_TABLES.some(
+      (t) => normalizeBossLookup(t.bossName) === normalizeBossLookup(boss.name)
+    );
     try {
       const [nextGuide, nextDrops, nextWikiDrops] = await Promise.all([
         fetchBossGuideDocument(boss.wikiPage),
@@ -281,6 +442,13 @@ export default function BossGuide({ hiscores }: Props) {
         setGuide(nextGuide);
         setDropCategories(nextDrops.categories);
         setWikiDrops(nextWikiDrops);
+        if (!hasStaticDrops && nextWikiDrops.length === 0) {
+          fetchBossDropsFromWiki(boss.name)
+            .then((rows) => {
+              if (requestId === activeRequest.current) setBucketFallbackDrops(rows);
+            })
+            .catch(() => {});
+        }
       }
     } finally {
       if (requestId === activeRequest.current) {
@@ -311,6 +479,14 @@ export default function BossGuide({ hiscores }: Props) {
       setLootKillsPerHour(bossLootTable.killsPerHour);
     }
   }, [bossLootTable]);
+
+  // Initialize wiki tabbers after guide content renders
+  useEffect(() => {
+    if (!loading && guide && guideContentRef.current) {
+      initWikiTabbers(guideContentRef.current);
+      initTooltips(guideContentRef.current);
+    }
+  }, [loading, guide]);
 
   return (
     <div className="space-y-5">
@@ -344,6 +520,7 @@ export default function BossGuide({ hiscores }: Props) {
             <button
               key={category}
               type="button"
+              aria-pressed={selectedCategory === category}
               onClick={() => setSelectedCategory(category)}
               className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
                 selectedCategory === category
@@ -362,7 +539,7 @@ export default function BossGuide({ hiscores }: Props) {
           <div className="mb-3 px-2 text-[10px] uppercase tracking-[0.2em] text-text-secondary/45">
             Boss Directory
           </div>
-          <div className="space-y-1.5 max-h-[70vh] overflow-y-auto pr-1">
+          <div className="space-y-1.5 max-h-[70vh] overflow-y-auto pr-1 scroll-fade sidebar-scroll">
             {filteredBosses.map((boss) => {
               const active = selectedBoss?.name === boss.name;
               return (
@@ -398,13 +575,21 @@ export default function BossGuide({ hiscores }: Props) {
               );
             })}
           </div>
+          {selectedBoss && (
+            <div className="flex justify-center py-2 xl:hidden text-text-secondary/30">
+              <svg width="20" height="12" viewBox="0 0 20 12" fill="none" stroke="currentColor" strokeWidth="2" className="animate-bounce">
+                <path d="M2 2l8 8 8-8" />
+              </svg>
+            </div>
+          )}
         </aside>
 
         <div ref={contentRef} className="space-y-4">
           {!selectedBoss ? (
-            <div className="py-10 text-center text-sm text-text-secondary">
-              Pick a boss from the left to load a curated strategy view with structured sections and related tools.
-            </div>
+            <EmptyState
+              title="Select a boss"
+              description="Pick a boss from the directory to load its curated strategy view, loot table, and combat tasks."
+            />
           ) : null}
 
           {selectedBoss ? (
@@ -414,12 +599,12 @@ export default function BossGuide({ hiscores }: Props) {
                   <WikiImage
                     src={bossIcon(selectedBoss.name)}
                     alt=""
-                    className="h-16 w-16 rounded-2xl object-cover"
+                    className="h-20 w-20 rounded-2xl border border-border/40 bg-bg-primary/60 object-contain p-1"
                     fallback={selectedBoss.name[0]}
                   />
                   <div className="space-y-2">
                     <div>
-                      <div className="text-[10px] uppercase tracking-[0.2em] text-text-secondary/45">
+                      <div className="text-[11px] uppercase tracking-[0.18em] text-accent/70 font-medium">
                         {selectedBoss.category}
                       </div>
                       <h3 className="text-2xl font-semibold tracking-tight">{selectedBoss.name}</h3>
@@ -439,6 +624,16 @@ export default function BossGuide({ hiscores }: Props) {
                         <span className="rounded-full border border-success/20 bg-success/10 px-3 py-1 text-success">
                           Your KC {bossKc.toLocaleString()}
                         </span>
+                      ) : null}
+                      {selectedBoss.location ? (
+                        <a
+                          href={`https://oldschool.runescape.wiki/w/${selectedBoss.location.replace(/ /g, "_")}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="rounded-full border border-accent/20 bg-accent/10 px-3 py-1 text-accent transition hover:bg-accent/20"
+                        >
+                          📍 {selectedBoss.location}
+                        </a>
                       ) : null}
                     </div>
                     {guide?.summary ? (
@@ -460,17 +655,21 @@ export default function BossGuide({ hiscores }: Props) {
                     <button
                       key={tab.id}
                       type="button"
+                      aria-pressed={activeTab === tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`rounded-2xl border px-3 py-2 text-left transition ${
+                      className={`relative rounded-xl border px-3.5 py-2 text-left transition ${
                         activeTab === tab.id
-                          ? "border-accent/40 bg-accent/12 text-white"
-                          : "border border-border bg-bg-primary/60 text-text-secondary hover:border-accent/40 hover:text-text-primary"
+                          ? "border-accent/50 bg-accent/10"
+                          : "border-border bg-bg-primary/50 text-text-secondary hover:border-border hover:bg-bg-primary/70"
                       }`}
                     >
-                      <div className="text-xs font-semibold">
+                      {activeTab === tab.id && (
+                        <div className="absolute -bottom-px left-3 right-3 h-0.5 rounded-full bg-accent" />
+                      )}
+                      <div className={`text-xs font-semibold ${activeTab === tab.id ? "text-accent" : ""}`}>
                         {tab.label}
                       </div>
-                      <div className={`text-[11px] ${activeTab === tab.id ? "text-white/75" : "text-text-secondary/70"}`}>
+                      <div className={`hidden sm:block text-[11px] ${activeTab === tab.id ? "text-accent/60" : "text-text-secondary/60"}`}>
                         {tab.description}
                       </div>
                     </button>
@@ -490,6 +689,12 @@ export default function BossGuide({ hiscores }: Props) {
                     label="DPS"
                     onClick={() => navigate("dps-calc", { monster: selectedBoss.name })}
                   />
+                  {selectedBoss.category === "Raids" && (
+                    <BossActionButton
+                      label="Raid Rooms"
+                      onClick={() => navigate("raids")}
+                    />
+                  )}
                   <a
                     href={`https://oldschool.runescape.wiki/w/${selectedBoss.wikiPage}`}
                     target="_blank"
@@ -503,7 +708,7 @@ export default function BossGuide({ hiscores }: Props) {
               </div>
 
               <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <div className="bg-bg-primary/45 px-4 py-3">
+                <div className="rounded-xl border border-border/60 bg-bg-primary/45 px-4 py-3">
                   <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
                     Guide Sections
                   </div>
@@ -514,7 +719,7 @@ export default function BossGuide({ hiscores }: Props) {
                     Structured strategy blocks in this workspace.
                   </div>
                 </div>
-                <div className="bg-bg-primary/45 px-4 py-3">
+                <div className="rounded-xl border border-border/60 bg-bg-primary/45 px-4 py-3">
                   <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
                     Drop Categories
                   </div>
@@ -529,7 +734,7 @@ export default function BossGuide({ hiscores }: Props) {
                         : "No structured loot groups available yet."}
                   </div>
                 </div>
-                <div className="bg-bg-primary/45 px-4 py-3">
+                <div className="rounded-xl border border-border/60 bg-bg-primary/45 px-4 py-3">
                   <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
                     Task References
                   </div>
@@ -540,7 +745,7 @@ export default function BossGuide({ hiscores }: Props) {
                     Boss-linked combat tasks available for planning.
                   </div>
                 </div>
-                <div className="bg-bg-primary/45 px-4 py-3">
+                <div className="rounded-xl border border-border/60 bg-bg-primary/45 px-4 py-3">
                   <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
                     Top Drop
                   </div>
@@ -556,8 +761,19 @@ export default function BossGuide({ hiscores }: Props) {
           ) : null}
 
           {loading && selectedBoss ? (
-            <div className="py-8 text-sm text-text-secondary">
-              Loading structured guide content for {selectedBoss.name}...
+            <div className="space-y-4">
+              <CardSkeleton />
+              <div className="grid gap-4 xl:grid-cols-[220px_minmax(0,1fr)]">
+                <div className="space-y-2">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Skeleton key={i} className="h-9 w-full rounded-lg" />
+                  ))}
+                </div>
+                <div className="space-y-4">
+                  <CardSkeleton />
+                  <TableSkeleton rows={4} cols={3} />
+                </div>
+              </div>
             </div>
           ) : null}
 
@@ -574,30 +790,33 @@ export default function BossGuide({ hiscores }: Props) {
                 />
               )}
             <div className="grid gap-4 xl:grid-cols-[220px_minmax(0,1fr)]">
-              <aside className="h-fit xl:sticky xl:top-6">
+              <aside className="h-fit xl:sticky xl:top-6 max-h-[calc(100vh-4rem)] overflow-y-auto scroll-fade sidebar-scroll">
                 <div className="mb-2 px-2 text-[10px] uppercase tracking-[0.2em] text-text-secondary/45">
                   Guide Sections
                 </div>
-                <div className="space-y-1">
-                  {guide.sections.map((section) => (
+                <div className="space-y-0.5">
+                  {guide.sections.map((section, index) => (
                     <button
                       key={section.id}
                       type="button"
                       onClick={() => scrollToGuideSection(section.id)}
-                      className="block rounded-xl px-3 py-2 text-sm text-text-secondary transition hover:bg-bg-primary/70 hover:text-text-primary"
+                      className="group flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-text-secondary transition hover:bg-bg-primary/60 hover:text-text-primary"
                     >
-                      {section.title}
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-bg-tertiary/60 text-[10px] font-medium text-text-secondary/60 group-hover:text-text-primary">
+                        {index + 1}
+                      </span>
+                      <span className="truncate">{section.title}</span>
                     </button>
                   ))}
                 </div>
               </aside>
 
-              <div className="space-y-4">
+              <div ref={guideContentRef} className="space-y-4" onClick={handleGuideClick}>
                 {guide.sections.map((section) => (
                   <section
                     key={section.id}
                     id={section.id}
-                    className="pb-5"
+                    className="rounded-xl border border-border/40 bg-bg-primary/25 p-5"
                   >
                     <h4 className="mb-4 text-base font-semibold tracking-tight text-text-primary">
                       {section.title}
@@ -623,9 +842,11 @@ export default function BossGuide({ hiscores }: Props) {
           ) : null}
 
           {selectedBoss && !loading && activeTab === "guide" && guide && guide.sections.length === 0 ? (
-            <div className="py-8 text-sm text-text-secondary">
-              No structured guide content was extracted for this boss yet. Use the wiki action above for the full source page.
-            </div>
+            <EmptyState
+              title="No guide content available"
+              description="No structured strategy sections were found for this boss. Try the wiki page for the full source."
+              action={{ label: "Open Wiki", onClick: () => window.open(`https://oldschool.runescape.wiki/w/${selectedBoss.wikiPage}`, "_blank") }}
+            />
           ) : null}
 
           {selectedBoss && !loading && activeTab === "drops" ? (
@@ -649,9 +870,7 @@ export default function BossGuide({ hiscores }: Props) {
               </div>
 
               {dropsLoading ? (
-                <div className="py-6 text-sm text-text-secondary">
-                  Loading drop table...
-                </div>
+                <TableSkeleton rows={8} cols={4} />
               ) : wikiDrops.length > 0 ? (
                 <DropTable
                   drops={wikiDrops}
@@ -689,7 +908,7 @@ export default function BossGuide({ hiscores }: Props) {
                       </div>
 
                       <div className="mb-4 grid gap-3 sm:grid-cols-2">
-                        <div className="bg-bg-secondary/70 px-4 py-3">
+                        <div className="rounded-xl border border-border/60 bg-bg-secondary/70 px-4 py-3">
                           <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
                             Expected GP / Kill
                           </div>
@@ -697,7 +916,7 @@ export default function BossGuide({ hiscores }: Props) {
                             {formatGp(Math.round(lootTotals.perKill))}
                           </div>
                         </div>
-                        <div className="bg-bg-secondary/70 px-4 py-3">
+                        <div className="rounded-xl border border-border/60 bg-bg-secondary/70 px-4 py-3">
                           <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
                             Expected GP / Hour
                           </div>
@@ -707,15 +926,15 @@ export default function BossGuide({ hiscores }: Props) {
                         </div>
                       </div>
 
-                      <div className="overflow-hidden">
+                      <div className="rounded-xl border border-border/60 overflow-hidden">
                         <table className="w-full text-sm">
                           <thead>
                             <tr className="border-b border-border text-text-secondary text-xs">
-                              <th className="px-4 py-2 text-left">Item</th>
-                              <th className="px-4 py-2 text-right">Rate</th>
-                              <th className="px-4 py-2 text-right">Qty</th>
-                              <th className="px-4 py-2 text-right">GE</th>
-                              <th className="px-4 py-2 text-right">GP/Kill</th>
+                              <th scope="col" className="px-4 py-2 text-left">Item</th>
+                              <th scope="col" className="px-4 py-2 text-right">Rate</th>
+                              <th scope="col" className="px-4 py-2 text-right">Qty</th>
+                              <th scope="col" className="px-4 py-2 text-right">GE</th>
+                              <th scope="col" className="px-4 py-2 text-right">GP/Kill</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -764,7 +983,7 @@ export default function BossGuide({ hiscores }: Props) {
                           key={`top-drop-${drop.name}`}
                           type="button"
                           onClick={() => navigate("market", { query: drop.name })}
-                          className="rounded-xl bg-bg-primary/45 p-3 text-left transition hover:bg-bg-primary/70"
+                          className="rounded-xl border border-border/50 bg-bg-primary/45 p-3 text-left transition hover:bg-bg-primary/70 hover:border-accent/30"
                         >
                           <div className="flex items-center gap-3">
                             <WikiImage
@@ -794,14 +1013,14 @@ export default function BossGuide({ hiscores }: Props) {
                       <h5 className="mb-2 text-xs uppercase tracking-[0.18em] text-text-secondary/45">
                         {category.name}
                       </h5>
-                      <div className="overflow-hidden">
+                      <div className="rounded-xl border border-border/60 overflow-hidden">
                         <table className="w-full text-sm">
                           <thead>
                             <tr className="border-b border-border text-text-secondary text-xs">
-                              <th className="px-4 py-2 text-left">Item</th>
-                              <th className="px-4 py-2 text-right">Qty</th>
-                              <th className="px-4 py-2 text-right">Rate</th>
-                              <th className="px-4 py-2 text-right">GE</th>
+                              <th scope="col" className="px-4 py-2 text-left">Item</th>
+                              <th scope="col" className="px-4 py-2 text-right">Qty</th>
+                              <th scope="col" className="px-4 py-2 text-right">Rate</th>
+                              <th scope="col" className="px-4 py-2 text-right">GE</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -849,10 +1068,57 @@ export default function BossGuide({ hiscores }: Props) {
                     </div>
                   ))}
                 </div>
-              ) : (
-                <div className="py-6 text-sm text-text-secondary">
-                  No structured drop data was found for this boss in the embedded workspace. Use the full drops view or wiki page for deeper inspection.
+              ) : bucketFallbackDrops.length > 0 ? (
+                <div>
+                  <p className="mb-3 text-xs text-text-secondary">
+                    Wiki bucket drop data for {selectedBoss.name}.
+                  </p>
+                  <div className="rounded-xl border border-border/60 overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border text-text-secondary text-xs">
+                        <th scope="col" className="px-4 py-2 text-left">Item</th>
+                        <th scope="col" className="px-4 py-2 text-right">Qty</th>
+                        <th scope="col" className="px-4 py-2 text-right">Rate</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {bucketFallbackDrops.map((drop, i) => (
+                        <tr
+                          key={`bucket-drop-${drop.item}-${i}`}
+                          className="border-b border-border/50 even:bg-bg-secondary/35"
+                        >
+                          <td className="px-4 py-2">
+                            <button
+                              type="button"
+                              onClick={() => navigate("market", { query: drop.item })}
+                              className="flex items-center gap-2 text-left text-text-primary transition hover:text-accent"
+                            >
+                              <WikiImage
+                                src={itemIcon(drop.item)}
+                                alt=""
+                                className="h-5 w-5 shrink-0"
+                                fallback={drop.item[0]}
+                              />
+                              <span>{drop.item}</span>
+                            </button>
+                          </td>
+                          <td className="px-4 py-2 text-right text-text-secondary">{drop.quantity}</td>
+                          <td className="px-4 py-2 text-right text-text-secondary">
+                            {drop.rate === 1 ? "Always" : drop.rate > 0 ? `1/${drop.rate.toLocaleString()}` : "Varies"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  </div>
                 </div>
+              ) : (
+                <EmptyState
+                  title="No drop data available"
+                  description="No structured loot data was found for this boss. Try the full drops view or wiki page."
+                  action={{ label: "Open Full Drops View", onClick: () => navigate("loot", { monster: selectedBoss.name, tab: "drops" }) }}
+                />
               )}
             </section>
           ) : null}
@@ -881,14 +1147,24 @@ export default function BossGuide({ hiscores }: Props) {
                 <div className="space-y-4">
                   {tasksByTier.map((group) => (
                     <div key={group.tier}>
-                      <div className="mb-2 text-[11px] uppercase tracking-[0.16em] text-text-secondary">
-                        {group.tier}
+                      <div className="mb-2 flex items-center gap-2">
+                        <span className={`inline-block h-2 w-2 rounded-full ${
+                          group.tier === "Easy" ? "bg-success" :
+                          group.tier === "Medium" ? "bg-accent" :
+                          group.tier === "Hard" ? "bg-warning" :
+                          group.tier === "Elite" ? "bg-danger" :
+                          group.tier === "Master" ? "bg-[#a78bfa]" :
+                          "bg-[#f472b6]"
+                        }`} />
+                        <span className="text-[11px] uppercase tracking-[0.16em] text-text-secondary">
+                          {group.tier}
+                        </span>
                       </div>
                       <div className="space-y-2">
                         {group.tasks.map((task: CombatTask) => (
                           <div
                             key={task.name}
-                            className="px-4 py-3"
+                            className="rounded-xl border border-border/40 bg-bg-primary/30 px-4 py-3"
                           >
                             <div className="flex items-start justify-between gap-3">
                               <div className="min-w-0">
@@ -919,9 +1195,10 @@ export default function BossGuide({ hiscores }: Props) {
                   ))}
                 </div>
               ) : (
-                <div className="py-6 text-sm text-text-secondary">
-                  No boss-linked combat tasks are currently listed in the in-app reference for {selectedBoss.name}.
-                </div>
+                <EmptyState
+                  title="No combat tasks found"
+                  description={`No boss-linked combat achievement tasks found for ${selectedBoss.name}.`}
+                />
               )}
             </section>
           ) : null}

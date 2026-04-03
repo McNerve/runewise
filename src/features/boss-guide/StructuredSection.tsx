@@ -29,8 +29,14 @@ const INVALID_LOADOUT_LABELS = [
   "mage",
 ] as const;
 
+// Threshold: items with text longer than this are likely descriptions, not requirements
+const MAX_REQUIREMENT_LENGTH = 80;
+
 function normalizeText(value: string) {
-  return value.replace(/\s+/g, " ").trim();
+  return value
+    .replace(/\s+/g, " ")
+    .replace(/^[•◦▪▸►●○◆◇‣⁃\-–—]\s*/, "")
+    .trim();
 }
 
 function parseDocument(html: string) {
@@ -45,7 +51,9 @@ function parseListItems(doc: Document, title: string): IconTextItem[] {
       text: normalizeText(node.textContent ?? ""),
     }))
     .filter((item) => item.text.length > 0)
-    .filter((item) => item.text.toLowerCase() !== title.trim().toLowerCase());
+    .filter((item) => item.text.toLowerCase() !== title.trim().toLowerCase())
+    // Filter out long description paragraphs — keep only actual requirements/skills
+    .filter((item) => item.text.length <= MAX_REQUIREMENT_LENGTH || item.icon !== null);
 
   return items;
 }
@@ -153,18 +161,34 @@ function sectionKind(title: string) {
   return null;
 }
 
-function renderIcon(icon: string | null, text: string) {
+function renderIcon(icon: string | null, text: string, size: "sm" | "md" = "md") {
+  const sizeClass = size === "sm" ? "h-6 w-6 p-1" : "h-8 w-8 p-1.5";
+  const fallbackSize = size === "sm" ? "h-6 w-6 text-[8px]" : "h-8 w-8 text-[9px]";
   return icon ? (
     <WikiImage
       src={icon}
       alt=""
-      className="h-9 w-9 rounded-full bg-bg-primary/60 p-1.5 object-contain"
+      className={`${sizeClass} rounded-md bg-bg-primary/60 object-contain`}
       fallback={text[0]}
     />
   ) : (
-    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-bg-primary/60 text-xs font-semibold text-text-secondary">
+    <span className={`flex ${fallbackSize} items-center justify-center rounded-md bg-bg-primary/60 font-semibold text-text-secondary`}>
       {text[0]}
     </span>
+  );
+}
+
+function RawHtmlFallback({ html, kind }: { html: string; kind: string | null }) {
+  const extraClass = kind === "loadout"
+    ? "article-content--loadout"
+    : kind === "requirements" || kind === "skills"
+      ? "article-content--structured article-content--requirements"
+      : "";
+  return (
+    <div
+      className={`article-content text-sm leading-7 text-text-secondary ${extraClass}`.trim()}
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
   );
 }
 
@@ -176,17 +200,17 @@ export default function StructuredSection({ title, html }: StructuredSectionProp
 
   if (kind === "requirements" || kind === "skills") {
     const items = parseListItems(doc, title);
-    if (items.length === 0) return null;
+    if (items.length === 0) return <RawHtmlFallback html={html} kind={kind} />;
 
     return (
-      <div className="grid gap-2.5 xl:grid-cols-2">
+      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
         {items.map((item, index) => (
           <div
             key={`${title}-${index}`}
-            className="flex items-center gap-3 rounded-2xl border border-border/70 bg-bg-primary/40 px-3.5 py-3"
+            className="flex items-center gap-2.5 rounded-lg border border-border/50 bg-bg-primary/40 px-3 py-2"
           >
-            {renderIcon(item.icon, item.text)}
-            <div className="min-w-0 text-sm leading-6 text-text-primary">{item.text}</div>
+            {renderIcon(item.icon, item.text, "sm")}
+            <div className="min-w-0 text-sm leading-5 text-text-primary">{item.text}</div>
           </div>
         ))}
       </div>
@@ -194,43 +218,38 @@ export default function StructuredSection({ title, html }: StructuredSectionProp
   }
 
   const rows = parseLoadoutRows(doc);
-  if (rows.length === 0) return null;
+  if (rows.length === 0) return <RawHtmlFallback html={html} kind="loadout" />;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-1">
       {rows.map((row, index) => (
         <div
           key={`${title}-row-${index}`}
-          className="rounded-2xl border border-border/70 bg-bg-primary/38 p-3.5"
+          className="flex items-start gap-3 rounded-lg border border-border/40 bg-bg-primary/30 px-3 py-2.5"
         >
-          <div className="grid gap-3 xl:grid-cols-[170px_minmax(0,1fr)] xl:items-start">
-            <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-bg-secondary/55 px-3 py-2.5">
-              {renderIcon(row.slot.icon, row.slot.text)}
-              <div className="min-w-0">
-                <div className="text-[10px] uppercase tracking-[0.18em] text-text-secondary/52">Slot</div>
-                <div className="truncate text-sm font-semibold text-text-primary">{row.slot.text}</div>
+          {/* Slot label */}
+          <div className="flex shrink-0 items-center gap-2 w-28">
+            {renderIcon(row.slot.icon, row.slot.text, "sm")}
+            <span className="text-xs font-medium text-text-secondary truncate">{row.slot.text}</span>
+          </div>
+          {/* Item options */}
+          <div className="flex flex-wrap gap-1.5 min-w-0">
+            {row.options.map((option, optionIndex) => (
+              <div
+                key={`${title}-row-${index}-option-${optionIndex}`}
+                className={`flex items-center gap-1.5 rounded-lg border px-2 py-1 ${
+                  optionIndex === 0
+                    ? "border-accent/25 bg-accent/8"
+                    : "border-border/40 bg-bg-secondary/40"
+                }`}
+              >
+                {renderIcon(option.icon, option.text, "sm")}
+                <span className="text-xs text-text-primary truncate max-w-[160px]">{option.text}</span>
+                {optionIndex === 0 && (
+                  <span className="text-[9px] uppercase tracking-wide text-accent/70 font-semibold">Best</span>
+                )}
               </div>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {row.options.map((option, optionIndex) => (
-                <div
-                  key={`${title}-row-${index}-option-${optionIndex}`}
-                  className={`flex min-w-[190px] max-w-full items-center gap-2.5 rounded-xl border px-3 py-2 ${
-                    optionIndex === 0
-                      ? "border-accent/25 bg-accent/8"
-                      : "border-border/65 bg-bg-secondary/62"
-                  }`}
-                >
-                  {renderIcon(option.icon, option.text)}
-                  <div className="min-w-0">
-                    <div className="truncate text-sm leading-5 text-text-primary">{option.text}</div>
-                    {optionIndex === 0 ? (
-                      <div className="text-[10px] uppercase tracking-[0.16em] text-accent/80">Best</div>
-                    ) : null}
-                  </div>
-                </div>
-              ))}
-            </div>
+            ))}
           </div>
         </div>
       ))}

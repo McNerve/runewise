@@ -1,6 +1,9 @@
 import { fetchJson } from "./client";
+import { isTauri } from "../env";
 
-const TEMPLE_BASE = "https://templeosrs.com/api";
+const TEMPLE_BASE = isTauri
+  ? "https://templeosrs.com/api"
+  : "/api/temple";
 const CLOG_TTL = 10 * 60 * 1000; // 10 minutes
 
 export interface TempleCollectionItem {
@@ -45,7 +48,14 @@ export async function fetchTemplePlayerInfo(
         username: String(info.Username ?? rsn),
         country: info.Country ? String(info.Country) : null,
         game_mode: String(info["Game mode"] ?? "Main"),
-        clog_synced: Boolean(info["Collection log synced"]),
+        clog_synced: Boolean(
+          info["Collection log synced"] ??
+          info["Clog synced"] ??
+          info["clog_synced"] ??
+          // If field is missing, we can't tell from player_info alone —
+          // the collection log endpoint itself is the source of truth
+          null
+        ),
       };
     },
   });
@@ -65,26 +75,64 @@ export async function fetchTempleCollectionLog(
       if (!clog) return null as unknown as TempleCollectionLog;
 
       const categories: Record<string, TempleCollectionItem[]> = {};
-      const items = clog.items as Record<string, Record<string, unknown>> | undefined;
+      const items = clog.items as Record<string, unknown> | undefined;
 
       if (items) {
-        for (const [id, item] of Object.entries(items)) {
-          const cat = String(item.category ?? "Other");
-          if (!categories[cat]) categories[cat] = [];
-          categories[cat].push({
-            id: parseInt(id, 10),
+        // API returns: { category_name: [{id, count, date}, ...], ... }
+        for (const [catSlug, catItems] of Object.entries(items)) {
+          const catName = catSlug
+            .replace(/_/g, " ")
+            .replace(/\b\w/g, (c) => c.toUpperCase());
+          if (!Array.isArray(catItems)) continue;
+          categories[catName] = (catItems as Record<string, unknown>[]).map((item) => ({
+            id: Number(item.id ?? 0),
             name: item.name ? String(item.name) : undefined,
             count: Number(item.count ?? 0),
-            obtained_at: item.obtained_at ? String(item.obtained_at) : undefined,
-          });
+            obtained_at: item.date ? String(item.date) : undefined,
+          }));
         }
       }
 
       return {
-        total: Number(clog.total ?? 0),
-        finished: Number(clog.finished ?? 0),
+        total: Number(clog.total_collections_available ?? clog.total ?? 0),
+        finished: Number(clog.total_collections_finished ?? clog.finished ?? 0),
         categories,
       };
+    },
+  });
+}
+
+export interface TempleClogSchema {
+  tabs: Record<string, Record<string, number[]>>;
+}
+
+export async function fetchTempleClogSchema(): Promise<TempleClogSchema> {
+  return fetchJson<TempleClogSchema>({
+    url: `${TEMPLE_BASE}/collection-log/categories.php`,
+    cacheKey: "temple-clog-schema",
+    ttlMs: 24 * 60 * 60 * 1000,
+    transform: (json) => {
+      const data = json as Record<string, Record<string, number[]>>;
+      return { tabs: data };
+    },
+  });
+}
+
+export async function fetchTempleClogItemNames(): Promise<Map<number, string>> {
+  return fetchJson<Map<number, string>>({
+    url: `${TEMPLE_BASE}/collection-log/items.php`,
+    cacheKey: "temple-clog-items",
+    ttlMs: 24 * 60 * 60 * 1000, // 24 hours — item names rarely change
+    transform: (json) => {
+      const data = json as Record<string, unknown>;
+      const items = data.items as Record<string, string> | undefined;
+      const map = new Map<number, string>();
+      if (items) {
+        for (const [id, name] of Object.entries(items)) {
+          map.set(Number(id), name);
+        }
+      }
+      return map;
     },
   });
 }

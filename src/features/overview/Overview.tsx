@@ -1,12 +1,32 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { type HiscoreData } from "../../lib/api/hiscores";
 import { fetchWomPlayer, type WomPlayer } from "../../lib/api/wom";
 import { xpForLevel } from "../../lib/formulas/xp";
 import { combatLevel } from "../../lib/formulas/combat";
-import { SKILL_ICONS, NAV_ICONS, bossIconSmall, bossIcon, itemIcon } from "../../lib/sprites";
+import { WIKI_IMG, SKILL_ICONS, NAV_ICONS, bossIconSmall, bossIcon, itemIcon } from "../../lib/sprites";
 import { useNavigation } from "../../lib/NavigationContext";
 import WikiImage from "../../components/WikiImage";
 import { TRAINING_METHODS } from "../../lib/data/training-methods";
+import QuestTracker from "../quests/QuestTracker";
+import DiaryTracker from "../diaries/DiaryTracker";
+const CombatTasks = lazy(() => import("../combat-tasks/CombatTasks"));
+
+type ProfileTab = "overview" | "quests" | "diaries" | "combat" | "unlock";
+
+function ProgressRing({ obtained, total, size = 22 }: { obtained: number; total: number; size?: number }) {
+  const pct = total > 0 ? obtained / total : 0;
+  const r = (size - 3) / 2;
+  const c = 2 * Math.PI * r;
+  return (
+    <svg width={size} height={size} className="shrink-0">
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--color-bg-tertiary)" strokeWidth={2} />
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none"
+        stroke={pct >= 1 ? "var(--color-success)" : "var(--color-accent)"}
+        strokeWidth={2} strokeDasharray={c} strokeDashoffset={c * (1 - pct)}
+        strokeLinecap="round" transform={`rotate(-90 ${size / 2} ${size / 2})`} />
+    </svg>
+  );
+}
 
 interface Props {
   hiscores: HiscoreData;
@@ -39,8 +59,15 @@ const SKILL_ORDER = [
 ];
 
 export default function Overview({ hiscores, rsn }: Props) {
-  const { navigate } = useNavigation();
+  const { navigate, params } = useNavigation();
   const [womPlayer, setWomPlayer] = useState<WomPlayer | null>(null);
+  const initialTab: ProfileTab =
+    params.tab === "quests" ? "quests" :
+    params.tab === "diaries" ? "diaries" :
+    params.tab === "combat" ? "combat" :
+    params.tab === "unlock" ? "unlock" :
+    "overview";
+  const [profileTab, setProfileTab] = useState<ProfileTab>(initialTab);
 
   useEffect(() => {
     if (!rsn) return;
@@ -81,6 +108,11 @@ export default function Overview({ hiscores, rsn }: Props) {
     (a) => a.name === "Colosseum Glory"
   )?.score ?? null;
 
+  const questPoints = hiscores.activities?.find(
+    (a) => a.name === "Quest Points"
+  )?.score ?? null;
+
+
   const clueTiers = ["beginner", "easy", "medium", "hard", "elite", "master"].map((tier) => ({
     tier,
     count: hiscores.activities?.find((a) => a.name.toLowerCase() === `clue scrolls (${tier})`)?.score ?? 0,
@@ -105,17 +137,20 @@ export default function Overview({ hiscores, rsn }: Props) {
 
       {/* Summary cards */}
       <div className="grid grid-cols-4 gap-3 mb-6">
-        <div className="text-center">
+        <div className="flex flex-col items-center gap-1">
+          <img src={`${WIKI_IMG}/Attack_style_icon.png`} alt="" className="w-5 h-5 opacity-50" onError={(e) => { e.currentTarget.style.display = "none"; }} />
           <div className="text-2xl font-bold text-accent">
             {cmb.toFixed(0)}
           </div>
           <div className="text-xs text-text-secondary">Combat</div>
         </div>
-        <div className="text-center">
+        <div className="flex flex-col items-center gap-1">
+          <img src={`${WIKI_IMG}/Stats_icon.png`} alt="" className="w-5 h-5 opacity-50" onError={(e) => { e.currentTarget.style.display = "none"; }} />
           <div className="text-2xl font-bold">{totalLevel.toLocaleString()}</div>
           <div className="text-xs text-text-secondary">Total Level</div>
         </div>
-        <div className="text-center">
+        <div className="flex flex-col items-center gap-1">
+          <img src={`${WIKI_IMG}/Antique_lamp.png`} alt="" className="w-5 h-5 opacity-50" onError={(e) => { e.currentTarget.style.display = "none"; }} />
           <div className="text-2xl font-bold">
             {totalXp >= 1_000_000_000
               ? `${(totalXp / 1_000_000_000).toFixed(1)}B`
@@ -123,8 +158,13 @@ export default function Overview({ hiscores, rsn }: Props) {
           </div>
           <div className="text-xs text-text-secondary">Total XP</div>
         </div>
-        <div className="text-center">
-          <div className="text-2xl font-bold text-success">
+        <div className="flex flex-col items-center gap-1">
+          {maxedSkills >= 24 ? (
+            <img src={`${WIKI_IMG}/Max_cape.png`} alt="" className="w-5 h-5 opacity-50" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+          ) : (
+            <ProgressRing obtained={maxedSkills} total={24} size={22} />
+          )}
+          <div className={`text-2xl font-bold ${maxedSkills >= 24 ? "text-success" : ""}`}>
             {maxedSkills}/24
           </div>
           <div className="text-xs text-text-secondary">Maxed Skills</div>
@@ -136,7 +176,7 @@ export default function Overview({ hiscores, rsn }: Props) {
         {collectionLog != null && collectionLog > 0 && (
           <div className="p-3 text-center">
             <div className="flex items-center justify-center gap-1.5 mb-1">
-              <WikiImage src={NAV_ICONS.tracker} alt="" className="w-4 h-4" fallback="C" />
+              <WikiImage src={NAV_ICONS["collection-log"]} alt="" className="w-4 h-4" fallback="C" />
               <div className="text-lg font-bold">{collectionLog}<span className="text-xs text-text-secondary font-normal">/1,699</span></div>
             </div>
             <div className="text-xs text-text-secondary">Collection Log</div>
@@ -177,35 +217,75 @@ export default function Overview({ hiscores, rsn }: Props) {
         )}
       </div>
 
-      {/* Clue scroll breakdown */}
-      {clueTiers.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mb-4 justify-center">
-          {clueTiers.map((c) => (
-            <div key={c.tier} className="px-3 py-2 flex items-center gap-2">
-              <WikiImage src={itemIcon(`Clue scroll (${c.tier})`)} alt="" className="w-4 h-4" fallback="C" />
-              <div className="text-sm font-bold">{c.count}</div>
-              <div className="text-[10px] text-text-secondary capitalize">{c.tier}</div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* WOM data: EHP, EHB, account type */}
-      <div className="flex items-center gap-3 mb-4 text-xs text-text-secondary">
-        {overallRank > 0 && <span>Overall rank #{overallRank.toLocaleString()}</span>}
-        {womPlayer?.type && womPlayer.type !== "regular" && (
-          <span className="bg-accent/15 text-accent px-1.5 py-0.5 rounded capitalize">
-            {womPlayer.type.replace("_", " ")}
-          </span>
+      {/* WOM data: Rank, EHP, EHB, account type */}
+      <div className="flex flex-wrap justify-center gap-3 mb-4">
+        {overallRank > 0 && (
+          <div className="text-center px-3 py-1.5">
+            <div className="text-sm font-bold tabular-nums">#{overallRank.toLocaleString()}</div>
+            <div className="text-[10px] text-text-secondary">Overall Rank</div>
+          </div>
         )}
         {womPlayer?.ehp != null && womPlayer.ehp > 0 && (
-          <span title="Efficient Hours Played">EHP: {womPlayer.ehp.toFixed(0)}</span>
+          <div className="text-center px-3 py-1.5" title="Efficient Hours Played">
+            <div className="text-sm font-bold tabular-nums">{womPlayer.ehp.toFixed(0)}</div>
+            <div className="text-[10px] text-text-secondary">EHP</div>
+          </div>
         )}
         {womPlayer?.ehb != null && womPlayer.ehb > 0 && (
-          <span title="Efficient Hours Bossed">EHB: {womPlayer.ehb.toFixed(0)}</span>
+          <div className="text-center px-3 py-1.5" title="Efficient Hours Bossed">
+            <div className="text-sm font-bold tabular-nums">{womPlayer.ehb.toFixed(0)}</div>
+            <div className="text-[10px] text-text-secondary">EHB</div>
+          </div>
+        )}
+        {womPlayer?.type && womPlayer.type !== "regular" && (
+          <div className="text-center px-3 py-1.5">
+            <div className="text-sm font-bold text-accent capitalize">{womPlayer.type.replace("_", " ")}</div>
+            <div className="text-[10px] text-text-secondary">Account Type</div>
+          </div>
         )}
       </div>
 
+      {/* Profile sub-tabs */}
+      <div className="flex gap-1 mb-5 overflow-x-auto justify-center">
+        {([
+          { id: "overview" as const, label: "Overview", icon: `${WIKI_IMG}/Stats_icon.png` },
+          { id: "quests" as const, label: `Quests${questPoints ? ` (${questPoints} QP)` : ""}`, icon: `${WIKI_IMG}/Quest_point_icon.png` },
+          { id: "diaries" as const, label: "Diaries", icon: `${WIKI_IMG}/Achievement_Diaries_icon.png` },
+          { id: "combat" as const, label: "Combat Tasks", icon: `${WIKI_IMG}/Combat_Achievements_icon.png` },
+        ]).map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setProfileTab(tab.id)}
+            aria-pressed={profileTab === tab.id}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
+              profileTab === tab.id
+                ? "bg-accent text-white"
+                : "text-text-secondary hover:bg-bg-secondary/50"
+            }`}
+          >
+            <img src={tab.icon} alt="" className="w-4 h-4" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Sub-tab: Quests ── */}
+      {profileTab === "quests" && <QuestTracker hiscores={hiscores} />}
+
+      {/* ── Sub-tab: Diaries ── */}
+      {profileTab === "diaries" && <DiaryTracker hiscores={hiscores} />}
+
+      {/* ── Sub-tab: Combat Tasks ── */}
+      {profileTab === "combat" && (
+        <Suspense fallback={<div className="py-8 text-center"><div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4 mx-auto" /></div>}>
+          <CombatTasks />
+        </Suspense>
+      )}
+
+
+      {/* ── Sub-tab: Overview (skills, bosses, etc.) ── */}
+      {profileTab === "overview" && (
+      <>
       {/* Skill grid — 3 columns, OSRS layout */}
       <div className="grid grid-cols-3 gap-1.5">
         {SKILL_ORDER.map((skillName) => {
@@ -259,35 +339,66 @@ export default function Overview({ hiscores, rsn }: Props) {
           );
         })}
       </div>
+      {/* Clue scroll breakdown */}
+      {clueTiers.length > 0 && (
+        <div className="mt-6">
+          <h3 className="text-xs uppercase tracking-wider text-text-secondary/60 mb-2">
+            Clue Scrolls
+          </h3>
+          <div className="flex flex-wrap gap-2 justify-center">
+            {clueTiers.map((c) => (
+              <div key={c.tier} className="flex items-center gap-2 px-4 py-2.5">
+                <WikiImage src={itemIcon(`Clue scroll (${c.tier})`)} alt="" className="w-5 h-5" fallback="C" />
+                <div>
+                  <div className="text-sm font-bold">{c.count}</div>
+                  <div className="text-[10px] text-text-secondary capitalize">{c.tier}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       {/* Minigames */}
       {hasMinigames && (
         <div className="mt-6">
           <h3 className="text-xs uppercase tracking-wider text-text-secondary/60 mb-2">
             Minigames
           </h3>
-          <div className="flex flex-wrap gap-1.5 justify-center">
+          <div className="flex flex-wrap gap-2 justify-center">
             {wintertodt > 0 && (
-              <div className="px-4 py-2.5 text-center">
-                <div className="text-sm font-bold">{wintertodt.toLocaleString()}</div>
-                <div className="text-[10px] text-text-secondary">Wintertodt</div>
+              <div className="flex items-center gap-2 px-4 py-2.5">
+                <img src={`${WIKI_IMG}/Wintertodt_icon.png`} alt="" className="w-5 h-5" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                <div>
+                  <div className="text-sm font-bold">{wintertodt.toLocaleString()}</div>
+                  <div className="text-[10px] text-text-secondary">Wintertodt</div>
+                </div>
               </div>
             )}
             {tempoross > 0 && (
-              <div className="px-4 py-2.5 text-center">
-                <div className="text-sm font-bold">{tempoross.toLocaleString()}</div>
-                <div className="text-[10px] text-text-secondary">Tempoross</div>
+              <div className="flex items-center gap-2 px-4 py-2.5">
+                <img src={`${WIKI_IMG}/Tempoross.png`} alt="" className="w-5 h-5" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                <div>
+                  <div className="text-sm font-bold">{tempoross.toLocaleString()}</div>
+                  <div className="text-[10px] text-text-secondary">Tempoross</div>
+                </div>
               </div>
             )}
             {rifts > 0 && (
-              <div className="px-4 py-2.5 text-center">
-                <div className="text-sm font-bold">{rifts.toLocaleString()}</div>
-                <div className="text-[10px] text-text-secondary">GOTR Rifts</div>
+              <div className="flex items-center gap-2 px-4 py-2.5">
+                <img src={`${WIKI_IMG}/Guardians_of_the_Rift_logo.png`} alt="" className="w-5 h-5" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                <div>
+                  <div className="text-sm font-bold">{rifts.toLocaleString()}</div>
+                  <div className="text-[10px] text-text-secondary">GOTR Rifts</div>
+                </div>
               </div>
             )}
             {gauntlet > 0 && (
-              <div className="px-4 py-2.5 text-center">
-                <div className="text-sm font-bold">{gauntlet.toLocaleString()}</div>
-                <div className="text-[10px] text-text-secondary">Corrupted Gauntlet</div>
+              <div className="flex items-center gap-2 px-4 py-2.5">
+                <img src={`${WIKI_IMG}/Crystalline_Hunllef_icon.png`} alt="" className="w-5 h-5" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                <div>
+                  <div className="text-sm font-bold">{gauntlet.toLocaleString()}</div>
+                  <div className="text-[10px] text-text-secondary">Corrupted Gauntlet</div>
+                </div>
               </div>
             )}
           </div>
@@ -340,6 +451,8 @@ export default function Overview({ hiscores, rsn }: Props) {
         </div>
       )}
 
+      </>
+      )}
     </div>
   );
 }

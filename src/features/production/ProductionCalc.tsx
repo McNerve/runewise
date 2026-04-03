@@ -4,13 +4,27 @@ import { fetchLatestPrices, fetchMapping, type ItemPrice } from "../../lib/api/g
 import { formatGp } from "../../lib/format";
 import { itemIcon, skillIcon } from "../../lib/sprites";
 import ErrorState from "../../components/ErrorState";
+import { useNavigation } from "../../lib/NavigationContext";
 
 function getItemPrice(
   name: string,
   itemMap: Map<string, number>,
   prices: Record<string, ItemPrice>,
 ): number | null {
-  const id = itemMap.get(name.toLowerCase());
+  const lower = name.toLowerCase();
+  // Try exact match first
+  let id = itemMap.get(lower);
+  // Try common variants: "(4)", "(3)", "(2)", "(1)" for potions/consumables
+  if (!id) {
+    for (const suffix of ["(4)", "(3)", "(2)", "(1)", " (4)", " (3)"]) {
+      id = itemMap.get(lower + suffix);
+      if (id) break;
+    }
+  }
+  // Try without trailing parenthetical: "Item (4)" → "Item"
+  if (!id && lower.includes("(")) {
+    id = itemMap.get(lower.replace(/\s*\([^)]*\)\s*$/, "").trim());
+  }
   if (!id) return null;
   const p = prices[String(id)];
   return p?.high ?? p?.low ?? null;
@@ -29,17 +43,22 @@ function calcRecipe(
   itemMap: Map<string, number>,
   prices: Record<string, ItemPrice>,
 ): RecipeCalc {
+  const materials = Array.isArray(r.materials) ? r.materials : [];
+  const output = Array.isArray(r.output) ? r.output : [];
+
   let materialCost: number | null = 0;
-  for (const mat of r.materials) {
+  for (const mat of materials) {
+    if (!mat?.name) continue;
     const price = getItemPrice(mat.name, itemMap, prices);
     if (price == null) { materialCost = null; break; }
-    materialCost += price * mat.quantity;
+    materialCost += price * (mat.quantity ?? 1);
   }
 
   let outputValue: number | null = 0;
-  for (const out of r.output) {
+  for (const out of output) {
+    if (!out?.name) continue;
     const price = getItemPrice(out.name, itemMap, prices);
-    if (price != null && outputValue != null) outputValue += price * out.quantity;
+    if (price != null && outputValue != null) outputValue += price * (out.quantity ?? 1);
     else outputValue = null;
   }
 
@@ -54,6 +73,7 @@ function calcRecipe(
 }
 
 export default function ProductionCalc() {
+  const { navigate } = useNavigation();
   const [recipes, setRecipes] = useState<WikiRecipe[]>([]);
   const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
   const [itemMap, setItemMap] = useState<Map<string, number>>(new Map());
@@ -116,7 +136,7 @@ export default function ProductionCalc() {
   if (loadError) {
     return (
       <div className="max-w-4xl">
-        <h2 className="text-xl font-semibold mb-5">Production Calculator</h2>
+        <h2 className="text-xl font-semibold mb-5">Recipe Calculator</h2>
         <ErrorState
           error={loadError}
           onRetry={() => setRetryCount((n) => n + 1)}
@@ -128,15 +148,15 @@ export default function ProductionCalc() {
   if (loading) {
     return (
       <div className="max-w-4xl">
-        <h2 className="text-xl font-semibold mb-1">Production Calculator</h2>
-        <p className="text-xs text-text-secondary">Loading recipes...</p>
+        <h2 className="text-xl font-semibold mb-1">Recipe Calculator</h2>
+        <div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4" />
       </div>
     );
   }
 
   return (
     <div className="max-w-4xl">
-      <h2 className="text-xl font-semibold mb-1">Production Calculator</h2>
+      <h2 className="text-xl font-semibold mb-1">Recipe Calculator</h2>
       <p className="text-xs text-text-secondary mb-4">
         {recipes.length.toLocaleString()} recipes — search any craftable item to
         see costs, XP, and profit
@@ -151,6 +171,7 @@ export default function ProductionCalc() {
           if (selected && e.target.value !== selected.name) setSelected(null);
         }}
         placeholder="Search recipes (e.g. Rune platebody, Shark, Prayer potion)..."
+        aria-label="Search recipes"
         className="w-full bg-bg-secondary border border-border rounded px-3 py-2 text-sm mb-1"
         autoFocus
       />
@@ -168,7 +189,12 @@ export default function ProductionCalc() {
                 src={itemIcon(r.name)}
                 alt=""
                 className="w-5 h-5 shrink-0"
-                onError={(e) => { e.currentTarget.style.display = "none"; }}
+                onError={(e) => {
+                  const el = e.currentTarget;
+                  const alt = itemIcon(`${r.name} (4)`);
+                  if (el.src !== alt) { el.src = alt; }
+                  else { el.style.display = "none"; }
+                }}
               />
               <div className="flex-1 min-w-0">
                 <span className="text-sm">{r.name}</span>
@@ -230,7 +256,7 @@ export default function ProductionCalc() {
           <div>
             <div className="section-kicker mb-2">Materials</div>
             <div className="space-y-1">
-              {selected.materials.map((mat) => {
+              {(Array.isArray(selected.materials) ? selected.materials : []).map((mat) => {
                 const price = getItemPrice(mat.name, itemMap, prices);
                 return (
                   <div
@@ -243,7 +269,13 @@ export default function ProductionCalc() {
                       className="w-4 h-4 shrink-0"
                       onError={(e) => { e.currentTarget.style.display = "none"; }}
                     />
-                    <span className="text-sm flex-1">{mat.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => navigate("market", { query: mat.name })}
+                      className="text-sm flex-1 text-left text-text-primary hover:text-accent transition-colors"
+                    >
+                      {mat.name}
+                    </button>
                     <span className="text-xs text-text-secondary tabular-nums">
                       x{mat.quantity}
                     </span>
@@ -256,7 +288,7 @@ export default function ProductionCalc() {
                   </div>
                 );
               })}
-              {selected.materials.length === 0 && (
+              {(!Array.isArray(selected.materials) || selected.materials.length === 0) && (
                 <p className="text-xs text-text-secondary/50">No materials required</p>
               )}
             </div>
@@ -266,7 +298,7 @@ export default function ProductionCalc() {
           <div>
             <div className="section-kicker mb-2">Output</div>
             <div className="space-y-1">
-              {selected.output.map((out) => {
+              {(Array.isArray(selected.output) ? selected.output : []).map((out) => {
                 const price = getItemPrice(out.name, itemMap, prices);
                 return (
                   <div
@@ -341,6 +373,7 @@ export default function ProductionCalc() {
                   <button
                     key={q}
                     onClick={() => setQuantity(q)}
+                    aria-pressed={quantity === q}
                     className={`px-2 py-1 rounded text-xs transition-colors ${
                       quantity === q
                         ? "bg-accent text-white"

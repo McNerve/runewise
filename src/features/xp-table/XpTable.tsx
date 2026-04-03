@@ -1,75 +1,108 @@
 import { useState } from "react";
-import { XP_TABLE } from "../../lib/formulas/xp";
-import EmptyState from "../../components/EmptyState";
+import { XP_TABLE_VIRTUAL } from "../../lib/formulas/xp";
 
 export default function XpTable() {
-  const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState<number | null>(null);
 
-  const filtered = search
-    ? XP_TABLE.filter(
-        (row) =>
-          String(row.level) === search ||
-          String(row.xp).includes(search.replace(/,/g, ""))
-      )
-    : XP_TABLE;
+  const selectedRow = selected ? XP_TABLE_VIRTUAL.find((r) => r.level === selected) : null;
+  const prevRow = selected && selected > 1 ? XP_TABLE_VIRTUAL.find((r) => r.level === selected - 1) : null;
+  const nextRow = selected && selected < 126 ? XP_TABLE_VIRTUAL.find((r) => r.level === selected + 1) : null;
 
   return (
-    <div className="max-w-lg">
+    <div>
       <h2 className="text-xl font-semibold mb-4">XP Table</h2>
 
-      <input
-        type="text"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        placeholder="Search by level or XP..."
-        className="w-full bg-bg-secondary border border-border rounded-lg px-4 py-2 text-sm mb-4"
-      />
+      {/* Selected level detail card */}
+      {selectedRow ? (
+        <div className="mb-5 rounded-xl border border-border/40 bg-bg-secondary/50 p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <div className={`text-3xl font-bold tabular-nums ${
+                selectedRow.level === 99 ? "text-success" : selectedRow.level > 99 ? "text-accent" : "text-text-primary"
+              }`}>
+                {selectedRow.level}
+              </div>
+              <div>
+                {selectedRow.level === 99 && <span className="text-xs text-success bg-success/10 px-1.5 py-0.5 rounded">MAX</span>}
+                {selectedRow.level > 99 && <span className="text-xs text-accent bg-accent/10 px-1.5 py-0.5 rounded">VIRTUAL</span>}
+              </div>
+            </div>
+            <button
+              onClick={() => setSelected(null)}
+              className="text-xs text-text-secondary/40 hover:text-text-primary transition-colors"
+            >
+              Clear
+            </button>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-text-secondary/50">Total XP</div>
+              <div className="text-sm font-bold tabular-nums mt-0.5">{selectedRow.xp.toLocaleString()}</div>
+            </div>
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-text-secondary/50">XP to Next</div>
+              <div className="text-sm font-bold tabular-nums mt-0.5 text-accent">
+                {nextRow ? `+${(nextRow.xp - selectedRow.xp).toLocaleString()}` : "—"}
+              </div>
+            </div>
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-text-secondary/50">XP from Prev</div>
+              <div className="text-sm font-bold tabular-nums mt-0.5 text-text-secondary">
+                {prevRow ? `+${(selectedRow.xp - prevRow.xp).toLocaleString()}` : "—"}
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <p className="text-xs text-text-secondary/50 mb-4">Click a level to see XP details</p>
+      )}
 
-      <div className="section-kicker mb-2">
-        Levels 1–99 {search && `(${filtered.length} results)`}
+      {/* Level grid — 10 columns */}
+      <div className="section-kicker mb-2">Levels 1–99</div>
+      <div className="grid grid-cols-10 gap-1 mb-5">
+        {XP_TABLE_VIRTUAL.slice(0, 99).map(({ level }) => {
+          const isMilestone = level % 10 === 0;
+          const isSelected = selected === level;
+          return (
+            <button
+              key={level}
+              onClick={() => setSelected(isSelected ? null : level)}
+              className={`py-2 rounded text-xs font-medium tabular-nums transition-all ${
+                isSelected
+                  ? "bg-accent text-white scale-110 shadow-lg shadow-accent/20"
+                  : level === 99
+                    ? "bg-success/15 text-success hover:bg-success/25"
+                    : isMilestone
+                      ? "bg-accent/10 text-accent hover:bg-accent/20"
+                      : "bg-bg-secondary/50 text-text-secondary hover:bg-bg-secondary"
+              }`}
+            >
+              {level}
+            </button>
+          );
+        })}
       </div>
 
-      {filtered.length === 0 ? (
-        <EmptyState
-          title="No levels found"
-          description={`No levels match "${search}"`}
-        />
-      ) : (
-        <div className="bg-bg-secondary rounded-lg overflow-hidden max-h-[600px] overflow-y-auto">
-          <table className="w-full text-sm">
-            <thead className="sticky top-0 bg-bg-secondary">
-              <tr className="border-b border-border text-text-secondary text-xs">
-                <th className="text-left px-4 py-2">Level</th>
-                <th className="text-right px-4 py-2">Total XP</th>
-                <th className="text-right px-4 py-2">XP to Next</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map(({ level, xp, diff }) => {
-                const isMilestone = level % 10 === 0;
-                return (
-                  <tr
-                    key={level}
-                    className={`border-b border-border/50 hover:bg-bg-tertiary transition-colors ${
-                      isMilestone ? "milestone-row" : "even:bg-bg-primary/30"
-                    }`}
-                  >
-                    <td className={`px-4 py-1.5 font-medium ${isMilestone ? "text-accent" : ""}`}>
-                      {level}
-                    </td>
-                    <td className="px-4 py-1.5 text-right">
-                      {xp.toLocaleString()}
-                    </td>
-                    <td className="px-4 py-1.5 text-right text-text-secondary">
-                      {diff > 0 ? `+${diff.toLocaleString()}` : "\u2014"}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+      {/* Virtual levels */}
+      <div className="section-kicker mb-2">Virtual Levels 100–126</div>
+      <div className="grid grid-cols-9 gap-1">
+        {XP_TABLE_VIRTUAL.slice(99).map(({ level }) => {
+          const isSelected = selected === level;
+          return (
+            <button
+              key={level}
+              onClick={() => setSelected(isSelected ? null : level)}
+              className={`py-2 rounded text-xs font-medium tabular-nums transition-all ${
+                isSelected
+                  ? "bg-accent text-white scale-110 shadow-lg shadow-accent/20"
+                  : "bg-accent/8 text-accent/70 hover:bg-accent/15"
+              }`}
+            >
+              {level}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

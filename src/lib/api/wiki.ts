@@ -25,20 +25,23 @@ export interface DropItem {
 export async function searchMonsters(query: string): Promise<string[]> {
   if (query.length < 2) return [];
 
-  const cacheKey = `monster-search:${query.toLowerCase()}`;
+  const cacheKey = `monster-search:v2:${query.toLowerCase()}`;
   const cached = getCached<string[]>(cacheKey, SEARCH_TTL);
   if (cached) return cached;
 
-  const url = `${WIKI_API}?action=opensearch&search=${encodeURIComponent(query)}&namespace=0&limit=10&format=json`;
+  // Search wiki pages within the Monsters category
+  const url = `${WIKI_API}?action=query&list=search&srsearch=${encodeURIComponent(query)}+incategory:Monsters&srnamespace=0&srlimit=15&format=json`;
   const res = await apiFetch(url);
   const data = await res.json();
-  const results: string[] = (data[1] as string[]).filter(
-    (name) =>
-      !name.includes("/") &&
-      !name.includes("(mounted)") &&
-      !name.includes("(unobtainable") &&
-      !name.includes("display (")
-  );
+  const searchResults = data?.query?.search ?? [];
+  const results: string[] = (searchResults as { title: string }[])
+    .map((r) => r.title)
+    .filter(
+      (name) =>
+        !name.includes("/") &&
+        !name.includes("(mounted)") &&
+        !name.includes("(unobtainable")
+    );
   setCache(cacheKey, results);
   return results;
 }

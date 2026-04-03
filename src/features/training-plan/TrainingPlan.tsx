@@ -44,6 +44,9 @@ const PREFERENCES: { id: TrainingPreference; label: string; desc: string }[] = [
 export default function TrainingPlan({ hiscores }: Props) {
   const [targets, setTargets] = useState<Record<string, number>>({});
   const [preference, setPreference] = useState<TrainingPreference>("fastest");
+  const [activePreset, setActivePreset] = useState<string | null>(null);
+  const [methodOverrides, setMethodOverrides] = useState<Record<string, string>>({});
+  const [expandedSkill, setExpandedSkill] = useState<string | null>(null);
 
   const currentLevels = useMemo(() => {
     const levels: Record<string, number> = {};
@@ -76,8 +79,11 @@ export default function TrainingPlan({ hiscores }: Props) {
       <div className="section-kicker mb-2">Quick Presets</div>
       <div className="flex gap-2 mb-5">
         <button
-          onClick={() => setAllTo(99)}
-          className="px-3 py-1.5 rounded text-xs bg-bg-secondary text-text-secondary hover:bg-bg-tertiary transition-colors"
+          onClick={() => { setAllTo(99); setActivePreset("all99"); }}
+          aria-pressed={activePreset === "all99"}
+          className={`px-3 py-1.5 rounded text-xs transition-colors ${
+            activePreset === "all99" ? "bg-accent text-white" : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+          }`}
         >
           All 99
         </button>
@@ -90,13 +96,17 @@ export default function TrainingPlan({ hiscores }: Props) {
             setTarget("Prayer", 99);
             setTarget("Magic", 99);
             setTarget("Hitpoints", 99);
+            setActivePreset("combat");
           }}
-          className="px-3 py-1.5 rounded text-xs bg-bg-secondary text-text-secondary hover:bg-bg-tertiary transition-colors"
+          aria-pressed={activePreset === "combat"}
+          className={`px-3 py-1.5 rounded text-xs transition-colors ${
+            activePreset === "combat" ? "bg-accent text-white" : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+          }`}
         >
           Max Combat
         </button>
         <button
-          onClick={() => setTargets({})}
+          onClick={() => { setTargets({}); setActivePreset(null); }}
           className="px-3 py-1.5 rounded text-xs bg-bg-secondary text-text-secondary hover:bg-bg-tertiary transition-colors"
         >
           Clear
@@ -111,6 +121,7 @@ export default function TrainingPlan({ hiscores }: Props) {
             key={p.id}
             onClick={() => setPreference(p.id)}
             title={p.desc}
+            aria-pressed={preference === p.id}
             className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
               preference === p.id
                 ? "bg-accent text-white"
@@ -155,7 +166,7 @@ export default function TrainingPlan({ hiscores }: Props) {
                 min={current}
                 max={126}
                 value={target}
-                onChange={(e) => setTarget(skill, Math.max(current, Number(e.target.value)))}
+                onChange={(e) => setTarget(skill, Math.min(126, Math.max(current, Number(e.target.value))))}
                 className={`w-10 bg-bg-tertiary border rounded px-1 py-0.5 text-xs text-center tabular-nums ${
                   hasGap ? "border-accent/30" : "border-border"
                 }`}
@@ -178,48 +189,84 @@ export default function TrainingPlan({ hiscores }: Props) {
           </div>
 
           <div className="space-y-2">
-            {plan.steps.map((step) => (
-              <div
-                key={step.skill}
-                className="flex items-center gap-3 py-2 border-b border-border/15"
-              >
-                <img
-                  src={SKILL_ICONS[step.skill]}
-                  alt=""
-                  className="w-5 h-5 shrink-0"
-                  onError={(e) => { e.currentTarget.style.display = "none"; }}
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">{step.skill}</span>
-                    <span className="text-xs text-text-secondary tabular-nums">
-                      {step.fromLevel} → {step.toLevel}
-                    </span>
-                  </div>
-                  <div className="text-xs text-text-secondary mt-0.5">
-                    {step.method.name}
-                    {step.method.intensity && (
-                      <span className={`ml-1.5 px-1.5 py-0.5 rounded text-[10px] ${
-                        step.method.intensity === "afk" ? "bg-success/10 text-success" :
-                        step.method.intensity === "low" ? "bg-accent/10 text-accent" :
-                        step.method.intensity === "medium" ? "bg-warning/10 text-warning" :
-                        "bg-danger/10 text-danger"
-                      }`}>
-                        {step.method.intensity.toUpperCase()}
-                      </span>
-                    )}
-                  </div>
+            {plan.steps.map((step) => {
+              const activeMethodName = methodOverrides[step.skill] ?? step.method.name;
+              const activeMethod = step.alternatives.find((a) => a.name === activeMethodName) ?? step.method;
+              const displayHours = activeMethod.xpPerHour && activeMethod.xpPerHour > 0
+                ? step.xpNeeded / activeMethod.xpPerHour
+                : step.hours;
+              return (
+                <div key={step.skill} className="border-b border-border/15 pb-1">
+                  <button
+                    onClick={() => setExpandedSkill(expandedSkill === step.skill ? null : step.skill)}
+                    className="text-left w-full flex items-center gap-3 py-2"
+                  >
+                    <img
+                      src={SKILL_ICONS[step.skill]}
+                      alt=""
+                      className="w-5 h-5 shrink-0"
+                      onError={(e) => { e.currentTarget.style.display = "none"; }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium">{step.skill}</span>
+                        <span className="text-xs text-text-secondary tabular-nums">
+                          {step.fromLevel} → {step.toLevel}
+                        </span>
+                      </div>
+                      <div className="text-xs text-text-secondary mt-0.5">
+                        {activeMethod.name}
+                        {activeMethod.intensity && (
+                          <span className={`ml-1.5 px-1.5 py-0.5 rounded text-[10px] ${
+                            activeMethod.intensity === "afk" ? "bg-success/10 text-success" :
+                            activeMethod.intensity === "low" ? "bg-accent/10 text-accent" :
+                            activeMethod.intensity === "medium" ? "bg-warning/10 text-warning" :
+                            "bg-danger/10 text-danger"
+                          }`}>
+                            {activeMethod.intensity.toUpperCase()}
+                          </span>
+                        )}
+                        <span className="text-[10px] text-text-secondary/40 ml-1">
+                          {step.alternatives.length > 1 ? `${step.alternatives.length} methods ▾` : ""}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className={`text-sm font-medium tabular-nums ${hourColor(displayHours)}`}>
+                        {formatHours(displayHours)}
+                      </div>
+                      <div className="text-[10px] text-text-secondary/50 tabular-nums">
+                        {formatGp(step.xpNeeded)} XP
+                      </div>
+                    </div>
+                  </button>
+                  {expandedSkill === step.skill && step.alternatives.length > 1 && (
+                    <div className="ml-8 mt-1 mb-2 space-y-1">
+                      {step.alternatives.map((alt) => (
+                        <button
+                          key={alt.name}
+                          onClick={() => {
+                            setMethodOverrides((prev) => ({ ...prev, [step.skill]: alt.name }));
+                            setExpandedSkill(null);
+                          }}
+                          className={`block w-full text-left px-3 py-1.5 rounded text-xs transition-colors ${
+                            activeMethodName === alt.name
+                              ? "bg-accent/20 text-accent"
+                              : "hover:bg-bg-tertiary text-text-secondary"
+                          }`}
+                        >
+                          <span className="font-medium">{alt.name}</span>
+                          <span className="ml-2 text-text-secondary/60">
+                            {alt.xpPerHour ? `${(alt.xpPerHour / 1000).toFixed(0)}K xp/hr` : ""}
+                            {alt.intensity ? ` · ${alt.intensity}` : ""}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <div className="text-right shrink-0">
-                  <div className={`text-sm font-medium tabular-nums ${hourColor(step.hours)}`}>
-                    {formatHours(step.hours)}
-                  </div>
-                  <div className="text-[10px] text-text-secondary/50 tabular-nums">
-                    {formatGp(step.xpNeeded)} XP
-                  </div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       ) : (

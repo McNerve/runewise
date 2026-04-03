@@ -8,6 +8,7 @@ import {
 import { useNavigation } from "../../lib/NavigationContext";
 import { findBossByName } from "../../lib/data/bosses";
 import EmptyState from "../../components/EmptyState";
+import { loadJSON, saveJSON } from "../../lib/localStorage";
 
 const TIER_COLORS: Record<CombatTier, { tab: string; badge: string }> = {
   Easy: {
@@ -39,10 +40,26 @@ const TIER_COLORS: Record<CombatTier, { tab: string; badge: string }> = {
 const TIER_INACTIVE =
   "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary";
 
+const COMPLETED_KEY = "runewise_completed_combat_tasks";
+
 export default function CombatTasks() {
   const { params, navigate } = useNavigation();
   const [selectedTier, setSelectedTier] = useState<CombatTier>("Easy");
   const [search, setSearch] = useState(params.search ?? "");
+  const [completedTasks, setCompletedTasks] = useState<Set<string>>(
+    () => new Set(loadJSON<string[]>(COMPLETED_KEY, []))
+  );
+  const [hideCompleted, setHideCompleted] = useState(false);
+
+  function toggleTask(taskName: string) {
+    setCompletedTasks((prev) => {
+      const next = new Set(prev);
+      if (next.has(taskName)) next.delete(taskName);
+      else next.add(taskName);
+      saveJSON(COMPLETED_KEY, [...next]);
+      return next;
+    });
+  }
 
   const totalTasks = Object.values(COMBAT_TIER_COUNTS).reduce(
     (sum, n) => sum + n,
@@ -62,8 +79,15 @@ export default function CombatTasks() {
       );
     }
 
+    if (hideCompleted) tasks = tasks.filter((t) => !completedTasks.has(t.name));
+
     return tasks;
-  }, [selectedTier, search]);
+  }, [selectedTier, search, hideCompleted, completedTasks]);
+
+  const tierCompletedCount = useMemo(() => {
+    const all = COMBAT_TASKS.filter((t) => t.tier === selectedTier);
+    return all.filter((t) => completedTasks.has(t.name)).length;
+  }, [selectedTier, completedTasks]);
 
   const groupedByBoss = useMemo(() => {
     const groups: Record<string, typeof tierTasks> = {};
@@ -112,23 +136,38 @@ export default function CombatTasks() {
         })}
       </div>
 
-      {/* Search */}
-      <input
-        type="text"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        placeholder="Search tasks, bosses..."
-        className="w-full bg-bg-secondary border border-border rounded px-3 py-1.5 text-sm mb-4"
-      />
+      {/* Search + controls */}
+      <div className="flex gap-2 items-center mb-4">
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search tasks, bosses..."
+          className="flex-1 bg-bg-secondary border border-border rounded px-3 py-1.5 text-sm"
+        />
+        <label className="flex items-center gap-1.5 text-xs text-text-secondary cursor-pointer shrink-0">
+          <input
+            type="checkbox"
+            checked={hideCompleted}
+            onChange={(e) => setHideCompleted(e.target.checked)}
+            className="accent-accent"
+          />
+          Hide completed
+        </label>
+      </div>
 
       {/* Task count for current tier */}
-      <div className="section-kicker mb-3">
-        Showing {tierTasks.length} of {COMBAT_TIER_COUNTS[selectedTier]}{" "}
-        {selectedTier} tasks
-        {tierTasks.length < COMBAT_TIER_COUNTS[selectedTier] && !search && (
-          <span className="opacity-50">
-            {" "}
-            (representative sample)
+      <div className="section-kicker mb-3 flex items-center gap-2">
+        <span>
+          Showing {tierTasks.length} of {COMBAT_TIER_COUNTS[selectedTier]}{" "}
+          {selectedTier} tasks
+          {tierTasks.length < COMBAT_TIER_COUNTS[selectedTier] && !search && !hideCompleted && (
+            <span className="opacity-50"> (representative sample)</span>
+          )}
+        </span>
+        {tierCompletedCount > 0 && (
+          <span className="text-success opacity-70">
+            · {tierCompletedCount}/{COMBAT_TIER_COUNTS[selectedTier]} completed
           </span>
         )}
       </div>
@@ -170,10 +209,22 @@ export default function CombatTasks() {
               {tasks.map((task) => (
                 <div
                   key={task.name}
-                  className="bg-bg-secondary rounded-lg px-4 py-2.5 hover:bg-bg-tertiary transition-colors"
+                  className={`bg-bg-secondary rounded-lg px-4 py-2.5 hover:bg-bg-tertiary transition-colors ${
+                    completedTasks.has(task.name) ? "opacity-60" : ""
+                  }`}
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
+                  <div className="flex items-start gap-3">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); toggleTask(task.name); }}
+                      className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center text-[10px] transition-colors mt-0.5 ${
+                        completedTasks.has(task.name)
+                          ? "bg-success/20 border-success text-success"
+                          : "border-border hover:border-accent"
+                      }`}
+                    >
+                      {completedTasks.has(task.name) && "✓"}
+                    </button>
+                    <div className="flex-1">
                       <span className="text-sm font-medium">{task.name}</span>
                       <p className="text-xs text-text-secondary mt-0.5">
                         {task.description}

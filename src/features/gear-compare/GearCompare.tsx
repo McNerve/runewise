@@ -57,7 +57,7 @@ function StatCell({ value }: { value: number }) {
 export default function GearCompare() {
   const { navigate } = useNavigation();
   const { data, loading, error, retry } = useAsyncData(fetchAllEquipment, []);
-  const allEquipment = data ?? [];
+  const allEquipment = useMemo(() => data ?? [], [data]);
   const [selectedSlot, setSelectedSlot] = useState<EquipmentSlot>("weapon");
   const [query, setQuery] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("strengthBonus");
@@ -65,15 +65,31 @@ export default function GearCompare() {
   const [selected, setSelected] = useState<WikiEquipment[]>([]);
 
   const filtered = useMemo(() => {
-    const results = searchEquipment(allEquipment, query, selectedSlot, 200);
-    return results.sort((a, b) => {
-      const aVal = a[sortKey] as number;
-      const bVal = b[sortKey] as number;
-      if (typeof aVal === "number" && typeof bVal === "number") {
-        return sortAsc ? aVal - bVal : bVal - aVal;
+    const results = searchEquipment(allEquipment, query, selectedSlot, 500);
+    // Deduplicate: keep only one version per item name (best stats or base version)
+    const seen = new Map<string, WikiEquipment>();
+    for (const item of results) {
+      const key = item.name.toLowerCase();
+      const existing = seen.get(key);
+      if (!existing) {
+        seen.set(key, item);
+      } else {
+        // Keep the one with higher total offensive stats
+        const totalNew = item.attackStab + item.attackSlash + item.attackCrush + item.strengthBonus + item.attackRanged + item.rangedStrength + item.attackMagic + item.magicDamage;
+        const totalOld = existing.attackStab + existing.attackSlash + existing.attackCrush + existing.strengthBonus + existing.attackRanged + existing.rangedStrength + existing.attackMagic + existing.magicDamage;
+        if (totalNew > totalOld) seen.set(key, item);
       }
-      return 0;
-    });
+    }
+    return [...seen.values()]
+      .sort((a, b) => {
+        const aVal = a[sortKey] as number;
+        const bVal = b[sortKey] as number;
+        if (typeof aVal === "number" && typeof bVal === "number") {
+          return sortAsc ? aVal - bVal : bVal - aVal;
+        }
+        return 0;
+      })
+      .slice(0, 100);
   }, [allEquipment, query, selectedSlot, sortKey, sortAsc]);
 
   function handleSort(key: SortKey) {
@@ -107,6 +123,7 @@ export default function GearCompare() {
               setSelectedSlot(slot);
               setQuery("");
             }}
+            aria-pressed={selectedSlot === slot}
             className={`px-2.5 py-1 rounded text-xs transition-colors ${
               selectedSlot === slot
                 ? "bg-accent/20 text-accent border border-accent/30"
@@ -124,6 +141,7 @@ export default function GearCompare() {
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder={`Search ${SLOT_LABELS[selectedSlot].toLowerCase()} items...`}
+        aria-label={`Search ${SLOT_LABELS[selectedSlot].toLowerCase()} items`}
         className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm mb-4"
       />
 
@@ -195,8 +213,9 @@ export default function GearCompare() {
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-border">
-                <th className="px-2 py-2 text-xs text-text-secondary font-normal w-8" />
+                <th scope="col" className="px-2 py-2 text-xs text-text-secondary font-normal w-8" />
                 <th
+                  scope="col"
                   className="px-2 py-2 text-xs text-text-secondary font-normal cursor-pointer hover:text-text-primary"
                   onClick={() => handleSort("name")}
                 >
@@ -205,6 +224,7 @@ export default function GearCompare() {
                 {STAT_COLUMNS.map((col) => (
                   <th
                     key={col.key}
+                    scope="col"
                     className="px-2 py-2 text-xs text-text-secondary font-normal text-right cursor-pointer hover:text-text-primary"
                     onClick={() => handleSort(col.key)}
                     title={col.label}
@@ -234,16 +254,16 @@ export default function GearCompare() {
                         src={itemIcon(item.name)}
                         alt=""
                         className="w-5 h-5"
-                        onError={(e) => { e.currentTarget.style.display = "none"; }}
+                        onError={(e) => {
+                          const el = e.currentTarget;
+                          const detail = itemIcon(`${item.name} detail`);
+                          if (el.src !== detail) el.src = detail;
+                          else el.style.display = "none";
+                        }}
                       />
                     </td>
-                    <td className="px-2 py-1.5 text-sm">
+                    <td className="px-2 py-1.5 text-sm font-medium">
                       {item.name}
-                      {item.version && (
-                        <span className="text-text-secondary/50 ml-1 text-xs">
-                          ({item.version})
-                        </span>
-                      )}
                     </td>
                     {STAT_COLUMNS.map((col) => (
                       <StatCell key={col.key} value={item[col.key] as number} />

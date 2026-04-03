@@ -3,6 +3,7 @@ import DOMPurify from "dompurify";
 import { apiFetch } from "../../lib/api/fetch";
 import { isTauri } from "../../lib/env";
 import EmptyState from "../../components/EmptyState";
+import { TableSkeleton, CardSkeleton } from "../../components/Skeleton";
 import { NAV_ICONS } from "../../lib/sprites";
 
 interface NewsPost {
@@ -96,9 +97,15 @@ async function fetchBlogPosts(): Promise<NewsPost[]> {
 }
 
 function resolveArticleUrl(url: string): string {
-  if (url.startsWith("http")) return url;
-  if (isTauri) return `https://secure.runescape.com${url}`;
-  return `/api/news${url.replace(/^\/m=news/, "")}`;
+  if (isTauri) {
+    if (url.startsWith("http")) return url;
+    return `https://secure.runescape.com${url}`;
+  }
+  // Dev mode: proxy through Vite to avoid CORS
+  const path = url.startsWith("http")
+    ? url.replace(/^https?:\/\/secure\.runescape\.com\/m=news/, "")
+    : url.replace(/^\/m=news/, "");
+  return `/api/news${path}`;
 }
 
 function extractArticleHtml(html: string): string {
@@ -153,10 +160,14 @@ function extractArticleHtml(html: string): string {
     }
   });
 
-  // Strip links but keep text
+  // Resolve relative link URLs and open in new tab
   content.querySelectorAll("a").forEach((a) => {
-    const text = document.createTextNode(a.textContent ?? "");
-    a.replaceWith(text);
+    const href = a.getAttribute("href");
+    if (href && href.startsWith("/")) {
+      a.setAttribute("href", `https://secure.runescape.com${href}`);
+    }
+    a.setAttribute("target", "_blank");
+    a.setAttribute("rel", "noopener noreferrer");
   });
 
   return DOMPurify.sanitize(content.innerHTML, {
@@ -164,9 +175,9 @@ function extractArticleHtml(html: string): string {
       "p", "h2", "h3", "h4", "h5", "ul", "ol", "li", "img",
       "strong", "em", "b", "i", "br", "table", "thead", "tbody",
       "tr", "th", "td", "span", "div", "figure", "figcaption",
-      "blockquote", "dl", "dt", "dd", "sup", "sub",
+      "blockquote", "dl", "dt", "dd", "sup", "sub", "a",
     ],
-    ALLOWED_ATTR: ["src", "alt", "loading", "colspan", "rowspan", "class"],
+    ALLOWED_ATTR: ["src", "alt", "loading", "colspan", "rowspan", "class", "href", "target", "rel"],
   });
 }
 
@@ -281,40 +292,40 @@ export default function News() {
   );
 
   const filterButtons = (
-    <div className="flex gap-1.5 mb-4">
-      {(["all", "shipped", "proposed", "upcoming"] as const).map((f) => (
-        <button
-          key={f}
-          onClick={() => setFilter(f)}
-          className={`px-3 py-1.5 rounded text-xs transition-colors ${
-            filter === f
-              ? f === "all"
-                ? "bg-accent text-white"
-                : f === "shipped"
-                  ? "bg-success/20 text-success"
-                  : f === "proposed"
-                    ? "bg-warning/20 text-warning"
-                    : "bg-purple-500/20 text-purple-400"
-              : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
-          }`}
-        >
-          {f === "all"
-            ? "All"
-            : f === "shipped"
-              ? "Shipped"
-              : f === "proposed"
-                ? "Proposed / Poll"
-                : "Upcoming"}
-        </button>
-      ))}
+    <div className="flex gap-2 mb-4">
+      {(["all", "shipped", "proposed", "upcoming"] as const).map((f) => {
+        const active = filter === f;
+        const label =
+          f === "all" ? "All"
+            : f === "shipped" ? "Shipped"
+              : f === "proposed" ? "Proposed / Poll"
+                : "Upcoming";
+        return (
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            aria-pressed={active}
+            className={`relative px-4 py-2 rounded-xl border text-xs font-medium transition-colors ${
+              active
+                ? "border-accent/40 text-accent bg-accent/5"
+                : "border-border/60 text-text-secondary hover:border-border hover:text-text-primary"
+            }`}
+          >
+            {label}
+            {active && (
+              <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-2/3 h-0.5 rounded-full bg-accent" />
+            )}
+          </button>
+        );
+      })}
     </div>
   );
 
   if (!selectedPost) {
     return (
-      <div className="max-w-2xl">
-        <div className="flex items-center gap-3 mb-4">
-          <h2 className="text-xl font-semibold">OSRS News</h2>
+      <div className="max-w-4xl">
+        <div className="flex items-center gap-3 mb-1">
+          <h2 className="text-2xl font-semibold tracking-tight">OSRS News</h2>
           <button
             onClick={() => setRefreshKey((k) => k + 1)}
             disabled={loading}
@@ -329,14 +340,12 @@ export default function News() {
             </span>
           )}
         </div>
+        <p className="text-sm text-text-secondary mb-4">
+          Latest updates, dev blogs, and community posts from the Old School team.
+        </p>
         {filterButtons}
 
-        {loading && (
-          <EmptyState
-            icon={NAV_ICONS.news}
-            title="Loading news..."
-          />
-        )}
+        {loading && <TableSkeleton rows={6} cols={2} />}
 
         {!loading && filtered.length === 0 && (
           <EmptyState
@@ -346,33 +355,47 @@ export default function News() {
           />
         )}
 
-        <div className="space-y-1.5">
-          {filtered.map((post, i) => postRow(post, i))}
-        </div>
+        {filtered.length > 0 && (
+          <div className="rounded-xl border border-border/60 p-2 space-y-1.5">
+            {filtered.map((post, i) => postRow(post, i))}
+          </div>
+        )}
       </div>
     );
   }
 
   return (
-    <div className="flex gap-4" style={{ maxWidth: "900px" }}>
-      <div className="shrink-0" style={{ width: "250px" }}>
-        <h2 className="text-xl font-semibold mb-4">OSRS News</h2>
+    <div className="grid grid-cols-[280px_minmax(0,1fr)] gap-5">
+      <aside>
+        <div className="mb-3 px-2 text-[10px] uppercase tracking-[0.2em] text-text-secondary/45">
+          Articles
+        </div>
         {filterButtons}
         <div
-          className="space-y-1.5 overflow-y-auto"
-          style={{ maxHeight: "calc(100vh - 180px)" }}
+          className="space-y-1.5 overflow-y-auto scroll-fade sidebar-scroll"
+          style={{ maxHeight: "calc(100vh - 220px)" }}
         >
           {filtered.map((post, i) => postRow(post, i))}
         </div>
-      </div>
+      </aside>
 
-      <div className="flex-1 min-w-0">
-        <button
-          onClick={handleBack}
-          className="text-sm text-accent hover:text-accent-hover mb-4 transition-colors"
-        >
-          ← Back to list
-        </button>
+      <div className="min-w-0">
+        <div className="flex items-center gap-3 mb-4">
+          <button
+            onClick={handleBack}
+            className="text-sm text-accent hover:text-accent-hover transition-colors"
+          >
+            ← Back to list
+          </button>
+          <a
+            href={selectedPost.url.startsWith("http") ? selectedPost.url : `https://secure.runescape.com${selectedPost.url}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-text-secondary hover:text-text-primary transition-colors"
+          >
+            Open on RuneScape.com ↗
+          </a>
+        </div>
 
         <h3 className="text-lg font-semibold mb-2">{selectedPost.title}</h3>
 
@@ -388,18 +411,15 @@ export default function News() {
           {statusBadge(selectedPost.status)}
         </div>
 
-        {articleLoading && (
-          <EmptyState
-            icon={NAV_ICONS.news}
-            title="Loading article..."
-          />
-        )}
+        {articleLoading && <CardSkeleton />}
 
         {!articleLoading && articleHtml && (
-          <div
-            className="article-content text-sm text-text-secondary leading-relaxed space-y-3"
-            dangerouslySetInnerHTML={{ __html: articleHtml }}
-          />
+          <div className="rounded-xl border border-border/40 bg-bg-primary/25 p-5">
+            <div
+              className="article-content text-sm text-text-secondary leading-relaxed space-y-3"
+              dangerouslySetInnerHTML={{ __html: articleHtml }}
+            />
+          </div>
         )}
       </div>
     </div>

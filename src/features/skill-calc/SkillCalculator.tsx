@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { xpForLevel } from "../../lib/formulas/xp";
 import { getSkillXp, type HiscoreData } from "../../lib/api/hiscores";
 import { fetchLatestPrices, fetchMapping, type ItemPrice } from "../../lib/api/ge";
 import { formatGp } from "../../lib/format";
-import { SKILL_ICONS } from "../../lib/sprites";
+import { WIKI_IMG, SKILL_ICONS, itemIcon } from "../../lib/sprites";
 import { useNavigation } from "../../lib/NavigationContext";
 import { TRAINING_METHODS } from "../../lib/data/training-methods";
 import { HERBLORE_RECIPES } from "../../lib/data/herblore-recipes";
@@ -12,6 +12,11 @@ import { fetchRecipesForSkill, type WikiRecipe } from "../../lib/api/recipes";
 import RecipeCostTable from "./components/RecipeCostTable";
 import WikiRecipeTable from "./components/WikiRecipeTable";
 import ConstructionPlanner from "./components/ConstructionPlanner";
+
+const TrainingPlan = lazy(() => import("../training-plan/TrainingPlan"));
+const XpTable = lazy(() => import("../xp-table/XpTable"));
+
+type SkillTab = "calculator" | "plan" | "xp-table";
 
 const SKILLS = [
   "Attack", "Strength", "Defence", "Ranged", "Prayer", "Magic",
@@ -26,7 +31,9 @@ interface Props {
 }
 
 export default function SkillCalculator({ hiscores }: Props) {
-  const { params } = useNavigation();
+  const { params, navigate } = useNavigation();
+  const initialSkillTab: SkillTab = params.tab === "plan" ? "plan" : "calculator";
+  const [skillTab, setSkillTab] = useState<SkillTab>(initialSkillTab);
   const [selectedSkill, setSelectedSkill] = useState<string>(params.skill ?? "Attack");
   const [currentXp, setCurrentXp] = useState(0);
   const [targetLevel, setTargetLevel] = useState(99);
@@ -85,8 +92,9 @@ export default function SkillCalculator({ hiscores }: Props) {
   }, [selectedSkill]);
 
   const handleTargetChange = (value: number) => {
-    setTargetLevel(value);
-    customTargets.current.set(selectedSkill, value);
+    const clamped = Math.max(2, Math.min(126, value));
+    setTargetLevel(clamped);
+    customTargets.current.set(selectedSkill, clamped);
   };
 
   const [intensityFilter, setIntensityFilter] = useState<string>("All");
@@ -100,7 +108,49 @@ export default function SkillCalculator({ hiscores }: Props) {
 
   return (
     <div className="max-w-3xl">
-      <h2 className="text-xl font-semibold mb-4">Skill Calculator</h2>
+      <h2 className="text-xl font-semibold mb-4">Skills</h2>
+
+      {/* Tab bar */}
+      <div className="flex gap-1 mb-5">
+        {([
+          { id: "calculator" as const, label: "Skill Calculator", icon: `${WIKI_IMG}/Stats_icon.png` },
+          { id: "plan" as const, label: "Training Plan", icon: `${WIKI_IMG}/Max_cape.png` },
+          { id: "xp-table" as const, label: "XP Table", icon: `${WIKI_IMG}/Book_of_knowledge.png` },
+        ]).map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setSkillTab(tab.id)}
+            aria-pressed={skillTab === tab.id}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              skillTab === tab.id
+                ? "bg-accent text-white"
+                : "text-text-secondary hover:bg-bg-secondary/50"
+            }`}
+          >
+            <img src={tab.icon} alt="" className="w-4 h-4" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Training Plan tab */}
+      {skillTab === "plan" && (
+        <Suspense fallback={<div className="py-8 text-center"><div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4 mx-auto" /></div>}>
+          <TrainingPlan hiscores={hiscores} />
+        </Suspense>
+      )}
+
+      {/* XP Table tab */}
+      {skillTab === "xp-table" && (
+        <Suspense fallback={<div className="py-8 text-center"><div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4 mx-auto" /></div>}>
+          <XpTable />
+        </Suspense>
+      )}
+
+      {/* Skill Calculator tab */}
+      {skillTab === "calculator" && (
+      <>
+
 
       <div className="grid grid-cols-6 gap-1.5 mb-6">
         {SKILLS.map((skill) => {
@@ -109,6 +159,7 @@ export default function SkillCalculator({ hiscores }: Props) {
             <button
               key={skill}
               onClick={() => setSelectedSkill(skill)}
+              aria-pressed={selectedSkill === skill}
               className={`px-2 py-1.5 rounded text-xs transition-colors relative flex items-center gap-1.5 ${
                 selectedSkill === skill
                   ? "bg-accent text-white"
@@ -155,9 +206,18 @@ export default function SkillCalculator({ hiscores }: Props) {
             )}
           </div>
           <div>
-            <label className="block text-xs text-text-secondary mb-1">
-              Target Level
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs text-text-secondary">
+                Target Level
+              </label>
+              <button
+                type="button"
+                onClick={() => navigate("training-plan")}
+                className="text-[11px] text-text-secondary/50 hover:text-accent transition-colors"
+              >
+                Build training plan →
+              </button>
+            </div>
             <div className="flex gap-2">
               <input
                 type="number"
@@ -170,6 +230,7 @@ export default function SkillCalculator({ hiscores }: Props) {
               {currentLevel !== null && currentLevel < 99 && (
                 <button
                   onClick={() => handleTargetChange(currentLevel + 1)}
+                  aria-pressed={targetLevel === currentLevel + 1}
                   className={`px-2 py-1 rounded text-xs transition-colors ${
                     targetLevel === currentLevel + 1
                       ? "bg-accent text-white"
@@ -181,6 +242,7 @@ export default function SkillCalculator({ hiscores }: Props) {
               )}
               <button
                 onClick={() => handleTargetChange(99)}
+                aria-pressed={targetLevel === 99}
                 className={`px-2 py-1 rounded text-xs transition-colors ${
                   targetLevel === 99
                     ? "bg-accent text-white"
@@ -231,6 +293,7 @@ export default function SkillCalculator({ hiscores }: Props) {
                 <button
                   key={f}
                   onClick={() => setIntensityFilter(f)}
+                  aria-pressed={intensityFilter === f}
                   className={`px-2.5 py-1 rounded-full text-xs transition-colors ${
                     intensityFilter === f
                       ? "bg-accent text-white"
@@ -259,20 +322,21 @@ export default function SkillCalculator({ hiscores }: Props) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-text-secondary text-xs">
-                  <th className="text-left px-4 py-2">Method</th>
-                  <th className="text-right px-4 py-2">Lvl</th>
-                  <th className="text-right px-4 py-2">XP Each</th>
-                  <th className="text-right px-4 py-2">XP/hr</th>
-                  <th className="text-right px-4 py-2">Actions</th>
-                  <th className="text-right px-4 py-2">Time</th>
-                  <th className="text-right px-4 py-2">GP/XP</th>
-                  <th className="text-right px-4 py-2">Cost</th>
+                  <th scope="col" className="text-left px-4 py-2">Method</th>
+                  <th scope="col" className="text-right px-4 py-2">Lvl</th>
+                  <th scope="col" className="text-right px-4 py-2">XP Each</th>
+                  <th scope="col" className="text-right px-4 py-2">XP/hr</th>
+                  <th scope="col" className="text-right px-4 py-2">Actions</th>
+                  <th scope="col" className="text-right px-4 py-2">Time</th>
+                  <th scope="col" className="text-right px-4 py-2">GP/XP</th>
+                  <th scope="col" className="text-right px-4 py-2">Cost</th>
                 </tr>
               </thead>
               <tbody>
                 {[...methods]
                   .sort((a, b) => (b.xpPerHour ?? 0) - (a.xpPerHour ?? 0))
                   .map((method) => {
+                    const maxXpHr = methods.reduce((m, x) => Math.max(m, x.xpPerHour ?? 0), 1);
                     const actions = Math.ceil(xpNeeded / method.xp);
                     const hours = method.xpPerHour ? xpNeeded / method.xpPerHour : null;
                     const meetsLevel = !method.levelReq || !currentLevel || currentLevel >= method.levelReq;
@@ -284,7 +348,15 @@ export default function SkillCalculator({ hiscores }: Props) {
                         className={`border-b border-border/50 hover:bg-bg-tertiary transition-colors ${!meetsLevel ? "opacity-40" : ""}`}
                       >
                         <td className="px-4 py-1.5 font-medium">
-                          {method.name}
+                          <span className="flex items-center gap-2">
+                            <img
+                              src={method.itemName ? itemIcon(method.itemName) : SKILL_ICONS[selectedSkill]}
+                              alt=""
+                              className="w-4 h-4 shrink-0"
+                              onError={(e) => { e.currentTarget.style.display = "none"; }}
+                            />
+                            {method.name}
+                          </span>
                           {method.intensity && (
                             <span className={`ml-1.5 px-1 py-0.5 rounded text-[9px] font-normal ${
                               method.intensity === "afk" ? "bg-success/10 text-success" :
@@ -302,7 +374,13 @@ export default function SkillCalculator({ hiscores }: Props) {
                         <td className="px-4 py-1.5 text-right text-text-secondary">
                           {method.xp.toLocaleString()}
                         </td>
-                        <td className="px-4 py-1.5 text-right text-text-secondary">
+                        <td className={`px-4 py-1.5 text-right font-medium tabular-nums ${
+                          method.xpPerHour
+                            ? (method.xpPerHour / maxXpHr) >= 0.7 ? "text-success"
+                              : (method.xpPerHour / maxXpHr) >= 0.35 ? "text-warning"
+                              : "text-danger"
+                            : "text-text-secondary"
+                        }`}>
                           {method.xpPerHour
                             ? method.xpPerHour >= 1_000_000
                               ? `${(method.xpPerHour / 1_000_000).toFixed(1)}M`
@@ -373,6 +451,8 @@ export default function SkillCalculator({ hiscores }: Props) {
             />
           )}
         </div>
+      )}
+      </>
       )}
     </div>
   );

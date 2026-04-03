@@ -55,6 +55,23 @@ export default defineConfig({
           Authorization: "1E15qy2D4M4G",
         },
       },
+      "/api/maps": {
+        target: "https://maps.runescape.wiki",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/maps/, ""),
+        headers: { "User-Agent": "runewise - osrs companion app" },
+      },
+      "/api/cdn": {
+        target: "https://cdn.runescape.com",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/cdn/, ""),
+      },
+      "/api/temple": {
+        target: "https://templeosrs.com",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/temple/, "/api"),
+        headers: { "User-Agent": "runewise - osrs companion app" },
+      },
     },
   },
 });

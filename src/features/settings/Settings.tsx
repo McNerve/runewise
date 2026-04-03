@@ -5,26 +5,32 @@ import { isTauri, isMac } from "../../lib/env";
 
 declare const __APP_VERSION__: string;
 
-const KEYBIND_LABELS: Record<string, string> = {
-  overview: "Profile",
-  tracker: "XP Tracker",
-  "skill-calc": "Skill Calc",
-  "dps-calc": "DPS Calc",
-  "dry-calc": "Dry Calc",
-  "pet-calc": "Pet Calc",
-  bosses: "Boss Guides",
-  loot: "Loot",
-  market: "Items",
-  watchlist: "Watchlist",
-  progress: "Progress",
-  slayer: "Slayer Blocks",
-  "clue-helper": "Clue Helper",
-  "money-making": "Money Making",
-  stars: "Shooting Stars",
-  news: "News",
-  wiki: "Wiki",
-  timers: "Timers",
-  "xp-table": "XP Table",
+const KEYBIND_LABELS: Record<string, { label: string; family: string }> = {
+  overview: { label: "Profile", family: "Player" },
+  tracker: { label: "XP Tracker", family: "Player" },
+  "collection-log": { label: "Collection Log", family: "Player" },
+  "skill-calc": { label: "Skill Calc", family: "Tools" },
+  "dps-calc": { label: "DPS Calc", family: "Tools" },
+  "dry-calc": { label: "Dry Calc", family: "Tools" },
+  "pet-calc": { label: "Pet Calc", family: "Tools" },
+  "gear-compare": { label: "Gear Compare", family: "Tools" },
+  "money-making": { label: "Money Making", family: "Tools" },
+  timers: { label: "Farm Timers", family: "Tools" },
+  "xp-table": { label: "XP Table", family: "Tools" },
+  "training-plan": { label: "Training Plan", family: "Tools" },
+  "production-calc": { label: "Recipe Calc", family: "Tools" },
+  bosses: { label: "Boss Guides", family: "Bossing" },
+  raids: { label: "Raid Guides", family: "Bossing" },
+  market: { label: "Items", family: "Market" },
+  loot: { label: "Loot & Drops", family: "Market" },
+  spells: { label: "Spells", family: "Market" },
+  progress: { label: "Progress", family: "Guides" },
+  slayer: { label: "Slayer Helper", family: "Guides" },
+  "clue-helper": { label: "Clue Helper", family: "Guides" },
+  stars: { label: "Star Helper", family: "Guides" },
+  "world-map": { label: "World Map", family: "Live" },
+  news: { label: "OSRS News", family: "Live" },
+  wiki: { label: "OSRS Wiki", family: "Live" },
 };
 
 function ThemeGlyph({ theme }: { theme: "dark" | "light" | "system" }) {
@@ -247,11 +253,11 @@ export default function Settings() {
   };
 
   return (
-    <div className="max-w-2xl space-y-4">
+    <div className="max-w-4xl space-y-4">
       <div className="mb-2">
-        <h2 className="text-xl font-semibold tracking-tight">Settings</h2>
+        <h2 className="text-2xl font-semibold tracking-tight">Settings</h2>
         <p className="mt-1 text-sm text-text-secondary/80">
-          Preferences, notifications, keyboard shortcuts, and system options.
+          Configure your RuneWise experience.
         </p>
       </div>
 
@@ -336,17 +342,47 @@ export default function Settings() {
 
       {/* Keyboard Shortcuts */}
       <SettingsCard title="Keyboard Shortcuts">
-        <div className="space-y-2">
-          {Object.entries(KEYBIND_LABELS).map(([action, label]) => (
-            <div key={action} className="flex items-center justify-between gap-3 py-0.5">
-              <span className="text-sm text-text-primary/90">{label}</span>
-              <KeybindRecorder
-                value={settings.keybinds[action] ?? DEFAULT_KEYBINDS[action]}
-                onChange={(key) => handleKeybindChange(action, key)}
-              />
+        {(() => {
+          const families = new Map<string, [string, { label: string; family: string }][]>();
+          for (const [action, info] of Object.entries(KEYBIND_LABELS)) {
+            const list = families.get(info.family) ?? [];
+            list.push([action, info]);
+            families.set(info.family, list);
+          }
+          const usedKeys = new Map<string, string>();
+          for (const [action] of Object.entries(KEYBIND_LABELS)) {
+            const key = (settings.keybinds[action] ?? DEFAULT_KEYBINDS[action] ?? "").toLowerCase();
+            if (key && usedKeys.has(key)) {
+              // conflict detected
+            }
+            if (key) usedKeys.set(key, action);
+          }
+          return Array.from(families.entries()).map(([family, entries]) => (
+            <div key={family} className="mb-4 last:mb-0">
+              <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/50 mb-2">{family}</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1">
+                {entries.map(([action, info]) => {
+                  const key = (settings.keybinds[action] ?? DEFAULT_KEYBINDS[action] ?? "").toLowerCase();
+                  const conflict = Array.from(Object.entries(KEYBIND_LABELS)).some(
+                    ([a]) => a !== action && (settings.keybinds[a] ?? DEFAULT_KEYBINDS[a] ?? "").toLowerCase() === key && key
+                  );
+                  return (
+                    <div key={action} className="flex items-center justify-between gap-3 py-1">
+                      <span className="text-sm text-text-primary/90">{info.label}</span>
+                      <div className="flex items-center gap-1">
+                        {conflict && <span className="text-[9px] text-warning" title="Duplicate keybind">⚠</span>}
+                        <KeybindRecorder
+                          value={settings.keybinds[action] ?? DEFAULT_KEYBINDS[action]}
+                          onChange={(key) => handleKeybindChange(action, key)}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          ))}
-        </div>
+          ));
+        })()}
         <div className="flex items-center justify-between mt-4 pt-3 border-t border-border/30">
           <p className="text-[10px] text-text-secondary/65">
             {isMac ? "⌘" : "Ctrl+"}K to open global search is always available
@@ -375,6 +411,26 @@ export default function Settings() {
 
           <div className="flex items-center justify-between gap-4 pt-3 border-t border-border/30">
             <div>
+              <span className="text-sm font-medium text-text-primary">Clear data cache</span>
+              <p className="mt-0.5 text-xs text-text-secondary/70">
+                Remove cached API responses. Useful if data appears stale.
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                const keys = Object.keys(localStorage).filter(k => k.startsWith("runewise_cache:"));
+                keys.forEach(k => localStorage.removeItem(k));
+                alert(`Cleared ${keys.length} cached entries. Reload the page to fetch fresh data.`);
+                window.location.reload();
+              }}
+              className="rounded-lg bg-bg-tertiary px-3 py-1.5 text-xs text-text-secondary transition-colors hover:text-text-primary"
+            >
+              Clear Cache
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between gap-4 pt-3 border-t border-border/30">
+            <div>
               <span className="text-sm font-medium text-text-primary">Reset settings</span>
               <p className="mt-0.5 text-xs text-text-secondary/70">
                 Clear saved preferences, theme choices, and custom shortcuts.
@@ -388,6 +444,46 @@ export default function Settings() {
             >
               Reset
             </button>
+          </div>
+        </div>
+      </SettingsCard>
+
+      {/* Data Sync */}
+      <SettingsCard title="Data Sync">
+        <div className="space-y-3">
+          <p className="text-sm text-text-secondary leading-relaxed">
+            RuneWise pulls live data from <strong>Wise Old Man</strong>, <strong>Temple OSRS</strong>,
+            and the <strong>OSRS Hiscores</strong>. Set your RSN in the top bar to see your stats,
+            boss kills, and collection log.
+          </p>
+          <div className="space-y-2 pt-2 border-t border-border/30">
+            <div className="flex items-start gap-3">
+              <span className="text-accent text-sm mt-0.5">1.</span>
+              <p className="text-xs text-text-secondary leading-relaxed">
+                <strong className="text-text-primary">Collection Log</strong> — Install the <em>Temple OSRS</em> RuneLite
+                plugin and sync your account at{" "}
+                <a href="https://templeosrs.com" target="_blank" rel="noopener noreferrer" className="text-accent hover:text-accent-hover">
+                  templeosrs.com
+                </a>. Your collection log data will appear automatically.
+              </p>
+            </div>
+            <div className="flex items-start gap-3">
+              <span className="text-accent text-sm mt-0.5">2.</span>
+              <p className="text-xs text-text-secondary leading-relaxed">
+                <strong className="text-text-primary">XP Tracking</strong> — Update your profile on{" "}
+                <a href="https://wiseoldman.net" target="_blank" rel="noopener noreferrer" className="text-accent hover:text-accent-hover">
+                  wiseoldman.net
+                </a>{" "}
+                for gains, records, and achievements.
+              </p>
+            </div>
+            <div className="flex items-start gap-3">
+              <span className="text-accent text-sm mt-0.5">3.</span>
+              <p className="text-xs text-text-secondary leading-relaxed">
+                <strong className="text-text-primary">Quests &amp; Combat Tasks</strong> — Mark these manually in
+                RuneWise. No public API tracks individual quest or combat achievement completion.
+              </p>
+            </div>
           </div>
         </div>
       </SettingsCard>

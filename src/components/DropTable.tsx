@@ -2,11 +2,14 @@ import { useState, useMemo } from "react";
 import type { WikiDrop } from "../lib/api/drops";
 import { formatGp } from "../lib/format";
 import { itemIcon } from "../lib/sprites";
+import { useNavigation } from "../lib/NavigationContext";
+import WikiImage from "./WikiImage";
 
 interface DropTableProps {
   drops: WikiDrop[];
   prices?: Record<string, { high: number | null; low: number | null }>;
   itemMap?: Map<string, number>;
+  iconMap?: Map<string, string>;
   killsPerHour?: number;
   onKillsPerHourChange?: (v: number) => void;
   showProfit?: boolean;
@@ -14,10 +17,24 @@ interface DropTableProps {
 
 type SortKey = "name" | "rarity" | "value";
 
-function RarityBar({ fraction }: { fraction: number | null }) {
-  if (fraction == null || fraction <= 0) return null;
-  const rate = 1 / fraction;
-  const width = Math.max(5, Math.min(100, fraction * 5000));
+function parseFractionFallback(rarity: string): number | null {
+  if (!rarity) return null;
+  if (rarity.toLowerCase() === "always") return 1;
+  const cleaned = rarity.replace(/~/g, "").replace(/,/g, "");
+  const match = cleaned.match(/(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)/);
+  if (match) {
+    const num = parseFloat(match[1]);
+    const den = parseFloat(match[2]);
+    if (den > 0) return num / den;
+  }
+  return null;
+}
+
+function RarityBar({ fraction, rarity }: { fraction: number | null; rarity?: string }) {
+  const effective = fraction ?? (rarity ? parseFractionFallback(rarity) : null);
+  if (effective == null || effective <= 0) return null;
+  const rate = 1 / effective;
+  const width = Math.max(5, Math.min(100, effective * 5000));
   const color =
     rate <= 16
       ? "bg-text-secondary"
@@ -49,15 +66,30 @@ export default function DropTable({
   drops,
   prices,
   itemMap,
+  iconMap,
   killsPerHour,
   onKillsPerHourChange,
   showProfit = false,
 }: DropTableProps) {
+  const { navigate } = useNavigation();
+
+  const getIconUrl = (name: string) => {
+    const icon = iconMap?.get(name.toLowerCase());
+    return icon ? `https://oldschool.runescape.wiki/images/${icon}` : itemIcon(name);
+  };
   const [sortKey, setSortKey] = useState<SortKey>("rarity");
   const [sortAsc, setSortAsc] = useState(true);
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
-    new Set(["Always", "Weapons and armour", "Runes and ammunition", "Other", "Seeds", "Resources", "Rare drop table"])
-  );
+  // Auto-expand all categories by building the set from the data
+  const allCategoryNames = useMemo(() => {
+    const names = new Set<string>();
+    for (const drop of drops) {
+      names.add(drop.isRareDropTable ? "Rare drop table" : (drop.dropType || "Other"));
+    }
+    return names;
+  }, [drops]);
+
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const effectiveExpanded = expandedCategories.size > 0 ? expandedCategories : allCategoryNames;
 
   const categories = useMemo(() => {
     const grouped = new Map<string, WikiDrop[]>();
@@ -102,7 +134,9 @@ export default function DropTable({
 
   function toggleCategory(cat: string) {
     setExpandedCategories((prev) => {
-      const next = new Set(prev);
+      // First toggle: initialize from all categories (all expanded), then collapse the clicked one
+      const base = prev.size > 0 ? prev : allCategoryNames;
+      const next = new Set(base);
       if (next.has(cat)) next.delete(cat);
       else next.add(cat);
       return next;
@@ -140,7 +174,7 @@ export default function DropTable({
             className="flex items-center gap-2 w-full text-left py-1.5"
           >
             <span className="text-xs text-text-secondary/50">
-              {expandedCategories.has(catName) ? "▾" : "▸"}
+              {effectiveExpanded.has(catName) ? "▾" : "▸"}
             </span>
             <span className="text-xs font-medium text-text-secondary">
               {catName}
@@ -150,7 +184,7 @@ export default function DropTable({
             </span>
           </button>
 
-          {expandedCategories.has(catName) && (
+          {effectiveExpanded.has(catName) && (
             <table className="w-full text-left">
               <thead>
                 <tr className="border-b border-border/30">
@@ -203,14 +237,22 @@ export default function DropTable({
                       className="border-b border-border/15 hover:bg-bg-secondary/30 transition-colors"
                     >
                       <td className="px-2 py-1.5">
-                        <img
-                          src={itemIcon(drop.itemName)}
-                          alt=""
+                        <WikiImage
+                          src={getIconUrl(drop.itemName)}
+                          alt={drop.itemName}
                           className="w-5 h-5"
-                          onError={(e) => { e.currentTarget.style.display = "none"; }}
+                          fallback={drop.itemName[0]}
                         />
                       </td>
-                      <td className="px-2 py-1.5 text-sm">{drop.itemName}</td>
+                      <td className="px-2 py-1.5 text-sm">
+                        <button
+                          type="button"
+                          onClick={() => navigate("wiki", { page: drop.itemName.replace(/ /g, "_") })}
+                          className="text-left hover:text-accent transition-colors"
+                        >
+                          {drop.itemName}
+                        </button>
+                      </td>
                       <td className="px-2 py-1.5 text-xs text-text-secondary text-right tabular-nums">
                         {drop.quantity}
                       </td>
@@ -222,7 +264,7 @@ export default function DropTable({
                             <span className="text-text-secondary">{drop.rarity}</span>
                           )}
                         </div>
-                        <RarityBar fraction={drop.rarityFraction} />
+                        <RarityBar fraction={drop.rarityFraction} rarity={drop.rarity} />
                       </td>
                       {prices && (
                         <td className="px-2 py-1.5 text-xs text-right tabular-nums text-text-secondary">
