@@ -12,6 +12,7 @@ import { type WikiEquipment, type EquipmentSlot } from "../../lib/api/equipment"
 import { loadJSON, saveJSON } from "../../lib/localStorage";
 import { useNavigation } from "../../lib/NavigationContext";
 import { itemIcon } from "../../lib/sprites";
+import { getWeaponType, type WeaponStance } from "../../lib/data/weapon-stances";
 import MonsterSearch from "./components/MonsterSearch";
 import ModifierToggles from "./components/ModifierToggles";
 import DpsBreakdown from "./components/DpsBreakdown";
@@ -59,28 +60,11 @@ interface GearLoadout {
 
 const LOADOUTS_KEY = "runewise_dps_loadouts";
 
-interface Stance {
-  label: string;
-  attackBonus: number;
-  strengthBonus: number;
-}
-
-const STANCES: Record<CombatStyle, Stance[]> = {
-  melee: [
-    { label: "Accurate", attackBonus: 3, strengthBonus: 0 },
-    { label: "Aggressive", attackBonus: 0, strengthBonus: 3 },
-    { label: "Controlled", attackBonus: 1, strengthBonus: 1 },
-    { label: "Defensive", attackBonus: 0, strengthBonus: 0 },
-  ],
-  ranged: [
-    { label: "Accurate", attackBonus: 3, strengthBonus: 0 },
-    { label: "Rapid", attackBonus: 0, strengthBonus: 0 },
-    { label: "Longrange", attackBonus: 0, strengthBonus: 0 },
-  ],
-  magic: [
-    { label: "Accurate", attackBonus: 3, strengthBonus: 0 },
-    { label: "Longrange", attackBonus: 0, strengthBonus: 0 },
-  ],
+// Fallback generic stances when no weapon is equipped
+const GENERIC_STANCES: Record<CombatStyle, WeaponStance[]> = {
+  melee: getWeaponType("Slash Sword").stances,
+  ranged: getWeaponType("Bow").stances,
+  magic: getWeaponType("Staff").stances,
 };
 
 const DEFAULT_SPEED: Record<CombatStyle, number> = {
@@ -230,14 +214,20 @@ export default function DpsCalculator({ hiscores }: Props) {
   const effectiveStrengthBonus = bonusMode === "equipment"
     ? (combatStyle === "ranged" ? gearBonuses.rangedStrength : combatStyle === "magic" ? gearBonuses.magicDamage : gearBonuses.strengthBonus)
     : strengthBonus;
-  // Weapon attack speed from equipped weapon slot
+  // Get weapon-specific stances from equipped weapon's combat_style
   const weaponItem = equippedGear["weapon"] ?? equippedGear["2h"] ?? null;
-  const effectiveAttackSpeed = bonusMode === "equipment" && weaponItem
-    ? attackSpeed // speed is still manual; weapon data doesn't carry tick speed in WikiEquipment
-    : attackSpeed;
-
-  const stances = STANCES[combatStyle];
+  const weaponCombatStyle = weaponItem?.combatStyle ?? undefined;
+  const weaponType = getWeaponType(weaponCombatStyle);
+  const stances = bonusMode === "equipment" && weaponCombatStyle
+    ? weaponType.stances
+    : GENERIC_STANCES[combatStyle];
   const stance = stances[stanceIdx] ?? stances[0];
+
+  // Weapon attack speed — auto from equipped weapon, fallback to manual
+  const weaponSpeed = weaponItem?.attackSpeed ?? 0;
+  const effectiveAttackSpeed = bonusMode === "equipment" && weaponSpeed > 0
+    ? weaponSpeed + (stance.speedMod ?? 0)
+    : attackSpeed;
   const filteredPrayers = useMemo(
     () => PRAYERS.filter((p) => p.style === combatStyle),
     [combatStyle]
@@ -567,7 +557,14 @@ export default function DpsCalculator({ hiscores }: Props) {
                   )}
                   <div>Prayer: <span className="text-accent">+{gearBonuses.prayer}</span></div>
                 </div>
-                <StatInput label="Atk speed" value={attackSpeed} onChange={setAttackSpeed} min={1} max={12} suffix="ticks" />
+                {bonusMode === "equipment" && weaponSpeed > 0 ? (
+                  <div className="flex justify-between text-xs text-text-secondary mt-2">
+                    <span>Attack speed</span>
+                    <span className="text-text-primary font-medium tabular-nums">{effectiveAttackSpeed} ticks ({(effectiveAttackSpeed * 0.6).toFixed(1)}s)</span>
+                  </div>
+                ) : (
+                  <StatInput label="Atk speed" value={attackSpeed} onChange={setAttackSpeed} min={1} max={12} suffix="ticks" />
+                )}
               </div>
             ) : (
               <div className="space-y-2">
@@ -620,20 +617,38 @@ export default function DpsCalculator({ hiscores }: Props) {
           </div>
 
           <div>
-            <div className="section-kicker mb-3">Stance</div>
-            <select
-              value={stanceIdx}
-              onChange={(e) => setStanceIdx(Number(e.target.value))}
-              className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm"
-            >
-              {stances.map((s, i) => (
-                <option key={s.label} value={i}>
-                  {s.label}
-                  {s.attackBonus > 0 ? ` (+${s.attackBonus} atk)` : ""}
-                  {s.strengthBonus > 0 ? ` (+${s.strengthBonus} str)` : ""}
-                </option>
-              ))}
-            </select>
+            <div className="section-kicker mb-2">
+              Stance
+              {bonusMode === "equipment" && weaponCombatStyle && (
+                <span className="ml-1.5 text-accent/60 normal-case tracking-normal">({weaponType.name})</span>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-1">
+              {stances.map((s, i) => {
+                const isActive = stanceIdx === i;
+                return (
+                  <button
+                    key={`${s.name}-${i}`}
+                    onClick={() => setStanceIdx(i)}
+                    aria-pressed={isActive}
+                    className={`px-2.5 py-2 rounded-lg text-left text-xs transition-colors ${
+                      isActive
+                        ? "bg-accent text-white"
+                        : "bg-bg-tertiary/50 text-text-secondary hover:bg-bg-tertiary"
+                    }`}
+                  >
+                    <div className="font-medium">{s.name}</div>
+                    <div className={`text-[9px] mt-0.5 ${isActive ? "text-white/60" : "text-text-secondary/40"}`}>
+                      {s.attackType}
+                      {s.attackBonus > 0 && ` · +${s.attackBonus} atk`}
+                      {s.strengthBonus > 0 && ` · +${s.strengthBonus} str`}
+                      {s.defenceBonus > 0 && ` · +${s.defenceBonus} def`}
+                      {s.speedMod !== 0 && ` · ${s.speedMod > 0 ? "+" : ""}${s.speedMod} speed`}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 
