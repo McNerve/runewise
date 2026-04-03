@@ -77,7 +77,7 @@ export default function Home({ hiscores }: HomeProps) {
 
       {/* Stats row — minimal, no card wrapper */}
       {savedRsn && (
-        <div className="grid grid-cols-3 gap-px rounded-xl overflow-hidden border border-border/40">
+        <div className="grid grid-cols-3 gap-px rounded-xl overflow-hidden border border-border/60">
           <div className="stat-card bg-bg-secondary/40 px-4 py-3" data-accent="green">
             <div className="text-[11px] uppercase tracking-wider text-text-secondary/70">Total Level</div>
             <div className="mt-0.5 text-lg font-semibold tabular-nums">{totalLevel?.toLocaleString() ?? "—"}</div>
@@ -110,7 +110,7 @@ export default function Home({ hiscores }: HomeProps) {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.03, duration: 0.18, ease: "easeOut" }}
                 onClick={() => navigate(feature.id)}
-                className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-bg-secondary/60"
+                className="group flex items-center gap-3 rounded-xl border border-border/60 px-3 py-2.5 text-left transition hover:bg-bg-secondary/60"
               >
                 <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg" style={{ color: accent, background: `color-mix(in srgb, ${accent} 12%, transparent)` }}>
                   <ShellIcon view={feature.id} className="h-4 w-4" />

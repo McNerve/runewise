@@ -247,11 +247,11 @@ export default function Settings() {
   };
 
   return (
-    <div className="max-w-2xl space-y-4">
+    <div className="max-w-4xl space-y-4">
       <div className="mb-2">
-        <h2 className="text-xl font-semibold tracking-tight">Settings</h2>
+        <h2 className="text-2xl font-semibold tracking-tight">Settings</h2>
         <p className="mt-1 text-sm text-text-secondary/80">
-          Preferences, notifications, keyboard shortcuts, and system options.
+          Configure your RuneWise experience.
         </p>
       </div>
 

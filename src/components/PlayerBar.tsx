@@ -19,10 +19,12 @@ export default function PlayerBar({
 }: PlayerBarProps) {
   const { view, goBack, canGoBack } = useNavigation();
   const [input, setInput] = useState(rsn);
+  const [editing, setEditing] = useState(false);
   const feature = getFeature(view);
 
   useEffect(() => {
     setInput(rsn);
+    if (rsn) setEditing(false);
   }, [rsn]);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -78,34 +80,46 @@ export default function PlayerBar({
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <label className="section-kicker">Saved RSN</label>
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); onLookup(input); } }}
-            placeholder="Enter username..."
-            className="w-full rounded-xl border border-border bg-bg-primary/82 px-3 py-2 text-sm text-text-primary outline-none transition placeholder:text-text-secondary/65 focus:border-accent sm:w-52"
-          />
+        {rsn && !editing ? (
           <button
-            type="submit"
-            disabled={loading}
-            className="rounded-xl bg-accent px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-accent-hover disabled:opacity-50"
+            onClick={() => setEditing(true)}
+            className="flex items-center gap-2 rounded-xl border border-accent/30 bg-accent/10 px-3 py-1.5 text-sm font-medium text-accent transition hover:bg-accent/15"
           >
-            {loading ? "Loading..." : "Set Profile"}
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-accent/20 text-[10px] font-bold text-accent">
+              {rsn[0].toUpperCase()}
+            </span>
+            {rsn}
           </button>
-          {rsn && !loading && !error ? (
+        ) : (
+          <form onSubmit={handleSubmit} className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <label className="section-kicker">Saved RSN</label>
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); onLookup(input); } }}
+              placeholder="Enter username..."
+              className="w-full rounded-xl border border-border bg-bg-primary/82 px-3 py-2 text-sm text-text-primary outline-none transition placeholder:text-text-secondary/65 focus:border-accent sm:w-52"
+            />
             <button
-              onClick={handleClear}
-              className="rounded-xl border border-border px-3 py-2 text-xs text-text-secondary transition hover:border-danger/30 hover:text-danger"
-              title="Clear saved RSN"
-              type="button"
+              type="submit"
+              disabled={loading}
+              className="rounded-xl bg-accent px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-accent-hover disabled:opacity-50"
             >
-              Clear
+              {loading ? "Loading..." : "Set Profile"}
             </button>
-          ) : null}
-        </form>
+            {rsn && !loading && !error ? (
+              <button
+                onClick={handleClear}
+                className="rounded-xl border border-border px-3 py-2 text-xs text-text-secondary transition hover:border-danger/30 hover:text-danger"
+                title="Clear saved RSN"
+                type="button"
+              >
+                Clear
+              </button>
+            ) : null}
+          </form>
+        )}
       </div>
 
       {error ? (

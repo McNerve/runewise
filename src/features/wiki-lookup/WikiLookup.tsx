@@ -9,6 +9,7 @@ import {
   type WikiLookupDocument,
 } from "../../lib/wiki/lookup";
 import SourceAttribution from "../../components/SourceAttribution";
+import { Skeleton } from "../../components/Skeleton";
 import { useNavigation } from "../../lib/NavigationContext";
 
 export default function WikiLookup() {
@@ -216,10 +217,9 @@ export default function WikiLookup() {
       <section>
         <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
           <div className="space-y-1">
-            <h2 className="text-2xl font-semibold tracking-tight">Wiki Lookup</h2>
+            <h2 className="text-2xl font-semibold tracking-tight">OSRS Wiki</h2>
             <p className="max-w-2xl text-sm text-text-secondary">
-              Search any OSRS item, place, NPC, shop, minigame, or mechanic and get a
-              structured wiki view inside RuneWise.
+              Search and read any OSRS Wiki page with formatted content.
             </p>
           </div>
           <div className="text-[11px] uppercase tracking-[0.18em] text-text-secondary/60">
@@ -246,9 +246,13 @@ export default function WikiLookup() {
               className="w-full rounded-xl border border-border bg-bg-primary px-4 py-3 text-sm outline-none transition focus:border-accent"
             />
             {showResultsPanel ? (
-              <div className="rounded-xl border border-border/70 bg-bg-primary/55">
+              <div className="rounded-xl border border-border/60 bg-bg-primary/55">
                 {loadingResults ? (
-                  <div className="px-4 py-3 text-sm text-text-secondary">Searching wiki...</div>
+                  <div className="space-y-2 px-4 py-3">
+                    <Skeleton className="h-4 w-2/3" />
+                    <Skeleton className="h-4 w-1/2" />
+                    <Skeleton className="h-4 w-3/5" />
+                  </div>
                 ) : visibleResults.length > 0 ? (
                   visibleResults.map((page) => (
                     <button
@@ -316,6 +320,7 @@ export default function WikiLookup() {
       ) : null}
 
       {document ? (
+        <div className="rounded-xl border border-border/40 bg-bg-primary/25 p-5">
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
           <section className="min-w-0 space-y-4">
             <div>
@@ -485,6 +490,7 @@ export default function WikiLookup() {
               </div>
             </section>
           </aside>
+        </div>
         </div>
       ) : null}
     </div>
