@@ -21,7 +21,7 @@ import DpsBreakdown from "./components/DpsBreakdown";
 import GearSelector from "./GearSelector";
 import { getPhaseBoss, type BossPhase } from "../../lib/data/boss-phases";
 import { getSpecWeaponsForStyle, type SpecWeapon } from "../../lib/data/spec-weapons";
-import { calculateSpecDps } from "../../lib/formulas/dps";
+import { calculateSpecDps, toaDefenseScale, toaHpScale, coxHpScale, compareDps, type DpsInput } from "../../lib/formulas/dps";
 import {
   COMBAT_SPELLS,
   spellMaxHit,
@@ -134,6 +134,7 @@ export default function DpsCalculator({ hiscores }: Props) {
   const [loadoutName, setLoadoutName] = useState("");
   const [selectedSpec, setSelectedSpec] = useState<SpecWeapon | null>(null);
   const [selectedSpell, setSelectedSpell] = useState<CombatSpell | null>(null);
+  const [compareLoadout, setCompareLoadout] = useState<GearLoadout | null>(null);
   const pendingLoadout = useRef<GearLoadout | null>(null);
 
   // Gear selector state
@@ -292,13 +293,23 @@ export default function DpsCalculator({ hiscores }: Props) {
   }, [bossPhases, selectedMonster, wikiMonsters]);
 
   const isCustom = !selectedMonster;
-  const targetDefLevel = isCustom
+  const baseDefLevel = isCustom
     ? customDef.defLevel
     : selectedMonster.defenceLevel;
   const targetDefBonus = isCustom
     ? customDef.defBonus
     : getDefBonus(selectedMonster, combatStyle);
-  const targetHp = isCustom ? customDef.hp : selectedMonster.hitpoints;
+  const baseHp = isCustom ? customDef.hp : selectedMonster.hitpoints;
+
+  // Apply raid scaling
+  const targetDefLevel = toaInvocation > 0
+    ? toaDefenseScale(baseDefLevel, toaInvocation)
+    : baseDefLevel;
+  const targetHp = coxPartySize > 1
+    ? coxHpScale(baseHp, coxPartySize)
+    : toaInvocation > 0
+      ? toaHpScale(baseHp, toaInvocation)
+      : baseHp;
 
   const modifierList = useMemo<DpsModifier[]>(
     () =>
@@ -393,6 +404,75 @@ export default function DpsCalculator({ hiscores }: Props) {
       }),
     }));
   }, [phaseMonsters, attackLevel, strengthLevel, rangedLevel, magicLevel, effectiveAttackBonus, effectiveStrengthBonus, prayerAttackMult, prayerStrengthMult, stanceAttackBonus, stanceStrengthBonus, effectiveAttackSpeed, combatStyle, modifierList, defReductions]);
+
+  // Loadout comparison
+  const comparisonResult = useMemo(() => {
+    if (!compareLoadout) return null;
+    const compareStances = GENERIC_STANCES[compareLoadout.combatStyle];
+    const cmpStance = compareStances[compareLoadout.stanceIdx] ?? compareStances[0];
+    const cmpPrayer = PRAYERS.filter((p) => p.style === compareLoadout.combatStyle)[compareLoadout.prayerIdx] ?? PRAYERS[0];
+
+    let cmpAttackBonus = compareLoadout.attackBonus;
+    let cmpStrengthBonus = compareLoadout.attackBonus; // fallback
+    if (compareLoadout.gear) {
+      const bonuses = sumGearBonuses(compareLoadout.gear as EquippedGear);
+      if (compareLoadout.combatStyle === "melee") {
+        cmpAttackBonus = Math.max(bonuses.attackStab, bonuses.attackSlash, bonuses.attackCrush);
+        cmpStrengthBonus = bonuses.strength;
+      } else if (compareLoadout.combatStyle === "ranged") {
+        cmpAttackBonus = bonuses.attackRanged;
+        cmpStrengthBonus = bonuses.rangedStrength;
+      } else {
+        cmpAttackBonus = bonuses.attackMagic;
+        cmpStrengthBonus = bonuses.magicDamage;
+      }
+    } else {
+      cmpStrengthBonus = compareLoadout.attackBonus; // manual mode fallback
+    }
+
+    const cmpInput: DpsInput = {
+      attackLevel,
+      strengthLevel,
+      rangedLevel,
+      magicLevel,
+      attackBonus: cmpAttackBonus,
+      strengthBonus: cmpStrengthBonus,
+      prayerAttackMult: cmpPrayer.attackMult,
+      prayerStrengthMult: cmpPrayer.strengthMult,
+      stanceAttackBonus: cmpStance.attackBonus,
+      stanceStrengthBonus: cmpStance.strengthBonus,
+      attackSpeed: compareLoadout.attackSpeed,
+      combatStyle: compareLoadout.combatStyle,
+      targetDefLevel,
+      targetDefBonus,
+      targetHp,
+      targetMagicLevel: selectedMonster?.magicLevel,
+      modifiers: [...compareLoadout.modifiers].map((id) => DPS_MODIFIERS[id]).filter((m): m is DpsModifier => m != null),
+      defReductions,
+    };
+    const currentInput: DpsInput = {
+      attackLevel,
+      strengthLevel,
+      rangedLevel,
+      magicLevel,
+      attackBonus: effectiveAttackBonus,
+      strengthBonus: effectiveStrengthBonus,
+      prayerAttackMult,
+      prayerStrengthMult,
+      stanceAttackBonus,
+      stanceStrengthBonus,
+      attackSpeed: effectiveAttackSpeed,
+      combatStyle,
+      targetDefLevel,
+      targetDefBonus,
+      targetHp,
+      targetMagicLevel: selectedMonster?.magicLevel,
+      modifiers: modifierList,
+      defReductions,
+      spellBaseMaxHit: activeSpellBase,
+    };
+    return compareDps(cmpInput, currentInput);
+  }, [compareLoadout, attackLevel, strengthLevel, rangedLevel, magicLevel, effectiveAttackBonus, effectiveStrengthBonus, prayerAttackMult, prayerStrengthMult, stanceAttackBonus, stanceStrengthBonus, effectiveAttackSpeed, combatStyle, targetDefLevel, targetDefBonus, targetHp, selectedMonster?.magicLevel, modifierList, defReductions, activeSpellBase]);
 
   const specWeapons = useMemo(
     () => getSpecWeaponsForStyle(combatStyle),
@@ -1048,16 +1128,28 @@ export default function DpsCalculator({ hiscores }: Props) {
               Raid Scaling {showRaidScaling ? "▾" : "▸"}
             </button>
             {showRaidScaling && (
-              <div className="mt-2 grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-[10px] text-text-secondary/50">ToA Invocations</label>
-                  <input type="number" min={0} max={600} value={toaInvocation} onChange={(e) => setToaInvocation(Number(e.target.value))} className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm mt-1" />
+              <>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[10px] text-text-secondary/50">ToA Invocations</label>
+                    <input type="number" min={0} max={600} value={toaInvocation} onChange={(e) => setToaInvocation(Number(e.target.value))} className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm mt-1" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-text-secondary/50">CoX Party Size</label>
+                    <input type="number" min={1} max={100} value={coxPartySize} onChange={(e) => setCoxPartySize(Number(e.target.value))} className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm mt-1" />
+                  </div>
                 </div>
-                <div>
-                  <label className="text-[10px] text-text-secondary/50">CoX Party Size</label>
-                  <input type="number" min={1} max={100} value={coxPartySize} onChange={(e) => setCoxPartySize(Number(e.target.value))} className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm mt-1" />
-                </div>
-              </div>
+                {(toaInvocation !== 0 || coxPartySize !== 1) && (
+                  <div className="mt-2 text-[10px] text-text-secondary/50">
+                    {toaInvocation !== 0 && (
+                      <span>Def: {baseDefLevel} {"\u2192"} <span className="text-warning">{targetDefLevel}</span> · HP: {baseHp} {"\u2192"} <span className="text-warning">{targetHp}</span></span>
+                    )}
+                    {coxPartySize !== 1 && (
+                      <span>HP: {baseHp} {"\u2192"} <span className="text-warning">{targetHp}</span> ({coxPartySize} players)</span>
+                    )}
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -1211,6 +1303,66 @@ export default function DpsCalculator({ hiscores }: Props) {
                   </tr>
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {/* Loadout Comparison */}
+          {loadouts.length > 0 && (
+            <div className="mt-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="text-[10px] uppercase tracking-wider text-text-secondary/50">Compare vs</div>
+                <select
+                  value={compareLoadout?.name ?? ""}
+                  onChange={(e) => {
+                    const l = loadouts.find((lo) => lo.name === e.target.value) ?? null;
+                    setCompareLoadout(l);
+                  }}
+                  className="flex-1 bg-bg-tertiary border border-border rounded px-2 py-1 text-xs"
+                >
+                  <option value="">Select loadout...</option>
+                  {loadouts.map((l) => (
+                    <option key={l.name} value={l.name}>{l.name} ({l.combatStyle})</option>
+                  ))}
+                </select>
+              </div>
+              {comparisonResult && compareLoadout && (
+                <div className="rounded-lg border border-border/40 bg-bg-tertiary/30 p-3">
+                  <div className="grid grid-cols-3 gap-2 text-center text-sm">
+                    <div>
+                      <div className="text-text-secondary/50 text-[10px] mb-1">{compareLoadout.name}</div>
+                      <div className="font-bold tabular-nums">{comparisonResult.setup1.dps.toFixed(2)}</div>
+                      <div className="text-[10px] text-text-secondary">DPS</div>
+                    </div>
+                    <div>
+                      <div className="text-text-secondary/50 text-[10px] mb-1">Difference</div>
+                      <div className={`font-bold tabular-nums ${
+                        comparisonResult.dpsGain > 0 ? "text-success" :
+                        comparisonResult.dpsGain < 0 ? "text-danger" :
+                        "text-text-secondary"
+                      }`}>
+                        {comparisonResult.dpsGain > 0 ? "+" : ""}{comparisonResult.dpsGain.toFixed(2)}
+                      </div>
+                      <div className={`text-[10px] ${
+                        comparisonResult.dpsGainPct > 0 ? "text-success" :
+                        comparisonResult.dpsGainPct < 0 ? "text-danger" :
+                        "text-text-secondary"
+                      }`}>
+                        {comparisonResult.dpsGainPct > 0 ? "+" : ""}{comparisonResult.dpsGainPct.toFixed(1)}%
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-text-secondary/50 text-[10px] mb-1">Current</div>
+                      <div className="font-bold text-accent tabular-nums">{comparisonResult.setup2.dps.toFixed(2)}</div>
+                      <div className="text-[10px] text-text-secondary">DPS</div>
+                    </div>
+                  </div>
+                  {comparisonResult.ttkDiff !== 0 && isFinite(comparisonResult.ttkDiff) && (
+                    <div className={`mt-2 text-center text-[10px] ${comparisonResult.ttkDiff > 0 ? "text-success" : "text-danger"}`}>
+                      {comparisonResult.ttkDiff > 0 ? "Faster" : "Slower"} by {Math.abs(comparisonResult.ttkDiff).toFixed(1)}s
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>

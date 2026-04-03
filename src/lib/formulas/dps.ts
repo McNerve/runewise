@@ -371,10 +371,19 @@ export function compareDps(input1: DpsInput, input2: DpsInput): DpsComparison {
 }
 
 export function toaDefenseScale(baseDefLevel: number, invocationLevel: number): number {
-  // ToA scales monster defense based on invocation level
-  // ~1% increase per invocation level above 0
   const scale = 1 + (invocationLevel / 100);
   return Math.floor(baseDefLevel * scale);
+}
+
+export function toaHpScale(baseHp: number, invocationLevel: number): number {
+  const scale = 1 + (invocationLevel / 100);
+  return Math.floor(baseHp * scale);
+}
+
+export function coxHpScale(baseHp: number, partySize: number): number {
+  // CoX scales boss HP linearly: base × (1 + 0.5 × (party - 1)) for most bosses
+  // Solo = 1×, duo = 1.5×, trio = 2×, etc.
+  return Math.floor(baseHp * (1 + 0.5 * (partySize - 1)));
 }
 
 export function coxScale(baseDefLevel: number, partySize: number, challengeMode: boolean): number {
