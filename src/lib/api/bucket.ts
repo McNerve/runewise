@@ -82,7 +82,7 @@ export async function bucketQueryAll<T extends Record<string, unknown>>(
 
   while (true) {
     const whereKey = where ? `:${where.field}=${where.value}` : "";
-    const cacheKey = `bucket:${bucket}:${fields.join(",")}${whereKey}:${offset}`;
+    const cacheKey = `${BUCKET_CACHE_VERSION}:bucket:${bucket}:${fields.join(",")}${whereKey}:${offset}`;
 
     const batch = await fetchJson<T[]>({
       url: `${WIKI_API}?action=bucket&query=${encodeURIComponent(
@@ -94,6 +94,7 @@ export async function bucketQueryAll<T extends Record<string, unknown>>(
         if (Array.isArray(json)) return json as T[];
         const obj = json as Record<string, unknown>;
         if (obj?.results && Array.isArray(obj.results)) return obj.results as T[];
+        if (obj?.bucket && Array.isArray(obj.bucket)) return obj.bucket as T[];
         if (
           typeof json === "object" &&
           json !== null &&
