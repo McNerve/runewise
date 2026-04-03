@@ -1,6 +1,4 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { COLLECTION_CATEGORIES, getTotalSlots } from "./data/slots";
-import { loadJSON, saveJSON } from "../../lib/localStorage";
 import { itemIcon, NAV_ICONS } from "../../lib/sprites";
 import {
   fetchTempleCollectionLog,
@@ -12,20 +10,6 @@ import {
 } from "../../lib/api/temple";
 import { clearCacheKey } from "../../lib/api/cache";
 import { useNavigation } from "../../lib/NavigationContext";
-import EmptyState from "../../components/EmptyState";
-
-const STORAGE_KEY = "runewise_collection_log";
-
-type Mode = "temple" | "manual";
-
-function loadObtained(): Set<string> {
-  const data = loadJSON<string[]>(STORAGE_KEY, []);
-  return new Set(data);
-}
-
-function saveObtained(obtained: Set<string>): void {
-  saveJSON(STORAGE_KEY, [...obtained]);
-}
 
 function ProgressRing({
   obtained,
@@ -451,110 +435,6 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
   );
 }
 
-function ManualView() {
-  const [obtained, setObtained] = useState<Set<string>>(loadObtained);
-  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
-
-  const totalSlots = useMemo(() => getTotalSlots(), []);
-  const totalObtained = obtained.size;
-
-  const toggle = useCallback((slot: string) => {
-    setObtained((prev) => {
-      const next = new Set(prev);
-      if (next.has(slot)) next.delete(slot);
-      else next.add(slot);
-      saveObtained(next);
-      return next;
-    });
-  }, []);
-
-  return (
-    <>
-      {totalObtained === 0 ? (
-        <EmptyState
-          icon={NAV_ICONS["collection-log"]}
-          title="No items collected yet"
-          description="Expand a category below and click items to start tracking."
-        />
-      ) : (
-        <div className="flex items-center gap-4 mb-6">
-          <ProgressRing obtained={totalObtained} total={totalSlots} size={48} />
-          <div>
-            <div className="text-lg font-bold tabular-nums">
-              {totalObtained} / {totalSlots}
-            </div>
-            <div className="text-xs text-text-secondary">
-              {((totalObtained / totalSlots) * 100).toFixed(1)}% complete
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="space-y-2">
-        {COLLECTION_CATEGORIES.map((cat) => {
-          const catObtained = cat.slots.filter((s) => obtained.has(s)).length;
-          const isExpanded = expandedCategory === cat.name;
-          const isComplete = catObtained === cat.slots.length;
-
-          return (
-            <div key={cat.name}>
-              <button
-                onClick={() =>
-                  setExpandedCategory(isExpanded ? null : cat.name)
-                }
-                aria-expanded={isExpanded}
-                className="w-full flex items-center gap-3 py-2 px-2 rounded hover:bg-bg-secondary/50 transition-colors"
-              >
-                <ProgressRing obtained={catObtained} total={cat.slots.length} />
-                <span
-                  className={`text-sm flex-1 text-left ${isComplete ? "text-success" : ""}`}
-                >
-                  {cat.name}
-                </span>
-                <span className="text-xs text-text-secondary tabular-nums">
-                  {catObtained}/{cat.slots.length}
-                </span>
-                <span className="text-xs text-text-secondary/40">
-                  {isExpanded ? "▾" : "▸"}
-                </span>
-              </button>
-
-              {isExpanded && (
-                <div className="ml-12 mb-3 grid grid-cols-2 gap-1">
-                  {cat.slots.map((slot) => {
-                    const isObtained = obtained.has(slot);
-                    return (
-                      <button
-                        key={slot}
-                        onClick={() => toggle(slot)}
-                        className={`flex items-center gap-2 px-2 py-1.5 rounded text-left text-sm transition-colors ${
-                          isObtained
-                            ? "bg-success/8 text-success"
-                            : "hover:bg-bg-secondary/50 text-text-secondary"
-                        }`}
-                      >
-                        <img
-                          src={itemIcon(slot)}
-                          alt=""
-                          className={`w-5 h-5 shrink-0 ${isObtained ? "" : "opacity-30"}`}
-                          onError={(e) => {
-                            e.currentTarget.style.display = "none";
-                          }}
-                        />
-                        <span className="truncate">{slot}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </>
-  );
-}
-
 interface Props {
   rsn: string;
 }
@@ -566,7 +446,6 @@ export default function CollectionLog({ rsn }: Props) {
   const [templeLoading, setTempleLoading] = useState(false);
   const [templeSynced, setTempleSynced] = useState<boolean | null>(null);
   const [templeError, setTempleError] = useState<string | null>(null);
-  const [mode, setMode] = useState<Mode>("manual");
 
   useEffect(() => {
     if (!rsn) return;
@@ -601,7 +480,6 @@ export default function CollectionLog({ rsn }: Props) {
         setTempleSynced(true);
         if (hasClogData) {
           setTempleData(clog);
-          setMode("temple");
         }
         setTempleLoading(false);
       } catch (err: unknown) {
@@ -620,35 +498,12 @@ export default function CollectionLog({ rsn }: Props) {
     };
   }, [rsn]);
 
-  const hasTemple = templeData && Object.keys(templeData.categories).length > 0;
-
   return (
     <div>
       <h2 className="text-xl font-semibold mb-1">Collection Log</h2>
       <p className="text-xs text-text-secondary/60 mb-5">
-        {mode === "temple"
-          ? "Live collection log synced from TempleOSRS."
-          : "Track your collection log manually. Click items to toggle obtained."}
+        Live collection log synced from TempleOSRS. Click any item to look it up on the wiki.
       </p>
-
-      {hasTemple && (
-        <div className="flex gap-1 mb-6">
-          {(["temple", "manual"] as const).map((m) => (
-            <button
-              key={m}
-              onClick={() => setMode(m)}
-              aria-pressed={mode === m}
-              className={`px-4 py-1.5 rounded text-sm font-medium transition-colors ${
-                mode === m
-                  ? "bg-accent text-white"
-                  : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
-              }`}
-            >
-              {m === "temple" ? "Temple" : "Manual"}
-            </button>
-          ))}
-        </div>
-      )}
 
       {templeLoading && (
         <div className="mb-4 space-y-2">
@@ -691,12 +546,12 @@ export default function CollectionLog({ rsn }: Props) {
                 setTempleSynced(null);
                 Promise.all([fetchTemplePlayerInfo(rsn), fetchTempleCollectionLog(rsn)])
                   .then(([info, clog]) => {
-                    if (info?.clog_synced) {
+                    const hasClog = clog && Object.keys(clog.categories).length > 0;
+                    if (hasClog) {
                       setTempleSynced(true);
-                      if (clog && Object.keys(clog.categories).length > 0) {
-                        setTempleData(clog);
-                        setMode("temple");
-                      }
+                      setTempleData(clog);
+                    } else if (info?.clog_synced) {
+                      setTempleSynced(true);
                     } else {
                       setTempleSynced(false);
                     }
@@ -715,11 +570,7 @@ export default function CollectionLog({ rsn }: Props) {
         </div>
       )}
 
-      {mode === "temple" && templeData ? (
-        <TempleView data={templeData} />
-      ) : (
-        <ManualView />
-      )}
+      {templeData && <TempleView data={templeData} />}
     </div>
   );
 }

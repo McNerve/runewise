@@ -3,7 +3,7 @@ import { type HiscoreData } from "../../lib/api/hiscores";
 import { fetchWomPlayer, type WomPlayer } from "../../lib/api/wom";
 import { xpForLevel } from "../../lib/formulas/xp";
 import { combatLevel } from "../../lib/formulas/combat";
-import { SKILL_ICONS, NAV_ICONS, bossIconSmall, bossIcon, itemIcon } from "../../lib/sprites";
+import { WIKI_IMG, SKILL_ICONS, NAV_ICONS, bossIconSmall, bossIcon, itemIcon } from "../../lib/sprites";
 import { useNavigation } from "../../lib/NavigationContext";
 import WikiImage from "../../components/WikiImage";
 import { TRAINING_METHODS } from "../../lib/data/training-methods";
@@ -265,29 +265,41 @@ export default function Overview({ hiscores, rsn }: Props) {
           <h3 className="text-xs uppercase tracking-wider text-text-secondary/60 mb-2">
             Minigames
           </h3>
-          <div className="flex flex-wrap gap-1.5 justify-center">
+          <div className="flex flex-wrap gap-2 justify-center">
             {wintertodt > 0 && (
-              <div className="px-4 py-2.5 text-center">
-                <div className="text-sm font-bold">{wintertodt.toLocaleString()}</div>
-                <div className="text-[10px] text-text-secondary">Wintertodt</div>
+              <div className="flex items-center gap-2 px-4 py-2.5">
+                <img src={`${WIKI_IMG}/Wintertodt_icon.png`} alt="" className="w-5 h-5" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                <div>
+                  <div className="text-sm font-bold">{wintertodt.toLocaleString()}</div>
+                  <div className="text-[10px] text-text-secondary">Wintertodt</div>
+                </div>
               </div>
             )}
             {tempoross > 0 && (
-              <div className="px-4 py-2.5 text-center">
-                <div className="text-sm font-bold">{tempoross.toLocaleString()}</div>
-                <div className="text-[10px] text-text-secondary">Tempoross</div>
+              <div className="flex items-center gap-2 px-4 py-2.5">
+                <img src={`${WIKI_IMG}/Tempoross.png`} alt="" className="w-5 h-5" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                <div>
+                  <div className="text-sm font-bold">{tempoross.toLocaleString()}</div>
+                  <div className="text-[10px] text-text-secondary">Tempoross</div>
+                </div>
               </div>
             )}
             {rifts > 0 && (
-              <div className="px-4 py-2.5 text-center">
-                <div className="text-sm font-bold">{rifts.toLocaleString()}</div>
-                <div className="text-[10px] text-text-secondary">GOTR Rifts</div>
+              <div className="flex items-center gap-2 px-4 py-2.5">
+                <img src={`${WIKI_IMG}/Guardian_of_the_Rift_icon.png`} alt="" className="w-5 h-5" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                <div>
+                  <div className="text-sm font-bold">{rifts.toLocaleString()}</div>
+                  <div className="text-[10px] text-text-secondary">GOTR Rifts</div>
+                </div>
               </div>
             )}
             {gauntlet > 0 && (
-              <div className="px-4 py-2.5 text-center">
-                <div className="text-sm font-bold">{gauntlet.toLocaleString()}</div>
-                <div className="text-[10px] text-text-secondary">Corrupted Gauntlet</div>
+              <div className="flex items-center gap-2 px-4 py-2.5">
+                <img src={`${WIKI_IMG}/Crystalline_Hunllef_icon.png`} alt="" className="w-5 h-5" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                <div>
+                  <div className="text-sm font-bold">{gauntlet.toLocaleString()}</div>
+                  <div className="text-[10px] text-text-secondary">Corrupted Gauntlet</div>
+                </div>
               </div>
             )}
           </div>
