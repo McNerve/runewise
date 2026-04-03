@@ -9,10 +9,7 @@ import WikiImage from "../../components/WikiImage";
 import { TRAINING_METHODS } from "../../lib/data/training-methods";
 import QuestTracker from "../quests/QuestTracker";
 import DiaryTracker from "../diaries/DiaryTracker";
-import EmptyState from "../../components/EmptyState";
-
 const CombatTasks = lazy(() => import("../combat-tasks/CombatTasks"));
-const QuestUnlock = lazy(() => import("../progress/components/QuestUnlock"));
 
 type ProfileTab = "overview" | "quests" | "diaries" | "combat" | "unlock";
 
@@ -243,7 +240,6 @@ export default function Overview({ hiscores, rsn }: Props) {
           { id: "quests" as const, label: `Quests${questPoints ? ` (${questPoints} QP)` : ""}`, icon: `${WIKI_IMG}/Quest_point_icon.png` },
           { id: "diaries" as const, label: "Diaries", icon: `${WIKI_IMG}/Achievement_Diaries_icon.png` },
           { id: "combat" as const, label: "Combat Tasks", icon: `${WIKI_IMG}/Combat_Achievements_icon.png` },
-          { id: "unlock" as const, label: "What Can I Do?", icon: `${WIKI_IMG}/Quest_point_cape_detail.png` },
         ]).map((tab) => (
           <button
             key={tab.id}
@@ -274,19 +270,6 @@ export default function Overview({ hiscores, rsn }: Props) {
         </Suspense>
       )}
 
-      {/* ── Sub-tab: What Can I Do? ── */}
-      {profileTab === "unlock" && hiscores && (
-        <Suspense fallback={<div className="py-8 text-center"><div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4 mx-auto" /></div>}>
-          <QuestUnlock hiscores={hiscores} />
-        </Suspense>
-      )}
-      {profileTab === "unlock" && !hiscores && (
-        <EmptyState
-          icon={NAV_ICONS.progress}
-          title="No hiscores loaded"
-          description="Look up your RSN above to see which quests you can tackle."
-        />
-      )}
 
       {/* ── Sub-tab: Overview (skills, bosses, etc.) ── */}
       {profileTab === "overview" && (
