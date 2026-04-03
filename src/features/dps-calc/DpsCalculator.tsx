@@ -1083,28 +1083,19 @@ export default function DpsCalculator({ hiscores }: Props) {
           )}
 
           {isCustom && (
-            <div className="grid grid-cols-3 gap-3 mt-3">
-              <StatInput
-                label="Def level"
-                value={customDef.defLevel}
-                onChange={(v) => setCustomDef((p) => ({ ...p, defLevel: v }))}
-                min={1}
-                max={500}
-              />
-              <StatInput
-                label="Def bonus"
-                value={customDef.defBonus}
-                onChange={(v) => setCustomDef((p) => ({ ...p, defBonus: v }))}
-                min={-100}
-                max={500}
-              />
-              <StatInput
-                label="HP"
-                value={customDef.hp}
-                onChange={(v) => setCustomDef((p) => ({ ...p, hp: v }))}
-                min={1}
-                max={10000}
-              />
+            <div className="grid grid-cols-3 gap-2 mt-3">
+              <div>
+                <label className="text-[10px] text-text-secondary/50">Def Level</label>
+                <input type="number" min={1} max={500} value={customDef.defLevel} onChange={(e) => setCustomDef((p) => ({ ...p, defLevel: Number(e.target.value) }))} className="w-full bg-bg-tertiary border border-border rounded px-2 py-1.5 text-sm mt-0.5" />
+              </div>
+              <div>
+                <label className="text-[10px] text-text-secondary/50">Def Bonus</label>
+                <input type="number" min={-100} max={500} value={customDef.defBonus} onChange={(e) => setCustomDef((p) => ({ ...p, defBonus: Number(e.target.value) }))} className="w-full bg-bg-tertiary border border-border rounded px-2 py-1.5 text-sm mt-0.5" />
+              </div>
+              <div>
+                <label className="text-[10px] text-text-secondary/50">HP</label>
+                <input type="number" min={1} max={10000} value={customDef.hp} onChange={(e) => setCustomDef((p) => ({ ...p, hp: Number(e.target.value) }))} className="w-full bg-bg-tertiary border border-border rounded px-2 py-1.5 text-sm mt-0.5" />
+              </div>
             </div>
           )}
 
