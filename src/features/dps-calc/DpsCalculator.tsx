@@ -413,21 +413,19 @@ export default function DpsCalculator({ hiscores }: Props) {
     const cmpPrayer = PRAYERS.filter((p) => p.style === compareLoadout.combatStyle)[compareLoadout.prayerIdx] ?? PRAYERS[0];
 
     let cmpAttackBonus = compareLoadout.attackBonus;
-    let cmpStrengthBonus = compareLoadout.attackBonus; // fallback
+    let cmpStrengthBonus = compareLoadout.attackBonus;
     if (compareLoadout.gear) {
       const bonuses = sumGearBonuses(compareLoadout.gear as EquippedGear);
       if (compareLoadout.combatStyle === "melee") {
-        cmpAttackBonus = Math.max(bonuses.attackStab, bonuses.attackSlash, bonuses.attackCrush);
-        cmpStrengthBonus = bonuses.strength;
+        cmpAttackBonus = bonuses.attackBonus;
+        cmpStrengthBonus = bonuses.strengthBonus;
       } else if (compareLoadout.combatStyle === "ranged") {
-        cmpAttackBonus = bonuses.attackRanged;
+        cmpAttackBonus = bonuses.rangedBonus;
         cmpStrengthBonus = bonuses.rangedStrength;
       } else {
-        cmpAttackBonus = bonuses.attackMagic;
+        cmpAttackBonus = bonuses.magicBonus;
         cmpStrengthBonus = bonuses.magicDamage;
       }
-    } else {
-      cmpStrengthBonus = compareLoadout.attackBonus; // manual mode fallback
     }
 
     const cmpInput: DpsInput = {
