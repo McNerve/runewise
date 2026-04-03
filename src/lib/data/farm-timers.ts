@@ -61,6 +61,10 @@ export const PATCH_TYPES: PatchType[] = [
   // Hardwood Trees (640 min tick × variable stages)
   { name: "Teak tree", category: "Hardwood", growthMinutes: 4480, stages: 7, icon: "Teak_sapling.png" },
   { name: "Mahogany tree", category: "Hardwood", growthMinutes: 5120, stages: 8, icon: "Mahogany_sapling.png" },
+  { name: "Redwood tree (hardwood)", category: "Hardwood", growthMinutes: 6400, stages: 10, icon: "Redwood_sapling.png" },
+  { name: "Rosewood tree", category: "Hardwood", growthMinutes: 5120, stages: 8, icon: "Rosewood_sapling.png" },
+  { name: "Ironwood tree", category: "Hardwood", growthMinutes: 5120, stages: 8, icon: "Ironwood_sapling.png" },
+  { name: "Camphorwood tree", category: "Hardwood", growthMinutes: 5120, stages: 8, icon: "Camphorwood_sapling.png" },
 
   // Bushes (20 min tick × variable stages)
   { name: "Redberry bush", category: "Bushes", growthMinutes: 100, stages: 5, icon: "Redberry_seed_5.png" },
@@ -80,11 +84,11 @@ export const PATCH_TYPES: PatchType[] = [
   { name: "Wildblood hops", category: "Hops", growthMinutes: 80, stages: 8, icon: "Wildblood_seed_5.png" },
 
   // Cactus (80/10 min tick)
-  { name: "Cactus", category: "Cactus", growthMinutes: 560, stages: 7, icon: "Cactus_seed.png" },
-  { name: "Potato cactus", category: "Cactus", growthMinutes: 70, stages: 7, icon: "Potato_cactus_seed.png" },
+  { name: "Cactus", category: "Cactus", growthMinutes: 560, stages: 7, icon: "Cactus_seed_5.png" },
+  { name: "Potato cactus", category: "Cactus", growthMinutes: 70, stages: 7, icon: "Potato_cactus_seed_5.png" },
 
   // Special
-  { name: "Seaweed", category: "Special", growthMinutes: 40, stages: 4, icon: "Seaweed_spore_5.png" },
+  { name: "Seaweed", category: "Seaweed", growthMinutes: 40, stages: 4, icon: "Seaweed_spore_5.png" },
   { name: "Mushroom", category: "Special", growthMinutes: 240, stages: 6, icon: "Mushroom_spore.png" },
   { name: "Belladonna", category: "Special", growthMinutes: 320, stages: 4, icon: "Belladonna_seed.png" },
   { name: "Calquat tree", category: "Special", growthMinutes: 1280, stages: 8, icon: "Calquat_sapling.png" },

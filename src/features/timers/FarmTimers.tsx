@@ -6,7 +6,7 @@ import { WIKI_IMG } from "../../lib/sprites";
 import EmptyState from "../../components/EmptyState";
 
 // Categories where selecting a specific crop variety matters for timers
-const CONFIGURABLE_CATEGORIES = new Set(["Herbs", "Flowers", "Trees", "Fruit Trees", "Hardwood", "Special", "Birdhouse"]);
+const CONFIGURABLE_CATEGORIES = new Set(["Herbs", "Flowers", "Allotments", "Bushes", "Cactus", "Trees", "Fruit Trees", "Hardwood", "Special", "Birdhouse"]);
 
 function getCategoryForPatch(name: string): string | undefined {
   return PATCH_TYPES.find((p) => p.name === name)?.category;
