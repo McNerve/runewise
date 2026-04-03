@@ -20,19 +20,6 @@ import GearSelector from "./GearSelector";
 type CombatStyle = "melee" | "ranged" | "magic";
 type BonusMode = "equipment" | "manual";
 
-const GEAR_SLOTS: Array<{ slot: EquipmentSlot | "2h"; label: string }> = [
-  { slot: "head", label: "Head" },
-  { slot: "cape", label: "Cape" },
-  { slot: "neck", label: "Neck" },
-  { slot: "ammo", label: "Ammo" },
-  { slot: "weapon", label: "Weapon" },
-  { slot: "body", label: "Body" },
-  { slot: "shield", label: "Shield" },
-  { slot: "legs", label: "Legs" },
-  { slot: "hands", label: "Hands" },
-  { slot: "feet", label: "Feet" },
-  { slot: "ring", label: "Ring" },
-];
 
 type EquippedGear = Partial<Record<EquipmentSlot | "2h", WikiEquipment>>;
 
@@ -514,41 +501,51 @@ export default function DpsCalculator({ hiscores }: Props) {
 
             {bonusMode === "equipment" ? (
               <div>
-                <div className="grid grid-cols-3 gap-1 mb-2">
-                  {GEAR_SLOTS.map(({ slot, label }) => {
+                {/* OSRS-style equipment grid */}
+                {(() => {
+                  function SlotButton({ slot, label }: { slot: EquipmentSlot | "2h"; label: string }) {
                     const equipped = equippedGear[slot];
                     return (
                       <button
-                        key={slot}
                         onClick={() => setOpenSlot(slot)}
                         title={equipped?.name ?? label}
-                        className={`flex flex-col items-center justify-center gap-0.5 p-1.5 rounded border transition-colors text-center ${
+                        className={`flex flex-col items-center justify-center gap-0.5 w-full aspect-square rounded-lg border transition-colors ${
                           equipped
                             ? "border-accent/40 bg-accent/8 hover:bg-accent/15"
-                            : "border-border bg-bg-secondary hover:bg-bg-tertiary"
+                            : "border-border/40 bg-bg-tertiary/30 hover:bg-bg-tertiary/60"
                         }`}
                       >
                         {equipped ? (
                           <img
                             src={itemIcon(equipped.version ? `${equipped.name}_${equipped.version}` : equipped.name)}
                             alt={equipped.name}
-                            className="w-6 h-6 object-contain"
+                            className="w-7 h-7 object-contain"
                             onError={(e) => {
                               (e.currentTarget as HTMLImageElement).src = itemIcon(equipped.name);
                             }}
                           />
                         ) : (
-                          <span className="w-6 h-6 flex items-center justify-center text-[10px] text-text-secondary/30">
-                            +
-                          </span>
+                          <span className="text-[9px] text-text-secondary/30">{label}</span>
                         )}
-                        <span className="text-[9px] text-text-secondary/60 leading-none truncate w-full text-center">
-                          {label}
-                        </span>
                       </button>
                     );
-                  })}
-                </div>
+                  }
+                  return (
+                    <div className="grid grid-cols-5 gap-1 mb-2 max-w-[220px] mx-auto">
+                      {/* Row 1: Head */}
+                      <div /><div /><SlotButton slot="head" label="Head" /><div /><div />
+                      {/* Row 2: Cape, Neck, Ammo */}
+                      <div /><SlotButton slot="cape" label="Cape" /><SlotButton slot="neck" label="Neck" /><SlotButton slot="ammo" label="Ammo" /><div />
+                      {/* Row 3: Weapon, Body, Shield */}
+                      <div /><SlotButton slot="weapon" label="Weapon" /><SlotButton slot="body" label="Body" /><SlotButton slot="shield" label="Shield" /><div />
+                      {/* Row 4: Legs */}
+                      <div /><div /><SlotButton slot="legs" label="Legs" /><div /><div />
+                      {/* Row 5: Hands, Feet, Ring */}
+                      <div /><SlotButton slot="hands" label="Hands" /><SlotButton slot="feet" label="Feet" /><SlotButton slot="ring" label="Ring" /><div />
+                    </div>
+                  );
+                })()}
+
                 <div className="text-[10px] text-text-secondary/50 space-y-0.5">
                   {combatStyle === "melee" && (
                     <>
