@@ -2,6 +2,7 @@ import { fetchJson } from "./client";
 import { WIKI_API } from "../wiki/helpers";
 
 const BUCKET_TTL = 24 * 60 * 60 * 1000; // 24 hours
+const BUCKET_CACHE_VERSION = "v2"; // bump to invalidate stale cached empty arrays
 const MAX_PER_QUERY = 5000;
 
 export interface BucketWhere {
@@ -40,7 +41,7 @@ export async function bucketQuery<T extends Record<string, unknown>>(
   limit?: number
 ): Promise<T[]> {
   const whereKey = where ? `:${where.field}=${where.value}` : "";
-  const cacheKey = `bucket:${bucket}:${fields.join(",")}${whereKey}`;
+  const cacheKey = `${BUCKET_CACHE_VERSION}:bucket:${bucket}:${fields.join(",")}${whereKey}`;
 
   return fetchJson<T[]>({
     url: `${WIKI_API}?action=bucket&query=${encodeURIComponent(
