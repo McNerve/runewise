@@ -24,6 +24,9 @@ const SANITIZE_TAGS = [
   "i",
   "br",
   "img",
+  "span",
+  "div",
+  "button",
   "blockquote",
   "details",
   "summary",
@@ -42,11 +45,17 @@ const SANITIZE_ATTRS = [
   "href",
   "target",
   "rel",
+  "style",
+  "class",
+  "title",
   "data-wiki-page",
+  "data-title",
+  "data-slot",
+  "data-tiles",
 ] as const;
 
 const UNSAFE_SELECTORS =
-  "script, style, sup.reference, .mw-editsection, .navbox, .catlinks, .printfooter, .noprint, iframe, object, embed, form, .toc, #toc, [role='navigation'], .mw-headline-anchor, .infobox-switch-resources, .navigation-not-searchable, .advanced-data, .smwfact, .redirectMsg, .mw-collapsible";
+  "script, style, sup.reference, .mw-editsection, .navbox, .catlinks, .printfooter, .noprint, iframe, object, embed, form, .toc, #toc, [role='navigation'], .mw-headline-anchor, .infobox-switch-resources, .navigation-not-searchable, .advanced-data, .smwfact, .redirectMsg";
 
 export function slugify(input: string): string {
   return input

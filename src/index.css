@@ -249,27 +249,344 @@ body {
 }
 
 .article-content table {
-  display: block;
-  width: 100%;
+  display: table;
+  width: auto;
   max-width: 100%;
   border-collapse: collapse;
   margin: 1rem 0;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   overflow-x: auto;
   overflow-y: hidden;
-  border-radius: 0.9rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-border);
 }
 
 .article-content th,
 .article-content td {
-  padding: 0.6rem 0.75rem;
-  border: 1px solid var(--color-border);
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
   text-align: left;
+  vertical-align: middle;
+  line-height: 1.5;
+}
+
+.article-content tr:last-child td {
+  border-bottom: none;
 }
 
 .article-content th {
-  background: var(--color-bg-tertiary);
+  background: color-mix(in srgb, var(--color-bg-tertiary) 90%, transparent);
   font-weight: 600;
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+  color: var(--color-text-primary);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.article-content td {
+  color: var(--color-text-secondary);
+}
+
+.article-content tr:nth-child(even) td {
+  background: color-mix(in srgb, var(--color-bg-secondary) 20%, transparent);
+}
+
+.article-content td img {
+  display: inline-block;
+  vertical-align: middle;
+  width: auto;
+  height: 1.75rem;
+  margin: 0.1rem 0.15rem;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  cursor: help;
+}
+
+.article-content td:empty {
+  padding: 0.15rem 0.25rem;
+}
+
+/* Compact cells that contain only images (no text siblings) */
+.article-content td:has(img):not(:has(span, a, p)) {
+  padding: 0.25rem 0.4rem;
+}
+
+/* OSRS-style image grids (equipment & inventory) */
+.article-content--loadout table {
+  background: #2b2418;
+  border: 2px solid #504535;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  border-collapse: collapse;
+}
+
+.article-content--loadout table caption {
+  caption-side: top;
+  text-align: left;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #c8b89a;
+  background: #3a3224;
+  border: 2px solid #504535;
+  border-bottom: none;
+  border-radius: 0.5rem 0.5rem 0 0;
+}
+
+.article-content--loadout table td,
+.article-content--loadout table th {
+  background: #3a3224;
+  border: 1px solid #504535;
+  padding: 0.35rem 0.5rem;
+  text-align: left;
+  vertical-align: middle;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+}
+
+.article-content--loadout table th {
+  color: #c8b89a;
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.article-content--loadout table td:first-child {
+  text-align: center;
+  width: 2.5rem;
+  padding: 0.2rem;
+}
+
+.article-content--loadout table td:empty {
+  background: #32291e;
+  border-color: #453a2b;
+}
+
+.article-content--loadout table td img {
+  height: 1.5rem;
+  width: auto;
+  object-fit: contain;
+  margin: 0 0.1rem;
+  vertical-align: middle;
+  filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.5));
+  cursor: help;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+
+.article-content--loadout table tr:nth-child(even) td {
+  background: #352d20;
+}
+
+/* Wiki equipment paper doll — absolute positioning matching wiki CSS */
+.article-content table.equipment {
+  background: transparent;
+  border: none;
+  width: auto;
+  margin: 0.75rem 0;
+}
+
+.article-content table.equipment td {
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.article-content table.equipment .equipment-div {
+  position: relative;
+  width: 210px;
+  height: 270px;
+  background: #3a3527;
+  border: 2px solid #635845;
+  border-radius: 0.5rem;
+  margin: 0.5rem 0;
+  padding: 12px;
+}
+
+.article-content table.equipment .equipment-div > div {
+  position: absolute;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 40px;
+  height: 40px;
+  background: #2b2418;
+  border: 1px solid #504535;
+  border-radius: 0.25rem;
+}
+
+.article-content .equipment-head   { left: 85px; top: 12px; }
+.article-content .equipment-cape   { left: 36px; top: 60px; }
+.article-content .equipment-neck   { left: 85px; top: 60px; }
+.article-content .equipment-ammo   { left: 134px; top: 60px; }
+.article-content .equipment-ammo2  { left: 134px; top: 12px; }
+.article-content .equipment-weapon { left: 12px; top: 108px; }
+.article-content .equipment-torso  { left: 85px; top: 108px; }
+.article-content .equipment-shield { left: 158px; top: 108px; }
+.article-content .equipment-legs   { left: 85px; top: 156px; }
+.article-content .equipment-hands,
+.article-content .equipment-gloves { left: 12px; top: 216px; }
+.article-content .equipment-feet,
+.article-content .equipment-boots  { left: 85px; top: 216px; }
+.article-content .equipment-ring   { left: 158px; top: 216px; }
+
+.article-content table.equipment .equipment-div > div img {
+  width: auto;
+  height: 30px;
+  max-width: 36px;
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.4));
+}
+
+.article-content .equipment-plinkp {
+  position: absolute;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.article-content .equipment-ammo2:not(:has(img)) {
+  background: transparent;
+}
+
+/* Wiki inventory grid — matches Template:Inventory */
+.article-content table.inventorytable,
+.article-content table.lootingbagtable,
+.article-content table.runepouchtable {
+  background-repeat: no-repeat;
+  background-position: left top;
+  border-spacing: 0;
+  border-collapse: separate;
+  border: none;
+  width: auto;
+  margin: 0.5rem 0;
+}
+
+.article-content table.inventorytable {
+  background-image: url("https://oldschool.runescape.wiki/images/Inventory_tab.png?dd7c2");
+  width: 204px;
+  padding: 13px 16px 10px;
+}
+
+.article-content table.inventorytable td {
+  width: 43px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  text-align: center;
+  background: transparent;
+}
+
+.article-content table.inventorytable td img {
+  max-height: 28px;
+  max-width: 28px;
+  width: auto;
+  height: auto;
+  margin: auto;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.3));
+}
+
+/* Rune pouch table */
+.article-content table.runepouchtable {
+  background-image: url("https://oldschool.runescape.wiki/images/Rune_pouch_background.png?30a74");
+  width: 158px;
+  padding: 24px 7px 6px;
+}
+
+.article-content table.runepouchtable td {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  text-align: center;
+  background: transparent;
+}
+
+.article-content table.runepouchtable td.middle-rune {
+  width: 72px;
+}
+
+/* Loadout section lists — bullet notes about the setup */
+.article-content--loadout ul,
+.article-content--loadout ol {
+  list-style: none;
+  padding: 0;
+  margin: 0.75rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.article-content--loadout li {
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent);
+  background: color-mix(in srgb, var(--color-bg-secondary) 40%, transparent);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.article-content--loadout li::before {
+  content: "•";
+  color: var(--color-accent);
+  margin-right: 0.5rem;
+  font-weight: bold;
+}
+
+.article-content table.runepouchtable td img {
+  height: 24px;
+  width: auto;
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+
+/* Looting bag table */
+.article-content table.lootingbagtable {
+  background-image: url("https://oldschool.runescape.wiki/images/Looting_bag_tab.png?4d63e");
+  width: 204px;
+  padding: 13px 16px 10px;
+}
+
+.article-content table.lootingbagtable td {
+  width: 43px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  text-align: center;
+  background: transparent;
+}
+
+.article-content table.lootingbagtable td img {
+  height: 28px;
+  width: auto;
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+
+/* Wiki attack type colors */
+.article-content td {
+  text-transform: none;
+}
+
+/* Color-code common OSRS attack patterns in tables */
+.article-content td b,
+.article-content td strong {
   color: var(--color-text-primary);
 }
 
@@ -280,7 +597,7 @@ body {
 }
 
 .article-content .wikitable {
-  background: var(--color-bg-tertiary);
+  background: transparent;
 }
 
 .article-content--loadout-table table {
@@ -423,6 +740,126 @@ body {
   font-size: 0.95rem;
   margin-top: 1rem;
   margin-bottom: 0.4rem;
+}
+
+.article-content li img,
+.article-content p img {
+  display: inline;
+  vertical-align: middle;
+  margin: 0 0.25rem;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  width: auto;
+  height: 1.5em;
+}
+
+.article-content code,
+.article-content kbd {
+  padding: 0.15rem 0.35rem;
+  border-radius: 0.25rem;
+  background: var(--color-bg-tertiary);
+  font-size: 0.85em;
+  font-family: monospace;
+}
+
+.article-content blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+/* Clickable images — enlarge on click */
+.article-content img {
+  cursor: zoom-in;
+  transition: transform 0.15s ease;
+}
+
+.article-content img:active {
+  transform: scale(1.1);
+}
+
+/* Lightbox overlay */
+.wiki-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.85);
+  cursor: zoom-out;
+  animation: lightbox-in 0.15s ease;
+}
+
+.wiki-lightbox img {
+  max-width: 90vw;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: 0.5rem;
+  filter: drop-shadow(0 4px 24px rgba(0, 0, 0, 0.5));
+}
+
+.wiki-lightbox .wiki-lightbox-label {
+  position: absolute;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.7);
+  color: #e4e4e7;
+  padding: 0.4rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.8125rem;
+  white-space: nowrap;
+}
+
+@keyframes lightbox-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Wiki tabber — show tabs as selectable buttons, hide inactive content */
+.article-content .tabber {
+  margin: 1rem 0;
+}
+
+.article-content .tabber > .tabbertab {
+  display: none;
+  padding: 0.75rem 0;
+}
+
+.article-content .tabber > .tabbertab.tabbertab--active {
+  display: block;
+}
+
+/* CSS tooltip for item images */
+.article-content td {
+  position: relative;
+}
+
+.article-content td img[title]:hover + .css-tooltip,
+.article-content img[title] {
+  cursor: help;
+}
+
+.article-content td:hover > img[title]::after {
+  content: none; /* img can't have pseudo-elements */
+}
+
+/* Tooltip wrapper — added via JS */
+.wiki-tooltip {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1a1d27;
+  color: #e4e4e7;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.35rem;
+  font-size: 0.7rem;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 100;
+  border: 1px solid #2e3345;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
 }
 
 /* ── Button utilities ── */

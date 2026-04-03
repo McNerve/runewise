@@ -1,6 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigation } from "../../lib/NavigationContext";
 import { WIKI_IMG, skillIcon, bossIconSmall } from "../../lib/sprites";
+import { TableSkeleton } from "../../components/Skeleton";
+import EmptyState from "../../components/EmptyState";
+import { timeAgo } from "../../lib/format";
 
 function skillIconUrl(name: string): string {
   if (name === "Overall") return `${WIKI_IMG}/Stats_icon.png`;
@@ -135,8 +138,8 @@ function CompetitionsView({ competitions }: { competitions: WomPlayerCompetition
         const rawMetric = comp.metric ?? "";
         const metric = rawMetric.replace(/_/g, " ");
         const compIcon = metricIconUrl(rawMetric);
-        const start = comp.startsAt ? new Date(comp.startsAt).toLocaleDateString() : "—";
-        const end = comp.endsAt ? new Date(comp.endsAt).toLocaleDateString() : "—";
+        const start = comp.startsAt ? new Date(comp.startsAt).toLocaleDateString() : "\u2014";
+        const end = comp.endsAt ? new Date(comp.endsAt).toLocaleDateString() : "\u2014";
         const gained = pc.progress?.gained ?? 0;
         const rank = pc.rank ?? 0;
         return (
@@ -163,7 +166,7 @@ function CompetitionsView({ competitions }: { competitions: WomPlayerCompetition
                 </div>
                 <div className="flex gap-3 mt-1 text-xs text-text-secondary">
                   <span className="capitalize">{metric}</span>
-                  <span>{start} – {end}</span>
+                  <span>{start} \u2013 {end}</span>
                   {comp.group && <span className="text-accent">{comp.group.name}</span>}
                 </div>
                 {pc.teamName && (
@@ -193,6 +196,8 @@ function CompetitionsView({ competitions }: { competitions: WomPlayerCompetition
   );
 }
 
+const CONTENT_TABS = ["gains", "achievements", "records", "competitions"] as const;
+
 export default function XpTracker({ rsn }: Props) {
   const { navigate } = useNavigation();
   const [period, setPeriod] = useState<GainsPeriod>("week");
@@ -201,17 +206,21 @@ export default function XpTracker({ rsn }: Props) {
   const [records, setRecords] = useState<WomRecord[]>([]);
   const [nameChanges, setNameChanges] = useState<WomNameChange[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [tab, setTab] = useState<"gains" | "achievements" | "records" | "competitions">(
     "gains"
   );
   const [competitions, setCompetitions] = useState<WomPlayerCompetition[]>([]);
   const [competitionsLoaded, setCompetitionsLoaded] = useState(false);
+  const [fetchKey, setFetchKey] = useState(0);
 
   useEffect(() => {
     if (!rsn) return;
     let cancelled = false;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
+    setError(null);
 
     Promise.all([
       fetchWomGains(rsn, period),
@@ -226,15 +235,19 @@ export default function XpTracker({ rsn }: Props) {
         setRecords(r);
         setNameChanges(n);
         setLoading(false);
+        setLastUpdated(new Date());
       })
       .catch(() => {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+          setError("Failed to load tracker data. The Wise Old Man API may be down.");
+        }
       });
 
     return () => {
       cancelled = true;
     };
-  }, [rsn, period]);
+  }, [rsn, period, fetchKey]);
 
   // Lazy-load competitions when tab selected
   useEffect(() => {
@@ -252,10 +265,53 @@ export default function XpTracker({ rsn }: Props) {
     return () => { cancelled = true; };
   }, [tab, rsn, competitionsLoaded]);
 
+  const handleRefresh = useCallback(() => {
+    setFetchKey((k) => k + 1);
+    setCompetitionsLoaded(false);
+  }, []);
+
+  const header = (
+    <div className="space-y-1 mb-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold tracking-tight">XP Tracker</h2>
+          <p className="max-w-2xl text-sm text-text-secondary">
+            Track XP gains, boss kills, achievements, and records via Wise Old Man. Data refreshes every 5 minutes.
+          </p>
+        </div>
+        <div className="flex items-center gap-3 shrink-0">
+          {lastUpdated && (
+            <span className="text-xs text-text-secondary">
+              Updated {timeAgo(Math.floor(lastUpdated.getTime() / 1000))}
+            </span>
+          )}
+          <button onClick={handleRefresh} className="text-xs text-accent hover:underline">Refresh</button>
+        </div>
+      </div>
+      {nameChanges.length > 0 && (
+        <span className="text-[10px] text-text-secondary/50" title={nameChanges.map(n => `${n.oldName} \u2192 ${n.newName}`).join(", ")}>
+          Previously: {nameChanges.map(n => n.oldName).join(" \u2192 ")}
+        </span>
+      )}
+    </div>
+  );
+
   if (!rsn) {
     return (
       <div className="text-text-secondary text-sm">
         Enter your RSN above to track XP gains.
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-3xl">
+        {header}
+        <div className="rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm">
+          <div className="font-medium text-danger">{error}</div>
+          <button onClick={() => { setError(null); handleRefresh(); }} className="mt-2 text-xs text-accent hover:underline">Retry</button>
+        </div>
       </div>
     );
   }
@@ -275,65 +331,49 @@ export default function XpTracker({ rsn }: Props) {
 
   return (
     <div className="max-w-3xl">
-      <div className="flex items-center gap-3 mb-4">
-        <h2 className="text-xl font-semibold">
-          XP Tracker{" "}
-          <span className="text-sm font-normal text-text-secondary">
-            via Wise Old Man
-          </span>
-        </h2>
-        {nameChanges.length > 0 && (
-          <span className="text-[10px] text-text-secondary/50" title={nameChanges.map(n => `${n.oldName} → ${n.newName}`).join(", ")}>
-            Previously: {nameChanges.map(n => n.oldName).join(" → ")}
-          </span>
-        )}
-      </div>
+      {header}
 
       <div className="flex gap-4 mb-4">
-        <div className="flex gap-1">
-          {(["gains", "achievements", "records", "competitions"] as const).map((t) => (
+        <div className="flex gap-1.5">
+          {CONTENT_TABS.map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
               aria-pressed={tab === t}
-              className={`px-3 py-1.5 rounded text-xs capitalize ${
+              className={`relative rounded-xl border px-3.5 py-2 text-left transition ${
                 tab === t
-                  ? "bg-accent text-white"
-                  : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+                  ? "border-accent/50 bg-accent/10"
+                  : "border-border bg-bg-primary/50 text-text-secondary hover:bg-bg-primary/70"
               }`}
             >
-              {t}
+              {tab === t && <div className="absolute -bottom-px left-3 right-3 h-0.5 rounded-full bg-accent" />}
+              <div className={`text-xs font-semibold capitalize ${tab === t ? "text-accent" : ""}`}>{t}</div>
             </button>
           ))}
         </div>
 
         {tab === "gains" && (
-          <div className="flex gap-1">
+          <div className="flex gap-1.5">
             {PERIODS.map((p) => (
               <button
                 key={p.id}
                 onClick={() => setPeriod(p.id)}
                 aria-pressed={period === p.id}
-                className={`px-2 py-1 rounded text-xs ${
+                className={`relative rounded-xl border px-3.5 py-2 text-left transition ${
                   period === p.id
-                    ? "bg-success/20 text-success"
-                    : "bg-bg-secondary text-text-secondary"
+                    ? "border-accent/50 bg-accent/10"
+                    : "border-border bg-bg-primary/50 text-text-secondary hover:bg-bg-primary/70"
                 }`}
               >
-                {p.label}
+                {period === p.id && <div className="absolute -bottom-px left-3 right-3 h-0.5 rounded-full bg-accent" />}
+                <div className={`text-xs font-semibold ${period === p.id ? "text-accent" : ""}`}>{p.label}</div>
               </button>
             ))}
           </div>
         )}
       </div>
 
-      {loading && (
-        <div className="space-y-3">
-          <div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4" />
-          <div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-1/2" />
-          <div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-2/3" />
-        </div>
-      )}
+      {loading && <TableSkeleton rows={6} cols={3} />}
 
       {tab === "gains" && !loading && gains && (
         <div className="space-y-4">
@@ -342,7 +382,7 @@ export default function XpTracker({ rsn }: Props) {
               <h3 className="text-sm font-medium text-text-secondary uppercase tracking-wider mb-2">
                 Skill XP Gains
               </h3>
-              <div className="bg-bg-secondary rounded-lg overflow-hidden">
+              <div className="rounded-xl border border-border/60 overflow-hidden">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border text-text-secondary text-xs">
@@ -376,7 +416,7 @@ export default function XpTracker({ rsn }: Props) {
                             ? `+${data.rank.gained.toLocaleString()}`
                             : data.rank.gained < 0
                               ? data.rank.gained.toLocaleString()
-                              : "—"}
+                              : "\u2014"}
                         </td>
                       </tr>
                     ))}
@@ -391,7 +431,7 @@ export default function XpTracker({ rsn }: Props) {
               <h3 className="text-sm font-medium text-text-secondary uppercase tracking-wider mb-2">
                 Boss Kills
               </h3>
-              <div className="bg-bg-secondary rounded-lg overflow-hidden">
+              <div className="rounded-xl border border-border/60 overflow-hidden">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border text-text-secondary text-xs">
@@ -426,15 +466,13 @@ export default function XpTracker({ rsn }: Props) {
           )}
 
           {skillGains.length === 0 && bossGains.length === 0 && (
-            <p className="text-sm text-text-secondary">
-              No gains recorded for this period.
-            </p>
+            <EmptyState title="No gains this period" description="Try a longer time period or update your profile on Wise Old Man." />
           )}
         </div>
       )}
 
       {tab === "achievements" && !loading && (
-        <div className="bg-bg-secondary rounded-lg overflow-hidden max-h-[500px] overflow-y-auto">
+        <div className="rounded-xl border border-border/60 overflow-hidden max-h-[500px] overflow-y-auto">
           <table className="w-full text-sm">
             <thead className="sticky top-0 bg-bg-secondary">
               <tr className="border-b border-border text-text-secondary text-xs">
@@ -534,14 +572,9 @@ export default function XpTracker({ rsn }: Props) {
 
       {tab === "competitions" && (
         <div>
-          {!competitionsLoaded && (
-            <div className="space-y-3">
-              <div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4" />
-              <div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-1/2" />
-            </div>
-          )}
+          {!competitionsLoaded && <TableSkeleton rows={4} cols={3} />}
           {competitionsLoaded && competitions.length === 0 && (
-            <p className="text-sm text-text-secondary">No competitions found for this player.</p>
+            <EmptyState title="No competitions found" description="This player hasn't participated in any Wise Old Man competitions." />
           )}
           {competitionsLoaded && competitions.length > 0 && (
             <CompetitionsView competitions={competitions} />

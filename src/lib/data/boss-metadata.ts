@@ -72,7 +72,7 @@ export const BOSS_METADATA: Record<string, BossMetadata> = {
   "Zalcano": { difficulty: 2, teamSize: "small", mechanicsSummary: "Mining/Smithing/Runecraft skilling boss. Mine tephra, refine at furnace, imbue at altar, throw at Zalcano. Group boss in Prifddinas.", questReqs: ["Song of the Elves"] },
 
   // Varlamore
-  "Araxxor": { difficulty: 4, teamSize: "solo", mechanicsSummary: "Spider boss with acid mechanics. Multiple paths with different mechanics. Enrage system increases difficulty. Drops Noxious halberd.", recommendedCombatLevel: 100 },
+  "Araxxor": { difficulty: 4, teamSize: "solo", mechanicsSummary: "Spider boss with acid mechanics. Multiple paths with different mechanics. Enrage system increases difficulty. Drops Noxious halberd.", slayerReq: 92, recommendedCombatLevel: 100 },
   "Amoxliatl": { difficulty: 3, teamSize: "solo", mechanicsSummary: "Varlamore boss with poison mechanics. Dodge poison pools and projectiles. Use melee or ranged." },
   "Hueycoatl": { difficulty: 4, teamSize: "solo", mechanicsSummary: "Serpent boss in Varlamore. Multiple attack phases with elemental mechanics. Requires prayer switching and positioning." },
 
@@ -108,4 +108,9 @@ export const BOSS_METADATA: Record<string, BossMetadata> = {
   // Other missing
   "Hespori": { difficulty: 2, teamSize: "solo", mechanicsSummary: "Farming boss in Farming Guild. Kill four flowers at corners then DPS the main boss. Has an instant-kill flower; step away quickly.", questReqs: ["Farming Guild access"] },
   "The Mimic": { difficulty: 2, teamSize: "solo", mechanicsSummary: "Rare boss from elite/master clue scroll caskets. Spawns Mimic and minions. Prayer switch and DPS. Short fight." },
+
+  // Hiscores-tracked
+  "Lunar Chests": { difficulty: 4, teamSize: "solo", mechanicsSummary: "Combined loot tracker for Moons of Peril encounters. Fight three moon bosses (Blood, Blue, Eclipse) in sequence with different combat styles." },
+  "Yama": { difficulty: 4, teamSize: "solo", mechanicsSummary: "Underworld boss with melee and magic attacks. Dodge fire walls and ground hazards. Prayer switching and precise movement required." },
+  "The Royal Titans": { difficulty: 4, teamSize: "small", mechanicsSummary: "Multi-boss encounter featuring paired titan fights. Requires team coordination with role assignment and phase-based mechanics." },
 };

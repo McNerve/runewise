@@ -41,18 +41,40 @@ const SECTION_LABELS = [
   "inventory",
   "inventory setups",
   "gear",
+  "setup",
   "recommended equipment",
   "suggested equipment",
   "getting there",
+  "transportation",
   "location",
+  "overview",
   "fight overview",
   "strategy",
+  "general strategy",
+  "advanced strategies",
   "the fight",
   "mechanics",
   "special attacks",
   "phases",
   "attacks",
   "drops",
+  "safespotting",
+  "prayer flicking",
+  "tips",
+  "trip efficiency",
+  "forms",
+  "recommendations",
+  "suggested stats",
+  "starting the fight",
+  "awakened mode",
+  "advanced tips",
+  "plugins",
+  "inventory recommendations",
+  "shields and totems",
+  "stat draining",
+  "damage reduction",
+  "enrage",
+  "battle phase",
 ] as const;
 
 function cleanSectionHtml(
@@ -76,9 +98,7 @@ function cleanSectionHtml(
       className.includes("toc") ||
       className.includes("infobox") ||
       className.includes("rsw-infobox") ||
-      (text.startsWith("Contents") && element.querySelectorAll("li").length > 0 && text.length < 500) ||
-      (text.includes("Tile markers") && text.length < 200) ||
-      (text.includes("guide") && text.includes("Data") && text.length < 100)
+      (text.startsWith("Contents") && element.querySelectorAll("li").length > 0 && text.length < 500)
     ) {
       element.remove();
     }
@@ -97,6 +117,26 @@ function cleanSectionHtml(
   });
 
   normalizeGalleries(content);
+
+  // Add tooltips: copy alt text to title so hovering shows item names
+  content.querySelectorAll("img[alt]").forEach((img) => {
+    const alt = img.getAttribute("alt");
+    if (alt && !img.getAttribute("title")) {
+      img.setAttribute("title", alt);
+    }
+  });
+
+  // Equipment layout is handled by CSS using the wiki's class names
+
+  // Convert hidden tile marker data into a visible copy button
+  content.querySelectorAll(".tilemarker-div").forEach((div) => {
+    const json = (div.textContent ?? "").trim();
+    if (!json) return;
+    const wrapper = document.createElement("div");
+    wrapper.setAttribute("style", "margin:0.5rem 0;");
+    wrapper.innerHTML = `<button class="tile-marker-copy" data-tiles="${json.replace(/"/g, "&quot;")}" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.4rem 0.75rem;border-radius:0.5rem;border:1px solid #2e3345;background:rgba(59,130,246,0.1);color:#3b82f6;font-size:0.75rem;font-weight:500;cursor:pointer;">📋 Copy Tile Markers for RuneLite</button>`;
+    div.replaceWith(wrapper);
+  });
 
   const firstParagraph = content.querySelector("p");
   if (
@@ -118,7 +158,7 @@ function cleanSectionHtml(
 async function fetchWikiSections(wikiPage: string): Promise<WikiSection[]> {
   return fetchJson<WikiSection[]>({
     url: `${WIKI_API}?action=parse&page=${wikiPage}&prop=sections&format=json`,
-    cacheKey: `boss-guide-sections:${wikiPage}`,
+    cacheKey: `boss-guide-sections:v2:${wikiPage}`,
     ttlMs: GUIDE_TTL,
     transform: (json) =>
       typeof json === "object" &&
@@ -198,28 +238,53 @@ function extractSectionHtmlFromFullPage(fullHtml: string, sectionTitle: string):
   return fragment.innerHTML.trim();
 }
 
+async function fetchSectionsWithFallback(wikiPage: string) {
+  const hasStrategies = wikiPage.endsWith("/Strategies");
+  const altPage = hasStrategies
+    ? wikiPage.replace(/\/Strategies$/, "")
+    : `${wikiPage}/Strategies`;
+
+  // Try both pages in parallel — use whichever has more matching sections
+  const [sections, altSections] = await Promise.all([
+    fetchWikiSections(wikiPage).catch(() => [] as WikiSection[]),
+    fetchWikiSections(altPage).catch(() => [] as WikiSection[]),
+  ]);
+
+  const matched = sections.filter((s) =>
+    SECTION_LABELS.some((l) => s.line.toLowerCase().includes(l))
+  );
+  const altMatched = altSections.filter((s) =>
+    SECTION_LABELS.some((l) => s.line.toLowerCase().includes(l))
+  );
+
+  return altMatched.length > matched.length
+    ? { page: altPage, sections: altMatched }
+    : matched.length > 0
+      ? { page: wikiPage, sections: matched }
+      : { page: altPage, sections: altMatched };
+}
+
 export async function fetchBossGuideDocument(
   wikiPage: string
 ): Promise<BossGuideDocument> {
-  const cacheKey = `boss-guide:v3:${wikiPage}`;
+  const cacheKey = `boss-guide:v4:${wikiPage}`;
   const cached = getCached<BossGuideDocument>(cacheKey, GUIDE_TTL);
   if (cached) return cached;
 
-  const [sections, classification, fullHtml] = await Promise.all([
-    fetchWikiSections(wikiPage),
-    classifyWikiPage(wikiPage),
-    fetchFullHtml(wikiPage),
+  const { page: resolvedPage, sections: targetSections } =
+    await fetchSectionsWithFallback(wikiPage);
+
+  const [classification, fullHtml] = await Promise.all([
+    classifyWikiPage(resolvedPage),
+    fetchFullHtml(resolvedPage),
   ]);
-  const targetSections = sections.filter((section) =>
-    SECTION_LABELS.some((label) => section.line.toLowerCase().includes(label))
-  );
 
   const normalizedSections = (
     await Promise.all(
       targetSections.map(async (section) => {
         const rawHtml =
           extractSectionHtmlFromFullPage(fullHtml, section.line) ||
-          (await fetchSectionHtml(wikiPage, section.number));
+          (await fetchSectionHtml(resolvedPage, section.number));
         const { html, summary } = cleanSectionHtml(rawHtml, section.line);
         if (html.length < 20) return null;
         return {

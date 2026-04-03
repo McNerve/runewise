@@ -220,14 +220,19 @@ export default function ShootingStars() {
   }
 
   return (
-    <div className="max-w-3xl">
-      <div className="mb-4 flex items-center gap-3">
-        <h2 className="text-xl font-semibold">Shooting Stars</h2>
-        {tab === "live" && !loading && (
-          <span className="text-[10px] text-text-secondary/50">
-            {activeCount} active · refreshes every 30s
-          </span>
-        )}
+    <div className="max-w-4xl">
+      <div className="mb-5 space-y-1">
+        <div className="flex items-center gap-3">
+          <h2 className="text-2xl font-semibold tracking-tight">Star Helper</h2>
+          {tab === "live" && !loading && (
+            <span className="text-[11px] text-text-secondary/50">
+              {activeCount} active · refreshes every 30s
+            </span>
+          )}
+        </div>
+        <p className="max-w-2xl text-sm text-text-secondary">
+          Track active shooting stars across all worlds. Data from Star Miners crowdsource API.
+        </p>
       </div>
 
       {/* Tabs */}

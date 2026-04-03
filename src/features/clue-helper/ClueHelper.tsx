@@ -4,8 +4,8 @@ import { CLUE_TIERS } from "../../lib/data/clues";
 import { useDebounce } from "../../hooks/useDebounce";
 import EmptyState from "../../components/EmptyState";
 import { NAV_ICONS } from "../../lib/sprites";
-import { loadJSON, saveJSON } from "../../lib/localStorage";
 import { useNavigation } from "../../lib/NavigationContext";
+import { TableSkeleton } from "../../components/Skeleton";
 
 const TYPES: (ClueType | "All")[] = ["All", "Anagram", "Cipher", "Coordinate", "Cryptic", "Map", "Emote"];
 const TIERS: (ClueTier | "All")[] = ["All", "Beginner", "Easy", "Medium", "Hard", "Elite", "Master"];
@@ -46,7 +46,23 @@ const TIER_BADGE: Record<ClueTier, string> = {
   Master: "bg-danger/15 text-danger",
 };
 
-const CLUE_COMPLETED_KEY = "runewise_completed_clues";
+const TIER_ACTIVE_BORDER: Record<ClueTier, string> = {
+  Beginner: "border-text-secondary/50",
+  Easy: "border-success/50",
+  Medium: "border-accent/50",
+  Hard: "border-warning/50",
+  Elite: "border-purple-400/50",
+  Master: "border-danger/50",
+};
+
+const TIER_ACTIVE_BG: Record<ClueTier, string> = {
+  Beginner: "bg-text-secondary/10",
+  Easy: "bg-success/10",
+  Medium: "bg-accent/10",
+  Hard: "bg-warning/10",
+  Elite: "bg-purple-500/10",
+  Master: "bg-danger/10",
+};
 
 function highlight(text: string, query: string): React.ReactNode {
   if (!query || query.length < 2) return text;
@@ -74,10 +90,6 @@ export default function ClueHelper() {
   const [typeFilter, setTypeFilter] = useState<ClueType | "All">("All");
   const [tierFilter, setTierFilter] = useState<ClueTier | "All">("All");
   const [visibleCount, setVisibleCount] = useState(50);
-  const [completedClues, setCompletedClues] = useState<Set<string>>(
-    () => new Set(loadJSON<string[]>(CLUE_COMPLETED_KEY, []))
-  );
-  const [hideCompleted, setHideCompleted] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   useEffect(() => {
@@ -90,20 +102,9 @@ export default function ClueHelper() {
     return () => { cancelled = true; };
   }, []);
 
-  // Reset visible count when filters change
   useEffect(() => {
     setVisibleCount(50);
-  }, [debouncedQuery, typeFilter, tierFilter, hideCompleted]);
-
-  function toggleClue(key: string) {
-    setCompletedClues((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      saveJSON(CLUE_COMPLETED_KEY, [...next]);
-      return next;
-    });
-  }
+  }, [debouncedQuery, typeFilter, tierFilter]);
 
   function copyToClipboard(text: string, key: string) {
     navigator.clipboard.writeText(text).then(() => {
@@ -122,14 +123,11 @@ export default function ClueHelper() {
         (c) => c.text.toLowerCase().includes(q) || c.solution.toLowerCase().includes(q) || c.location.toLowerCase().includes(q)
       );
     }
-    if (hideCompleted) results = results.filter((c) => !completedClues.has(clueKey(c)));
     return results;
-  }, [clues, debouncedQuery, typeFilter, tierFilter, hideCompleted, completedClues]);
+  }, [clues, debouncedQuery, typeFilter, tierFilter]);
 
-  // Paginated results (no hard 100 cap)
   const pagedFiltered = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
 
-  // Group by tier
   const grouped = useMemo(() => {
     const map = new Map<ClueTier, ClueEntry[]>();
     for (const tier of CLUE_TIERS) map.set(tier, []);
@@ -142,141 +140,167 @@ export default function ClueHelper() {
   const q = debouncedQuery.length >= 2 ? debouncedQuery : "";
 
   return (
-    <div className="max-w-3xl">
-      <div className="flex items-center justify-between gap-4 mb-4">
-        <h2 className="text-xl font-semibold">Clue Scroll Helper</h2>
-        <div className="flex items-center gap-3">
-          <label className="flex items-center gap-1.5 text-xs text-text-secondary cursor-pointer">
-            <input
-              type="checkbox"
-              checked={hideCompleted}
-              onChange={(e) => setHideCompleted(e.target.checked)}
-              className="accent-accent"
-            />
-            Hide completed
-          </label>
-          <span className="text-xs text-text-secondary">
-            {filtered.length} / {clues.length} clues
-          </span>
-        </div>
+    <div className="max-w-4xl">
+      {/* Header */}
+      <div className="mb-6">
+        <h2 className="text-2xl font-semibold tracking-tight">Clue Helper</h2>
+        <p className="max-w-2xl text-sm text-text-secondary">
+          Search 729 clue scroll solutions across all tiers. Paste your clue text to find the answer instantly.
+        </p>
       </div>
 
-      {loading ? (
-        <div className="mb-4 px-4 py-3 text-sm text-text-secondary">
-          Loading clue reference data...
+      {/* Progress Dashboard */}
+      {!loading && (
+        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-5">
+          {CLUE_TIERS.map((tier) => {
+            const total = clues.filter((c) => c.tier === tier).length;
+            return (
+              <div key={tier} className="rounded-xl border border-border/60 bg-bg-primary/45 px-3 py-2 text-center">
+                <div className="text-[10px] uppercase tracking-wider text-text-secondary/50">{tier}</div>
+                <div className={`text-lg font-semibold ${TIER_TEXT_COLORS[tier]}`}>{total}</div>
+              </div>
+            );
+          })}
         </div>
-      ) : null}
+      )}
 
+      {/* Search Input */}
       <input
         type="text"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Paste your clue text here..."
-        className="w-full bg-bg-secondary border border-border rounded-lg px-4 py-3 text-sm mb-4"
-        autoFocus={false}
+        placeholder="Paste your clue text here to find the solution..."
+        className="w-full bg-bg-secondary border border-border rounded-xl px-4 py-3 text-sm mb-5 placeholder:text-text-secondary/50"
       />
 
-      <div className="flex flex-wrap gap-2 mb-4">
-        <div className="flex gap-1 flex-wrap">
-          {TYPES.map((t) => (
-            <button
-              key={t}
-              onClick={() => setTypeFilter(t)}
-              className={`px-2.5 py-1 rounded text-xs transition-colors ${
-                typeFilter === t ? "bg-accent text-white" : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
-              }`}
-            >
-              {t}
-            </button>
-          ))}
-        </div>
-        <div className="flex gap-1 flex-wrap">
-          {TIERS.map((t) => (
+      {/* Tier Filter Tabs */}
+      <div className="flex flex-wrap gap-2 mb-3">
+        {TIERS.map((t) => {
+          const isAll = t === "All";
+          const active = tierFilter === t;
+          const tierColor = !isAll ? t as ClueTier : null;
+          return (
             <button
               key={t}
               onClick={() => setTierFilter(t)}
-              className={`px-2.5 py-1 rounded text-xs transition-colors ${
-                tierFilter === t ? "bg-accent text-white" : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+              className={`relative rounded-xl border px-3.5 py-2 text-xs font-semibold transition ${
+                active
+                  ? tierColor
+                    ? `${TIER_ACTIVE_BORDER[tierColor]} ${TIER_ACTIVE_BG[tierColor]} ${TIER_TEXT_COLORS[tierColor]}`
+                    : "border-accent/50 bg-accent/10 text-accent"
+                  : "border-border bg-bg-primary/50 text-text-secondary hover:border-border hover:bg-bg-primary/70"
               }`}
             >
+              {active && (
+                <div className={`absolute -bottom-px left-3 right-3 h-0.5 rounded-full ${
+                  tierColor ? `bg-current` : "bg-accent"
+                }`} />
+              )}
               {t}
             </button>
-          ))}
-        </div>
+          );
+        })}
       </div>
 
+      {/* Type Filter Pills */}
+      <div className="flex flex-wrap gap-1.5 mb-5">
+        {TYPES.map((t) => (
+          <button
+            key={t}
+            onClick={() => setTypeFilter(t)}
+            className={`px-2.5 py-1 rounded-lg border text-xs transition-colors ${
+              typeFilter === t
+                ? "border-accent/50 bg-accent/10 text-accent"
+                : "border-border bg-bg-primary/50 text-text-secondary hover:bg-bg-primary/70"
+            }`}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+
+      {/* Results Count */}
+      <div className="mb-4">
+        <span className="text-xs text-text-secondary">
+          {filtered.length} / {clues.length} clues
+        </span>
+      </div>
+
+      {/* Loading State */}
+      {loading && <TableSkeleton rows={8} cols={3} />}
+
+      {/* Clue Groups */}
       <div className="space-y-5">
         {CLUE_TIERS.map((tier) => {
           const tierClues = grouped.get(tier) ?? [];
           if (tierClues.length === 0) return null;
           return (
-            <div key={tier}>
-              <div className={`flex items-center gap-2 mb-2 text-xs font-semibold uppercase tracking-wider ${TIER_TEXT_COLORS[tier]}`}>
+            <div key={tier} className="rounded-xl border border-border/60 overflow-hidden">
+              <div className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold uppercase tracking-wider ${TIER_TEXT_COLORS[tier]} ${TIER_BG[tier]} border-b ${TIER_BORDER_COLORS[tier]}`}>
                 <span>{tier}</span>
                 <span className={`px-1.5 py-0.5 rounded ${TIER_BADGE[tier]}`}>{tierClues.length}</span>
               </div>
-              <div className="space-y-2">
+              <div className="divide-y divide-border/30">
                 {tierClues.map((clue) => {
                   const key = clueKey(clue);
-                  const done = completedClues.has(key);
                   return (
                     <div
                       key={key}
-                      className={`rounded-lg border p-4 hover:bg-bg-tertiary transition-colors ${TIER_BORDER_COLORS[tier]} ${TIER_BG[tier]} ${done ? "opacity-60" : ""}`}
+                      className="p-4 hover:bg-bg-tertiary/50 transition-colors"
                     >
-                      <div className="flex items-start gap-2 mb-2">
-                        {/* Completion checkbox */}
-                        <button
-                          onClick={() => toggleClue(key)}
-                          className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center text-[10px] transition-colors mt-0.5 ${
-                            done
-                              ? "bg-success/20 border-success text-success"
-                              : "border-border hover:border-accent"
-                          }`}
-                        >
-                          {done && "✓"}
-                        </button>
-                        <p className="flex-1 text-sm text-text-secondary italic leading-relaxed">
-                          {highlight(clue.text, q)}
-                        </p>
-                        <div className="flex items-center gap-1 shrink-0">
-                          {/* Wiki link for Coordinate/Map clues */}
-                          {(clue.type === "Coordinate" || clue.type === "Map") && (
-                            <button
-                              onClick={() => navigate("wiki", { search: clue.text })}
-                              className="text-[10px] px-1.5 py-0.5 rounded bg-bg-tertiary text-accent hover:bg-accent/15 transition-colors"
-                              title="Look up in Wiki"
-                            >
-                              wiki
-                            </button>
+                      <div className="flex items-start gap-3">
+                        <div className="flex-1 min-w-0">
+                          {/* Clue text */}
+                          <p className="text-sm text-text-secondary italic leading-relaxed mb-1">
+                            {highlight(clue.text, q)}
+                          </p>
+
+                          {/* Solution */}
+                          <p className="text-sm font-semibold text-text-primary mb-1">
+                            {highlight(clue.solution, q)}
+                          </p>
+
+                          {/* Location */}
+                          <p className="text-xs text-text-secondary">
+                            {highlight(clue.location, q)}
+                          </p>
+
+                          {/* NPC */}
+                          {clue.npc && (
+                            <p className="text-xs text-accent mt-1">NPC: {clue.npc}</p>
                           )}
-                          {/* Copy solution */}
+
+                          {/* Challenge answer */}
+                          {clue.challengeAnswer && (
+                            <div className="mt-2 rounded-lg border border-warning/30 bg-warning/5 px-3 py-2">
+                              <p className="text-xs text-warning font-medium">
+                                Challenge answer: {clue.challengeAnswer}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button
+                            onClick={() => navigate("wiki", { search: clue.text })}
+                            className="rounded-lg border border-border bg-bg-primary/60 px-2 py-1 text-[10px] font-medium text-accent transition hover:border-accent/40"
+                            title="Look up in Wiki"
+                          >
+                            Wiki
+                          </button>
                           <button
                             onClick={() => copyToClipboard(clue.solution, key)}
-                            className="text-[10px] px-1.5 py-0.5 rounded bg-bg-tertiary text-text-secondary hover:bg-bg-tertiary transition-colors"
+                            className="rounded-lg border border-border bg-bg-primary/60 px-2 py-1 text-[10px] font-medium text-text-secondary transition hover:border-accent/40 hover:text-text-primary"
                             title="Copy solution"
                           >
-                            {copiedKey === key ? "✓" : "copy"}
+                            {copiedKey === key ? "\u2713 Copied" : "Copy"}
                           </button>
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-bg-tertiary text-text-secondary">
+                          <span className={`rounded-lg border px-2 py-1 text-[10px] font-medium ${TIER_BADGE[tier]} border-current/20`}>
                             {clue.type}
                           </span>
                         </div>
                       </div>
-                      <p className="text-sm font-semibold text-text-primary mb-1">
-                        {highlight(clue.solution, q)}
-                      </p>
-                      <p className="text-xs text-text-secondary">
-                        {highlight(clue.location, q)}
-                      </p>
-                      {clue.npc && (
-                        <p className="text-xs text-accent mt-1">NPC: {clue.npc}</p>
-                      )}
-                      {clue.challengeAnswer && (
-                        <p className="text-xs text-warning mt-0.5 font-medium">
-                          Challenge answer: {clue.challengeAnswer}
-                        </p>
-                      )}
                     </div>
                   );
                 })}
@@ -286,18 +310,19 @@ export default function ClueHelper() {
         })}
       </div>
 
-      {/* Show more pagination */}
+      {/* Show More */}
       {filtered.length > visibleCount && (
-        <div className="mt-4 text-center">
+        <div className="mt-5 text-center">
           <button
             onClick={() => setVisibleCount((n) => n + 50)}
-            className="px-4 py-2 rounded text-sm bg-bg-secondary text-text-secondary hover:bg-bg-tertiary transition-colors"
+            className="rounded-xl border border-border bg-bg-primary/60 px-5 py-2.5 text-sm font-medium text-text-secondary transition hover:border-accent/40 hover:text-text-primary"
           >
             Show more ({filtered.length - visibleCount} remaining)
           </button>
         </div>
       )}
 
+      {/* Empty State */}
       {filtered.length === 0 && !loading && (
         <EmptyState
           icon={NAV_ICONS["clue-helper"]}
@@ -305,8 +330,6 @@ export default function ClueHelper() {
           description={
             debouncedQuery.length >= 2
               ? `No clues match "${debouncedQuery}". Try a shorter phrase, different keywords, or check the type/tier filters.`
-              : hideCompleted
-              ? "All clues in this filter are marked complete. Uncheck \"Hide completed\" to see them."
               : "Try a different search or filter."
           }
         />

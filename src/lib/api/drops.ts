@@ -58,7 +58,9 @@ function parseRarityFraction(rarity: string): number | null {
   if (!rarity) return null;
   if (rarity.toLowerCase() === "always") return 1;
 
-  const match = rarity.match(/^(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)$/);
+  // Handle formats: "1/512", "1/1,026.8", "~1/958.3", "8/115"
+  const cleaned = rarity.replace(/~/g, "").replace(/,/g, "");
+  const match = cleaned.match(/(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)/);
   if (match) {
     const numerator = parseFloat(match[1]);
     const denominator = parseFloat(match[2]);

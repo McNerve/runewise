@@ -1,9 +1,11 @@
 import { useState, useEffect, useMemo } from "react";
 import { BOSS_DROP_TABLES } from "../../../lib/data/boss-drops";
+import { BOSSES } from "../../../lib/data/bosses";
 import { fetchLatestPrices, type ItemPrice } from "../../../lib/api/ge";
 import { formatGp } from "../../../lib/format";
 import { bossIconSmall } from "../../../lib/sprites";
 import WikiImage from "../../../components/WikiImage";
+import { Skeleton } from "../../../components/Skeleton";
 import type { View } from "../../../lib/features";
 
 interface BossProfit {
@@ -79,80 +81,96 @@ export default function BossProfitRanking({
     else { setSortKey(key); setSortAsc(false); }
   }
 
+  const totalBosses = BOSSES.length;
+
   return (
     <div>
-      <div className="section-kicker mb-3">Boss Profit Ranking ({sorted.length} bosses)</div>
+      <div className="mb-3">
+        <h3 className="text-sm font-semibold text-text-primary">
+          Boss Profit Ranking
+        </h3>
+        <p className="text-xs text-text-secondary mt-0.5">
+          {sorted.length} of {totalBosses} bosses with curated drop data — remaining bosses can be viewed in Boss Guides.
+        </p>
+      </div>
 
-      <table className="w-full text-left">
-        <thead>
-          <tr className="border-b border-border text-text-secondary text-xs">
-            <th className="px-2 py-2 w-6" />
-            <th
-              className="px-2 py-2 cursor-pointer hover:text-text-primary"
-              onClick={() => handleSort("name")}
-            >
-              Boss {sortKey === "name" && (sortAsc ? "↑" : "↓")}
-            </th>
-            <th
-              className="px-2 py-2 text-right cursor-pointer hover:text-text-primary"
-              onClick={() => handleSort("gpPerHour")}
-            >
-              GP/Hr {sortKey === "gpPerHour" && (sortAsc ? "↑" : "↓")}
-            </th>
-            <th
-              className="px-2 py-2 text-right cursor-pointer hover:text-text-primary"
-              onClick={() => handleSort("gpPerKill")}
-            >
-              GP/Kill {sortKey === "gpPerKill" && (sortAsc ? "↑" : "↓")}
-            </th>
-            <th
-              className="px-2 py-2 text-right cursor-pointer hover:text-text-primary"
-              onClick={() => handleSort("killsPerHour")}
-            >
-              Kills/Hr {sortKey === "killsPerHour" && (sortAsc ? "↑" : "↓")}
-            </th>
-            <th className="px-2 py-2 text-right">Top Unique</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sorted.map((boss, i) => (
-            <tr
-              key={boss.name}
-              className="border-b border-border/20 hover:bg-bg-secondary/30 cursor-pointer transition-colors"
-              onClick={() => navigate("bosses", { boss: boss.name, tab: "drops" })}
-            >
-              <td className="px-2 py-2">
-                <WikiImage
-                  src={bossIconSmall(boss.name)}
-                  alt=""
-                  className="w-5 h-5"
-                  fallback={String(i + 1)}
-                />
-              </td>
-              <td className="px-2 py-2 text-sm font-medium">{boss.name}</td>
-              <td className="px-2 py-2 text-right text-sm tabular-nums text-success font-medium">
-                {formatGp(boss.gpPerHour)}
-              </td>
-              <td className="px-2 py-2 text-right text-xs tabular-nums text-text-secondary">
-                {formatGp(boss.gpPerKill)}
-              </td>
-              <td className="px-2 py-2 text-right text-xs tabular-nums text-text-secondary">
-                {boss.killsPerHour}
-              </td>
-              <td className="px-2 py-2 text-right text-xs text-text-secondary truncate max-w-[120px]">
-                {boss.topUnique || "—"}
-                {boss.topUniqueValue != null && (
-                  <span className="ml-1 text-accent">{formatGp(boss.topUniqueValue)}</span>
-                )}
-              </td>
+      <div className="rounded-xl border border-border/60 overflow-hidden">
+        <table className="w-full text-left">
+          <thead>
+            <tr className="border-b border-border text-text-secondary text-xs">
+              <th className="px-2 py-2 w-8 text-center">#</th>
+              <th className="px-2 py-2 w-6" />
+              <th
+                className="px-2 py-2 cursor-pointer hover:text-text-primary"
+                onClick={() => handleSort("name")}
+              >
+                Boss {sortKey === "name" && (sortAsc ? "\u2191" : "\u2193")}
+              </th>
+              <th
+                className="px-2 py-2 text-right cursor-pointer hover:text-text-primary"
+                onClick={() => handleSort("gpPerHour")}
+              >
+                GP/Hr {sortKey === "gpPerHour" && (sortAsc ? "\u2191" : "\u2193")}
+              </th>
+              <th
+                className="px-2 py-2 text-right cursor-pointer hover:text-text-primary"
+                onClick={() => handleSort("gpPerKill")}
+              >
+                GP/Kill {sortKey === "gpPerKill" && (sortAsc ? "\u2191" : "\u2193")}
+              </th>
+              <th
+                className="px-2 py-2 text-right cursor-pointer hover:text-text-primary"
+                onClick={() => handleSort("killsPerHour")}
+              >
+                Kills/Hr {sortKey === "killsPerHour" && (sortAsc ? "\u2191" : "\u2193")}
+              </th>
+              <th className="px-2 py-2 text-right">Top Unique</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {sorted.map((boss, i) => (
+              <tr
+                key={boss.name}
+                className="border-b border-border/20 even:bg-bg-primary/25 hover:bg-bg-secondary/30 cursor-pointer transition-colors"
+                onClick={() => navigate("bosses", { boss: boss.name, tab: "drops" })}
+              >
+                <td className="px-2 py-2 text-center text-xs tabular-nums text-text-secondary">
+                  {i + 1}
+                </td>
+                <td className="px-2 py-2">
+                  <WikiImage
+                    src={bossIconSmall(boss.name)}
+                    alt=""
+                    className="w-5 h-5"
+                    fallback={String(i + 1)}
+                  />
+                </td>
+                <td className="px-2 py-2 text-sm font-medium">{boss.name}</td>
+                <td className="px-2 py-2 text-right text-sm tabular-nums text-success font-medium">
+                  {formatGp(boss.gpPerHour)}
+                </td>
+                <td className="px-2 py-2 text-right text-xs tabular-nums text-text-secondary">
+                  {formatGp(boss.gpPerKill)}
+                </td>
+                <td className="px-2 py-2 text-right text-xs tabular-nums text-text-secondary">
+                  {boss.killsPerHour}
+                </td>
+                <td className="px-2 py-2 text-right text-xs text-text-secondary truncate max-w-[120px]">
+                  {boss.topUnique || "\u2014"}
+                  {boss.topUniqueValue != null && (
+                    <span className="ml-1 text-accent">{formatGp(boss.topUniqueValue)}</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       {sorted.length === 0 && (
         <div className="text-center py-8 text-text-secondary">
-          Loading price data...
+          <Skeleton className="h-4 w-32 mx-auto mb-2" />
+          <p className="text-sm">Loading price data...</p>
         </div>
       )}
     </div>

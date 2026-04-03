@@ -17,6 +17,8 @@ import { formatGp, timeAgo } from "../../lib/format";
 import { itemIcon } from "../../lib/sprites";
 import { useNavigation } from "../../lib/NavigationContext";
 import WikiImage from "../../components/WikiImage";
+import { Skeleton, TableSkeleton } from "../../components/Skeleton";
+import EmptyState from "../../components/EmptyState";
 import {
   PERIODS,
   PERIOD_TIMESTEP,
@@ -484,8 +486,8 @@ export default function Market({
       {/* Left: search + table */}
       <div className="min-w-0">
         <div className="mb-4">
-          <h2 className="text-xl font-semibold">{title}</h2>
-          <p className="mt-1 text-sm text-text-secondary">{subtitle}</p>
+          <h2 className="text-2xl font-semibold tracking-tight">{title}</h2>
+          <p className="max-w-2xl text-sm text-text-secondary">{subtitle}</p>
         </div>
 
         {selectedItem ? (
@@ -513,18 +515,14 @@ export default function Market({
                 </div>
               </div>
               <div className="flex flex-wrap gap-2 md:justify-end">
-                <button
-                  type="button"
-                  onClick={() =>
-                    navigate("market", {
-                      query: selectedItem.name,
-                      tab: "chart",
-                    })
-                  }
+                <a
+                  href={`https://prices.runescape.wiki/osrs/item/${selectedItem.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="rounded-xl border border-border bg-bg-primary/70 px-3 py-2 text-xs font-medium text-text-secondary transition hover:border-accent/35 hover:text-text-primary"
                 >
-                  Open Chart View
-                </button>
+                  Full Price History
+                </a>
                 <button
                   type="button"
                   onClick={() => navigate("wiki", { page: selectedItem.name, query: selectedItem.name })}
@@ -555,7 +553,7 @@ export default function Market({
               {selectedSummary.map((stat) => (
                 <div
                   key={stat.label}
-                  className="px-4 py-3"
+                  className="rounded-xl border border-border/60 bg-bg-primary/45 px-4 py-3"
                 >
                   <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
                     {stat.label}
@@ -569,7 +567,7 @@ export default function Market({
           </div>
         ) : (
           <div className="mb-4 grid gap-3 md:grid-cols-3">
-            <div className="px-4 py-3">
+            <div className="rounded-xl border border-border/60 bg-bg-primary/45 px-4 py-3">
               <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
                 Search Flow
               </div>
@@ -577,7 +575,7 @@ export default function Market({
                 Find a specific item to inspect live prices, charts, and wiki context.
               </div>
             </div>
-            <div className="px-4 py-3">
+            <div className="rounded-xl border border-border/60 bg-bg-primary/45 px-4 py-3">
               <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
                 Browse Flow
               </div>
@@ -585,7 +583,7 @@ export default function Market({
                 Switch to Browse All for the full catalogue with members filtering.
               </div>
             </div>
-            <div className="px-4 py-3">
+            <div className="rounded-xl border border-border/60 bg-bg-primary/45 px-4 py-3">
               <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
                 Workspace Goal
               </div>
@@ -598,19 +596,27 @@ export default function Market({
 
         {/* Tab bar — always visible */}
         <div className="flex items-center gap-3 mb-4 flex-wrap">
-          <div className="flex bg-bg-secondary rounded-lg p-0.5 border border-border">
-            {(["search", "browse", "watchlist", "alch", "bulk"] as const).map((t) => (
+          <div className="flex flex-wrap gap-2">
+            {([
+              { id: "search" as Tab, label: "Search", description: "Find items by name" },
+              { id: "browse" as Tab, label: allItems.length > 0 ? `Browse All (${allItems.length.toLocaleString()})` : "Browse All", description: "Full item catalogue" },
+              { id: "watchlist" as Tab, label: "Watchlist", description: "Tracked items" },
+              { id: "alch" as Tab, label: "Alch Profits", description: "Alchemy calculator" },
+              { id: "bulk" as Tab, label: "Bulk Lookup", description: "Batch price check" },
+            ]).map((t) => (
               <button
-                key={t}
-                onClick={() => setTab(t)}
-                aria-pressed={tab === t}
-                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                  tab === t
-                    ? "bg-accent text-white"
-                    : "text-text-secondary hover:text-text-primary"
+                key={t.id}
+                onClick={() => { setTab(t.id); setSelectedItem(null); }}
+                aria-pressed={tab === t.id}
+                className={`relative rounded-xl border px-3.5 py-2 text-left transition ${
+                  tab === t.id
+                    ? "border-accent/50 bg-accent/10"
+                    : "border-border bg-bg-primary/50 text-text-secondary hover:bg-bg-primary/70"
                 }`}
               >
-                {t === "search" ? "Search Results" : t === "browse" ? `Browse All${allItems.length > 0 ? ` (${allItems.length.toLocaleString()})` : ""}` : t === "watchlist" ? "Watchlist" : t === "alch" ? "Alch Profits" : "Bulk Lookup"}
+                {tab === t.id && <div className="absolute -bottom-px left-3 right-3 h-0.5 rounded-full bg-accent" />}
+                <div className={`text-xs font-semibold ${tab === t.id ? "text-accent" : ""}`}>{t.label}</div>
+                <div className={`hidden sm:block text-[11px] ${tab === t.id ? "text-accent/60" : "text-text-secondary/60"}`}>{t.description}</div>
               </button>
             ))}
           </div>
@@ -674,28 +680,24 @@ export default function Market({
         )}
 
         {!pricesLoaded && (
-          <p className="text-xs text-text-secondary mb-2">Loading prices...</p>
+          <div className="mb-2"><Skeleton className="h-3 w-48 rounded" /></div>
         )}
 
         {tab === "search" && loading && (
-          <p className="text-xs text-text-secondary mb-2">Searching...</p>
+          <div className="mb-2"><TableSkeleton rows={5} cols={4} /></div>
         )}
 
         {tab === "browse" && browseLoading && (
-          <p className="text-xs text-text-secondary mb-2">
-            Loading item database...
-          </p>
+          <div className="mb-2"><TableSkeleton rows={8} cols={7} /></div>
         )}
 
         {tab === "search" && query.length < 2 && (
-          <p className="text-sm text-text-secondary text-center py-8">
-            Type at least 2 characters to search, or switch to Browse All.
-          </p>
+          <EmptyState title="Start searching" description="Type at least 2 characters to search, or switch to Browse All." />
         )}
 
         {/* Results table */}
         {showTable && displayItems.length > 0 && (
-          <div className="bg-bg-secondary rounded-lg overflow-hidden">
+          <div className="rounded-xl border border-border/60 overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-text-secondary text-xs">
@@ -705,6 +707,7 @@ export default function Market({
                   <th scope="col" className="text-right px-4 py-2">Margin</th>
                   <th scope="col" className="text-right px-4 py-2">Volume</th>
                   <th scope="col" className="text-right px-4 py-2">High Alch</th>
+                  <th scope="col" className="text-right px-4 py-2">Alch Profit</th>
                   <th scope="col" className="text-right px-4 py-2">Limit</th>
                 </tr>
               </thead>
@@ -714,6 +717,10 @@ export default function Market({
                   const itemMargin =
                     price?.high != null && price?.low != null
                       ? price.high - price.low
+                      : null;
+                  const alchProfit =
+                    item.highalch != null && price?.high != null
+                      ? item.highalch - price.high
                       : null;
                   return (
                     <tr
@@ -728,7 +735,7 @@ export default function Market({
                       <td className="px-4 py-2">
                         <div className="flex items-center gap-2">
                           <WikiImage
-                            src={itemIcon(item.name)}
+                            src={`https://oldschool.runescape.wiki/images/${item.icon}`}
                             alt=""
                             className="w-5 h-5 shrink-0"
                             fallback={item.name[0]}
@@ -779,6 +786,15 @@ export default function Market({
                       <td className="px-4 py-2 text-right text-warning">
                         {formatGp(item.highalch)}
                       </td>
+                      <td className="px-4 py-2 text-right">
+                        {alchProfit == null ? (
+                          "\u2014"
+                        ) : (
+                          <span className={alchProfit >= 0 ? "text-success" : "text-danger"}>
+                            {alchProfit > 0 ? "+" : ""}{formatGp(alchProfit)}
+                          </span>
+                        )}
+                      </td>
                       <td className="px-4 py-2 text-right text-text-secondary">
                         {item.limit ?? "\u2014"}
                       </td>
@@ -796,18 +812,14 @@ export default function Market({
         )}
 
         {showTable && displayItems.length === 0 && tab === "search" && (
-          <p className="text-sm text-text-secondary text-center py-4">
-            No items found for "{query}"
-          </p>
+          <EmptyState title="No items found" description={`No items match "${query}".`} />
         )}
 
         {showTable &&
           displayItems.length === 0 &&
           tab === "browse" &&
           !browseLoading && (
-            <p className="text-sm text-text-secondary text-center py-4">
-              No items match your filters.
-            </p>
+            <EmptyState title="No items found" description="No items match your filters." />
           )}
         </>
         )}

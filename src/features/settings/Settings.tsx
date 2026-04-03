@@ -20,7 +20,7 @@ const KEYBIND_LABELS: Record<string, string> = {
   slayer: "Slayer Blocks",
   "clue-helper": "Clue Helper",
   "money-making": "Money Making",
-  stars: "Shooting Stars",
+  stars: "Star Helper",
   news: "News",
   wiki: "Wiki",
   timers: "Timers",

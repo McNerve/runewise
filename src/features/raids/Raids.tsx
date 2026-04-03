@@ -120,30 +120,39 @@ function RaidContent({
       <div>
         <div className="section-kicker mb-2">Unique Rewards</div>
         <p className="text-xs text-text-secondary mb-3">{lootDescription}</p>
-        <div className="grid grid-cols-1 gap-1">
-          {uniques.map((item) => (
-            <div
-              key={item.name}
-              className="flex items-center gap-3 py-2 border-b border-border/10"
-            >
-              <img
-                src={itemIcon(item.name)}
-                alt=""
-                className="w-6 h-6 shrink-0 object-contain"
-                onError={(e) => { e.currentTarget.style.display = "none"; }}
-              />
-              <button
-                type="button"
-                onClick={() => onNavigateMarket(item.name)}
-                className="text-sm flex-1 text-left font-medium cursor-pointer hover:text-accent transition-colors"
-              >
-                {item.name}
-              </button>
-              <span className="text-xs text-text-secondary tabular-nums text-right">
-                {item.rateDescription}
-              </span>
-            </div>
-          ))}
+        <div className="rounded-xl border border-border/60 overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border text-text-secondary text-xs">
+                <th scope="col" className="px-4 py-2 text-left">Item</th>
+                <th scope="col" className="px-4 py-2 text-right">Drop Rate</th>
+              </tr>
+            </thead>
+            <tbody>
+              {uniques.map((item) => (
+                <tr key={item.name} className="border-b border-border/50 even:bg-bg-primary/25">
+                  <td className="px-4 py-2">
+                    <button
+                      type="button"
+                      onClick={() => onNavigateMarket(item.name)}
+                      className="flex items-center gap-2.5 text-left text-text-primary transition hover:text-accent"
+                    >
+                      <img
+                        src={itemIcon(item.name)}
+                        alt=""
+                        className="w-6 h-6 shrink-0 object-contain"
+                        onError={(e) => { e.currentTarget.style.display = "none"; }}
+                      />
+                      <span className="font-medium">{item.name}</span>
+                    </button>
+                  </td>
+                  <td className="px-4 py-2 text-right text-text-secondary tabular-nums">
+                    {item.rateDescription}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -164,27 +173,45 @@ export default function Raids() {
   const activeRaid = RAID_TABS.find((t) => t.id === tab)!;
 
   return (
-    <div>
-      <div className="flex items-baseline gap-3 mb-5">
-        <h2 className="text-xl font-semibold">Raids</h2>
-        <span className="text-xs text-text-secondary">
-          {activeRaid.rooms.length} rooms — {activeRaid.rooms.filter((r) => r.type === "combat").length} combat, {activeRaid.rooms.filter((r) => r.type === "puzzle").length} puzzle, {activeRaid.rooms.filter((r) => r.type === "boss").length} boss
-        </span>
+    <div className="space-y-5">
+      <div>
+        <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
+          <div className="space-y-1">
+            <h2 className="text-2xl font-semibold tracking-tight">Raid Guides</h2>
+            <p className="max-w-2xl text-sm text-text-secondary">
+              Quick reference for raid rooms, mechanics, and loot. Click any room for tips.
+              For full strategies, gear setups, and wiki content, use{" "}
+              <button
+                type="button"
+                onClick={() => navigate("bosses", { boss: activeRaid.label })}
+                className="text-accent hover:underline"
+              >
+                Boss Guides
+              </button>.
+            </p>
+          </div>
+          <div className="text-[11px] uppercase tracking-[0.18em] text-text-secondary/60">
+            {activeRaid.rooms.length} rooms — {activeRaid.rooms.filter((r) => r.type === "combat").length} combat, {activeRaid.rooms.filter((r) => r.type === "puzzle").length} puzzle, {activeRaid.rooms.filter((r) => r.type === "boss").length} boss
+          </div>
+        </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 mb-5">
+      <div className="flex flex-wrap gap-2">
         {RAID_TABS.map((t) => (
           <button
             key={t.id}
             onClick={() => { setTab(t.id); setExpandedRoom(null); }}
             aria-pressed={tab === t.id}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`relative rounded-xl border px-4 py-2 text-sm font-medium transition ${
               tab === t.id
-                ? "bg-accent text-white"
-                : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+                ? "border-accent/50 bg-accent/10 text-accent"
+                : "border-border bg-bg-primary/50 text-text-secondary hover:bg-bg-primary/70"
             }`}
           >
+            {tab === t.id && (
+              <div className="absolute -bottom-px left-3 right-3 h-0.5 rounded-full bg-accent" />
+            )}
             {t.label}
           </button>
         ))}
