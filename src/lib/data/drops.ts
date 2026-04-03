@@ -3,18 +3,19 @@ export interface DropEntry {
   source: string;
   rate: number;
   category: string;
+  note?: string;
 }
 
 export const POPULAR_DROPS: DropEntry[] = [
   // Raids
-  { item: "Twisted bow", source: "Chambers of Xeric", rate: 34.5, category: "Raids" },
-  { item: "Scythe of vitur", source: "Theatre of Blood", rate: 86, category: "Raids" },
-  { item: "Tumeken's shadow", source: "Tombs of Amascut", rate: 24, category: "Raids" },
-  { item: "Masori mask", source: "Tombs of Amascut", rate: 24, category: "Raids" },
-  { item: "Osmumten's fang", source: "Tombs of Amascut", rate: 8, category: "Raids" },
-  { item: "Dragon claws", source: "Chambers of Xeric", rate: 23, category: "Raids" },
-  { item: "Dexterous prayer scroll", source: "Chambers of Xeric", rate: 20.3, category: "Raids" },
-  { item: "Avernic defender hilt", source: "Theatre of Blood", rate: 86, category: "Raids" },
+  { item: "Twisted bow", source: "Chambers of Xeric", rate: 34.5, category: "Raids", note: "Rate per unique roll. Scales with points." },
+  { item: "Scythe of vitur", source: "Theatre of Blood", rate: 86, category: "Raids", note: "Rate per completion. Scales with team size." },
+  { item: "Tumeken's shadow", source: "Tombs of Amascut", rate: 24, category: "Raids", note: "Rate scales with invocation level. Shown at ~150 invocations." },
+  { item: "Masori mask", source: "Tombs of Amascut", rate: 24, category: "Raids", note: "Rate scales with invocation level." },
+  { item: "Osmumten's fang", source: "Tombs of Amascut", rate: 8, category: "Raids", note: "Rate scales with invocation level." },
+  { item: "Dragon claws", source: "Chambers of Xeric", rate: 23, category: "Raids", note: "Rate per unique roll. Scales with points." },
+  { item: "Dexterous prayer scroll", source: "Chambers of Xeric", rate: 20.3, category: "Raids", note: "Rate per unique roll. Scales with points." },
+  { item: "Avernic defender hilt", source: "Theatre of Blood", rate: 86, category: "Raids", note: "Rate per completion. Scales with team size." },
 
   // GWD
   { item: "Bandos chestplate", source: "General Graardor", rate: 384, category: "GWD" },
@@ -47,11 +48,11 @@ export const POPULAR_DROPS: DropEntry[] = [
   { item: "Sarachnis cudgel", source: "Sarachnis", rate: 384, category: "Other" },
 
   // Skilling pets
-  { item: "Rift guardian", source: "Runecraft", rate: 1795758, category: "Pets" },
-  { item: "Rock golem", source: "Mining", rate: 244725, category: "Pets" },
-  { item: "Heron", source: "Fishing", rate: 257770, category: "Pets" },
-  { item: "Beaver", source: "Woodcutting", rate: 264367, category: "Pets" },
-  { item: "Tangleroot", source: "Farming", rate: 7500, category: "Pets" },
+  { item: "Rift guardian", source: "Runecraft", rate: 1795758, category: "Pets", note: "Rate varies by method. Shown for ZMI altar." },
+  { item: "Rock golem", source: "Mining", rate: 244725, category: "Pets", note: "Rate varies by ore type. Shown for iron." },
+  { item: "Heron", source: "Fishing", rate: 257770, category: "Pets", note: "Rate varies by fish type. Shown for barbarian fishing." },
+  { item: "Beaver", source: "Woodcutting", rate: 264367, category: "Pets", note: "Rate varies by tree type. Shown for teaks." },
+  { item: "Tangleroot", source: "Farming", rate: 7500, category: "Pets", note: "Rate varies by crop. Shown for Magic tree." },
 
   // DT2 bosses
   { item: "Ultor ring", source: "The Whisperer", rate: 1536, category: "Other" },
@@ -64,13 +65,13 @@ export const POPULAR_DROPS: DropEntry[] = [
   { item: "Blue moon spear", source: "The Whisperer", rate: 768, category: "Other" },
 
   // More raids
-  { item: "Ancestral hat", source: "Chambers of Xeric", rate: 23, category: "Raids" },
-  { item: "Ancestral robe top", source: "Chambers of Xeric", rate: 23, category: "Raids" },
-  { item: "Dragon hunter crossbow", source: "Chambers of Xeric", rate: 34.5, category: "Raids" },
-  { item: "Masori body (f)", source: "Tombs of Amascut", rate: 24, category: "Raids" },
-  { item: "Lightbearer", source: "Tombs of Amascut", rate: 8, category: "Raids" },
-  { item: "Justiciar legguards", source: "Theatre of Blood", rate: 86, category: "Raids" },
-  { item: "Sanguinesti staff", source: "Theatre of Blood", rate: 86, category: "Raids" },
+  { item: "Ancestral hat", source: "Chambers of Xeric", rate: 23, category: "Raids", note: "Rate per unique roll. Scales with points." },
+  { item: "Ancestral robe top", source: "Chambers of Xeric", rate: 23, category: "Raids", note: "Rate per unique roll. Scales with points." },
+  { item: "Dragon hunter crossbow", source: "Chambers of Xeric", rate: 34.5, category: "Raids", note: "Rate per unique roll. Scales with points." },
+  { item: "Masori body (f)", source: "Tombs of Amascut", rate: 24, category: "Raids", note: "Rate scales with invocation level." },
+  { item: "Lightbearer", source: "Tombs of Amascut", rate: 8, category: "Raids", note: "Rate scales with invocation level." },
+  { item: "Justiciar legguards", source: "Theatre of Blood", rate: 86, category: "Raids", note: "Rate per completion. Scales with team size." },
+  { item: "Sanguinesti staff", source: "Theatre of Blood", rate: 86, category: "Raids", note: "Rate per completion. Scales with team size." },
 
   // Araxxor
   { item: "Noxious pommel", source: "Araxxor", rate: 200, category: "Other" },
@@ -89,9 +90,9 @@ export const POPULAR_DROPS: DropEntry[] = [
   { item: "Ancient hilt", source: "Nex", rate: 258, category: "GWD" },
 
   // Clue scrolls
-  { item: "3rd age piece (any)", source: "Reward casket (hard)", rate: 211250, category: "Clues" },
-  { item: "3rd age piece (any)", source: "Reward casket (elite)", rate: 148750, category: "Clues" },
-  { item: "3rd age piece (any)", source: "Reward casket (master)", rate: 313168, category: "Clues" },
+  { item: "3rd age range top", source: "Reward casket (hard)", rate: 211250, category: "Clues", note: "Rate is for any 3rd age piece. Shown rate is per casket." },
+  { item: "3rd age range top", source: "Reward casket (elite)", rate: 148750, category: "Clues", note: "Rate is for any 3rd age piece. Shown rate is per casket." },
+  { item: "3rd age range top", source: "Reward casket (master)", rate: 313168, category: "Clues", note: "Rate is for any 3rd age piece. Shown rate is per casket." },
   { item: "Ranger boots", source: "Reward casket (medium)", rate: 1133, category: "Clues" },
   { item: "Gilded platebody", source: "Reward casket (hard)", rate: 35750, category: "Clues" },
   { item: "Bloodhound", source: "Reward casket (master)", rate: 1000, category: "Clues" },
@@ -104,8 +105,8 @@ export const POPULAR_DROPS: DropEntry[] = [
   { item: "Tyrannical ring", source: "Callisto", rate: 512, category: "Wilderness" },
 
   // Fight caves / inferno pets
-  { item: "Jad pet (TzRek-Jad)", source: "TzTok-Jad", rate: 200, category: "Other" },
-  { item: "Jad pet (Tzrek-zuk)", source: "TzKal-Zuk", rate: 100, category: "Other" },
+  { item: "TzRek-Jad", source: "TzTok-Jad", rate: 200, category: "Pets" },
+  { item: "Jal-nib-rek", source: "TzKal-Zuk", rate: 100, category: "Pets" },
 
   // The Nightmare
   { item: "Nightmare staff", source: "The Nightmare", rate: 400, category: "Other" },
@@ -132,7 +133,7 @@ export const POPULAR_DROPS: DropEntry[] = [
   { item: "Eclipse atlatl", source: "Eclipse Moon", rate: 256, category: "Other" },
 
   // Corporeal Beast
-  { item: "Elysian sigil", source: "Corporeal Beast", rate: 4095, category: "Other" },
+  { item: "Elysian sigil", source: "Corporeal Beast", rate: 4095, category: "Other", note: "Solo rate. Effective rate scales with team size." },
   { item: "Spectral sigil", source: "Corporeal Beast", rate: 1365, category: "Other" },
   { item: "Arcane sigil", source: "Corporeal Beast", rate: 1365, category: "Other" },
 

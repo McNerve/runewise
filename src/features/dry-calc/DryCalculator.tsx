@@ -51,6 +51,11 @@ export default function DryCalculator() {
               </button>
             </div>
           )}
+          {selectedDrop?.note && (
+            <div className="text-[10px] text-warning/70 bg-warning/8 rounded px-2.5 py-1.5">
+              {selectedDrop.note}
+            </div>
+          )}
 
           <div>
             <label className="block text-xs text-text-secondary mb-1">
