@@ -161,7 +161,7 @@ export const FEATURE_REGISTRY = {
   },
   "production-calc": {
     title: "Recipe Calculator",
-    navLabel: "Recipes",
+    navLabel: "Recipe Calculator",
     family: "Tools",
     sidebar: true,
     search: true,
@@ -169,7 +169,7 @@ export const FEATURE_REGISTRY = {
   },
   kingdom: {
     title: "Kingdom of Miscellania",
-    navLabel: "Kingdom",
+    navLabel: "Kingdom Calculator",
     family: "Tools",
     sidebar: true,
     search: true,

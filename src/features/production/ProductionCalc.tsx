@@ -11,7 +11,20 @@ function getItemPrice(
   itemMap: Map<string, number>,
   prices: Record<string, ItemPrice>,
 ): number | null {
-  const id = itemMap.get(name.toLowerCase());
+  const lower = name.toLowerCase();
+  // Try exact match first
+  let id = itemMap.get(lower);
+  // Try common variants: "(4)", "(3)", "(2)", "(1)" for potions/consumables
+  if (!id) {
+    for (const suffix of ["(4)", "(3)", "(2)", "(1)", " (4)", " (3)"]) {
+      id = itemMap.get(lower + suffix);
+      if (id) break;
+    }
+  }
+  // Try without trailing parenthetical: "Item (4)" → "Item"
+  if (!id && lower.includes("(")) {
+    id = itemMap.get(lower.replace(/\s*\([^)]*\)\s*$/, "").trim());
+  }
   if (!id) return null;
   const p = prices[String(id)];
   return p?.high ?? p?.low ?? null;
@@ -176,7 +189,12 @@ export default function ProductionCalc() {
                 src={itemIcon(r.name)}
                 alt=""
                 className="w-5 h-5 shrink-0"
-                onError={(e) => { e.currentTarget.style.display = "none"; }}
+                onError={(e) => {
+                  const el = e.currentTarget;
+                  const alt = itemIcon(`${r.name} (4)`);
+                  if (el.src !== alt) { el.src = alt; }
+                  else { el.style.display = "none"; }
+                }}
               />
               <div className="flex-1 min-w-0">
                 <span className="text-sm">{r.name}</span>

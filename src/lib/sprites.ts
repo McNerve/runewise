@@ -7,6 +7,7 @@ export function skillIcon(skill: string): string {
 
 export function itemIcon(itemName: string): string {
   const name = itemName
+    .replace(/ \(/g, "(")   // "Prayer potion (4)" → "Prayer potion(4)" (wiki convention)
     .replace(/ /g, "_")
     .replace(/'/g, "%27")
     .replace(/\(/g, "%28")
@@ -163,7 +164,7 @@ export const NAV_ICONS: Record<string, string> = {
   "combat-tasks": `${WIKI_IMG}/Combat_Achievements_icon.png`,
   "money-making": `${WIKI_IMG}/Coins_detail.png`,
   "production-calc": `${WIKI_IMG}/Crafting_icon.png`,
-  kingdom: `${WIKI_IMG}/Crown.png`,
+  kingdom: `${WIKI_IMG}/Royal_crown.png`,
   wiki: `${WIKI_IMG}/Enchanted_scroll.png`,
   "pet-calc": `${WIKI_IMG}/Heron.png`,
   settings: `${WIKI_IMG}/Options_icon.png`,
