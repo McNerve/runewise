@@ -392,6 +392,46 @@ export default function Settings() {
         </div>
       </SettingsCard>
 
+      {/* Data Sync */}
+      <SettingsCard title="Data Sync">
+        <div className="space-y-3">
+          <p className="text-sm text-text-secondary leading-relaxed">
+            RuneWise pulls live data from <strong>Wise Old Man</strong>, <strong>Temple OSRS</strong>,
+            and the <strong>OSRS Hiscores</strong>. Set your RSN in the top bar to see your stats,
+            boss kills, and collection log.
+          </p>
+          <div className="space-y-2 pt-2 border-t border-border/30">
+            <div className="flex items-start gap-3">
+              <span className="text-accent text-sm mt-0.5">1.</span>
+              <p className="text-xs text-text-secondary leading-relaxed">
+                <strong className="text-text-primary">Collection Log</strong> — Install the <em>Temple OSRS</em> RuneLite
+                plugin and sync your account at{" "}
+                <a href="https://templeosrs.com" target="_blank" rel="noopener noreferrer" className="text-accent hover:text-accent-hover">
+                  templeosrs.com
+                </a>. Your collection log data will appear automatically.
+              </p>
+            </div>
+            <div className="flex items-start gap-3">
+              <span className="text-accent text-sm mt-0.5">2.</span>
+              <p className="text-xs text-text-secondary leading-relaxed">
+                <strong className="text-text-primary">XP Tracking</strong> — Update your profile on{" "}
+                <a href="https://wiseoldman.net" target="_blank" rel="noopener noreferrer" className="text-accent hover:text-accent-hover">
+                  wiseoldman.net
+                </a>{" "}
+                for gains, records, and achievements.
+              </p>
+            </div>
+            <div className="flex items-start gap-3">
+              <span className="text-accent text-sm mt-0.5">3.</span>
+              <p className="text-xs text-text-secondary leading-relaxed">
+                <strong className="text-text-primary">Quests &amp; Combat Tasks</strong> — Mark these manually in
+                RuneWise. No public API tracks individual quest or combat achievement completion.
+              </p>
+            </div>
+          </div>
+        </div>
+      </SettingsCard>
+
       {/* Attribution */}
       <SettingsCard title="Attribution">
         <div className="space-y-1">

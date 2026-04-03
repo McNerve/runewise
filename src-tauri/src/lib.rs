@@ -58,7 +58,6 @@ const ALLOWED_HOSTS: &[&str] = &[
     "public.starminers.site",
     "templeosrs.com",
     "maps.runescape.wiki",
-    "sync.runescape.wiki",
 ];
 
 fn runelite_paths() -> Result<(Option<String>, Vec<String>), String> {

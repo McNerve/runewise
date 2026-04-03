@@ -542,3 +542,22 @@ body {
   border-color: var(--color-border);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
 }
+
+/* ── Scroll fade indicator ── */
+.scroll-fade {
+  position: relative;
+  mask-image: linear-gradient(to bottom, black calc(100% - 1.5rem), transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 1.5rem), transparent 100%);
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

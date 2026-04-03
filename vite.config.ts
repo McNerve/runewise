@@ -61,12 +61,6 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api\/maps/, ""),
         headers: { "User-Agent": "runewise - osrs companion app" },
       },
-      "/api/wikisync": {
-        target: "https://sync.runescape.wiki",
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/wikisync/, ""),
-        headers: { "User-Agent": "runewise - osrs companion app" },
-      },
     },
   },
 });

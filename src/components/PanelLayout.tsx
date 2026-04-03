@@ -121,7 +121,7 @@ export default function PanelLayout({ renderView, currentView }: PanelLayoutProp
                   </button>
                 )}
               </div>
-              <div className="flex-1 overflow-y-auto p-4">
+              <div className="flex-1 overflow-y-auto p-4 scroll-fade">
                 {renderView(panel.view)}
               </div>
             </div>
