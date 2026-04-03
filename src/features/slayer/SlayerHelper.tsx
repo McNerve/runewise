@@ -4,9 +4,7 @@ import { useNavigation } from "../../lib/NavigationContext";
 import WikiImage from "../../components/WikiImage";
 import { WIKI_IMG } from "../../lib/sprites";
 
-function monsterIconUrl(name: string): string {
-  // Try singular form — wiki uses singular for most monster images
-  const ICON_OVERRIDES: Record<string, string> = {
+const ICON_OVERRIDES: Record<string, string> = {
     // Turael basics
     "Banshees": "Banshee.png",
     "Bats": "Bat.png",
@@ -109,8 +107,9 @@ function monsterIconUrl(name: string): string {
     "Spiritual creatures": "Spiritual_ranger_%28Saradomin%29.png",
     "Scabarites": "Scarab_Mage.png",
     "Custodian stalker": "Scabaras.png",
-  };
+};
 
+function monsterIconUrl(name: string): string {
   if (ICON_OVERRIDES[name]) return `${WIKI_IMG}/${ICON_OVERRIDES[name]}`;
   const file = name.replace(/ /g, "_").replace(/'/g, "%27");
   return `${WIKI_IMG}/${file}.png`;
