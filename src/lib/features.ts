@@ -67,7 +67,7 @@ export const FEATURE_REGISTRY = {
     title: "Training Plan",
     navLabel: "Training Plan",
     family: "Planning",
-    sidebar: true,
+    sidebar: false,
     search: true,
     aliases: ["training plan", "level plan", "goal", "targets", "efficient", "xp per hour"],
   },

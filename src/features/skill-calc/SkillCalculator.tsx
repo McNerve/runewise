@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { xpForLevel } from "../../lib/formulas/xp";
 import { getSkillXp, type HiscoreData } from "../../lib/api/hiscores";
 import { fetchLatestPrices, fetchMapping, type ItemPrice } from "../../lib/api/ge";
 import { formatGp } from "../../lib/format";
-import { SKILL_ICONS, itemIcon } from "../../lib/sprites";
+import { WIKI_IMG, SKILL_ICONS, itemIcon } from "../../lib/sprites";
 import { useNavigation } from "../../lib/NavigationContext";
 import { TRAINING_METHODS } from "../../lib/data/training-methods";
 import { HERBLORE_RECIPES } from "../../lib/data/herblore-recipes";
@@ -12,6 +12,10 @@ import { fetchRecipesForSkill, type WikiRecipe } from "../../lib/api/recipes";
 import RecipeCostTable from "./components/RecipeCostTable";
 import WikiRecipeTable from "./components/WikiRecipeTable";
 import ConstructionPlanner from "./components/ConstructionPlanner";
+
+const TrainingPlan = lazy(() => import("../training-plan/TrainingPlan"));
+
+type SkillTab = "calculator" | "plan";
 
 const SKILLS = [
   "Attack", "Strength", "Defence", "Ranged", "Prayer", "Magic",
@@ -27,6 +31,8 @@ interface Props {
 
 export default function SkillCalculator({ hiscores }: Props) {
   const { params, navigate } = useNavigation();
+  const initialSkillTab: SkillTab = params.tab === "plan" ? "plan" : "calculator";
+  const [skillTab, setSkillTab] = useState<SkillTab>(initialSkillTab);
   const [selectedSkill, setSelectedSkill] = useState<string>(params.skill ?? "Attack");
   const [currentXp, setCurrentXp] = useState(0);
   const [targetLevel, setTargetLevel] = useState(99);
@@ -101,7 +107,41 @@ export default function SkillCalculator({ hiscores }: Props) {
 
   return (
     <div className="max-w-3xl">
-      <h2 className="text-xl font-semibold mb-4">Skill Calculator</h2>
+      <h2 className="text-xl font-semibold mb-4">Skills</h2>
+
+      {/* Tab bar */}
+      <div className="flex gap-1 mb-5">
+        {([
+          { id: "calculator" as const, label: "Skill Calculator", icon: `${WIKI_IMG}/Stats_icon.png` },
+          { id: "plan" as const, label: "Training Plan", icon: `${WIKI_IMG}/Quest_point_icon.png` },
+        ]).map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setSkillTab(tab.id)}
+            aria-pressed={skillTab === tab.id}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              skillTab === tab.id
+                ? "bg-accent text-white"
+                : "text-text-secondary hover:bg-bg-secondary/50"
+            }`}
+          >
+            <img src={tab.icon} alt="" className="w-4 h-4" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Training Plan tab */}
+      {skillTab === "plan" && (
+        <Suspense fallback={<div className="py-8 text-center"><div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4 mx-auto" /></div>}>
+          <TrainingPlan hiscores={hiscores} />
+        </Suspense>
+      )}
+
+      {/* Skill Calculator tab */}
+      {skillTab === "calculator" && (
+      <>
+
 
       <div className="grid grid-cols-6 gap-1.5 mb-6">
         {SKILLS.map((skill) => {
@@ -402,6 +442,8 @@ export default function SkillCalculator({ hiscores }: Props) {
             />
           )}
         </div>
+      )}
+      </>
       )}
     </div>
   );
