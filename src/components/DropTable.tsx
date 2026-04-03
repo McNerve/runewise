@@ -4,6 +4,7 @@ import { formatGp } from "../lib/format";
 import { itemIcon } from "../lib/sprites";
 import { useNavigation } from "../lib/NavigationContext";
 import WikiImage from "./WikiImage";
+import ItemTooltip from "./ItemTooltip";
 
 interface DropTableProps {
   drops: WikiDrop[];
@@ -245,13 +246,15 @@ export default function DropTable({
                         />
                       </td>
                       <td className="px-2 py-1.5 text-sm">
-                        <button
-                          type="button"
-                          onClick={() => navigate("wiki", { page: drop.itemName.replace(/ /g, "_") })}
-                          className="text-left hover:text-accent transition-colors"
-                        >
-                          {drop.itemName}
-                        </button>
+                        <ItemTooltip itemName={drop.itemName}>
+                          <button
+                            type="button"
+                            onClick={() => navigate("wiki", { page: drop.itemName.replace(/ /g, "_") })}
+                            className="text-left hover:text-accent transition-colors"
+                          >
+                            {drop.itemName}
+                          </button>
+                        </ItemTooltip>
                       </td>
                       <td className="px-2 py-1.5 text-xs text-text-secondary text-right tabular-nums">
                         {drop.quantity}

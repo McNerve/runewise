@@ -1,5 +1,6 @@
 import { Suspense, lazy } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import * as Tooltip from "@radix-ui/react-tooltip";
 import Sidebar from "./components/Sidebar";
 import PlayerBar from "./components/PlayerBar";
 import GlobalSearch from "./components/GlobalSearch";
@@ -76,9 +77,11 @@ function App() {
 
   return (
     <SettingsContext.Provider value={settingsValue}>
-      <NavigationProvider>
-        <AppContent />
-      </NavigationProvider>
+      <Tooltip.Provider delayDuration={300}>
+        <NavigationProvider>
+          <AppContent />
+        </NavigationProvider>
+      </Tooltip.Provider>
     </SettingsContext.Provider>
   );
 }

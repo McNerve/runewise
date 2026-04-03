@@ -1038,6 +1038,18 @@ body {
   animation: tooltip-in 120ms ease;
 }
 
+.item-tooltip-content {
+  border-radius: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  font-size: 0.75rem;
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+  animation: tooltip-in 120ms ease;
+  max-width: 280px;
+}
+
 @keyframes tooltip-in {
   from { opacity: 0; transform: scale(0.96); }
   to { opacity: 1; transform: scale(1); }
