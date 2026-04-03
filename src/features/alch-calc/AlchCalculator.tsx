@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { itemIcon } from "../../lib/sprites";
 import {
   fetchMapping,
   fetchLatestPrices,
@@ -277,7 +278,10 @@ export default function AlchCalculator() {
                   className="border-b border-border/50 even:bg-bg-primary/30 hover:bg-bg-tertiary transition-colors"
                 >
                   <td className="px-4 py-2">
-                    <div className="font-medium">{row.item.name}</div>
+                    <div className="flex items-center gap-2 font-medium">
+                      <img src={itemIcon(row.item.name)} alt="" className="w-5 h-5 shrink-0" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                      {row.item.name}
+                    </div>
                     {row.item.members && (
                       <span className="text-xs text-warning">P2P</span>
                     )}

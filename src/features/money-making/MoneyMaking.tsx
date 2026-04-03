@@ -145,7 +145,9 @@ export default function MoneyMaking({ hiscores }: Props) {
         ))}
       </div>
 
-      {/* Filters */}
+      {/* Filters — only for Methods tab */}
+      {mainTab === "methods" && (
+      <>
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <input
           type="text"
@@ -197,6 +199,8 @@ export default function MoneyMaking({ hiscores }: Props) {
           </label>
         )}
       </div>
+      </>
+      )}
 
       {/* Methods list */}
       {mainTab === "methods" && (
