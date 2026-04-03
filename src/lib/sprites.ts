@@ -136,11 +136,11 @@ export function bossIconSmall(bossName: string): string {
 export const NAV_ICONS: Record<string, string> = {
   overview: `${WIKI_IMG}/Stats_icon.png`,
   "collection-log": `${WIKI_IMG}/Collection_log.png`,
-  lookup: `${WIKI_IMG}/Player-owned_house_portal.png`,
+  lookup: `${WIKI_IMG}/Magnifying_glass.png`,
   "skill-calc": `${WIKI_IMG}/Antique_lamp.png`,
   "dry-calc": `${WIKI_IMG}/Ring_of_wealth.png`,
   "xp-table": `${WIKI_IMG}/Book_of_knowledge.png`,
-  tracker: `${WIKI_IMG}/Collection_log.png`,
+  tracker: `${WIKI_IMG}/Adventurer%27s_log.png`,
   bosses: `${WIKI_IMG}/Slayer_helmet_%28i%29.png`,
   raids: `${WIKI_IMG}/Olmlet.png`,
   loot: `${WIKI_IMG}/Looting_bag.png`,
@@ -148,7 +148,7 @@ export const NAV_ICONS: Record<string, string> = {
   slayer: `${WIKI_IMG}/Slayer_icon.png`,
   news: `${WIKI_IMG}/Newspaper.png`,
   "dps-calc": `${WIKI_IMG}/Dragon_claws_detail.png`,
-  "training-plan": `${WIKI_IMG}/Antique_lamp_detail.png`,
+  "training-plan": `${WIKI_IMG}/Quest_point_icon.png`,
   "gear-compare": `${WIKI_IMG}/Armour_case.png`,
   watchlist: `${WIKI_IMG}/Platinum_token_detail.png`,
   timers: `${WIKI_IMG}/Farming_icon.png`,
@@ -159,11 +159,11 @@ export const NAV_ICONS: Record<string, string> = {
   "combat-tasks": `${WIKI_IMG}/Combat_Achievements_icon.png`,
   "money-making": `${WIKI_IMG}/Coins_detail.png`,
   "production-calc": `${WIKI_IMG}/Crafting_icon.png`,
-  kingdom: `${WIKI_IMG}/Coins_10000_detail.png`,
-  wiki: `${WIKI_IMG}/Book_of_knowledge.png`,
+  kingdom: `${WIKI_IMG}/Crown.png`,
+  wiki: `${WIKI_IMG}/Enchanted_scroll.png`,
   "pet-calc": `${WIKI_IMG}/Heron.png`,
   settings: `${WIKI_IMG}/Options_icon.png`,
-  market: `${WIKI_IMG}/Coins_10000.png`,
+  market: `${WIKI_IMG}/Grand_Exchange_icon.png`,
 };
 
 export const SKILL_ICONS: Record<string, string> = {
