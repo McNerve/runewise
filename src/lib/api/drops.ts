@@ -1,4 +1,4 @@
-import { bucketQueryAll, type BucketWhere } from "./bucket";
+import { bucketQuery, bucketQueryAll, type BucketWhere } from "./bucket";
 import { getCached, setCache } from "./cache";
 
 const DROPS_TTL = 24 * 60 * 60 * 1000;
@@ -58,7 +58,9 @@ function parseRarityFraction(rarity: string): number | null {
   if (!rarity) return null;
   if (rarity.toLowerCase() === "always") return 1;
 
-  const match = rarity.match(/^(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)$/);
+  // Handle formats: "1/512", "1/1,026.8", "~1/958.3", "8/115"
+  const cleaned = rarity.replace(/~/g, "").replace(/,/g, "");
+  const match = cleaned.match(/(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)/);
   if (match) {
     const numerator = parseFloat(match[1]);
     const denominator = parseFloat(match[2]);
@@ -139,4 +141,51 @@ export async function fetchDropsForMonster(
   const table: MonsterDropTable = { monsterName, drops, categories };
   setCache(cacheKey, table, { persist: true });
   return table;
+}
+
+// --- Wiki bucket drop_table fetching (boss-specific) ---
+
+interface WikiDropRow {
+  [key: string]: unknown;
+  dropped_item: string;
+  drop_quantity: string;
+  rarity: string;
+  drop_type: string;
+}
+
+export interface BossWikiDrop {
+  item: string;
+  rate: number;
+  quantity: string;
+  type: string;
+}
+
+function parseDropRate(rarity: string): number {
+  if (!rarity || rarity === "Always" || rarity === "100%") return 1;
+  const match = rarity.replace(/,/g, "").match(/1\/(\d+)/);
+  if (match) return parseInt(match[1], 10);
+  return 0;
+}
+
+export async function fetchBossDropsFromWiki(bossName: string): Promise<BossWikiDrop[]> {
+  try {
+    const rows = await bucketQuery<WikiDropRow>(
+      "drop_table",
+      ["dropped_item", "drop_quantity", "rarity", "drop_type"],
+      { field: "dropped_from", value: bossName },
+      200
+    );
+
+    return rows
+      .filter((r) => r.dropped_item && r.rarity)
+      .map((r) => ({
+        item: r.dropped_item,
+        rate: parseDropRate(r.rarity),
+        quantity: r.drop_quantity || "1",
+        type: r.drop_type || "drop",
+      }));
+  } catch (error) {
+    console.warn(`[RuneWise] Failed to fetch wiki drops for ${bossName}:`, error);
+    return [];
+  }
 }

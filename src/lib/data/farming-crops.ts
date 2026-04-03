@@ -57,6 +57,10 @@ export const FARM_CROPS: FarmCrop[] = [
   // Hardwood Trees (Fossil Island, 2-3 patches)
   { name: "Teak tree", category: "Hardwood", seedName: "Teak sapling", seedId: 21480, produceName: "Teak logs", produceId: 6333, levelReq: 35, growthMinutes: 4480, avgYield: 1, patches: 3 },
   { name: "Mahogany tree", category: "Hardwood", seedName: "Mahogany sapling", seedId: 21482, produceName: "Mahogany logs", produceId: 6332, levelReq: 55, growthMinutes: 5120, avgYield: 1, patches: 3 },
+  { name: "Redwood tree", category: "Hardwood", seedName: "Redwood sapling", seedId: 22871, produceName: "Redwood logs", produceId: 19669, levelReq: 90, growthMinutes: 6400, avgYield: 1, patches: 1 },
+  { name: "Rosewood tree", category: "Hardwood", seedName: "Rosewood sapling", seedId: 31406, produceName: "Rosewood logs", produceId: 31407, levelReq: 50, growthMinutes: 5120, avgYield: 1, patches: 3 },
+  { name: "Ironwood tree", category: "Hardwood", seedName: "Ironwood sapling", seedId: 31408, produceName: "Ironwood logs", produceId: 31409, levelReq: 60, growthMinutes: 5120, avgYield: 1, patches: 3 },
+  { name: "Camphorwood tree", category: "Hardwood", seedName: "Camphorwood sapling", seedId: 31410, produceName: "Camphorwood logs", produceId: 31411, levelReq: 70, growthMinutes: 5120, avgYield: 1, patches: 3 },
 
   // Special Trees (single patches)
   { name: "Calquat tree", category: "Special", seedName: "Calquat sapling", seedId: 5290, produceName: "Calquat fruit", produceId: 5979, levelReq: 72, growthMinutes: 1280, avgYield: 6, patches: 1 },

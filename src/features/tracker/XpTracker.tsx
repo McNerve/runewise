@@ -1,5 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigation } from "../../lib/NavigationContext";
+import { WIKI_IMG, skillIcon, bossIconSmall } from "../../lib/sprites";
+import { TableSkeleton } from "../../components/Skeleton";
+import EmptyState from "../../components/EmptyState";
+import { timeAgo } from "../../lib/format";
+
+function skillIconUrl(name: string): string {
+  if (name === "Overall") return `${WIKI_IMG}/Stats_icon.png`;
+  return skillIcon(name);
+}
 import {
   fetchWomGains,
   fetchWomAchievements,
@@ -53,6 +62,142 @@ const SKILL_NAMES: Record<string, string> = {
   sailing: "Sailing",
 };
 
+const formatBossName = (key: string) =>
+  key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+
+// WOM metric keys → display names that match our sprite maps
+const METRIC_FIXUPS: Record<string, string> = {
+  kril_tsutsaroth: "K'ril Tsutsaroth",
+  kreearra: "Kree'Arra",
+  tztok_jad: "TzTok-Jad",
+  tzkal_zuk: "TzKal-Zuk",
+  vetion: "Vet'ion",
+  calvarion: "Calvar'ion",
+  phosanis_nightmare: "Phosani's Nightmare",
+  theatre_of_blood: "Theatre of Blood",
+  chambers_of_xeric: "Chambers of Xeric",
+  tombs_of_amascut: "Tombs of Amascut",
+  the_corrupted_gauntlet: "The Corrupted Gauntlet",
+  the_gauntlet: "The Gauntlet",
+  the_leviathan: "The Leviathan",
+  the_whisperer: "The Whisperer",
+  moons_of_peril: "Moons of Peril",
+  the_royal_titans: "The Royal Titans",
+  fortis_colosseum: "The Fortis Colosseum",
+  sol_heredit: "Sol Heredit",
+  clue_scrolls_all: "Clue Scrolls (all)",
+  clue_scrolls_beginner: "Clue Scrolls (beginner)",
+  clue_scrolls_easy: "Clue Scrolls (easy)",
+  clue_scrolls_medium: "Clue Scrolls (medium)",
+  clue_scrolls_hard: "Clue Scrolls (hard)",
+  clue_scrolls_elite: "Clue Scrolls (elite)",
+  clue_scrolls_master: "Clue Scrolls (master)",
+  collections_logged: "Collection Log",
+  last_man_standing: "Last Man Standing",
+  soul_wars_zeal: "Soul Wars",
+  bounty_hunter_hunter: "Bounty Hunter",
+  bounty_hunter_rogue: "Bounty Hunter",
+  league_points: "League Points",
+  ehp: "Overall",
+  ehb: "Overall",
+};
+
+// Resolve WOM metric to icon URL
+function metricIconUrl(rawMetric: string): string | null {
+  const fixedName = METRIC_FIXUPS[rawMetric];
+  if (fixedName) {
+    if (rawMetric in SKILL_NAMES) return skillIconUrl(SKILL_NAMES[rawMetric]!);
+    if (fixedName === "Overall") return skillIconUrl("Overall");
+    if (fixedName === "Collection Log") return `${WIKI_IMG}/Collection_log.png`;
+    if (fixedName.startsWith("Clue Scrolls")) {
+      const tier = fixedName.match(/\((\w+)\)/)?.[1] ?? "hard";
+      return `${WIKI_IMG}/Clue_scroll_%28${tier}%29.png`;
+    }
+    return bossIconSmall(fixedName);
+  }
+  if (rawMetric in SKILL_NAMES) return skillIconUrl(SKILL_NAMES[rawMetric]!);
+  return bossIconSmall(formatBossName(rawMetric));
+}
+
+function metricDisplayName(rawMetric: string): string {
+  return METRIC_FIXUPS[rawMetric] ?? SKILL_NAMES[rawMetric] ?? formatBossName(rawMetric);
+}
+
+function CompetitionsView({ competitions }: { competitions: WomPlayerCompetition[] }) {
+  const now = new Date();
+  const sorted = [...competitions].sort(
+    (a, b) => new Date(b.competition?.startsAt ?? 0).getTime() - new Date(a.competition?.startsAt ?? 0).getTime()
+  );
+
+  return (
+    <div className="space-y-2">
+      {sorted.map((pc) => {
+        const comp = pc.competition;
+        if (!comp) return null;
+        const isActive = new Date(comp.endsAt ?? 0) > now;
+        const rawMetric = comp.metric ?? "";
+        const metric = rawMetric.replace(/_/g, " ");
+        const compIcon = metricIconUrl(rawMetric);
+        const start = comp.startsAt ? new Date(comp.startsAt).toLocaleDateString() : "\u2014";
+        const end = comp.endsAt ? new Date(comp.endsAt).toLocaleDateString() : "\u2014";
+        const gained = pc.progress?.gained ?? 0;
+        const rank = pc.rank ?? 0;
+        return (
+          <a
+            key={comp.id}
+            href={`https://wiseoldman.net/competitions/${comp.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`block bg-bg-secondary rounded-lg px-4 py-3 border-l-2 transition-colors hover:bg-bg-tertiary ${
+              isActive ? "border-success" : "border-border/30 opacity-50"
+            }`}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <img src={compIcon ?? ""} alt="" className="w-4 h-4" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                  <span className="text-sm font-medium">{comp.title ?? "Untitled"}</span>
+                  {isActive && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-success/20 text-success">Active</span>
+                  )}
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-bg-tertiary text-text-secondary capitalize">
+                    {comp.type ?? "classic"}
+                  </span>
+                </div>
+                <div className="flex gap-3 mt-1 text-xs text-text-secondary">
+                  <span className="capitalize">{metric}</span>
+                  <span>{start} \u2013 {end}</span>
+                  {comp.group && <span className="text-accent">{comp.group.name}</span>}
+                </div>
+                {pc.teamName && (
+                  <div className="text-xs text-text-secondary mt-0.5">
+                    Team: <span className="text-text-primary">{pc.teamName}</span>
+                  </div>
+                )}
+              </div>
+              <div className="text-right shrink-0">
+                {gained !== 0 && (
+                  <div className={`text-sm font-medium tabular-nums ${gained > 0 ? "text-success" : ""}`}>
+                    {gained > 0 ? `+${gained.toLocaleString()}` : gained.toLocaleString()}
+                  </div>
+                )}
+                {rank > 0 && (
+                  <div className="text-[10px] text-text-secondary">Rank #{rank.toLocaleString()}</div>
+                )}
+                <div className="text-[10px] text-text-secondary/50">
+                  {comp.participantCount ?? 0} participants
+                </div>
+              </div>
+            </div>
+          </a>
+        );
+      })}
+    </div>
+  );
+}
+
+const CONTENT_TABS = ["gains", "achievements", "records", "competitions"] as const;
+
 export default function XpTracker({ rsn }: Props) {
   const { navigate } = useNavigation();
   const [period, setPeriod] = useState<GainsPeriod>("week");
@@ -61,17 +206,21 @@ export default function XpTracker({ rsn }: Props) {
   const [records, setRecords] = useState<WomRecord[]>([]);
   const [nameChanges, setNameChanges] = useState<WomNameChange[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [tab, setTab] = useState<"gains" | "achievements" | "records" | "competitions">(
     "gains"
   );
   const [competitions, setCompetitions] = useState<WomPlayerCompetition[]>([]);
   const [competitionsLoaded, setCompetitionsLoaded] = useState(false);
+  const [fetchKey, setFetchKey] = useState(0);
 
   useEffect(() => {
     if (!rsn) return;
     let cancelled = false;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
+    setError(null);
 
     Promise.all([
       fetchWomGains(rsn, period),
@@ -86,32 +235,83 @@ export default function XpTracker({ rsn }: Props) {
         setRecords(r);
         setNameChanges(n);
         setLoading(false);
+        setLastUpdated(new Date());
       })
       .catch(() => {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+          setError("Failed to load tracker data. The Wise Old Man API may be down.");
+        }
       });
 
     return () => {
       cancelled = true;
     };
-  }, [rsn, period]);
+  }, [rsn, period, fetchKey]);
 
   // Lazy-load competitions when tab selected
   useEffect(() => {
     if (tab !== "competitions" || !rsn || competitionsLoaded) return;
     let cancelled = false;
-    fetchWomCompetitions(rsn).then((data) => {
-      if (cancelled) return;
-      setCompetitions(data);
-      setCompetitionsLoaded(true);
-    });
+    fetchWomCompetitions(rsn)
+      .then((data) => {
+        if (cancelled) return;
+        setCompetitions(data ?? []);
+        setCompetitionsLoaded(true);
+      })
+      .catch(() => {
+        if (!cancelled) setCompetitionsLoaded(true);
+      });
     return () => { cancelled = true; };
   }, [tab, rsn, competitionsLoaded]);
+
+  const handleRefresh = useCallback(() => {
+    setFetchKey((k) => k + 1);
+    setCompetitionsLoaded(false);
+  }, []);
+
+  const header = (
+    <div className="space-y-1 mb-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold tracking-tight">XP Tracker</h2>
+          <p className="max-w-2xl text-sm text-text-secondary">
+            Track XP gains, boss kills, achievements, and records via Wise Old Man. Data refreshes every 5 minutes.
+          </p>
+        </div>
+        <div className="flex items-center gap-3 shrink-0">
+          {lastUpdated && (
+            <span className="text-xs text-text-secondary">
+              Updated {timeAgo(Math.floor(lastUpdated.getTime() / 1000))}
+            </span>
+          )}
+          <button onClick={handleRefresh} className="text-xs text-accent hover:underline">Refresh</button>
+        </div>
+      </div>
+      {nameChanges.length > 0 && (
+        <span className="text-[10px] text-text-secondary/50" title={nameChanges.map(n => `${n.oldName} \u2192 ${n.newName}`).join(", ")}>
+          Previously: {nameChanges.map(n => n.oldName).join(" \u2192 ")}
+        </span>
+      )}
+    </div>
+  );
 
   if (!rsn) {
     return (
       <div className="text-text-secondary text-sm">
         Enter your RSN above to track XP gains.
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-3xl">
+        {header}
+        <div className="rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm">
+          <div className="font-medium text-danger">{error}</div>
+          <button onClick={() => { setError(null); handleRefresh(); }} className="mt-2 text-xs text-accent hover:underline">Retry</button>
+        </div>
       </div>
     );
   }
@@ -128,66 +328,52 @@ export default function XpTracker({ rsn }: Props) {
         .sort((a, b) => b[1].kills.gained - a[1].kills.gained)
     : [];
 
-  const formatBossName = (key: string) =>
-    key
-      .replace(/_/g, " ")
-      .replace(/\b\w/g, (c) => c.toUpperCase());
 
   return (
     <div className="max-w-3xl">
-      <div className="flex items-center gap-3 mb-4">
-        <h2 className="text-xl font-semibold">
-          XP Tracker{" "}
-          <span className="text-sm font-normal text-text-secondary">
-            via Wise Old Man
-          </span>
-        </h2>
-        {nameChanges.length > 0 && (
-          <span className="text-[10px] text-text-secondary/50" title={nameChanges.map(n => `${n.oldName} → ${n.newName}`).join(", ")}>
-            Previously: {nameChanges.map(n => n.oldName).join(" → ")}
-          </span>
-        )}
-      </div>
+      {header}
 
       <div className="flex gap-4 mb-4">
-        <div className="flex gap-1">
-          {(["gains", "achievements", "records", "competitions"] as const).map((t) => (
+        <div className="flex gap-1.5">
+          {CONTENT_TABS.map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
-              className={`px-3 py-1.5 rounded text-xs capitalize ${
+              aria-pressed={tab === t}
+              className={`relative rounded-xl border px-3.5 py-2 text-left transition ${
                 tab === t
-                  ? "bg-accent text-white"
-                  : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+                  ? "border-accent/50 bg-accent/10"
+                  : "border-border bg-bg-primary/50 text-text-secondary hover:bg-bg-primary/70"
               }`}
             >
-              {t}
+              {tab === t && <div className="absolute -bottom-px left-3 right-3 h-0.5 rounded-full bg-accent" />}
+              <div className={`text-xs font-semibold capitalize ${tab === t ? "text-accent" : ""}`}>{t}</div>
             </button>
           ))}
         </div>
 
         {tab === "gains" && (
-          <div className="flex gap-1">
+          <div className="flex gap-1.5">
             {PERIODS.map((p) => (
               <button
                 key={p.id}
                 onClick={() => setPeriod(p.id)}
-                className={`px-2 py-1 rounded text-xs ${
+                aria-pressed={period === p.id}
+                className={`relative rounded-xl border px-3.5 py-2 text-left transition ${
                   period === p.id
-                    ? "bg-success/20 text-success"
-                    : "bg-bg-secondary text-text-secondary"
+                    ? "border-accent/50 bg-accent/10"
+                    : "border-border bg-bg-primary/50 text-text-secondary hover:bg-bg-primary/70"
                 }`}
               >
-                {p.label}
+                {period === p.id && <div className="absolute -bottom-px left-3 right-3 h-0.5 rounded-full bg-accent" />}
+                <div className={`text-xs font-semibold ${period === p.id ? "text-accent" : ""}`}>{p.label}</div>
               </button>
             ))}
           </div>
         )}
       </div>
 
-      {loading && (
-        <p className="text-sm text-text-secondary">Loading data...</p>
-      )}
+      {loading && <TableSkeleton rows={6} cols={3} />}
 
       {tab === "gains" && !loading && gains && (
         <div className="space-y-4">
@@ -196,13 +382,13 @@ export default function XpTracker({ rsn }: Props) {
               <h3 className="text-sm font-medium text-text-secondary uppercase tracking-wider mb-2">
                 Skill XP Gains
               </h3>
-              <div className="bg-bg-secondary rounded-lg overflow-hidden">
+              <div className="rounded-xl border border-border/60 overflow-hidden">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border text-text-secondary text-xs">
-                      <th className="text-left px-4 py-2">Skill</th>
-                      <th className="text-right px-4 py-2">XP Gained</th>
-                      <th className="text-right px-4 py-2">Rank Change</th>
+                      <th scope="col" className="text-left px-4 py-2">Skill</th>
+                      <th scope="col" className="text-right px-4 py-2">XP Gained</th>
+                      <th scope="col" className="text-right px-4 py-2">Rank Change</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -214,20 +400,23 @@ export default function XpTracker({ rsn }: Props) {
                         <td className="px-4 py-1.5 font-medium">
                           <button
                             onClick={() => navigate("skill-calc", { skill: SKILL_NAMES[key] ?? key })}
-                            className="hover:text-accent transition-colors"
+                            className="flex items-center gap-2 hover:text-accent transition-colors"
                           >
+                            <img src={skillIconUrl(SKILL_NAMES[key] ?? key)} alt="" className="w-4 h-4" onError={(e) => { e.currentTarget.style.display = "none"; }} />
                             {SKILL_NAMES[key] ?? key}
                           </button>
                         </td>
-                        <td className="px-4 py-1.5 text-right text-success">
+                        <td className="px-4 py-1.5 text-right text-success tabular-nums">
                           +{data.experience.gained.toLocaleString()}
                         </td>
-                        <td className="px-4 py-1.5 text-right text-text-secondary">
+                        <td className={`px-4 py-1.5 text-right tabular-nums ${
+                          data.rank.gained < 0 ? "text-success" : data.rank.gained > 0 ? "text-danger" : "text-text-secondary"
+                        }`}>
                           {data.rank.gained > 0
                             ? `+${data.rank.gained.toLocaleString()}`
                             : data.rank.gained < 0
                               ? data.rank.gained.toLocaleString()
-                              : "—"}
+                              : "\u2014"}
                         </td>
                       </tr>
                     ))}
@@ -242,12 +431,12 @@ export default function XpTracker({ rsn }: Props) {
               <h3 className="text-sm font-medium text-text-secondary uppercase tracking-wider mb-2">
                 Boss Kills
               </h3>
-              <div className="bg-bg-secondary rounded-lg overflow-hidden">
+              <div className="rounded-xl border border-border/60 overflow-hidden">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border text-text-secondary text-xs">
-                      <th className="text-left px-4 py-2">Boss</th>
-                      <th className="text-right px-4 py-2">Kills</th>
+                      <th scope="col" className="text-left px-4 py-2">Boss</th>
+                      <th scope="col" className="text-right px-4 py-2">Kills</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -257,9 +446,15 @@ export default function XpTracker({ rsn }: Props) {
                         className="border-b border-border/50 even:bg-bg-primary/30 hover:bg-bg-tertiary"
                       >
                         <td className="px-4 py-1.5 font-medium">
-                          {formatBossName(key)}
+                          <button
+                            onClick={() => navigate("bosses", { boss: formatBossName(key) })}
+                            className="flex items-center gap-2 hover:text-accent transition-colors"
+                          >
+                            <img src={bossIconSmall(formatBossName(key))} alt="" className="w-4 h-4" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                            {formatBossName(key)}
+                          </button>
                         </td>
-                        <td className="px-4 py-1.5 text-right text-success">
+                        <td className="px-4 py-1.5 text-right text-success tabular-nums">
                           +{data.kills.gained.toLocaleString()}
                         </td>
                       </tr>
@@ -271,21 +466,19 @@ export default function XpTracker({ rsn }: Props) {
           )}
 
           {skillGains.length === 0 && bossGains.length === 0 && (
-            <p className="text-sm text-text-secondary">
-              No gains recorded for this period.
-            </p>
+            <EmptyState title="No gains this period" description="Try a longer time period or update your profile on Wise Old Man." />
           )}
         </div>
       )}
 
       {tab === "achievements" && !loading && (
-        <div className="bg-bg-secondary rounded-lg overflow-hidden max-h-[500px] overflow-y-auto">
+        <div className="rounded-xl border border-border/60 overflow-hidden max-h-[500px] overflow-y-auto">
           <table className="w-full text-sm">
             <thead className="sticky top-0 bg-bg-secondary">
               <tr className="border-b border-border text-text-secondary text-xs">
-                <th className="text-left px-4 py-2">Achievement</th>
-                <th className="text-left px-4 py-2">Skill</th>
-                <th className="text-right px-4 py-2">Date</th>
+                <th scope="col" className="text-left px-4 py-2">Achievement</th>
+                <th scope="col" className="text-left px-4 py-2">Skill</th>
+                <th scope="col" className="text-right px-4 py-2">Date</th>
               </tr>
             </thead>
             <tbody>
@@ -295,8 +488,11 @@ export default function XpTracker({ rsn }: Props) {
                   className="border-b border-border/50 even:bg-bg-primary/30 hover:bg-bg-tertiary"
                 >
                   <td className="px-4 py-1.5 font-medium">{a.name}</td>
-                  <td className="px-4 py-1.5 text-text-secondary capitalize">
-                    {a.metric}
+                  <td className="px-4 py-1.5 text-text-secondary">
+                    <span className="flex items-center gap-2">
+                      <img src={metricIconUrl(a.metric) ?? ""} alt="" className="w-4 h-4" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                      {metricDisplayName(a.metric)}
+                    </span>
                   </td>
                   <td className="px-4 py-1.5 text-right text-text-secondary">
                     {new Date(a.createdAt).toLocaleDateString()}
@@ -308,113 +504,81 @@ export default function XpTracker({ rsn }: Props) {
         </div>
       )}
 
-      {tab === "records" && !loading && (
-        <div className="bg-bg-secondary rounded-lg overflow-hidden max-h-[500px] overflow-y-auto">
-          <table className="w-full text-sm">
-            <thead className="sticky top-0 bg-bg-secondary">
-              <tr className="border-b border-border text-text-secondary text-xs">
-                <th className="text-left px-4 py-2">Activity</th>
-                <th className="text-left px-4 py-2">Period</th>
-                <th className="text-right px-4 py-2">Record</th>
-              </tr>
-            </thead>
-            <tbody>
-              {records.slice(0, 50).map((r, i) => (
-                <tr
-                  key={i}
-                  className="border-b border-border/50 even:bg-bg-primary/30 hover:bg-bg-tertiary"
-                >
-                  <td className="px-4 py-1.5 font-medium capitalize">
-                    {r.metric.replace(/_/g, " ")}
-                  </td>
-                  <td className="px-4 py-1.5 text-text-secondary capitalize">
-                    {r.period}
-                  </td>
-                  <td className="px-4 py-1.5 text-right text-success">
-                    {r.value.toLocaleString()}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      {tab === "records" && !loading && (() => {
+        const PERIOD_ORDER = ["five_min", "day", "week", "month", "year"];
+        const PERIOD_LABELS: Record<string, string> = { five_min: "5 Min", day: "Day", week: "Week", month: "Month", year: "Year" };
+        // Group records by metric
+        const grouped = new Map<string, typeof records>();
+        for (const r of records) {
+          const group = grouped.get(r.metric) ?? [];
+          group.push(r);
+          grouped.set(r.metric, group);
+        }
+        // Sort groups: skills first (by SKILL_NAMES key order), then bosses
+        const sortedGroups = [...grouped.entries()].sort(([a], [b]) => {
+          const aSkill = a in SKILL_NAMES;
+          const bSkill = b in SKILL_NAMES;
+          if (aSkill && !bSkill) return -1;
+          if (!aSkill && bSkill) return 1;
+          return metricDisplayName(a).localeCompare(metricDisplayName(b));
+        });
+
+        function formatValue(v: number): string {
+          if (v >= 1_000_000) return `+${(v / 1_000_000).toFixed(2)}m`;
+          if (v >= 1_000) return `+${(v / 1_000).toFixed(v >= 10_000 ? 0 : 1)}k`;
+          return `+${v.toLocaleString()}`;
+        }
+
+        return (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {sortedGroups.map(([metric, recs]) => (
+              <div key={metric}>
+                <div className="flex items-center gap-2 mb-2">
+                  <img src={metricIconUrl(metric) ?? ""} alt="" className="w-5 h-5" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                  <span className="text-sm font-semibold">{metricDisplayName(metric)}</span>
+                </div>
+                <div className="space-y-1">
+                  {PERIOD_ORDER.map((period) => {
+                    const rec = recs.find((r) => r.period === period);
+                    return (
+                      <div
+                        key={period}
+                        className="flex items-center justify-between px-3 py-2 rounded-lg border border-border/30 bg-bg-secondary/40"
+                      >
+                        <span className="text-xs text-text-secondary">{PERIOD_LABELS[period] ?? period}</span>
+                        <div className="text-right">
+                          {rec && rec.value > 0 ? (
+                            <>
+                              <div className="text-sm font-semibold text-success tabular-nums">
+                                {formatValue(rec.value)}
+                              </div>
+                              <div className="text-[10px] text-text-secondary/50">
+                                {new Date(rec.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                              </div>
+                            </>
+                          ) : (
+                            <span className="text-xs text-text-secondary/30">N/A</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      })()}
 
       {tab === "competitions" && (
         <div>
-          {!competitionsLoaded && (
-            <p className="text-sm text-text-secondary">Loading competitions...</p>
-          )}
+          {!competitionsLoaded && <TableSkeleton rows={4} cols={3} />}
           {competitionsLoaded && competitions.length === 0 && (
-            <p className="text-sm text-text-secondary">No competitions found for this player.</p>
+            <EmptyState title="No competitions found" description="This player hasn't participated in any Wise Old Man competitions." />
           )}
-          {competitionsLoaded && competitions.length > 0 && (() => {
-            const now = new Date();
-            const active = competitions.filter((c) => new Date(c.competition.endsAt) > now);
-            const completed = competitions.filter((c) => new Date(c.competition.endsAt) <= now);
-            const sorted = [...active, ...completed].sort(
-              (a, b) => new Date(b.competition.startsAt).getTime() - new Date(a.competition.startsAt).getTime()
-            );
-            return (
-              <div className="space-y-2">
-                {sorted.map((pc) => {
-                  const isActive = new Date(pc.competition.endsAt) > now;
-                  const metric = pc.competition.metric.replace(/_/g, " ");
-                  const start = new Date(pc.competition.startsAt).toLocaleDateString();
-                  const end = new Date(pc.competition.endsAt).toLocaleDateString();
-                  return (
-                    <div
-                      key={pc.competition.id}
-                      className={`bg-bg-secondary rounded-lg px-4 py-3 border-l-2 ${
-                        isActive ? "border-success" : "border-border/30"
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-sm font-medium">{pc.competition.title}</span>
-                            {isActive && (
-                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-success/20 text-success">
-                                Active
-                              </span>
-                            )}
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-bg-tertiary text-text-secondary capitalize">
-                              {pc.competition.type}
-                            </span>
-                          </div>
-                          <div className="flex gap-3 mt-1 text-xs text-text-secondary">
-                            <span className="capitalize">{metric}</span>
-                            <span>{start} – {end}</span>
-                            {pc.competition.group && (
-                              <span className="text-accent">{pc.competition.group.name}</span>
-                            )}
-                          </div>
-                          {pc.teamName && (
-                            <div className="text-xs text-text-secondary mt-0.5">
-                              Team: <span className="text-text-primary">{pc.teamName}</span>
-                            </div>
-                          )}
-                        </div>
-                        <div className="text-right shrink-0">
-                          <div className="text-sm font-medium tabular-nums">
-                            {pc.progress.gained > 0
-                              ? `+${pc.progress.gained.toLocaleString()}`
-                              : pc.progress.gained.toLocaleString()}
-                          </div>
-                          <div className="text-[10px] text-text-secondary">
-                            Rank #{pc.rank.toLocaleString()}
-                          </div>
-                          <div className="text-[10px] text-text-secondary/50">
-                            {pc.competition.participantCount} participants
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })()}
+          {competitionsLoaded && competitions.length > 0 && (
+            <CompetitionsView competitions={competitions} />
+          )}
         </div>
       )}
     </div>

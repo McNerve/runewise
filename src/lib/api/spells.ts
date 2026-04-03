@@ -1,7 +1,7 @@
 import { bucketQueryAll } from "./bucket";
 import { getCached, setCache } from "./cache";
 
-const CACHE_KEY = "wiki-spells:v1";
+const CACHE_KEY = "wiki-spells:v4";
 const CACHE_TTL = 24 * 60 * 60 * 1000;
 
 const SPELL_FIELDS = [
@@ -43,7 +43,8 @@ export interface WikiSpell {
   damage: number | null;
   members: boolean;
   image: string | null;
-  runes: string | null;
+  runes: unknown;
+  cost: string | null;
   type: string | null;
 }
 
@@ -68,6 +69,8 @@ function toWikiSpell(raw: RawBucketSpell): WikiSpell | null {
 
   const level = json?.level ?? 0;
   if (level === 0) return null;
+  if (raw.page_name.includes(":")) return null;
+  if (raw.page_name.toLowerCase().includes("(beta)")) return null;
 
   return {
     name: raw.page_name,
@@ -77,7 +80,8 @@ function toWikiSpell(raw: RawBucketSpell): WikiSpell | null {
     damage: json?.damage ?? null,
     members: raw.is_members_only === "Yes",
     image: raw.image || null,
-    runes: raw.uses_material || json?.cost || null,
+    runes: raw.uses_material || null,
+    cost: json?.cost || null,
     type: json?.type || null,
   };
 }
@@ -95,7 +99,7 @@ export async function fetchAllSpells(): Promise<WikiSpell[]> {
           .map(toWikiSpell)
           .filter((s): s is WikiSpell => s !== null)
           .sort((a, b) => a.level - b.level);
-        setCache(CACHE_KEY, spells, { persist: true });
+        if (spells.length > 0) setCache(CACHE_KEY, spells, { persist: true });
         spellsPromise = null;
         return spells;
       })

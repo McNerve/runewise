@@ -28,10 +28,10 @@ function StatCompare({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border text-xs text-text-secondary">
-              <th className="text-left px-4 py-2">Skill</th>
-              <th className="text-right px-3 py-2">{leftRsn}</th>
-              <th className="text-center px-2 py-2">Diff</th>
-              <th className="text-right px-3 py-2">{rightRsn}</th>
+              <th scope="col" className="text-left px-4 py-2">Skill</th>
+              <th scope="col" className="text-right px-3 py-2">{leftRsn}</th>
+              <th scope="col" className="text-center px-2 py-2">Diff</th>
+              <th scope="col" className="text-right px-3 py-2">{rightRsn}</th>
             </tr>
           </thead>
           <tbody>
@@ -94,8 +94,9 @@ function StatCompare({
           { rsn: leftRsn, data: left },
           { rsn: rightRsn, data: right },
         ].map(({ rsn, data }) => {
-          const totalXp = data.skills.reduce((s, sk) => s + sk.xp, 0);
-          const totalLevel = data.skills.reduce((s, sk) => s + sk.level, 0);
+          const overall = data.skills.find((sk) => sk.name === "Overall");
+          const totalXp = overall?.xp ?? data.skills.filter((sk) => sk.name !== "Overall").reduce((s, sk) => s + sk.xp, 0);
+          const totalLevel = overall?.level ?? data.skills.filter((sk) => sk.name !== "Overall").reduce((s, sk) => s + sk.level, 0);
           return (
             <div
               key={rsn}
@@ -237,6 +238,7 @@ export default function PlayerLookup() {
               <button
                 key={m.id}
                 onClick={() => setMode(m.id)}
+                aria-pressed={mode === m.id}
                 className={`px-4 py-1.5 rounded text-sm font-medium transition-colors ${
                   mode === m.id
                     ? "bg-accent text-white"
@@ -254,6 +256,7 @@ export default function PlayerLookup() {
             <form
               onSubmit={(event) => {
                 event.preventDefault();
+                (document.activeElement as HTMLElement)?.blur();
                 void handleLookup(query);
               }}
               className="mt-4 flex flex-col gap-3 md:flex-row"
@@ -263,6 +266,7 @@ export default function PlayerLookup() {
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Search any player..."
+                aria-label="Search player by RSN"
                 className="flex-1 rounded-xl border border-border bg-bg-primary px-4 py-3 text-sm outline-none transition focus:border-accent"
               />
               <button
@@ -295,13 +299,28 @@ export default function PlayerLookup() {
             ) : null}
 
             {loading && lookupRsn ? (
-              <div className="py-8 text-sm text-text-secondary">
-                Loading profile for {lookupRsn}...
+              <div className="py-8 space-y-3">
+                <div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4" />
+                <div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-1/2" />
+                <div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-2/3" />
               </div>
             ) : null}
 
             {data && lookupRsn ? (
-              <Overview hiscores={data} rsn={lookupRsn} />
+              <>
+                {localStorage.getItem("runewise_rsn") !== lookupRsn && (
+                  <div className="mt-2 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => { localStorage.setItem("runewise_rsn", lookupRsn); window.location.reload(); }}
+                      className="text-[11px] text-text-secondary/50 hover:text-accent transition-colors"
+                    >
+                      Set as saved RSN
+                    </button>
+                  </div>
+                )}
+                <Overview hiscores={data} rsn={lookupRsn} />
+              </>
             ) : null}
           </>
         ) : (
@@ -318,6 +337,7 @@ export default function PlayerLookup() {
                 value={leftQuery}
                 onChange={(e) => setLeftQuery(e.target.value)}
                 placeholder="Player 1..."
+                aria-label="Search player 1 by RSN"
                 className="flex-1 rounded-xl border border-border bg-bg-primary px-4 py-3 text-sm outline-none transition focus:border-accent"
               />
               <span className="self-center text-xs text-text-secondary/50">
@@ -328,6 +348,7 @@ export default function PlayerLookup() {
                 value={rightQuery}
                 onChange={(e) => setRightQuery(e.target.value)}
                 placeholder="Player 2..."
+                aria-label="Search player 2 by RSN"
                 className="flex-1 rounded-xl border border-border bg-bg-primary px-4 py-3 text-sm outline-none transition focus:border-accent"
               />
               <button

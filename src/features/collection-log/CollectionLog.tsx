@@ -1,26 +1,15 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { COLLECTION_CATEGORIES, getTotalSlots } from "./data/slots";
-import { loadJSON, saveJSON } from "../../lib/localStorage";
 import { itemIcon, NAV_ICONS } from "../../lib/sprites";
 import {
   fetchTempleCollectionLog,
   fetchTemplePlayerInfo,
+  fetchTempleClogItemNames,
+  fetchTempleClogSchema,
   type TempleCollectionLog,
+  type TempleClogSchema,
 } from "../../lib/api/temple";
-import EmptyState from "../../components/EmptyState";
-
-const STORAGE_KEY = "runewise_collection_log";
-
-type Mode = "temple" | "manual";
-
-function loadObtained(): Set<string> {
-  const data = loadJSON<string[]>(STORAGE_KEY, []);
-  return new Set(data);
-}
-
-function saveObtained(obtained: Set<string>): void {
-  saveJSON(STORAGE_KEY, [...obtained]);
-}
+import { clearCacheKey } from "../../lib/api/cache";
+import { useNavigation } from "../../lib/NavigationContext";
 
 function ProgressRing({
   obtained,
@@ -63,205 +52,384 @@ function ProgressRing({
   );
 }
 
-function TempleView({ data }: { data: TempleCollectionLog }) {
-  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
-  const sortedCategories = useMemo(() => {
-    return Object.entries(data.categories).sort(([a], [b]) =>
-      a.localeCompare(b)
-    );
-  }, [data.categories]);
+// Temple title-cases names ("Smashed Mirror") but wiki uses game casing ("Smashed_mirror.png")
+// Try original first, fall back to wiki-convention casing
+function itemIconWithFallback(name: string): { primary: string; fallback: string } {
+  const primary = itemIcon(name);
+  const wikiCased = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+  const fallback = itemIcon(wikiCased);
+  return { primary, fallback };
+}
 
+function ClogItemImage({ name, className }: { name: string; className?: string }) {
+  const { primary, fallback } = itemIconWithFallback(name);
   return (
-    <>
-      <div className="flex items-center gap-4 mb-6">
-        <ProgressRing obtained={data.finished} total={data.total} size={48} />
-        <div>
-          <div className="text-lg font-bold tabular-nums">
-            {data.finished} / {data.total}
-          </div>
-          <div className="text-xs text-text-secondary">
-            {((data.finished / data.total) * 100).toFixed(1)}% complete
-          </div>
-        </div>
-        <span className="ml-auto text-[10px] text-text-secondary/50 bg-bg-secondary px-2 py-0.5 rounded">
-          via TempleOSRS
-        </span>
-      </div>
-
-      <div className="space-y-2">
-        {sortedCategories.map(([catName, items]) => {
-          const catObtained = items.filter((i) => i.count > 0).length;
-          const isExpanded = expandedCategory === catName;
-          const isComplete = catObtained === items.length;
-
-          return (
-            <div key={catName}>
-              <button
-                onClick={() =>
-                  setExpandedCategory(isExpanded ? null : catName)
-                }
-                className="w-full flex items-center gap-3 py-2 px-2 rounded hover:bg-bg-secondary/50 transition-colors"
-              >
-                <ProgressRing obtained={catObtained} total={items.length} />
-                <span
-                  className={`text-sm flex-1 text-left ${isComplete ? "text-success" : ""}`}
-                >
-                  {catName}
-                </span>
-                <span className="text-xs text-text-secondary tabular-nums">
-                  {catObtained}/{items.length}
-                </span>
-                <span className="text-xs text-text-secondary/40">
-                  {isExpanded ? "▾" : "▸"}
-                </span>
-              </button>
-
-              {isExpanded && (
-                <div className="ml-12 mb-3 grid grid-cols-2 gap-1">
-                  {[...items]
-                    .sort((a, b) => {
-                      if (a.count > 0 !== b.count > 0)
-                        return a.count > 0 ? -1 : 1;
-                      return (a.name ?? "").localeCompare(b.name ?? "");
-                    })
-                    .map((item) => {
-                      const isObtained = item.count > 0;
-                      const name = item.name ?? `Item ${item.id}`;
-                      return (
-                        <div
-                          key={item.id}
-                          className={`flex items-center gap-2 px-2 py-1.5 rounded text-sm ${
-                            isObtained
-                              ? "bg-success/8 text-success"
-                              : "text-text-secondary"
-                          }`}
-                        >
-                          <img
-                            src={itemIcon(name)}
-                            alt=""
-                            className={`w-5 h-5 shrink-0 ${isObtained ? "" : "opacity-30"}`}
-                            onError={(e) => {
-                              e.currentTarget.style.display = "none";
-                            }}
-                          />
-                          <span className="truncate">{name}</span>
-                          {isObtained && item.count > 1 && (
-                            <span className="ml-auto text-[10px] text-success/60 tabular-nums shrink-0">
-                              ×{item.count}
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </>
+    <img
+      src={primary}
+      alt={name}
+      className={className}
+      onError={(e) => {
+        const el = e.currentTarget;
+        if (el.src !== fallback) {
+          el.src = fallback;
+        } else {
+          el.style.display = "none";
+          const next = el.nextElementSibling;
+          if (next instanceof HTMLElement) next.style.display = "flex";
+        }
+      }}
+    />
   );
 }
 
-function ManualView() {
-  const [obtained, setObtained] = useState<Set<string>>(loadObtained);
-  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+type ItemFilter = "all" | "obtained" | "missing";
 
-  const totalSlots = useMemo(() => getTotalSlots(), []);
-  const totalObtained = obtained.size;
+function TempleView({ data }: { data: TempleCollectionLog }) {
+  const { navigate } = useNavigation();
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [itemFilter, setItemFilter] = useState<ItemFilter>("all");
+  const [activeTab, setActiveTab] = useState<string>("bosses");
+  const [itemNames, setItemNames] = useState<Map<number, string>>(new Map());
+  const [schema, setSchema] = useState<TempleClogSchema | null>(null);
 
-  const toggle = useCallback((slot: string) => {
-    setObtained((prev) => {
-      const next = new Set(prev);
-      if (next.has(slot)) next.delete(slot);
-      else next.add(slot);
-      saveObtained(next);
-      return next;
-    });
+  // Build a set of obtained item IDs with counts from player data
+  const obtainedMap = useMemo(() => {
+    const map = new Map<number, { count: number; date?: string }>();
+    for (const items of Object.values(data.categories)) {
+      for (const item of items) {
+        if (item.count > 0) {
+          map.set(item.id, { count: item.count, date: item.obtained_at });
+        }
+      }
+    }
+    return map;
+  }, [data.categories]);
+
+  useEffect(() => {
+    Promise.all([fetchTempleClogItemNames(), fetchTempleClogSchema()])
+      .then(([names, s]) => {
+        setItemNames(names);
+        setSchema(s);
+      })
+      .catch(() => {});
   }, []);
+
+  const resolveName = useCallback(
+    (item: { id: number; name?: string }) =>
+      item.name ?? itemNames.get(item.id) ?? `Item ${item.id}`,
+    [itemNames]
+  );
+
+  // Schema-based categories: shows ALL items, not just obtained
+  const schemaCategories = useMemo(() => {
+    if (!schema) return [];
+    const tabCats = schema.tabs[activeTab] ?? {};
+    return Object.entries(tabCats)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([slug, itemIds]) => {
+        const catName = slug.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+        const obtained = itemIds.filter((id) => obtainedMap.has(id)).length;
+        return { slug, catName, itemIds, obtained, total: itemIds.length };
+      });
+  }, [schema, activeTab, obtainedMap]);
+
+  const tabStats = useMemo(() => {
+    if (!schema) return {};
+    const stats: Record<string, { obtained: number; total: number }> = {};
+    for (const [tab, cats] of Object.entries(schema.tabs)) {
+      const allIds = Object.values(cats).flat();
+      stats[tab] = {
+        obtained: allIds.filter((id) => obtainedMap.has(id)).length,
+        total: allIds.length,
+      };
+    }
+    return stats;
+  }, [schema, obtainedMap]);
+
+  const completedCats = useMemo(() => {
+    if (!schema) return 0;
+    let count = 0;
+    for (const cats of Object.values(schema.tabs)) {
+      for (const itemIds of Object.values(cats)) {
+        if (itemIds.length > 0 && itemIds.every((id) => obtainedMap.has(id))) count++;
+      }
+    }
+    return count;
+  }, [schema, obtainedMap]);
+
+  const totalCats = useMemo(() => {
+    if (!schema) return 0;
+    return Object.values(schema.tabs).reduce((s, cats) => s + Object.keys(cats).length, 0);
+  }, [schema]);
+
+  // Recent items — last 6 obtained sorted by date
+  const recentItems = useMemo(() => {
+    const all: { id: number; name?: string; count: number; obtained_at?: string; category: string }[] = [];
+    for (const [catName, items] of Object.entries(data.categories)) {
+      for (const item of items) {
+        if (item.count > 0 && item.obtained_at) {
+          all.push({ ...item, category: catName });
+        }
+      }
+    }
+    return all
+      .sort((a, b) => (b.obtained_at ?? "").localeCompare(a.obtained_at ?? ""))
+      .slice(0, 8);
+  }, [data.categories]);
+
+  // Selected category — full items from schema
+  const activeSchemaCat = useMemo(
+    () => schemaCategories.find((c) => c.slug === selectedCategory) ?? null,
+    [schemaCategories, selectedCategory]
+  );
+
+  const activeCatItems = useMemo(() => {
+    if (!activeSchemaCat) return [];
+    let items = activeSchemaCat.itemIds.map((id) => {
+      const obtained = obtainedMap.get(id);
+      return {
+        id,
+        name: itemNames.get(id) ?? `Item ${id}`,
+        count: obtained?.count ?? 0,
+        obtained_at: obtained?.date,
+      };
+    });
+    if (itemFilter === "obtained") items = items.filter((i) => i.count > 0);
+    if (itemFilter === "missing") items = items.filter((i) => i.count === 0);
+    return items;
+  }, [activeSchemaCat, obtainedMap, itemNames, itemFilter]);
 
   return (
     <>
-      {totalObtained === 0 ? (
-        <EmptyState
-          icon={NAV_ICONS["collection-log"]}
-          title="No items collected yet"
-          description="Expand a category below and click items to start tracking."
-        />
-      ) : (
-        <div className="flex items-center gap-4 mb-6">
-          <ProgressRing obtained={totalObtained} total={totalSlots} size={48} />
+      {/* ── Summary stats ── */}
+      <div className="grid grid-cols-3 gap-px rounded-xl overflow-hidden border border-border/40 mb-6">
+        <div className="bg-bg-secondary/50 px-5 py-4 flex items-center gap-3">
+          <img src={NAV_ICONS["collection-log"]} alt="" className="w-8 h-8 shrink-0 opacity-60" onError={(e) => { e.currentTarget.style.display = "none"; }} />
           <div>
-            <div className="text-lg font-bold tabular-nums">
-              {totalObtained} / {totalSlots}
-            </div>
-            <div className="text-xs text-text-secondary">
-              {((totalObtained / totalSlots) * 100).toFixed(1)}% complete
-            </div>
+            <div className="text-[10px] uppercase tracking-wider text-text-secondary/50">Collections</div>
+            <div className="text-lg font-bold tabular-nums">{data.finished} / {data.total}</div>
+            <div className="text-[10px] text-text-secondary/40">{((data.finished / data.total) * 100).toFixed(1)}%</div>
+          </div>
+        </div>
+        <div className="bg-bg-secondary/50 px-5 py-4 flex items-center gap-3">
+          <ProgressRing obtained={completedCats} total={totalCats} size={32} />
+          <div>
+            <div className="text-[10px] uppercase tracking-wider text-text-secondary/50">Categories</div>
+            <div className="text-lg font-bold tabular-nums">{completedCats} / {totalCats}</div>
+            <div className="text-[10px] text-text-secondary/40">completed</div>
+          </div>
+        </div>
+        <div className="bg-bg-secondary/50 px-5 py-4 flex items-center gap-3 justify-center">
+          <div className="text-center">
+            <div className="text-[10px] uppercase tracking-wider text-text-secondary/50">Source</div>
+            <div className="text-sm font-medium mt-1 text-accent">TempleOSRS</div>
+            <div className="text-[10px] text-text-secondary/40">live sync</div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Recent items ── */}
+      {recentItems.length > 0 && (
+        <div className="mb-6">
+          <div className="text-[10px] uppercase tracking-wider text-text-secondary/50 mb-2">Recently Obtained</div>
+          <div className="flex gap-2 overflow-x-auto pb-2">
+            {recentItems.map((item) => {
+              const name = resolveName(item);
+              const date = item.obtained_at ? new Date(item.obtained_at + " UTC") : null;
+              return (
+                <div
+                  key={`recent-${item.id}-${item.obtained_at}`}
+                  className="flex flex-col items-center gap-1.5 min-w-[110px] max-w-[110px] p-2.5 rounded-lg bg-bg-secondary/30 hover:bg-bg-secondary/50 transition-colors cursor-pointer"
+                  onClick={() => navigate("wiki", { query: name })}
+                >
+                  <div className="relative">
+                    <div className="w-14 h-14 rounded-xl bg-bg-tertiary/40 border border-border/30 flex items-center justify-center">
+                      <ClogItemImage name={name} className="w-10 h-10 object-contain" />
+                      <span className="hidden w-10 h-10 items-center justify-center text-sm text-text-secondary/30">
+                        {name[0]}
+                      </span>
+                    </div>
+                    {item.count > 1 && (
+                      <span className="absolute -top-1.5 -right-1.5 bg-accent text-white text-[10px] font-bold rounded-full px-1.5 min-w-[18px] text-center leading-[18px] shadow-sm shadow-black/30">
+                        {item.count}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-[10px] text-text-primary text-center leading-tight w-full line-clamp-2">
+                    {name}
+                  </span>
+                  {date && (
+                    <span className="text-[9px] text-text-secondary/40">
+                      {date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
 
-      <div className="space-y-2">
-        {COLLECTION_CATEGORIES.map((cat) => {
-          const catObtained = cat.slots.filter((s) => obtained.has(s)).length;
-          const isExpanded = expandedCategory === cat.name;
-          const isComplete = catObtained === cat.slots.length;
-
+      {/* ── Tab bar ── */}
+      <div className="flex gap-1 mb-4 overflow-x-auto">
+        {Object.keys(schema?.tabs ?? {}).map((tab) => {
+          const stats = tabStats[tab];
+          const isActive = activeTab === tab;
           return (
-            <div key={cat.name}>
-              <button
-                onClick={() =>
-                  setExpandedCategory(isExpanded ? null : cat.name)
-                }
-                className="w-full flex items-center gap-3 py-2 px-2 rounded hover:bg-bg-secondary/50 transition-colors"
-              >
-                <ProgressRing obtained={catObtained} total={cat.slots.length} />
-                <span
-                  className={`text-sm flex-1 text-left ${isComplete ? "text-success" : ""}`}
-                >
-                  {cat.name}
+            <button
+              key={tab}
+              onClick={() => { setActiveTab(tab); setSelectedCategory(null); }}
+              aria-pressed={isActive}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
+                isActive
+                  ? "bg-accent text-white"
+                  : "text-text-secondary hover:bg-bg-secondary/50"
+              }`}
+            >
+              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              {stats && (
+                <span className={`tabular-nums ${isActive ? "text-white/70" : "text-text-secondary/40"}`}>
+                  {stats.obtained}/{stats.total}
                 </span>
-                <span className="text-xs text-text-secondary tabular-nums">
-                  {catObtained}/{cat.slots.length}
-                </span>
-                <span className="text-xs text-text-secondary/40">
-                  {isExpanded ? "▾" : "▸"}
-                </span>
-              </button>
-
-              {isExpanded && (
-                <div className="ml-12 mb-3 grid grid-cols-2 gap-1">
-                  {cat.slots.map((slot) => {
-                    const isObtained = obtained.has(slot);
-                    return (
-                      <button
-                        key={slot}
-                        onClick={() => toggle(slot)}
-                        className={`flex items-center gap-2 px-2 py-1.5 rounded text-left text-sm transition-colors ${
-                          isObtained
-                            ? "bg-success/8 text-success"
-                            : "hover:bg-bg-secondary/50 text-text-secondary"
-                        }`}
-                      >
-                        <img
-                          src={itemIcon(slot)}
-                          alt=""
-                          className={`w-5 h-5 shrink-0 ${isObtained ? "" : "opacity-30"}`}
-                          onError={(e) => {
-                            e.currentTarget.style.display = "none";
-                          }}
-                        />
-                        <span className="truncate">{slot}</span>
-                      </button>
-                    );
-                  })}
-                </div>
               )}
-            </div>
+            </button>
           );
         })}
+      </div>
+
+      {/* ── Two-column: categories + items ── */}
+      <div className="grid gap-5 xl:grid-cols-[240px_minmax(0,1fr)]">
+        {/* Category sidebar */}
+        <div>
+          <div className="text-[10px] uppercase tracking-wider text-text-secondary/50 mb-2 px-1">
+            {activeTab.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+          </div>
+          <div className="space-y-0.5 max-h-[60vh] overflow-y-auto pr-1">
+            {schemaCategories.map((cat) => {
+              const isComplete = cat.obtained === cat.total && cat.total > 0;
+              const isActive = selectedCategory === cat.slug;
+              const pct = cat.total > 0 ? (cat.obtained / cat.total) * 100 : 0;
+
+              return (
+                <button
+                  key={cat.slug}
+                  onClick={() => { setSelectedCategory(cat.slug); setItemFilter("all"); }}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-colors ${
+                    isActive
+                      ? "bg-accent/10 border border-accent/25"
+                      : "hover:bg-bg-secondary/50 border border-transparent"
+                  }`}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className={`text-xs font-medium truncate ${isComplete ? "text-success" : "text-text-primary"}`}>
+                      {cat.catName}
+                    </div>
+                    <div className="mt-1 h-0.5 w-full rounded-full bg-bg-tertiary overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${isComplete ? "bg-success" : "bg-accent/60"}`}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  </div>
+                  <span className="text-[10px] text-text-secondary/50 tabular-nums shrink-0">
+                    {cat.obtained}/{cat.total}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Items panel */}
+        <div>
+          {!selectedCategory || !activeSchemaCat ? (
+            <div className="py-12 text-center text-sm text-text-secondary">
+              Select a category to view items
+            </div>
+          ) : (
+            <>
+              {/* Category header */}
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <div>
+                  <h3 className={`text-base font-semibold ${activeSchemaCat.obtained === activeSchemaCat.total ? "text-success" : ""}`}>
+                    {activeSchemaCat.catName}
+                  </h3>
+                  <div className="text-xs text-text-secondary mt-0.5 tabular-nums">
+                    {activeSchemaCat.obtained} / {activeSchemaCat.total} items
+                  </div>
+                </div>
+                <div className="flex gap-1">
+                  {(["all", "obtained", "missing"] as const).map((f) => (
+                    <button
+                      key={f}
+                      onClick={() => setItemFilter(f)}
+                      aria-pressed={itemFilter === f}
+                      className={`px-2.5 py-1 rounded text-[11px] font-medium transition-colors ${
+                        itemFilter === f
+                          ? "bg-accent text-white"
+                          : "text-text-secondary hover:text-text-primary"
+                      }`}
+                    >
+                      {f === "all" ? "All" : f === "obtained" ? "Obtained" : "Missing"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Items icon grid */}
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
+                {activeCatItems.map((item) => {
+                  const isObtained = item.count > 0;
+                  const name = resolveName(item);
+                  return (
+                    <div
+                      key={item.id}
+                      onClick={() => navigate("wiki", { query: name })}
+                      className={`group flex flex-col items-center gap-1 p-2 rounded-lg transition-all cursor-pointer ${
+                        isObtained
+                          ? "bg-success/6 hover:bg-success/12 hover:scale-105"
+                          : "opacity-35 hover:opacity-80 hover:scale-105"
+                      }`}
+                      title={`${name}${isObtained ? ` (×${item.count})` : " — not obtained"}`}
+                    >
+                      <div className="relative">
+                        <div className={`w-11 h-11 rounded-lg border flex items-center justify-center transition-all ${
+                          isObtained
+                            ? "bg-bg-tertiary/40 border-success/20 group-hover:border-success/50 group-hover:bg-bg-tertiary/70"
+                            : "bg-bg-tertiary/15 border-border/15 group-hover:border-border/40 group-hover:bg-bg-tertiary/30"
+                        }`}>
+                          <ClogItemImage
+                            name={name}
+                            className={`w-8 h-8 object-contain transition-all ${isObtained ? "group-hover:scale-110" : "grayscale group-hover:grayscale-0"}`}
+                          />
+                        </div>
+                        {isObtained && item.count > 1 && (
+                          <span className="absolute -top-1.5 -right-2 bg-accent text-white text-[10px] font-bold rounded-full px-1.5 min-w-[18px] text-center leading-[18px] shadow-sm shadow-black/30">
+                            {item.count}
+                          </span>
+                        )}
+                      </div>
+                      <span className={`text-[10px] text-center leading-tight truncate max-w-full ${
+                        isObtained ? "text-text-primary" : "text-text-secondary/50"
+                      }`}>
+                        {name}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {activeCatItems.length === 0 && (
+                <div className="py-8 text-center text-sm text-text-secondary">
+                  {itemFilter === "obtained" ? "No obtained items in this category" :
+                   itemFilter === "missing" ? "All items obtained!" :
+                   "No items in this category"}
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </>
   );
@@ -278,14 +446,19 @@ export default function CollectionLog({ rsn }: Props) {
   const [templeLoading, setTempleLoading] = useState(false);
   const [templeSynced, setTempleSynced] = useState<boolean | null>(null);
   const [templeError, setTempleError] = useState<string | null>(null);
-  const [mode, setMode] = useState<Mode>("manual");
 
   useEffect(() => {
     if (!rsn) return;
 
+    // Clear previous RSN's cache so we fetch fresh data
+    clearCacheKey(`temple-player-info:${rsn.toLowerCase()}`);
+    clearCacheKey(`temple-clog:${rsn.toLowerCase()}`);
+
     let cancelled = false;
-    setTempleLoading(true); // eslint-disable-line react-hooks/set-state-in-effect -- loading state for async fetch
-    setTempleError(null);
+    setTempleData(null); // eslint-disable-line react-hooks/set-state-in-effect
+    setTempleLoading(true); // eslint-disable-line react-hooks/set-state-in-effect
+    setTempleError(null); // eslint-disable-line react-hooks/set-state-in-effect
+    setTempleSynced(null);
 
     (async () => {
       try {
@@ -295,16 +468,18 @@ export default function CollectionLog({ rsn }: Props) {
         ]);
         if (cancelled) return;
 
-        if (!info || !info.clog_synced) {
+        // Check clog data directly — clog_synced flag may be missing from player_info
+        const hasClogData = clog && Object.keys(clog.categories).length > 0;
+
+        if (!hasClogData && (!info || !info.clog_synced)) {
           setTempleSynced(false);
           setTempleLoading(false);
           return;
         }
 
         setTempleSynced(true);
-        if (clog && Object.keys(clog.categories).length > 0) {
+        if (hasClogData) {
           setTempleData(clog);
-          setMode("temple");
         }
         setTempleLoading(false);
       } catch (err: unknown) {
@@ -323,38 +498,17 @@ export default function CollectionLog({ rsn }: Props) {
     };
   }, [rsn]);
 
-  const hasTemple = templeData && Object.keys(templeData.categories).length > 0;
-
   return (
     <div>
       <h2 className="text-xl font-semibold mb-1">Collection Log</h2>
       <p className="text-xs text-text-secondary/60 mb-5">
-        {mode === "temple"
-          ? "Live collection log synced from TempleOSRS."
-          : "Track your collection log manually. Click items to toggle obtained."}
+        Live collection log synced from TempleOSRS. Click any item to look it up on the wiki.
       </p>
 
-      {hasTemple && (
-        <div className="flex gap-1 mb-6">
-          {(["temple", "manual"] as const).map((m) => (
-            <button
-              key={m}
-              onClick={() => setMode(m)}
-              className={`px-4 py-1.5 rounded text-sm font-medium transition-colors ${
-                mode === m
-                  ? "bg-accent text-white"
-                  : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
-              }`}
-            >
-              {m === "temple" ? "Temple" : "Manual"}
-            </button>
-          ))}
-        </div>
-      )}
-
       {templeLoading && (
-        <div className="text-xs text-text-secondary/60 mb-4">
-          Loading Temple data...
+        <div className="mb-4 space-y-2">
+          <div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4" />
+          <div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-1/2" />
         </div>
       )}
 
@@ -365,17 +519,58 @@ export default function CollectionLog({ rsn }: Props) {
       )}
 
       {!templeLoading && !templeError && rsn && templeSynced === false && (
-        <div className="text-xs text-text-secondary/50 bg-bg-secondary/50 rounded px-3 py-2 mb-4">
-          No Temple collection log found for {rsn}. Sync your account at{" "}
-          <span className="text-accent">templeosrs.com</span> to see live data.
+        <div className="bg-bg-secondary/50 rounded-lg px-4 py-3 mb-4 space-y-2">
+          <p className="text-sm font-medium text-text-primary">
+            No collection log data found for {rsn}
+          </p>
+          <p className="text-xs text-text-secondary leading-relaxed">
+            To see your live collection log, install the <strong>Temple OSRS</strong> plugin
+            in RuneLite and open your Collection Log in-game. Your data will be sent to Temple
+            automatically.
+          </p>
+          <div className="flex gap-3 pt-1">
+            <a
+              href="https://templeosrs.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-accent hover:text-accent-hover"
+            >
+              templeosrs.com
+            </a>
+            <button
+              onClick={() => {
+                clearCacheKey(`temple-player-info:${rsn.toLowerCase()}`);
+                clearCacheKey(`temple-clog:${rsn.toLowerCase()}`);
+                setTempleLoading(true);
+                setTempleError(null);
+                setTempleSynced(null);
+                Promise.all([fetchTemplePlayerInfo(rsn), fetchTempleCollectionLog(rsn)])
+                  .then(([info, clog]) => {
+                    const hasClog = clog && Object.keys(clog.categories).length > 0;
+                    if (hasClog) {
+                      setTempleSynced(true);
+                      setTempleData(clog);
+                    } else if (info?.clog_synced) {
+                      setTempleSynced(true);
+                    } else {
+                      setTempleSynced(false);
+                    }
+                    setTempleLoading(false);
+                  })
+                  .catch(() => {
+                    setTempleError("Failed to reach Temple OSRS");
+                    setTempleLoading(false);
+                  });
+              }}
+              className="text-xs text-accent hover:text-accent-hover"
+            >
+              Check Again
+            </button>
+          </div>
         </div>
       )}
 
-      {mode === "temple" && templeData ? (
-        <TempleView data={templeData} />
-      ) : (
-        <ManualView />
-      )}
+      {templeData && <TempleView data={templeData} />}
     </div>
   );
 }

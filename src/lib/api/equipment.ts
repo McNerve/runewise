@@ -1,7 +1,7 @@
 import { bucketQueryAll, type BucketWhere } from "./bucket";
 import { getCached, setCache } from "./cache";
 
-const CACHE_KEY = "wiki-equipment:v1";
+const CACHE_KEY = "wiki-equipment:v4";
 const CACHE_TTL = 24 * 60 * 60 * 1000;
 
 export type EquipmentSlot =
@@ -80,6 +80,7 @@ export interface WikiEquipment {
   magicDamage: number;
   prayerBonus: number;
   combatStyle: string | null;
+  attackSpeed: number; // ticks (0 = unknown, typically 4-6)
 }
 
 function num(value: string | undefined): number {
@@ -128,6 +129,7 @@ function toWikiEquipment(raw: RawBucketEquipment): WikiEquipment {
     magicDamage: num(raw.magic_damage_bonus),
     prayerBonus: num(raw.prayer_bonus),
     combatStyle: raw.combat_style || null,
+    attackSpeed: 0, // not available in infobox_bonuses bucket
   };
 }
 
@@ -146,7 +148,7 @@ export async function fetchAllEquipment(): Promise<WikiEquipment[]> {
     )
       .then((raw) => {
         const equipment = raw.map(toWikiEquipment);
-        setCache(CACHE_KEY, equipment, { persist: true });
+        if (equipment.length > 0) setCache(CACHE_KEY, equipment, { persist: true });
         equipmentPromise = null;
         return equipment;
       })

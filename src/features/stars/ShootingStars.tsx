@@ -220,20 +220,26 @@ export default function ShootingStars() {
   }
 
   return (
-    <div className="max-w-3xl">
-      <div className="mb-4 flex items-center gap-3">
-        <h2 className="text-xl font-semibold">Shooting Stars</h2>
-        {tab === "live" && !loading && (
-          <span className="text-[10px] text-text-secondary/50">
-            {activeCount} active · refreshes every 30s
-          </span>
-        )}
+    <div className="max-w-4xl">
+      <div className="mb-5 space-y-1">
+        <div className="flex items-center gap-3">
+          <h2 className="text-2xl font-semibold tracking-tight">Star Helper</h2>
+          {tab === "live" && !loading && (
+            <span className="text-[11px] text-text-secondary/50">
+              {activeCount} active · refreshes every 30s
+            </span>
+          )}
+        </div>
+        <p className="max-w-2xl text-sm text-text-secondary">
+          Track active shooting stars across all worlds. Data from Star Miners crowdsource API.
+        </p>
       </div>
 
       {/* Tabs */}
       <div className="flex gap-1.5 mb-4">
         <button
           onClick={() => setTab("live")}
+          aria-pressed={tab === "live"}
           className={`px-3 py-1.5 rounded text-xs transition-colors ${
             tab === "live" ? "bg-accent text-white" : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
           }`}
@@ -242,6 +248,7 @@ export default function ShootingStars() {
         </button>
         <button
           onClick={() => setTab("reference")}
+          aria-pressed={tab === "reference"}
           className={`px-3 py-1.5 rounded text-xs transition-colors ${
             tab === "reference" ? "bg-accent text-white" : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
           }`}
@@ -316,7 +323,7 @@ export default function ShootingStars() {
           )}
 
           {loading && (
-            <p className="text-sm text-text-secondary animate-pulse">Loading live stars...</p>
+            <div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4" />
           )}
 
           {!loading && stars.length === 0 && (
@@ -536,11 +543,11 @@ export default function ShootingStars() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-text-secondary text-xs">
-                  <th className="text-left px-4 py-2">Tier</th>
-                  <th className="text-right px-4 py-2">Mining Lvl</th>
-                  <th className="text-right px-4 py-2">XP/Dust</th>
-                  <th className="text-right px-4 py-2">Dust/Layer</th>
-                  <th className="text-right px-4 py-2">Layer Time</th>
+                  <th scope="col" className="text-left px-4 py-2">Tier</th>
+                  <th scope="col" className="text-right px-4 py-2">Mining Lvl</th>
+                  <th scope="col" className="text-right px-4 py-2">XP/Dust</th>
+                  <th scope="col" className="text-right px-4 py-2">Dust/Layer</th>
+                  <th scope="col" className="text-right px-4 py-2">Layer Time</th>
                 </tr>
               </thead>
               <tbody>
@@ -567,9 +574,9 @@ export default function ShootingStars() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-text-secondary text-xs">
-                  <th className="text-left px-4 py-2">Reward</th>
-                  <th className="text-right px-4 py-2">Cost</th>
-                  <th className="text-right px-4 py-2">Qty</th>
+                  <th scope="col" className="text-left px-4 py-2">Reward</th>
+                  <th scope="col" className="text-right px-4 py-2">Cost</th>
+                  <th scope="col" className="text-right px-4 py-2">Qty</th>
                 </tr>
               </thead>
               <tbody>
@@ -603,6 +610,7 @@ export default function ShootingStars() {
               value={siteQuery}
               onChange={(e) => setSiteQuery(e.target.value)}
               placeholder="Search sites..."
+              aria-label="Search landing sites"
               className="flex-1 bg-bg-secondary border border-border rounded-lg px-3 py-1.5 text-sm"
             />
             <select

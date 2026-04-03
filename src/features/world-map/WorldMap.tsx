@@ -1,300 +1,123 @@
-import { useEffect, useRef, useState, useCallback } from "react";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
-import {
-  MAP_MARKERS,
-  MARKER_COLORS,
-  MARKER_LABELS,
-  type MarkerCategory,
-} from "./data/markers";
-import { useNavigation } from "../../lib/NavigationContext";
-import { getCached, setCache } from "../../lib/api/cache";
-import { apiFetch } from "../../lib/api/fetch";
+import { useRef, useState, useCallback, useEffect } from "react";
 
-// Wiki map tile configuration
-// Two tile formats available:
-// 1. Interactive: tiles/{mapID}_{cacheVersion}/{z}/{p}_{x}_{-y}.png (supports -3 to 5)
-// 2. Versioned: versions/{ver}/tiles/rendered/{p}/{z}/{p}_{x}_{y}.png (supports 0 to 3)
-// Using versioned format for reliability
-const MAP_VERSION = "2026-03-04_a";
-const TILE_URL = `https://maps.runescape.wiki/osrs/versions/${MAP_VERSION}/tiles/rendered/0/{z}/0_{x}_{y}.png`;
-const MIN_ZOOM = 0;
-const MAX_ZOOM = 3;
-const DEFAULT_ZOOM = 1;
+import { isTauri } from "../../lib/env";
 
-// Wiki GeoJSON markers endpoint
-const GEOJSON_URL = "https://maps.runescape.wiki/osrs/data/MainMapIconLoc.json";
-const GEOJSON_CACHE_KEY = "wiki-map-geojson:v1";
-const GEOJSON_TTL = 7 * 24 * 60 * 60 * 1000; // 1 week (markers rarely change)
-
-function gameToLatLng(x: number, y: number): L.LatLng {
-  return L.latLng(y / 128, x / 128);
-}
-
-const ALL_CATEGORIES: MarkerCategory[] = [
-  "boss", "city", "fairy-ring", "spirit-tree", "teleport",
-  "slayer", "skilling", "minigame", "quest", "shortcut", "boat",
-];
-
-interface WikiMapFeature {
-  type: "Feature";
-  geometry: {
-    type: "Point";
-    coordinates: [number, number, number?]; // [x, y, plane?]
-  };
-  properties: {
-    name?: string;
-    icon?: string;
-    category?: string;
-    "wiki-link"?: string;
-    description?: string;
-  };
-}
-
-async function fetchGeoJsonMarkers(): Promise<WikiMapFeature[]> {
-  const cached = getCached<WikiMapFeature[]>(GEOJSON_CACHE_KEY, GEOJSON_TTL, { persist: true });
-  if (cached) return cached;
-
-  const res = await apiFetch(GEOJSON_URL);
-  if (!res.ok) throw new Error(`Failed to load map markers (HTTP ${res.status})`);
-  const data = await res.json();
-  const features = (data?.features ?? []) as WikiMapFeature[];
-  setCache(GEOJSON_CACHE_KEY, features, { persist: true });
-  return features;
-}
-
-// Map wiki icon categories to our marker categories
-function mapIconCategory(icon: string | undefined): MarkerCategory | null {
-  if (!icon) return null;
-  const lower = icon.toLowerCase();
-  if (lower.includes("fairy")) return "fairy-ring";
-  if (lower.includes("spirit_tree")) return "spirit-tree";
-  if (lower.includes("quest")) return "quest";
-  if (lower.includes("agility") || lower.includes("fishing") || lower.includes("mining") || lower.includes("farming") || lower.includes("woodcutting")) return "skilling";
-  if (lower.includes("transport") || lower.includes("teleport") || lower.includes("canoe") || lower.includes("boat") || lower.includes("charter") || lower.includes("glider") || lower.includes("carpet") || lower.includes("minecart")) return "teleport";
-  if (lower.includes("dungeon")) return "slayer";
-  if (lower.includes("minigame")) return "minigame";
-  if (lower.includes("city") || lower.includes("bank")) return "city";
-  return null;
-}
+const MAP_IMAGE = isTauri
+  ? "https://cdn.runescape.com/assets/img/external/oldschool/world-map/2025-11-18/osrs_world_map.jpg"
+  : "/api/cdn/assets/img/external/oldschool/world-map/2025-11-18/osrs_world_map.jpg";
 
 export default function WorldMap() {
-  const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstance = useRef<L.Map | null>(null);
-  const wikiLayerRef = useRef<L.LayerGroup | null>(null);
-  const customLayerRef = useRef<L.LayerGroup | null>(null);
-  const { navigate } = useNavigation();
-  const [activeCategories, setActiveCategories] = useState<Set<MarkerCategory>>(
-    new Set(["boss", "city", "fairy-ring", "spirit-tree", "minigame"])
-  );
-  const [wikiMarkerCount, setWikiMarkerCount] = useState(0);
-  const [showWikiMarkers, setShowWikiMarkers] = useState(true);
-  const [mapError, setMapError] = useState<string | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [zoom, setZoom] = useState(0.5);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [dragging, setDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+  const [loading, setLoading] = useState(true);
 
-  // Initialize map
-  useEffect(() => {
-    if (!mapRef.current || mapInstance.current) return;
-
-    const map = L.map(mapRef.current, {
-      crs: L.CRS.Simple,
-      minZoom: MIN_ZOOM,
-      maxZoom: MAX_ZOOM,
-      zoomControl: true,
-      attributionControl: true,
-    });
-
-    map.setView(gameToLatLng(3100, 3400), DEFAULT_ZOOM);
-
-    L.tileLayer(TILE_URL, {
-      minZoom: MIN_ZOOM,
-      maxZoom: MAX_ZOOM,
-      tileSize: 256,
-      noWrap: true,
-      errorTileUrl: "",
-      attribution: '&copy; <a href="https://oldschool.runescape.wiki">OSRS Wiki</a>',
-    }).addTo(map);
-
-    wikiLayerRef.current = L.layerGroup().addTo(map);
-    customLayerRef.current = L.layerGroup().addTo(map);
-
-    mapInstance.current = map;
-
-    // Fetch wiki GeoJSON markers
-    fetchGeoJsonMarkers()
-      .then((features) => {
-        if (!wikiLayerRef.current) return;
-        let count = 0;
-
-        for (const feature of features) {
-          if (feature.geometry.type !== "Point") continue;
-          const [x, y, plane] = feature.geometry.coordinates;
-          if (plane && plane !== 0) continue; // Only surface markers
-
-          const iconFile = feature.properties.icon;
-          const name = feature.properties.name || "";
-          const category = mapIconCategory(iconFile);
-
-          if (!category) continue;
-          count++;
-
-          const marker = L.circleMarker(gameToLatLng(x, y), {
-            radius: 4,
-            fillColor: MARKER_COLORS[category] ?? "#94a3b8",
-            color: "var(--color-bg-primary)",
-            weight: 1,
-            fillOpacity: 0.7,
-            className: `wiki-marker wiki-cat-${category}`,
-          });
-
-          if (name) {
-            marker.bindTooltip(name, {
-              permanent: false,
-              direction: "top",
-              offset: [0, -6],
-              className: "osrs-map-tooltip",
-            });
-          }
-
-          marker.addTo(wikiLayerRef.current);
-        }
-
-        setWikiMarkerCount(count);
-      })
-      .catch((err: unknown) => {
-        const message =
-          err instanceof Error ? err.message : "Failed to load map markers";
-        setMapError(message);
-      });
-
-    return () => {
-      map.remove();
-      mapInstance.current = null;
-      wikiLayerRef.current = null;
-      customLayerRef.current = null;
-    };
+  const handleWheel = useCallback((e: WheelEvent) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -0.02 : 0.02;
+    setZoom((z) => Math.max(0.05, Math.min(1.5, z + delta)));
   }, []);
 
-  // Update custom markers (bosses, etc.) when categories change
   useEffect(() => {
-    const layer = customLayerRef.current;
-    if (!layer) return;
-    layer.clearLayers();
+    const el = containerRef.current;
+    if (!el) return;
+    el.addEventListener("wheel", handleWheel, { passive: false });
+    return () => el.removeEventListener("wheel", handleWheel);
+  }, [handleWheel]);
 
-    const filtered = MAP_MARKERS.filter((m) => activeCategories.has(m.category));
+  const onMouseDown = (e: React.MouseEvent) => {
+    setDragging(true);
+    setDragStart({ x: e.clientX, y: e.clientY });
+    setPanStart({ x: pan.x, y: pan.y });
+  };
 
-    for (const marker of filtered) {
-      const color = MARKER_COLORS[marker.category];
-      const circle = L.circleMarker(gameToLatLng(marker.x, marker.y), {
-        radius: 7,
-        fillColor: color,
-        color: "var(--color-text-primary)",
-        weight: 2,
-        fillOpacity: 0.9,
-      });
-
-      circle.bindPopup(
-        `<div style="font-family:Inter,system-ui,sans-serif;min-width:120px">
-          <div style="font-weight:600;font-size:13px;margin-bottom:2px">${marker.name}</div>
-          ${marker.description ? `<div style="font-size:11px;opacity:0.6">${marker.description}</div>` : ""}
-        </div>`,
-        { closeButton: false }
-      );
-
-      circle.on("click", () => {
-        if (marker.wikiPage) navigate("wiki", { page: marker.wikiPage, query: marker.wikiPage });
-      });
-
-      circle.addTo(layer);
-    }
-  }, [activeCategories, navigate]);
-
-  // Toggle wiki markers visibility
-  useEffect(() => {
-    const map = mapInstance.current;
-    const layer = wikiLayerRef.current;
-    if (!map || !layer) return;
-
-    if (showWikiMarkers) {
-      if (!map.hasLayer(layer)) map.addLayer(layer);
-    } else {
-      if (map.hasLayer(layer)) map.removeLayer(layer);
-    }
-  }, [showWikiMarkers]);
-
-  const toggleCategory = useCallback((cat: MarkerCategory) => {
-    setActiveCategories((prev) => {
-      const next = new Set(prev);
-      if (next.has(cat)) next.delete(cat);
-      else next.add(cat);
-      return next;
+  const onMouseMove = (e: React.MouseEvent) => {
+    if (!dragging) return;
+    setPan({
+      x: panStart.x + (e.clientX - dragStart.x),
+      y: panStart.y + (e.clientY - dragStart.y),
     });
-  }, []);
+  };
+
+  const onMouseUp = () => setDragging(false);
+
+  const resetView = () => {
+    setZoom(0.15);
+    setPan({ x: 0, y: 0 });
+  };
 
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)]">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-xl font-semibold">World Map</h2>
-        <div className="flex items-center gap-3">
+        <div>
+          <h2 className="text-2xl font-semibold tracking-tight">World Map</h2>
+          <p className="text-sm text-text-secondary">
+            Scroll to zoom, click and drag to pan. Official OSRS world map.
+          </p>
+        </div>
+        <div className="flex gap-2 items-center">
+          <span className="text-xs text-text-secondary tabular-nums">{Math.round(zoom * 100)}%</span>
           <button
-            onClick={() => setShowWikiMarkers(!showWikiMarkers)}
-            className={`text-xs transition-colors ${
-              showWikiMarkers ? "text-accent" : "text-text-secondary/50"
-            }`}
+            onClick={() => setZoom((z) => Math.min(1.5, z + 0.05))}
+            className="rounded-lg border border-border bg-bg-primary/60 px-2.5 py-1.5 text-xs font-medium text-text-secondary transition hover:border-accent/40 hover:text-text-primary"
           >
-            Wiki Icons {wikiMarkerCount > 0 && `(${wikiMarkerCount.toLocaleString()})`}
+            +
           </button>
-          <span className="text-xs text-text-secondary/30">
-            OSRS Wiki tiles
-          </span>
+          <button
+            onClick={() => setZoom((z) => Math.max(0.05, z - 0.05))}
+            className="rounded-lg border border-border bg-bg-primary/60 px-2.5 py-1.5 text-xs font-medium text-text-secondary transition hover:border-accent/40 hover:text-text-primary"
+          >
+            −
+          </button>
+          <button
+            onClick={resetView}
+            className="rounded-lg border border-border bg-bg-primary/60 px-2.5 py-1.5 text-xs font-medium text-text-secondary transition hover:border-accent/40 hover:text-text-primary"
+          >
+            Reset
+          </button>
+          <a
+            href={MAP_IMAGE}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-lg border border-border bg-bg-primary/60 px-2.5 py-1.5 text-xs font-medium text-text-secondary transition hover:border-accent/40 hover:text-text-primary"
+          >
+            Download
+          </a>
         </div>
       </div>
 
-      {/* Category filters */}
-      <div className="flex flex-wrap gap-1.5 mb-3">
-        {ALL_CATEGORIES.map((cat) => {
-          const active = activeCategories.has(cat);
-          const color = MARKER_COLORS[cat];
-          return (
-            <button
-              key={cat}
-              onClick={() => toggleCategory(cat)}
-              className={`px-2.5 py-1 rounded text-xs transition-colors flex items-center gap-1.5 ${
-                active
-                  ? "border border-current/30"
-                  : "bg-bg-secondary text-text-secondary/50 border border-transparent hover:border-border"
-              }`}
-              style={active ? { color, backgroundColor: `${color}15` } : undefined}
-            >
-              <span
-                className="w-2 h-2 rounded-full"
-                style={{ backgroundColor: active ? color : "var(--color-bg-tertiary)" }}
-              />
-              {MARKER_LABELS[cat]}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Map marker error banner */}
-      {mapError && (
-        <div className="flex items-center justify-between mb-2 px-3 py-2 rounded-lg bg-danger/10 border border-danger/20 text-sm text-danger">
-          <span>{mapError}</span>
-          <button
-            onClick={() => setMapError(null)}
-            className="ml-3 text-danger/60 hover:text-danger transition-colors text-xs"
-            aria-label="Dismiss"
-          >
-            ✕
-          </button>
-        </div>
-      )}
-
-      {/* Map container */}
       <div
-        ref={mapRef}
-        className="flex-1 rounded-lg overflow-hidden border border-border"
-        style={{ minHeight: 400, background: "var(--color-bg-primary)" }}
-      />
+        ref={containerRef}
+        className="flex-1 rounded-xl border border-border/60 overflow-hidden relative bg-bg-primary"
+        style={{ cursor: dragging ? "grabbing" : "grab" }}
+        onMouseDown={onMouseDown}
+        onMouseMove={onMouseMove}
+        onMouseUp={onMouseUp}
+        onMouseLeave={onMouseUp}
+      >
+        {loading && (
+          <div className="absolute inset-0 flex items-center justify-center z-10">
+            <div className="text-sm text-text-secondary animate-pulse">Loading world map...</div>
+          </div>
+        )}
+        <img
+          src={MAP_IMAGE}
+          alt="OSRS World Map"
+          draggable={false}
+          onLoad={() => { setLoading(false); setZoom(0.5); }}
+          onError={() => setLoading(false)}
+          className="select-none absolute top-1/2 left-1/2"
+          style={{
+            transform: `translate(calc(-50% + ${pan.x}px), calc(-50% + ${pan.y}px)) scale(${zoom})`,
+            transformOrigin: "center center",
+            transition: dragging ? "none" : "transform 0.1s ease-out",
+            maxWidth: "none",
+          }}
+        />
+      </div>
     </div>
   );
 }

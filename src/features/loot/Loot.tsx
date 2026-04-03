@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { searchMonsters, fetchDropTable, type DropItem } from "../../lib/api/wiki";
-import { fetchDropsForMonster, type WikiDrop } from "../../lib/api/drops";
+import { fetchDropsForMonster, fetchBossDropsFromWiki, type WikiDrop } from "../../lib/api/drops";
 import { fetchLatestPrices, fetchMapping, type ItemPrice, type ItemMapping } from "../../lib/api/ge";
 import { formatGp } from "../../lib/format";
 import { itemIcon } from "../../lib/sprites";
@@ -10,10 +10,18 @@ import WikiImage from "../../components/WikiImage";
 import DropTable from "../../components/DropTable";
 import { findBossByName, normalizeBossLookup } from "../../lib/data/bosses";
 import { BOSS_DROP_TABLES, type BossDropTable } from "../../lib/data/boss-drops";
+import { TableSkeleton } from "../../components/Skeleton";
+import EmptyState from "../../components/EmptyState";
 
 import BossProfitRanking from "./components/BossProfitRanking";
 
 type LootTab = "drops" | "profit" | "ranking";
+
+const LOOT_TABS: Array<{ id: LootTab; label: string; description: string }> = [
+  { id: "drops", label: "Drop Tables", description: "Search any monster's drops" },
+  { id: "profit", label: "Profit Calculator", description: "GP/kill and GP/hr estimates" },
+  { id: "ranking", label: "Boss Rankings", description: "Compare all boss profits" },
+];
 
 // --- Shared helpers ---
 
@@ -90,11 +98,13 @@ function parseQuantity(quantity: string): number | null {
 function DropTablesTab({
   prices,
   itemMap,
+  iconMap,
   navigate,
   initialMonster,
 }: {
   prices: Record<string, ItemPrice>;
   itemMap: Map<string, number>;
+  iconMap: Map<string, string>;
   navigate: (view: View, params?: Record<string, string>) => void;
   initialMonster: string | undefined;
 }) {
@@ -198,7 +208,14 @@ function DropTablesTab({
             setSelectedMonster(null);
           }}
           onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && suggestions.length > 0) {
+              e.preventDefault();
+              selectMonster(suggestions[0]);
+            }
+          }}
           placeholder="Search monsters..."
+          aria-label="Search monsters"
           className="w-full bg-bg-secondary border border-border rounded-lg px-4 py-2.5 text-sm"
         />
         {showSuggestions && suggestions.length > 0 && (
@@ -216,10 +233,13 @@ function DropTablesTab({
         )}
       </div>
 
-      {loading && <p className="text-sm text-text-secondary">Loading drop table...</p>}
+      {loading && <TableSkeleton rows={8} cols={4} />}
 
       {selectedMonster && !loading && categories.length === 0 && bucketDrops.length === 0 && (
-        <p className="text-sm text-text-secondary">No drop table found for {selectedMonster}.</p>
+        <EmptyState
+          title={`No drop table found for ${selectedMonster}`}
+          description="This monster may not have a wiki drop table, or the name might be slightly different."
+        />
       )}
 
       {selectedMonster && !loading && bucketDrops.length > 0 && (
@@ -227,6 +247,7 @@ function DropTablesTab({
           drops={bucketDrops}
           prices={prices}
           itemMap={itemMap}
+          iconMap={iconMap}
           showProfit
           killsPerHour={20}
         />
@@ -237,14 +258,14 @@ function DropTablesTab({
           <h3 className="text-sm font-medium text-text-secondary uppercase tracking-wider mb-2">
             {cat.name}
           </h3>
-          <div className="bg-bg-secondary rounded-lg overflow-hidden">
+          <div className="rounded-xl border border-border/60 overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-text-secondary text-xs">
-                  <th className="text-left px-4 py-2">Item</th>
-                  <th className="text-right px-4 py-2">Qty</th>
-                  <th className="text-right px-4 py-2">Rate</th>
-                  <th className="text-right px-4 py-2">Price</th>
+                  <th scope="col" className="text-left px-4 py-2">Item</th>
+                  <th scope="col" className="text-right px-4 py-2">Qty</th>
+                  <th scope="col" className="text-right px-4 py-2">Rate</th>
+                  <th scope="col" className="text-right px-4 py-2">Price</th>
                 </tr>
               </thead>
               <tbody>
@@ -307,13 +328,8 @@ function ProfitCalculatorTab({
   const [wikiFallbackBoss, setWikiFallbackBoss] = useState<string | null>(null);
   const [wikiDropCategories, setWikiDropCategories] = useState<{ name: string; drops: DropItem[] }[]>([]);
   const [wikiFallbackLoading, setWikiFallbackLoading] = useState(false);
-
-  const getPrice = (itemId: number): number | null => {
-    const p = prices[String(itemId)];
-    if (!p) return null;
-    if (p.high != null && p.low != null) return Math.round((p.high + p.low) / 2);
-    return p.high ?? p.low ?? null;
-  };
+  const [fullWikiDrops, setFullWikiDrops] = useState<WikiDrop[]>([]);
+  const [wikiDropsLoading, setWikiDropsLoading] = useState(false);
 
   const mappingById = useMemo(() => {
     const map = new Map<number, ItemMapping>();
@@ -327,6 +343,25 @@ function ProfitCalculatorTab({
     return map;
   }, [mapping]);
 
+  const getPrice = (itemId: number, itemName?: string): number | null => {
+    const p = prices[String(itemId)];
+    if (p) {
+      if (p.high != null && p.low != null) return Math.round((p.high + p.low) / 2);
+      return p.high ?? p.low ?? null;
+    }
+    if (itemName) {
+      const mapped = mappingByName.get(itemName.toLowerCase());
+      if (mapped) {
+        const p2 = prices[String(mapped.id)];
+        if (p2) {
+          if (p2.high != null && p2.low != null) return Math.round((p2.high + p2.low) / 2);
+          return p2.high ?? p2.low ?? null;
+        }
+      }
+    }
+    return null;
+  };
+
   const getItemName = (itemId: number, fallback: string): string => {
     return mappingById.get(itemId)?.name ?? fallback;
   };
@@ -334,7 +369,7 @@ function ProfitCalculatorTab({
   const rows: ProfitRow[] = useMemo(() => {
     if (!selectedBoss) return [];
     return selectedBoss.drops.map((drop) => {
-      const price = getPrice(drop.itemId);
+      const price = getPrice(drop.itemId, drop.itemName);
       const ev = price != null ? (drop.quantity * price) / drop.rate : null;
       return {
         itemName: getItemName(drop.itemId, drop.itemName),
@@ -384,7 +419,46 @@ function ProfitCalculatorTab({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wikiDropCategories, mappingByName, prices, killsPerHour]);
 
-  const effectiveRows = selectedBoss ? rows : wikiRows;
+  // Build profit rows from full wiki drops (includes ALL items for accurate GP/hr)
+  const fullWikiRows: ProfitRow[] = useMemo(() => {
+    if (fullWikiDrops.length === 0) return [];
+    return fullWikiDrops.map((drop) => {
+      const mappedItem = mappingByName.get(drop.itemName.toLowerCase()) ?? null;
+      const itemId = mappedItem?.id ?? null;
+      const fraction = drop.rarityFraction;
+      const rate = fraction != null && fraction > 0 ? 1 / fraction : null;
+      const qty = drop.quantityLow === drop.quantityHigh
+        ? drop.quantityLow
+        : (drop.quantityLow + drop.quantityHigh) / 2;
+      const gePrice = itemId != null ? getPrice(itemId, drop.itemName) : null;
+      const evPerKill = gePrice != null && fraction != null ? qty * gePrice * fraction : null;
+      return {
+        itemName: drop.itemName,
+        itemId,
+        rate,
+        quantity: qty,
+        category: (drop.dropType?.toLowerCase().includes("unique") ? "unique" : drop.dropType?.toLowerCase().includes("rare") ? "rare" : "common") as ProfitRow["category"],
+        gePrice,
+        evPerKill,
+        evPerHr: evPerKill != null ? evPerKill * killsPerHour : null,
+      };
+    }).filter((r) => r.evPerKill != null && r.evPerKill > 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fullWikiDrops, mappingByName, prices, killsPerHour]);
+
+  // Merge: use wiki drops for common items + curated data for uniques (curated has accurate rates for rare drops)
+  const mergedRows = useMemo(() => {
+    if (fullWikiRows.length === 0) return selectedBoss ? rows : wikiRows;
+    if (!selectedBoss) return fullWikiRows;
+
+    // Keep ALL curated items (they have verified rates), supplement with wiki drops not in curated
+    const curatedNames = new Set(rows.map((r) => r.itemName.toLowerCase()));
+    const wikiExtras = fullWikiRows.filter((r) => !curatedNames.has(r.itemName.toLowerCase()));
+
+    return [...rows, ...wikiExtras];
+  }, [fullWikiRows, rows, wikiRows, selectedBoss]);
+
+  const effectiveRows = mergedRows;
   const totalGpPerKill = effectiveRows.reduce((sum, r) => sum + (r.evPerKill ?? 0), 0);
   const totalGpPerHr = effectiveRows.reduce((sum, r) => sum + (r.evPerHr ?? 0), 0);
 
@@ -396,6 +470,13 @@ function ProfitCalculatorTab({
     setWikiDropCategories([]);
     setSelectedBoss(boss);
     setKillsPerHour(boss.killsPerHour);
+    // Fetch full wiki drops for accurate GP/hr
+    setWikiDropsLoading(true);
+    setFullWikiDrops([]);
+    fetchDropsForMonster(bossName)
+      .then((t) => setFullWikiDrops(t.drops))
+      .catch(() => setFullWikiDrops([]))
+      .finally(() => setWikiDropsLoading(false));
   };
 
   const categoryColor = (cat: string) => {
@@ -407,6 +488,17 @@ function ProfitCalculatorTab({
   };
 
   const linkedBoss = selectedBoss ? findBossByName(selectedBoss.bossName) : null;
+
+  // Fetch wiki drops for the initial/default boss
+  useEffect(() => {
+    const bossName = selectedBoss?.bossName;
+    if (!bossName || fullWikiDrops.length > 0) return;
+    setWikiDropsLoading(true);
+    fetchDropsForMonster(bossName)
+      .then((t) => setFullWikiDrops(t.drops))
+      .catch(() => {})
+      .finally(() => setWikiDropsLoading(false));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!initialBoss) return;
@@ -428,8 +520,25 @@ function ProfitCalculatorTab({
       setSelectedBoss(null);
       setWikiFallbackBoss(routedBoss.name);
       setWikiFallbackLoading(true);
-      void fetchDropTable(routedBoss.name)
-        .then((result) => {
+      void fetchBossDropsFromWiki(routedBoss.name)
+        .then(async (bucketRows) => {
+          if (cancelled) return;
+          if (bucketRows.length > 0) {
+            // bucket drop_table had data — convert to category format for wikiRows
+            setWikiDropCategories([{
+              name: "Drops",
+              drops: bucketRows.map((r) => ({
+                name: r.item,
+                quantity: r.quantity,
+                rarity: r.rate === 1 ? "Always" : r.rate > 0 ? `1/${r.rate}` : "Varies",
+                price: "",
+                category: "drop",
+              })),
+            }]);
+            return;
+          }
+          // No bucket data — fall back to HTML wiki drop table
+          const result = await fetchDropTable(routedBoss.name).catch(() => ({ categories: [] }));
           if (cancelled) return;
           if (result.categories.length === 0) {
             setUnsupportedBoss(routedBoss.name);
@@ -494,16 +603,16 @@ function ProfitCalculatorTab({
       ) : null}
 
       <div className="grid grid-cols-2 gap-3 mb-4">
-        <div className="text-center">
+        <div className="rounded-xl border border-border/60 p-4 text-center">
           <div className="text-xs text-text-secondary mb-1">Expected GP / Kill</div>
           <div className="text-2xl font-bold text-success">
-            {priceLoading || wikiFallbackLoading ? "..." : formatGp(Math.round(totalGpPerKill))}
+            {priceLoading || wikiFallbackLoading || wikiDropsLoading ? "..." : formatGp(Math.round(totalGpPerKill))}
           </div>
         </div>
-        <div className="text-center">
+        <div className="rounded-xl border border-border/60 p-4 text-center">
           <div className="text-xs text-text-secondary mb-1">Expected GP / Hour</div>
           <div className="text-2xl font-bold text-success">
-            {priceLoading || wikiFallbackLoading ? "..." : formatGp(Math.round(totalGpPerHr))}
+            {priceLoading || wikiFallbackLoading || wikiDropsLoading ? "..." : formatGp(Math.round(totalGpPerHr))}
           </div>
         </div>
       </div>
@@ -522,7 +631,7 @@ function ProfitCalculatorTab({
                   {wikiFallbackBoss} (wiki-derived)
                 </option>
               ) : null}
-              {BOSS_DROP_TABLES.map((boss) => (
+              {[...BOSS_DROP_TABLES].sort((a, b) => a.bossName.localeCompare(b.bossName)).map((boss) => (
                 <option key={boss.bossName} value={boss.bossName}>
                   {boss.bossName}
                 </option>
@@ -543,24 +652,25 @@ function ProfitCalculatorTab({
         </div>
       </div>
 
-      <div className="overflow-hidden">
+      <div className="rounded-xl border border-border/60 overflow-hidden">
         {!selectedBoss ? (
           !wikiFallbackBoss || wikiFallbackLoading || effectiveRows.length > 0 ? null : (
-            <div className="px-4 py-8 text-center text-sm text-text-secondary">
-              Select a supported boss to view expected loot value.
-            </div>
+            <EmptyState
+              title="No boss selected"
+              description="Select a supported boss to view expected loot value."
+            />
           )
         ) : null}
         {selectedBoss || wikiFallbackBoss ? (
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border text-text-secondary text-xs">
-                <th className="text-left px-4 py-2">Item</th>
-                <th className="text-right px-4 py-2">Rate</th>
-                <th className="text-right px-4 py-2">Qty</th>
-                <th className="text-right px-4 py-2">GE Price</th>
-                <th className="text-right px-4 py-2">GP/Kill</th>
-                <th className="text-right px-4 py-2">GP/Hr</th>
+                <th scope="col" className="text-left px-4 py-2">Item</th>
+                <th scope="col" className="text-right px-4 py-2">Rate</th>
+                <th scope="col" className="text-right px-4 py-2">Qty</th>
+                <th scope="col" className="text-right px-4 py-2">GE Price</th>
+                <th scope="col" className="text-right px-4 py-2">GP/Kill</th>
+                <th scope="col" className="text-right px-4 py-2">GP/Hr</th>
               </tr>
             </thead>
             <tbody>
@@ -580,13 +690,13 @@ function ProfitCalculatorTab({
                   </td>
                   <td className="text-right px-4 py-2">{row.quantity ?? "\u2014"}</td>
                   <td className="text-right px-4 py-2">
-                    {priceLoading || wikiFallbackLoading ? "..." : formatGp(row.gePrice)}
+                    {priceLoading || wikiFallbackLoading || wikiDropsLoading ? "..." : formatGp(row.gePrice)}
                   </td>
                   <td className="text-right px-4 py-2 text-success">
-                    {priceLoading || wikiFallbackLoading ? "..." : formatGp(row.evPerKill != null ? Math.round(row.evPerKill) : null)}
+                    {priceLoading || wikiFallbackLoading || wikiDropsLoading ? "..." : formatGp(row.evPerKill != null ? Math.round(row.evPerKill) : null)}
                   </td>
                   <td className="text-right px-4 py-2 text-success">
-                    {priceLoading || wikiFallbackLoading ? "..." : formatGp(row.evPerHr != null ? Math.round(row.evPerHr) : null)}
+                    {priceLoading || wikiFallbackLoading || wikiDropsLoading ? "..." : formatGp(row.evPerHr != null ? Math.round(row.evPerHr) : null)}
                   </td>
                 </tr>
               ))}
@@ -595,10 +705,10 @@ function ProfitCalculatorTab({
               <tr className="border-t border-border font-semibold">
                 <td className="px-4 py-2" colSpan={4}>Total Expected Value</td>
                 <td className="text-right px-4 py-2 text-success">
-                  {priceLoading || wikiFallbackLoading ? "..." : formatGp(Math.round(totalGpPerKill))}
+                  {priceLoading || wikiFallbackLoading || wikiDropsLoading ? "..." : formatGp(Math.round(totalGpPerKill))}
                 </td>
                 <td className="text-right px-4 py-2 text-success">
-                  {priceLoading || wikiFallbackLoading ? "..." : formatGp(Math.round(totalGpPerHr))}
+                  {priceLoading || wikiFallbackLoading || wikiDropsLoading ? "..." : formatGp(Math.round(totalGpPerHr))}
                 </td>
               </tr>
             </tfoot>
@@ -619,6 +729,7 @@ export default function Loot() {
   const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
   const [mapping, setMapping] = useState<ItemMapping[]>([]);
   const [itemMap, setItemMap] = useState<Map<string, number>>(new Map());
+  const [iconMap, setIconMap] = useState<Map<string, string>>(new Map());
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -629,8 +740,13 @@ export default function Loot() {
         setPrices(p);
         setMapping(m);
         const nameToId = new Map<string, number>();
-        for (const item of m) nameToId.set(item.name.toLowerCase(), item.id);
+        const nameToIcon = new Map<string, string>();
+        for (const item of m) {
+          nameToId.set(item.name.toLowerCase(), item.id);
+          if (item.icon) nameToIcon.set(item.name.toLowerCase(), item.icon);
+        }
         setItemMap(nameToId);
+        setIconMap(nameToIcon);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -639,40 +755,45 @@ export default function Loot() {
   }, []);
 
   return (
-    <div className="max-w-4xl">
-      <h2 className="text-xl font-semibold mb-4">Loot</h2>
+    <div className="max-w-5xl">
+      <div className="space-y-1 mb-5">
+        <h2 className="text-2xl font-semibold tracking-tight">Loot & Drops</h2>
+        <p className="max-w-2xl text-sm text-text-secondary">
+          Search any monster's drop table, calculate boss profit, and compare GP/hr across all bosses.
+        </p>
+      </div>
 
-      <div className="flex bg-bg-secondary rounded-lg p-0.5 border border-border mb-4 w-fit">
-        <button
-          onClick={() => setTab("drops")}
-          className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-            tab === "drops" ? "bg-accent text-white" : "text-text-secondary hover:text-text-primary"
-          }`}
-        >
-          Drop Tables
-        </button>
-        <button
-          onClick={() => setTab("profit")}
-          className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-            tab === "profit" ? "bg-accent text-white" : "text-text-secondary hover:text-text-primary"
-          }`}
-        >
-          Profit Calculator
-        </button>
-        <button
-          onClick={() => setTab("ranking")}
-          className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-            tab === "ranking" ? "bg-accent text-white" : "text-text-secondary hover:text-text-primary"
-          }`}
-        >
-          Boss Rankings
-        </button>
+      <div className="flex flex-wrap gap-2 mb-5">
+        {LOOT_TABS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            aria-pressed={tab === t.id}
+            onClick={() => setTab(t.id)}
+            className={`relative rounded-xl border px-3.5 py-2 text-left transition ${
+              tab === t.id
+                ? "border-accent/50 bg-accent/10"
+                : "border-border bg-bg-primary/50 text-text-secondary hover:border-border hover:bg-bg-primary/70"
+            }`}
+          >
+            {tab === t.id && (
+              <div className="absolute -bottom-px left-3 right-3 h-0.5 rounded-full bg-accent" />
+            )}
+            <div className={`text-xs font-semibold ${tab === t.id ? "text-accent" : ""}`}>
+              {t.label}
+            </div>
+            <div className={`hidden sm:block text-[11px] ${tab === t.id ? "text-accent/60" : "text-text-secondary/60"}`}>
+              {t.description}
+            </div>
+          </button>
+        ))}
       </div>
 
       {tab === "drops" ? (
         <DropTablesTab
           prices={prices}
           itemMap={itemMap}
+          iconMap={iconMap}
           navigate={navigate}
           initialMonster={params.monster}
         />

@@ -3,25 +3,29 @@ export interface Prayer {
   attackMult: number;
   strengthMult: number;
   style: "melee" | "ranged" | "magic";
+  icon?: string; // wiki image filename
+  level?: number;
 }
 
 export const PRAYERS: Prayer[] = [
   // Melee
   { name: "None", attackMult: 1, strengthMult: 1, style: "melee" },
-  { name: "Clarity of Thought", attackMult: 1.05, strengthMult: 1, style: "melee" },
-  { name: "Improved Reflexes", attackMult: 1.1, strengthMult: 1, style: "melee" },
-  { name: "Incredible Reflexes", attackMult: 1.15, strengthMult: 1, style: "melee" },
-  { name: "Burst of Strength", attackMult: 1, strengthMult: 1.05, style: "melee" },
-  { name: "Superhuman Strength", attackMult: 1, strengthMult: 1.1, style: "melee" },
-  { name: "Ultimate Strength", attackMult: 1, strengthMult: 1.15, style: "melee" },
-  { name: "Chivalry", attackMult: 1.15, strengthMult: 1.18, style: "melee" },
-  { name: "Piety", attackMult: 1.2, strengthMult: 1.23, style: "melee" },
+  { name: "Clarity of Thought", attackMult: 1.05, strengthMult: 1, style: "melee", icon: "Clarity_of_Thought.png", level: 7 },
+  { name: "Improved Reflexes", attackMult: 1.1, strengthMult: 1, style: "melee", icon: "Improved_Reflexes.png", level: 16 },
+  { name: "Incredible Reflexes", attackMult: 1.15, strengthMult: 1, style: "melee", icon: "Incredible_Reflexes.png", level: 34 },
+  { name: "Burst of Strength", attackMult: 1, strengthMult: 1.05, style: "melee", icon: "Burst_of_Strength.png", level: 4 },
+  { name: "Superhuman Strength", attackMult: 1, strengthMult: 1.1, style: "melee", icon: "Superhuman_Strength.png", level: 13 },
+  { name: "Ultimate Strength", attackMult: 1, strengthMult: 1.15, style: "melee", icon: "Ultimate_Strength.png", level: 31 },
+  { name: "Chivalry", attackMult: 1.15, strengthMult: 1.18, style: "melee", icon: "Chivalry.png", level: 60 },
+  { name: "Piety", attackMult: 1.2, strengthMult: 1.23, style: "melee", icon: "Piety.png", level: 70 },
   // Ranged
-  { name: "Sharp Eye", attackMult: 1.05, strengthMult: 1.05, style: "ranged" },
-  { name: "Hawk Eye", attackMult: 1.1, strengthMult: 1.1, style: "ranged" },
-  { name: "Eagle Eye", attackMult: 1.15, strengthMult: 1.15, style: "ranged" },
-  { name: "Rigour", attackMult: 1.2, strengthMult: 1.23, style: "ranged" },
+  { name: "Sharp Eye", attackMult: 1.05, strengthMult: 1.05, style: "ranged", icon: "Sharp_Eye.png", level: 8 },
+  { name: "Hawk Eye", attackMult: 1.1, strengthMult: 1.1, style: "ranged", icon: "Hawk_Eye.png", level: 26 },
+  { name: "Eagle Eye", attackMult: 1.15, strengthMult: 1.15, style: "ranged", icon: "Eagle_Eye.png", level: 44 },
+  { name: "Rigour", attackMult: 1.2, strengthMult: 1.23, style: "ranged", icon: "Rigour.png", level: 74 },
   // Magic
-  { name: "Mystic Might", attackMult: 1.15, strengthMult: 1, style: "magic" },
-  { name: "Augury", attackMult: 1.25, strengthMult: 1, style: "magic" },
+  { name: "Mystic Will", attackMult: 1.05, strengthMult: 1, style: "magic", icon: "Mystic_Will.png", level: 9 },
+  { name: "Mystic Lore", attackMult: 1.1, strengthMult: 1, style: "magic", icon: "Mystic_Lore.png", level: 27 },
+  { name: "Mystic Might", attackMult: 1.15, strengthMult: 1, style: "magic", icon: "Mystic_Might.png", level: 45 },
+  { name: "Augury", attackMult: 1.25, strengthMult: 1, style: "magic", icon: "Augury.png", level: 77 },
 ];

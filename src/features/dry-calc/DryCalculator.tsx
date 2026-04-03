@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { dropChance, killsForConfidence } from "../../lib/formulas/dry";
 import { POPULAR_DROPS, DROP_CATEGORIES, type DropEntry } from "../../lib/data/drops";
+import { itemIcon } from "../../lib/sprites";
 
 export default function DryCalculator() {
   const [kills, setKills] = useState(0);
@@ -31,11 +32,28 @@ export default function DryCalculator() {
         {/* Calculator */}
         <div className="bg-bg-secondary rounded-lg p-4 space-y-4">
           {selectedDrop && (
-            <div className="text-sm text-text-secondary">
-              <span className="text-text-primary font-medium">
-                {selectedDrop.item}
-              </span>{" "}
-              from {selectedDrop.source} (1/{Math.round(selectedDrop.rate)})
+            <div className="flex items-center gap-3 text-sm">
+              <img
+                src={itemIcon(selectedDrop.item)}
+                alt=""
+                className="w-8 h-8 shrink-0"
+                onError={(e) => { e.currentTarget.style.display = "none"; }}
+              />
+              <div className="flex-1 min-w-0">
+                <div className="text-text-primary font-medium">{selectedDrop.item}</div>
+                <div className="text-xs text-text-secondary">{selectedDrop.source} · 1/{Math.round(selectedDrop.rate).toLocaleString()}</div>
+              </div>
+              <button
+                onClick={() => { setSelectedDrop(null); setRate(512); setKills(0); }}
+                className="text-xs text-text-secondary/50 hover:text-text-primary transition-colors cursor-pointer"
+              >
+                ×
+              </button>
+            </div>
+          )}
+          {selectedDrop?.note && (
+            <div className="text-[10px] text-warning/70 bg-warning/8 rounded px-2.5 py-1.5">
+              {selectedDrop.note}
             </div>
           )}
 
@@ -46,9 +64,9 @@ export default function DryCalculator() {
             <input
               type="number"
               min={1}
-              value={rate}
+              value={rate || ""}
               onChange={(e) => {
-                setRate(Number(e.target.value));
+                setRate(Number(e.target.value) || 0);
                 setSelectedDrop(null);
               }}
               className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm"
@@ -61,8 +79,8 @@ export default function DryCalculator() {
             <input
               type="number"
               min={0}
-              value={kills}
-              onChange={(e) => setKills(Number(e.target.value))}
+              value={kills || ""}
+              onChange={(e) => setKills(Number(e.target.value) || 0)}
               className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm"
             />
           </div>
@@ -119,22 +137,34 @@ export default function DryCalculator() {
 
         {/* Presets */}
         <div className="bg-bg-secondary rounded-lg p-3 overflow-y-auto max-h-[500px]">
-          <div className="section-kicker mb-2">Boss Presets</div>
+          <button
+            onClick={() => { setSelectedDrop(null); setRate(512); setKills(0); }}
+            className={`w-full mb-3 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+              !selectedDrop
+                ? "bg-accent text-white"
+                : "bg-bg-tertiary text-text-secondary hover:bg-bg-tertiary/80"
+            }`}
+          >
+            Manual Input
+          </button>
+          <div className="section-kicker mb-2">Drop Presets</div>
           <div className="flex flex-wrap gap-1 mb-3">
             <button
               onClick={() => setSelectedCategory("All")}
+              aria-pressed={selectedCategory === "All"}
               className={`px-2 py-0.5 rounded text-xs ${
                 selectedCategory === "All"
                   ? "bg-accent text-white"
                   : "bg-bg-tertiary text-text-secondary"
               }`}
             >
-              All
+              Popular
             </button>
             {DROP_CATEGORIES.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
+                aria-pressed={selectedCategory === cat}
                 className={`px-2 py-0.5 rounded text-xs ${
                   selectedCategory === cat
                     ? "bg-accent text-white"
@@ -151,17 +181,25 @@ export default function DryCalculator() {
               <button
                 key={`${drop.item}-${drop.source}-${i}`}
                 onClick={() => selectDrop(drop)}
-                className={`w-full text-left px-2 py-1.5 rounded text-xs transition-colors ${
+                className={`w-full text-left flex items-center gap-2 px-2 py-1.5 rounded text-xs transition-colors ${
                   selectedDrop === drop
                     ? "bg-accent/15 text-accent"
                     : "hover:bg-bg-tertiary text-text-secondary"
                 }`}
               >
-                <div className="font-medium text-text-primary">
-                  {drop.item}
-                </div>
-                <div>
-                  {drop.source} · 1/{Math.round(drop.rate).toLocaleString()}
+                <img
+                  src={itemIcon(drop.item)}
+                  alt=""
+                  className="w-5 h-5 shrink-0"
+                  onError={(e) => { e.currentTarget.style.display = "none"; }}
+                />
+                <div className="min-w-0">
+                  <div className="font-medium text-text-primary truncate">
+                    {drop.item}
+                  </div>
+                  <div className="text-text-secondary/60">
+                    {drop.source} · 1/{Math.round(drop.rate).toLocaleString()}
+                  </div>
                 </div>
               </button>
             ))}

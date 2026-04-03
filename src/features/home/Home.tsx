@@ -75,20 +75,29 @@ export default function Home({ hiscores }: HomeProps) {
         </div>
       </header>
 
-      {/* Stats row — minimal, no card wrapper */}
+      {/* Stats row */}
       {savedRsn && (
-        <div className="grid grid-cols-3 gap-px rounded-xl overflow-hidden border border-border/40">
-          <div className="stat-card bg-bg-secondary/40 px-4 py-3" data-accent="green">
-            <div className="text-[11px] uppercase tracking-wider text-text-secondary/70">Total Level</div>
-            <div className="mt-0.5 text-lg font-semibold tabular-nums">{totalLevel?.toLocaleString() ?? "—"}</div>
+        <div className="grid grid-cols-3 gap-3">
+          <div className="rounded-xl border border-border/60 bg-bg-primary/45 px-4 py-3 flex items-center gap-3">
+            <img src={NAV_ICONS["skill-calc"]} alt="" className="w-6 h-6 shrink-0 opacity-70" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+            <div>
+              <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/50">Total Level</div>
+              <div className="mt-0.5 text-lg font-semibold tabular-nums text-success">{totalLevel?.toLocaleString() ?? "—"}</div>
+            </div>
           </div>
-          <div className="stat-card bg-bg-secondary/40 px-4 py-3" data-accent="red">
-            <div className="text-[11px] uppercase tracking-wider text-text-secondary/70">Boss KC</div>
-            <div className="mt-0.5 text-lg font-semibold tabular-nums">{totalBossKills?.toLocaleString() ?? "—"}</div>
+          <div className="rounded-xl border border-border/60 bg-bg-primary/45 px-4 py-3 flex items-center gap-3">
+            <img src={NAV_ICONS.bosses} alt="" className="w-6 h-6 shrink-0 opacity-70" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+            <div>
+              <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/50">Boss KC</div>
+              <div className="mt-0.5 text-lg font-semibold tabular-nums text-danger">{totalBossKills?.toLocaleString() ?? "—"}</div>
+            </div>
           </div>
-          <div className="stat-card bg-bg-secondary/40 px-4 py-3" data-accent="purple">
-            <div className="text-[11px] uppercase tracking-wider text-text-secondary/70">Maxed Skills</div>
-            <div className="mt-0.5 text-lg font-semibold tabular-nums">{maxedSkills != null ? `${maxedSkills}/24` : "—"}</div>
+          <div className="rounded-xl border border-border/60 bg-bg-primary/45 px-4 py-3 flex items-center gap-3">
+            <img src={NAV_ICONS.overview} alt="" className="w-6 h-6 shrink-0 opacity-70" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+            <div>
+              <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/50">Maxed Skills</div>
+              <div className="mt-0.5 text-lg font-semibold tabular-nums text-[#a78bfa]">{maxedSkills != null ? `${maxedSkills}/24` : "—"}</div>
+            </div>
           </div>
         </div>
       )}
@@ -110,7 +119,7 @@ export default function Home({ hiscores }: HomeProps) {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.03, duration: 0.18, ease: "easeOut" }}
                 onClick={() => navigate(feature.id)}
-                className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-bg-secondary/60"
+                className="group flex items-center gap-3 rounded-xl border border-border/60 px-3 py-2.5 text-left transition hover:bg-bg-secondary/60"
               >
                 <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg" style={{ color: accent, background: `color-mix(in srgb, ${accent} 12%, transparent)` }}>
                   <ShellIcon view={feature.id} className="h-4 w-4" />

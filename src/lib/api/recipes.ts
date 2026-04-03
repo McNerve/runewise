@@ -1,7 +1,7 @@
 import { bucketQueryAll, type BucketWhere } from "./bucket";
 import { getCached, setCache } from "./cache";
 
-const CACHE_KEY = "wiki-recipes:v1";
+const CACHE_KEY = "wiki-recipes:v2";
 const CACHE_TTL = 24 * 60 * 60 * 1000;
 
 const RECIPE_FIELDS = [
@@ -93,7 +93,7 @@ export async function fetchAllRecipes(): Promise<WikiRecipe[]> {
         const recipes = raw
           .map(toWikiRecipe)
           .filter((r): r is WikiRecipe => r !== null);
-        setCache(CACHE_KEY, recipes, { persist: true });
+        if (recipes.length > 0) setCache(CACHE_KEY, recipes, { persist: true });
         recipesPromise = null;
         return recipes;
       })

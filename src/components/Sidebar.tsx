@@ -1,4 +1,6 @@
 import { useMemo } from "react";
+
+declare const __APP_VERSION__: string;
 import * as Tooltip from "@radix-ui/react-tooltip";
 import type { View } from "../lib/NavigationContext";
 import { isMac } from "../lib/env";
@@ -68,6 +70,7 @@ export default function Sidebar({ currentView, onNavigate }: SidebarProps) {
           onClick={toggleCollapse}
           className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-text-secondary/70 transition-colors hover:bg-bg-secondary/50 hover:text-text-primary"
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             {collapsed ? (
@@ -79,6 +82,7 @@ export default function Sidebar({ currentView, onNavigate }: SidebarProps) {
         </button>
       </div>
       <nav
+        aria-label="Main navigation"
         className={`sidebar-scroll flex-1 overflow-y-auto overflow-x-hidden ${collapsed ? "compact-sidebar-scroll px-2 py-2" : "px-2 py-2"}`}
       >
         {groupedFeatures.map((section, index) => (
@@ -170,7 +174,7 @@ export default function Sidebar({ currentView, onNavigate }: SidebarProps) {
         </button>
         {!collapsed && (
           <div className="text-[10px] text-text-secondary/30 text-center mt-1 tabular-nums">
-            v1.1.0
+            v{__APP_VERSION__}
           </div>
         )}
       </div>

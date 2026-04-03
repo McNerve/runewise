@@ -38,6 +38,7 @@ export default function Progress({ hiscores }: Props) {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
+            aria-pressed={activeTab === tab.id}
             className={`px-4 py-1.5 rounded text-sm font-medium transition-colors ${
               activeTab === tab.id
                 ? "bg-accent text-white"
@@ -52,12 +53,12 @@ export default function Progress({ hiscores }: Props) {
       {activeTab === "quests" && <QuestTracker hiscores={hiscores ?? null} />}
       {activeTab === "diaries" && <DiaryTracker hiscores={hiscores ?? null} />}
       {activeTab === "combat-tasks" && (
-        <Suspense fallback={<div className="py-8 text-center text-sm text-text-secondary">Loading...</div>}>
+        <Suspense fallback={<div className="py-8 text-center"><div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4 mx-auto" /></div>}>
           <CombatTasks />
         </Suspense>
       )}
       {activeTab === "unlock" && hiscores && (
-        <Suspense fallback={<div className="py-8 text-center text-sm text-text-secondary">Loading...</div>}>
+        <Suspense fallback={<div className="py-8 text-center"><div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4 mx-auto" /></div>}>
           <QuestUnlock hiscores={hiscores} />
         </Suspense>
       )}
