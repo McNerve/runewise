@@ -49,6 +49,7 @@ export default function Kingdom() {
     return () => { cancelled = true; };
   }, []);
 
+  const [isOptimal, setIsOptimal] = useState(false);
   const totalWorkers = resources.reduce((sum, r) => sum + r.workers, 0);
   const remaining = MAX_WORKERS - totalWorkers;
 
@@ -79,8 +80,6 @@ export default function Kingdom() {
   }, 0);
 
   const netProfit = totalDailyGp - DAILY_UPKEEP;
-
-  const [isOptimal, setIsOptimal] = useState(false);
 
   const optimize = useCallback(() => {
     const gpPerWorker = DEFAULT_RESOURCES.map((r) => {

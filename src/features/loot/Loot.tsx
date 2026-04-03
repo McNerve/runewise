@@ -443,6 +443,7 @@ function ProfitCalculatorTab({
         evPerHr: evPerKill != null ? evPerKill * killsPerHour : null,
       };
     }).filter((r) => r.evPerKill != null && r.evPerKill > 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fullWikiDrops, mappingByName, prices, killsPerHour]);
 
   // Merge: use wiki drops for common items + curated data for uniques (curated has accurate rates for rare drops)
