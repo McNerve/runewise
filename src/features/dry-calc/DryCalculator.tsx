@@ -59,9 +59,9 @@ export default function DryCalculator() {
             <input
               type="number"
               min={1}
-              value={rate}
+              value={rate || ""}
               onChange={(e) => {
-                setRate(Number(e.target.value));
+                setRate(Number(e.target.value) || 0);
                 setSelectedDrop(null);
               }}
               className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm"
@@ -74,8 +74,8 @@ export default function DryCalculator() {
             <input
               type="number"
               min={0}
-              value={kills}
-              onChange={(e) => setKills(Number(e.target.value))}
+              value={kills || ""}
+              onChange={(e) => setKills(Number(e.target.value) || 0)}
               className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm"
             />
           </div>
