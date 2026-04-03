@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { dropChance, killsForConfidence } from "../../lib/formulas/dry";
 import { POPULAR_DROPS, DROP_CATEGORIES, type DropEntry } from "../../lib/data/drops";
+import { itemIcon } from "../../lib/sprites";
 
 export default function DryCalculator() {
   const [kills, setKills] = useState(0);
@@ -31,16 +32,20 @@ export default function DryCalculator() {
         {/* Calculator */}
         <div className="bg-bg-secondary rounded-lg p-4 space-y-4">
           {selectedDrop && (
-            <div className="flex items-center justify-between text-sm text-text-secondary">
-              <span>
-                <span className="text-text-primary font-medium">
-                  {selectedDrop.item}
-                </span>{" "}
-                from {selectedDrop.source} (1/{Math.round(selectedDrop.rate)})
-              </span>
+            <div className="flex items-center gap-3 text-sm">
+              <img
+                src={itemIcon(selectedDrop.item)}
+                alt=""
+                className="w-8 h-8 shrink-0"
+                onError={(e) => { e.currentTarget.style.display = "none"; }}
+              />
+              <div className="flex-1 min-w-0">
+                <div className="text-text-primary font-medium">{selectedDrop.item}</div>
+                <div className="text-xs text-text-secondary">{selectedDrop.source} · 1/{Math.round(selectedDrop.rate).toLocaleString()}</div>
+              </div>
               <button
                 onClick={() => { setSelectedDrop(null); setRate(512); setKills(0); }}
-                className="text-xs text-text-secondary/50 hover:text-text-primary transition-colors cursor-pointer ml-2"
+                className="text-xs text-text-secondary/50 hover:text-text-primary transition-colors cursor-pointer"
               >
                 ×
               </button>
@@ -161,17 +166,25 @@ export default function DryCalculator() {
               <button
                 key={`${drop.item}-${drop.source}-${i}`}
                 onClick={() => selectDrop(drop)}
-                className={`w-full text-left px-2 py-1.5 rounded text-xs transition-colors ${
+                className={`w-full text-left flex items-center gap-2 px-2 py-1.5 rounded text-xs transition-colors ${
                   selectedDrop === drop
                     ? "bg-accent/15 text-accent"
                     : "hover:bg-bg-tertiary text-text-secondary"
                 }`}
               >
-                <div className="font-medium text-text-primary">
-                  {drop.item}
-                </div>
-                <div>
-                  {drop.source} · 1/{Math.round(drop.rate).toLocaleString()}
+                <img
+                  src={itemIcon(drop.item)}
+                  alt=""
+                  className="w-5 h-5 shrink-0"
+                  onError={(e) => { e.currentTarget.style.display = "none"; }}
+                />
+                <div className="min-w-0">
+                  <div className="font-medium text-text-primary truncate">
+                    {drop.item}
+                  </div>
+                  <div className="text-text-secondary/60">
+                    {drop.source} · 1/{Math.round(drop.rate).toLocaleString()}
+                  </div>
                 </div>
               </button>
             ))}

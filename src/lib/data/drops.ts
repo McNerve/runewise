@@ -120,6 +120,49 @@ export const POPULAR_DROPS: DropEntry[] = [
 
   // Barrows
   { item: "Barrows equipment (any piece)", source: "Barrows", rate: 353, category: "Other" },
+
+  // Varlamore
+  { item: "Tonalztics of ralos", source: "Sol Heredit", rate: 80, category: "Other" },
+  { item: "Sunfire fanatic helm", source: "Amoxliatl", rate: 256, category: "Other" },
+  { item: "Hueycoatl hide", source: "Hueycoatl", rate: 150, category: "Other" },
+
+  // Moons of Peril
+  { item: "Blood moon helm", source: "Blood Moon", rate: 256, category: "Other" },
+  { item: "Blue moon helm", source: "Blue Moon", rate: 256, category: "Other" },
+  { item: "Eclipse atlatl", source: "Eclipse Moon", rate: 256, category: "Other" },
+
+  // Corporeal Beast
+  { item: "Elysian sigil", source: "Corporeal Beast", rate: 4095, category: "Other" },
+  { item: "Spectral sigil", source: "Corporeal Beast", rate: 1365, category: "Other" },
+  { item: "Arcane sigil", source: "Corporeal Beast", rate: 1365, category: "Other" },
+
+  // More popular drops
+  { item: "Draconic visage", source: "Vorkath", rate: 5000, category: "Other" },
+  { item: "Jar of darkness", source: "Skotizo", rate: 200, category: "Other" },
+  { item: "Abyssal dagger", source: "Abyssal Sire", rate: 492, category: "Slayer" },
+  { item: "Bludgeon claw", source: "Abyssal Sire", rate: 492, category: "Slayer" },
+  { item: "Thermonuclear smoke devil pet", source: "Thermonuclear smoke devil", rate: 3000, category: "Pets" },
+  { item: "Hellpuppy", source: "Cerberus", rate: 3000, category: "Pets" },
+  { item: "Ikkle Hydra", source: "Alchemical Hydra", rate: 3000, category: "Pets" },
+  { item: "Skotos", source: "Skotizo", rate: 65, category: "Pets" },
+  { item: "Olmlet", source: "Chambers of Xeric", rate: 53, category: "Pets" },
+  { item: "Lil' Zik", source: "Theatre of Blood", rate: 650, category: "Pets" },
+  { item: "Tumeken's guardian", source: "Tombs of Amascut", rate: 350, category: "Pets" },
+  { item: "Nid", source: "Araxxor", rate: 2500, category: "Pets" },
+
+  // Gauntlet
+  { item: "Enhanced crystal weapon seed", source: "Corrupted Gauntlet", rate: 400, category: "Other" },
+  { item: "Youngllef", source: "Corrupted Gauntlet", rate: 800, category: "Pets" },
+
+  // Phantom Muspah
+  { item: "Ancient icon", source: "Phantom Muspah", rate: 75, category: "Other" },
+
+  // Royal Titans
+  { item: "Titan's grip", source: "Royal Titans", rate: 300, category: "Other" },
+
+  // Yama
+  { item: "Sulphur blades", source: "Yama", rate: 400, category: "Other" },
+  { item: "Scorching bow", source: "Yama", rate: 400, category: "Other" },
 ];
 
 export const DROP_CATEGORIES = [...new Set(POPULAR_DROPS.map((d) => d.category))];
