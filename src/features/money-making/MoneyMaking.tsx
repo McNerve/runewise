@@ -127,7 +127,6 @@ export default function MoneyMaking({ hiscores }: Props) {
           { id: "methods" as const, label: "Methods", icon: `${WIKI_IMG}/Coins_detail.png` },
           { id: "rankings" as const, label: "Profit Rankings", icon: `${WIKI_IMG}/Coins_10000.png` },
           { id: "alch" as const, label: "Alch Profits", icon: `${WIKI_IMG}/High_Level_Alchemy.png` },
-          { id: "wiki" as const, label: `Wiki (${wikiMethods.length})`, icon: `${WIKI_IMG}/Coins_10000_detail.png` },
         ]).map((tab) => (
           <button
             key={tab.id}
