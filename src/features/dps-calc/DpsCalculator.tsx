@@ -7,12 +7,14 @@ import {
 import { PRAYERS, type Prayer } from "../../lib/data/prayers";
 import { MONSTERS } from "../../lib/data/monsters";
 import { fetchAllMonsters, type WikiMonster } from "../../lib/api/monsters";
+import { fetchAllEquipment } from "../../lib/api/equipment";
 import { type HiscoreData } from "../../lib/api/hiscores";
 import { type WikiEquipment, type EquipmentSlot } from "../../lib/api/equipment";
 import { loadJSON, saveJSON } from "../../lib/localStorage";
 import { useNavigation } from "../../lib/NavigationContext";
 import { itemIcon } from "../../lib/sprites";
 import { getWeaponType, type WeaponStance } from "../../lib/data/weapon-stances";
+import { GEAR_PRESETS, type GearPreset } from "../../lib/data/gear-presets";
 import MonsterSearch from "./components/MonsterSearch";
 import ModifierToggles from "./components/ModifierToggles";
 import DpsBreakdown from "./components/DpsBreakdown";
@@ -128,10 +130,34 @@ export default function DpsCalculator({ hiscores }: Props) {
   const [equippedGear, setEquippedGear] = useState<EquippedGear>({});
   const [openSlot, setOpenSlot] = useState<EquipmentSlot | "2h" | null>(null);
 
-  // Load wiki monsters
+  const [allEquipment, setAllEquipment] = useState<WikiEquipment[]>([]);
+
+  // Load wiki data
   useEffect(() => {
     fetchAllMonsters().then(setWikiMonsters);
+    fetchAllEquipment().then(setAllEquipment);
   }, []);
+
+  const applyPreset = useCallback((preset: GearPreset) => {
+    setCombatStyle(preset.style);
+    setBonusMode("equipment");
+    setActiveLoadout(preset.name);
+    const gear: EquippedGear = {};
+    for (const [slot, itemName] of Object.entries(preset.slots)) {
+      if (!itemName) continue;
+      const match = allEquipment.find(
+        (e) => e.name.toLowerCase() === itemName.toLowerCase()
+      );
+      if (match) gear[slot as EquipmentSlot | "2h"] = match;
+    }
+    setEquippedGear(gear);
+    if (preset.prayer) {
+      const stylePrayers = PRAYERS.filter((p) => p.style === preset.style);
+      const pIdx = stylePrayers.findIndex((p) => p.name === preset.prayer);
+      if (pIdx >= 0) setPrayerIdx(pIdx);
+    }
+    setStanceIdx(0);
+  }, [allEquipment]);
 
   // Sync hiscores stats
   useEffect(() => {
@@ -393,11 +419,44 @@ export default function DpsCalculator({ hiscores }: Props) {
           ))}
         </div>
 
-        {/* Loadout Presets */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <div className="section-kicker">Loadouts</div>
-            {loadouts.length > 0 && (
+        {/* Gear Presets + Loadouts */}
+        <div className="space-y-3">
+          {/* Preset templates */}
+          <div>
+            <div className="section-kicker mb-2">Gear Presets</div>
+            <div className="flex gap-2">
+              <select
+                value=""
+                onChange={(e) => {
+                  const preset = GEAR_PRESETS.find((p) => p.name === e.target.value);
+                  if (preset) applyPreset(preset);
+                }}
+                className="flex-1 bg-bg-tertiary border border-border rounded-lg px-3 py-1.5 text-sm"
+              >
+                <option value="">Load a preset...</option>
+                <optgroup label="Melee">
+                  {GEAR_PRESETS.filter((p) => p.style === "melee").map((p) => (
+                    <option key={p.name} value={p.name}>{p.name} — {p.description}</option>
+                  ))}
+                </optgroup>
+                <optgroup label="Ranged">
+                  {GEAR_PRESETS.filter((p) => p.style === "ranged").map((p) => (
+                    <option key={p.name} value={p.name}>{p.name} — {p.description}</option>
+                  ))}
+                </optgroup>
+                <optgroup label="Magic">
+                  {GEAR_PRESETS.filter((p) => p.style === "magic").map((p) => (
+                    <option key={p.name} value={p.name}>{p.name} — {p.description}</option>
+                  ))}
+                </optgroup>
+              </select>
+            </div>
+          </div>
+
+          {/* Saved loadouts */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <div className="section-kicker">Saved Loadouts</div>
               <button
                 onClick={() => {
                   setEquippedGear({});
@@ -412,58 +471,56 @@ export default function DpsCalculator({ hiscores }: Props) {
                 }}
                 className="text-[10px] text-text-secondary/40 hover:text-danger transition-colors"
               >
-                Clear All
+                Clear
               </button>
-            )}
-          </div>
-          {loadouts.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mb-3">
-              {loadouts.map((l) => {
-                const isActive = activeLoadout === l.name;
-                return (
-                  <div
-                    key={l.name}
-                    className={`flex items-center gap-1 rounded-lg overflow-hidden border transition-colors ${
-                      isActive ? "border-accent bg-accent/10" : "border-border bg-bg-secondary"
-                    }`}
-                  >
-                    <button
-                      onClick={() => { applyLoadout(l); setActiveLoadout(l.name); }}
-                      className="px-2.5 py-1.5 text-xs font-medium hover:bg-bg-tertiary/50 transition-colors"
-                    >
-                      {l.name}
-                      <span className={`ml-1.5 text-[10px] capitalize ${isActive ? "text-accent" : "text-text-secondary/40"}`}>
-                        {l.combatStyle}
-                      </span>
-                    </button>
-                    <button
-                      onClick={() => deleteLoadout(l.name)}
-                      className="px-1.5 py-1.5 text-text-secondary/30 hover:text-danger text-xs transition-colors"
-                    >
-                      ×
-                    </button>
-                  </div>
-                );
-              })}
             </div>
-          )}
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={loadoutName}
-              onChange={(e) => setLoadoutName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && saveLoadout()}
-              placeholder="Loadout name..."
-              aria-label="Loadout name"
-              className="flex-1 bg-bg-secondary border border-border rounded-lg px-3 py-1.5 text-sm"
-            />
-            <button
-              onClick={saveLoadout}
-              disabled={!loadoutName.trim()}
-              className="px-3 py-1.5 text-xs font-medium bg-accent text-white rounded-lg hover:bg-accent-hover transition-colors disabled:opacity-40"
-            >
-              Save
-            </button>
+            {loadouts.length > 0 && (
+              <div className="flex gap-2 mb-2">
+                <select
+                  value={activeLoadout ?? ""}
+                  onChange={(e) => {
+                    const l = loadouts.find((lo) => lo.name === e.target.value);
+                    if (l) { applyLoadout(l); setActiveLoadout(l.name); }
+                  }}
+                  className="flex-1 bg-bg-tertiary border border-border rounded-lg px-3 py-1.5 text-sm"
+                >
+                  <option value="">Select loadout...</option>
+                  {loadouts.map((l) => (
+                    <option key={l.name} value={l.name}>{l.name} ({l.combatStyle})</option>
+                  ))}
+                </select>
+                {activeLoadout && (
+                  <button
+                    onClick={() => {
+                      if (activeLoadout) deleteLoadout(activeLoadout);
+                      setActiveLoadout(null);
+                    }}
+                    className="px-2 py-1.5 text-xs text-text-secondary/40 hover:text-danger transition-colors"
+                    title="Delete selected loadout"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            )}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={loadoutName}
+                onChange={(e) => setLoadoutName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && saveLoadout()}
+                placeholder="Save as..."
+                aria-label="Loadout name"
+                className="flex-1 bg-bg-secondary border border-border rounded-lg px-3 py-1.5 text-sm"
+              />
+              <button
+                onClick={saveLoadout}
+                disabled={!loadoutName.trim()}
+                className="px-3 py-1.5 text-xs font-medium bg-accent text-white rounded-lg hover:bg-accent-hover transition-colors disabled:opacity-40"
+              >
+                Save
+              </button>
+            </div>
           </div>
         </div>
 
