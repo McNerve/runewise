@@ -242,6 +242,7 @@ export default function WikiLookup() {
                 }
               }}
               placeholder="Search the OSRS Wiki for an item, place, NPC, or activity..."
+              aria-label="Search OSRS Wiki"
               className="w-full rounded-xl border border-border bg-bg-primary px-4 py-3 text-sm outline-none transition focus:border-accent"
             />
             {showResultsPanel ? (
@@ -298,8 +299,11 @@ export default function WikiLookup() {
       ) : null}
 
       {loadingDocument ? (
-        <div className="py-10 text-center text-sm text-text-secondary">
-          Loading wiki page...
+        <div className="space-y-4 py-6">
+          <div className="animate-pulse bg-bg-tertiary/50 h-6 rounded w-1/3" />
+          <div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-2/3" />
+          <div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-1/2" />
+          <div className="animate-pulse bg-bg-tertiary/40 h-32 rounded-xl w-full mt-4" />
         </div>
       ) : null}
 
@@ -320,7 +324,7 @@ export default function WikiLookup() {
                   <div className="text-[10px] uppercase tracking-[0.2em] text-text-secondary/45">
                     OSRS Wiki
                   </div>
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-text-secondary/60">
+                  <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-xs text-text-secondary/60">
                     <button
                       type="button"
                       onClick={() => navigate("home")}
@@ -349,7 +353,7 @@ export default function WikiLookup() {
                         </button>
                       </div>
                     ))}
-                  </div>
+                  </nav>
                   <h3 className="text-3xl font-semibold tracking-tight">{document.title}</h3>
                   {document.summary ? (
                     <p className="max-w-3xl text-sm leading-6 text-text-secondary">
@@ -437,12 +441,20 @@ export default function WikiLookup() {
                   <img
                     src={document.infoboxImage}
                     alt={document.infoboxTitle ?? document.title}
-                    className="max-h-64 w-full rounded-xl border border-border object-cover"
-                    onError={(event) => {
-                      event.currentTarget.style.display = "none";
+                    className="max-h-64 w-full rounded-xl border border-border object-contain bg-bg-tertiary/30"
+                    onError={(e) => {
+                      const el = e.currentTarget;
+                      el.style.display = "none";
+                      const fallback = el.nextElementSibling;
+                      if (fallback instanceof HTMLElement) fallback.style.display = "flex";
                     }}
                   />
                 ) : null}
+                <div
+                  className="hidden h-32 w-full rounded-xl border border-border bg-bg-tertiary/30 items-center justify-center text-2xl text-text-secondary/30"
+                >
+                  {(document.infoboxTitle ?? document.title)[0]}
+                </div>
                 <div>
                   <div className="text-sm font-semibold text-text-primary">
                     {document.infoboxTitle ?? document.title}

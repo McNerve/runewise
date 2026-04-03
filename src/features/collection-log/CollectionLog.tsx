@@ -365,9 +365,52 @@ export default function CollectionLog({ rsn }: Props) {
       )}
 
       {!templeLoading && !templeError && rsn && templeSynced === false && (
-        <div className="text-xs text-text-secondary/50 bg-bg-secondary/50 rounded px-3 py-2 mb-4">
-          No Temple collection log found for {rsn}. Sync your account at{" "}
-          <span className="text-accent">templeosrs.com</span> to see live data.
+        <div className="bg-bg-secondary/50 rounded-lg px-4 py-3 mb-4 space-y-2">
+          <p className="text-sm font-medium text-text-primary">
+            No collection log data found for {rsn}
+          </p>
+          <p className="text-xs text-text-secondary leading-relaxed">
+            To see your live collection log, install the <strong>Temple OSRS</strong> plugin
+            in RuneLite and open your Collection Log in-game. Your data will be sent to Temple
+            automatically.
+          </p>
+          <div className="flex gap-3 pt-1">
+            <a
+              href="https://templeosrs.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-accent hover:text-accent-hover"
+            >
+              templeosrs.com
+            </a>
+            <button
+              onClick={() => {
+                setTempleLoading(true);
+                setTempleError(null);
+                setTempleSynced(null);
+                Promise.all([fetchTemplePlayerInfo(rsn), fetchTempleCollectionLog(rsn)])
+                  .then(([info, clog]) => {
+                    if (info?.clog_synced) {
+                      setTempleSynced(true);
+                      if (clog && Object.keys(clog.categories).length > 0) {
+                        setTempleData(clog);
+                        setMode("temple");
+                      }
+                    } else {
+                      setTempleSynced(false);
+                    }
+                    setTempleLoading(false);
+                  })
+                  .catch(() => {
+                    setTempleError("Failed to reach Temple OSRS");
+                    setTempleLoading(false);
+                  });
+              }}
+              className="text-xs text-accent hover:text-accent-hover"
+            >
+              Check Again
+            </button>
+          </div>
         </div>
       )}
 

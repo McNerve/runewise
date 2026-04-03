@@ -356,6 +356,7 @@ export default function BossGuide({ hiscores }: Props) {
             <button
               key={category}
               type="button"
+              aria-pressed={selectedCategory === category}
               onClick={() => setSelectedCategory(category)}
               className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
                 selectedCategory === category
@@ -472,6 +473,7 @@ export default function BossGuide({ hiscores }: Props) {
                     <button
                       key={tab.id}
                       type="button"
+                      aria-pressed={activeTab === tab.id}
                       onClick={() => setActiveTab(tab.id)}
                       className={`rounded-2xl border px-3 py-2 text-left transition ${
                         activeTab === tab.id
@@ -723,11 +725,11 @@ export default function BossGuide({ hiscores }: Props) {
                         <table className="w-full text-sm">
                           <thead>
                             <tr className="border-b border-border text-text-secondary text-xs">
-                              <th className="px-4 py-2 text-left">Item</th>
-                              <th className="px-4 py-2 text-right">Rate</th>
-                              <th className="px-4 py-2 text-right">Qty</th>
-                              <th className="px-4 py-2 text-right">GE</th>
-                              <th className="px-4 py-2 text-right">GP/Kill</th>
+                              <th scope="col" className="px-4 py-2 text-left">Item</th>
+                              <th scope="col" className="px-4 py-2 text-right">Rate</th>
+                              <th scope="col" className="px-4 py-2 text-right">Qty</th>
+                              <th scope="col" className="px-4 py-2 text-right">GE</th>
+                              <th scope="col" className="px-4 py-2 text-right">GP/Kill</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -810,10 +812,10 @@ export default function BossGuide({ hiscores }: Props) {
                         <table className="w-full text-sm">
                           <thead>
                             <tr className="border-b border-border text-text-secondary text-xs">
-                              <th className="px-4 py-2 text-left">Item</th>
-                              <th className="px-4 py-2 text-right">Qty</th>
-                              <th className="px-4 py-2 text-right">Rate</th>
-                              <th className="px-4 py-2 text-right">GE</th>
+                              <th scope="col" className="px-4 py-2 text-left">Item</th>
+                              <th scope="col" className="px-4 py-2 text-right">Qty</th>
+                              <th scope="col" className="px-4 py-2 text-right">Rate</th>
+                              <th scope="col" className="px-4 py-2 text-right">GE</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -869,9 +871,9 @@ export default function BossGuide({ hiscores }: Props) {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-border text-text-secondary text-xs">
-                        <th className="px-4 py-2 text-left">Item</th>
-                        <th className="px-4 py-2 text-right">Qty</th>
-                        <th className="px-4 py-2 text-right">Rate</th>
+                        <th scope="col" className="px-4 py-2 text-left">Item</th>
+                        <th scope="col" className="px-4 py-2 text-right">Qty</th>
+                        <th scope="col" className="px-4 py-2 text-right">Rate</th>
                       </tr>
                     </thead>
                     <tbody>
