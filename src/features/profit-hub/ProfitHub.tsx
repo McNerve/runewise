@@ -91,17 +91,20 @@ export default function ProfitHub() {
     if (sourceFilter === "boss")
       result = result.filter((e) => e.source === "Boss Loot");
     else if (sourceFilter === "money")
-      result = result.filter(
-        (e) => e.source === "Money Method" && e.category === "Combat"
-      );
+      result = result.filter((e) => e.category === "Combat");
     else if (sourceFilter === "skilling")
       result = result.filter(
-        (e) =>
-          e.source === "Money Method" &&
-          (e.category === "Skilling" ||
-            e.category === "Processing" ||
-            e.category === "Collecting")
+        (e) => e.category === "Skilling" || e.category === "Processing" || e.category === "Collecting"
       );
+
+    // Deduplicate by name
+    const seen = new Set<string>();
+    result = result.filter((e) => {
+      const key = e.name.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
 
     if (search.length >= 2) {
       const q = search.toLowerCase();
