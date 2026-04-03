@@ -208,7 +208,9 @@ function DropTablesTab({
             setQuery(e.target.value);
             setSelectedMonster(null);
           }}
-          onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+          onFocus={() => {
+            if (suggestions.length > 0 && query !== selectedMonster) setShowSuggestions(true);
+          }}
           onKeyDown={(e) => {
             if (e.key === "Enter" && suggestions.length > 0) {
               e.preventDefault();
