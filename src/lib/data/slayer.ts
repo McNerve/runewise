@@ -4,8 +4,6 @@ export interface SlayerTask {
   weight: number;
   slayerLevel: number;
   combatLevel: number;
-  unlockCost?: number;
-  unlockName?: string;
 }
 
 export interface SlayerMaster {
@@ -13,8 +11,177 @@ export interface SlayerMaster {
   combatRequired: number;
   slayerRequired: number;
   location: string;
+  pointsPerTask: number;
   tasks: SlayerTask[];
 }
+
+export type SlayerRewardCategory = "unlock" | "extend" | "buy" | "cosmetic";
+
+export interface SlayerReward {
+  name: string;
+  cost: number;
+  category: SlayerRewardCategory;
+  description: string;
+}
+
+export const SLAYER_REWARD_CATEGORIES: Array<{
+  id: SlayerRewardCategory;
+  label: string;
+  description: string;
+}> = [
+  { id: "unlock", label: "Unlocks", description: "Permanent task and mechanic unlocks" },
+  { id: "extend", label: "Extensions", description: "Increase task assignment amounts" },
+  { id: "buy", label: "Purchases", description: "Items you can buy with points" },
+  { id: "cosmetic", label: "Cosmetics", description: "Slayer helmet recolours" },
+];
+
+export const SLAYER_REWARDS: SlayerReward[] = [
+  // Unlocks
+  { name: "Malevolent Masquerade", cost: 400, category: "unlock", description: "Unlock Slayer helmet assembly (55 Crafting)" },
+  { name: "Broader Fletching", cost: 300, category: "unlock", description: "Unlock broad arrow (52 Fletch), broad bolt (55 Fletch), amethyst broad bolt (76 Fletch)" },
+  { name: "Task Storage", cost: 500, category: "unlock", description: "Store one task to swap later — store/unstore is free" },
+  { name: "Like a Boss", cost: 200, category: "unlock", description: "Konar, Duradel, Krystilia, Nieve can assign boss monsters" },
+  { name: "Bigger and Badder", cost: 50, category: "unlock", description: "Superior Slayer monsters can spawn on task" },
+  { name: "Ring Bling", cost: 150, category: "unlock", description: "Unlock Slayer ring crafting (75 Crafting)" },
+  { name: "Gargoyle Smasher", cost: 120, category: "unlock", description: "Auto-finish gargoyles with rock hammer in inventory" },
+  { name: "'Shroom Sprayer", cost: 110, category: "unlock", description: "Auto-finish mutated zygomites with fungicide spray in inventory" },
+  { name: "Hot Stuff", cost: 100, category: "unlock", description: "Duradel, Nieve, Chaeldar can assign TzHaar; chance to fight TzTok-Jad" },
+  { name: "Duly Noted", cost: 200, category: "unlock", description: "Mithril dragons drop noted mithril bars on assignment" },
+  { name: "Watch the Birdie", cost: 80, category: "unlock", description: "Konar, Duradel, Nieve, Chaeldar, Krystilia can assign Aviansie" },
+  { name: "Basilocked", cost: 80, category: "unlock", description: "Konar, Duradel, Nieve can assign Basilisks" },
+  { name: "Actual Vampyre Slayer", cost: 80, category: "unlock", description: "Konar, Duradel, Nieve, Chaeldar can assign Vampyres" },
+  { name: "Lured In", cost: 80, category: "unlock", description: "Nieve and Duradel can assign Aquanites" },
+  { name: "Wings Spread", cost: 80, category: "unlock", description: "Nieve and Duradel can assign Gryphons" },
+  { name: "Reptile Got Ripped", cost: 75, category: "unlock", description: "Konar, Duradel, Nieve, Chaeldar can assign Lizardmen" },
+  { name: "Warped Reality", cost: 60, category: "unlock", description: "Konar, Duradel, Nieve, Chaeldar can assign Warped creatures" },
+  { name: "Seeing Red", cost: 50, category: "unlock", description: "Konar, Duradel, Nieve can assign Red dragons" },
+  { name: "Double Trouble", cost: 500, category: "unlock", description: "Dusk and Dawn each count as separate kills toward Grotesque Guardian task" },
+  { name: "Stop the Wyvern", cost: 500, category: "unlock", description: "Remove Fossil Island Wyverns from assignment pool (no block slot)" },
+  { name: "Slug Salter", cost: 10, category: "unlock", description: "Auto-finish rock slugs with bag of salt in inventory" },
+  { name: "Reptile Freezer", cost: 10, category: "unlock", description: "Auto-finish desert lizards with ice cooler in inventory" },
+  { name: "I Wildy More Slayer", cost: 0, category: "unlock", description: "Krystilia can assign Jellies, Dust Devils, Nechryaels, Abyssal Demons" },
+
+  // Extensions
+  { name: "Augment my Abbies", cost: 100, category: "extend", description: "Abyssal demons: 200–250" },
+  { name: "Nechs Please", cost: 100, category: "extend", description: "Nechryael: 200–250" },
+  { name: "Get Smashed", cost: 100, category: "extend", description: "Gargoyles: 200–250" },
+  { name: "To Dust You Shall Return", cost: 100, category: "extend", description: "Dust devils: 200–250" },
+  { name: "Greater Challenge", cost: 100, category: "extend", description: "Greater demons: 200–250" },
+  { name: "It's Dark in Here", cost: 100, category: "extend", description: "Black demons: 200–250" },
+  { name: "Smell Ya Later", cost: 100, category: "extend", description: "Aberrant spectres: 200–250" },
+  { name: "Horrorific", cost: 100, category: "extend", description: "Cave horrors: 200–250" },
+  { name: "Krack On", cost: 100, category: "extend", description: "Cave kraken: 150–200" },
+  { name: "Ankou Very Much", cost: 100, category: "extend", description: "Ankous: 91–150" },
+  { name: "Suq-a-nother One", cost: 100, category: "extend", description: "Suqahs: 186–250" },
+  { name: "Need More Darkness", cost: 100, category: "extend", description: "Dark beasts: 110–135" },
+  { name: "Spiritual Fervour", cost: 100, category: "extend", description: "Spiritual creatures: 181–250" },
+  { name: "Birds of a Feather", cost: 100, category: "extend", description: "Aviansie: 200–250" },
+  { name: "Bleed Me Dry", cost: 75, category: "extend", description: "Bloodveld: 200–250" },
+  { name: "Wyver-nother One", cost: 100, category: "extend", description: "Skeletal Wyverns: 50–75" },
+  { name: "Wyver-nother Two", cost: 100, category: "extend", description: "Fossil Island Wyverns: 55–75" },
+  { name: "Basilonger", cost: 100, category: "extend", description: "Basilisks: 200–250" },
+  { name: "More at Stake", cost: 100, category: "extend", description: "Vampyres: 200–250" },
+  { name: "Revenenenenenants", cost: 100, category: "extend", description: "Revenants: 100–150" },
+  { name: "More eyes than sense", cost: 150, category: "extend", description: "Araxytes: 200–250" },
+  { name: "Un-restraining Order", cost: 100, category: "extend", description: "Custodian stalkers: 200–250" },
+  { name: "Let's Stay All Aquanite", cost: 100, category: "extend", description: "Aquanites: 150–200" },
+  { name: "Can of Wyrms", cost: 100, category: "extend", description: "Wyrms: 200–250" },
+  { name: "Gryphon and on", cost: 50, category: "extend", description: "Gryphons: +80 to base amount" },
+  { name: "Pedal to the Metals", cost: 200, category: "extend", description: "Metal dragons: 150–200" },
+  { name: "Get Scabaright on It", cost: 50, category: "extend", description: "Scabarites: 130–170" },
+  { name: "Fire & Darkness", cost: 50, category: "extend", description: "Black dragons: 40–60" },
+
+  // Purchases
+  { name: "Herb sack", cost: 750, category: "buy", description: "Stores up to 30 of each grimy herb (58 Herblore)" },
+  { name: "Rune pouch", cost: 750, category: "buy", description: "Stores 16,000 of 3 rune types" },
+  { name: "Slayer ring (8)", cost: 75, category: "buy", description: "Ring with teleports to Slayer dungeons (75 Crafting + Ring Bling)" },
+  { name: "Broad bolts (x250)", cost: 35, category: "buy", description: "For Turoths/Kurask (55 Slayer, 61 Ranged)" },
+  { name: "Broad arrows (x250)", cost: 35, category: "buy", description: "For Turoths/Kurask (55 Slayer, 50 Ranged)" },
+  { name: "Looting bag", cost: 10, category: "buy", description: "Stores tradeable items in Wilderness/PvP areas" },
+
+  // Cosmetics (Slayer helm recolours)
+  { name: "King Black Bonnet", cost: 1000, category: "cosmetic", description: "Black recolour — requires KBD head" },
+  { name: "Kalphite Khat", cost: 1000, category: "cosmetic", description: "Green recolour — requires KQ head" },
+  { name: "Unholy Helmet", cost: 1000, category: "cosmetic", description: "Red recolour — requires Abyssal Demon head" },
+  { name: "Dark Mantle", cost: 1000, category: "cosmetic", description: "Purple recolour — requires Dark Claw" },
+  { name: "Undead Head", cost: 1000, category: "cosmetic", description: "Turquoise recolour — requires Vorkath's head" },
+  { name: "Use More Head", cost: 1000, category: "cosmetic", description: "Hydra theme — requires Alchemical Hydra head" },
+  { name: "Eye see you", cost: 1000, category: "cosmetic", description: "Araxxor theme — requires Araxyte head" },
+  { name: "Twisted Vision", cost: 1000, category: "cosmetic", description: "Great Olm theme — requires Twisted Horns" },
+  { name: "Absolutely Slayin'", cost: 1000, category: "cosmetic", description: "Skillcape theme — requires 99 Slayer" },
+];
+
+export const SLAYER_STREAK_MULTIPLIERS = [
+  { streak: "10th", multiplier: 5 },
+  { streak: "50th", multiplier: 15 },
+  { streak: "100th", multiplier: 25 },
+  { streak: "250th", multiplier: 35 },
+  { streak: "1,000th", multiplier: 50 },
+] as const;
+
+export interface SlayerBlockRecommendation {
+  monster: string;
+  reason: string;
+}
+
+export const RECOMMENDED_BLOCKS: Record<string, SlayerBlockRecommendation[]> = {
+  "Duradel": [
+    { monster: "Metal dragons", reason: "High weight (14), slow kills, low profit" },
+    { monster: "Black demons", reason: "High weight (8), tedious unless doing Demonic Gorillas" },
+    { monster: "Greater demons", reason: "High weight (9), slow XP unless doing K'ril" },
+    { monster: "Hellhounds", reason: "High weight (10), no drops without ring of wealth (i)" },
+    { monster: "Fire giants", reason: "Weight 7, mediocre XP and loot" },
+    { monster: "Suqah", reason: "Weight 8, far from teleports, annoying mechanics" },
+  ],
+  "Nieve / Steve": [
+    { monster: "Metal dragons", reason: "High weight (12), slow kills" },
+    { monster: "Black demons", reason: "High weight (9), tedious without Demonic Gorillas" },
+    { monster: "Fire giants", reason: "High weight (9), mediocre returns" },
+    { monster: "Kalphite", reason: "High weight (9), only good if doing KQ" },
+    { monster: "Hellhounds", reason: "Weight 8, no drops" },
+    { monster: "Spiritual creatures", reason: "Weight 6, slow and spread out" },
+  ],
+  "Konar": [
+    { monster: "Metal dragons", reason: "Highest weight (15), very slow in assigned locations" },
+    { monster: "Black demons", reason: "Weight 9, location restriction makes them worse" },
+    { monster: "Fire giants", reason: "Weight 9, Konar locations are inconvenient" },
+    { monster: "Bloodveld", reason: "Weight 9, location-locked makes them tedious" },
+    { monster: "Kalphite", reason: "Weight 9, slow in assigned areas" },
+    { monster: "Drakes", reason: "Weight 10, slow kills for the amount assigned" },
+  ],
+  "Krystilia": [
+    { monster: "Greater demons", reason: "High weight (8), dangerous in Wilderness" },
+    { monster: "Hellhounds", reason: "Weight 7, no drops, PvP risk" },
+    { monster: "Aviansies", reason: "Weight 7, hard to reach safely in Wilderness" },
+    { monster: "Fire giants", reason: "Weight 7, PvP hotspot" },
+    { monster: "Ice warriors", reason: "Weight 7, low value" },
+    { monster: "Scorpions", reason: "Weight 6, very low XP" },
+  ],
+};
+
+export interface SlayerStrategy {
+  title: string;
+  content: string;
+}
+
+export const BOOSTING_STRATEGIES: SlayerStrategy[] = [
+  {
+    title: "Turael Boosting (Best Points/Hr)",
+    content: "Complete 9 fast tasks from Turael (0 points each — use cannon + expeditious bracelets), then take every 10th task from Konar or Duradel for 5x multiplied points. If near a 50th/100th milestone, count your streak and route the milestone task to your highest-level master. Turael tasks like Bats, Birds, and Cows can be done in under a minute each.",
+  },
+  {
+    title: "Mazchna Boosting (Alternative)",
+    content: "Do 49 tasks with Mazchna (6 pts each = 294 pts), then take every 50th from Konar (18 × 15 = 270 pts) for 564 pts per 50-task cycle. Slower than Turael boosting but builds streak naturally and is less click-intensive.",
+  },
+  {
+    title: "When to Skip vs Block",
+    content: "Skipping costs 30 points per task and should be used for tasks you dislike but have low weight (won't come up often). Blocking is for high-weight tasks you never want — it permanently removes them, making every future assignment better. You get 1 block slot per 50 Quest Points, up to 6 slots (plus 1 from Elite Lumbridge Diary).",
+  },
+  {
+    title: "Master Selection",
+    content: "Duradel (15 pts) — best task quality and XP/hr for high-level mains. Konar (18 pts) — best base points, bonus Brimstone Keys, but location-locked tasks. Krystilia (25 pts) — highest points but Wilderness-only with PvP risk, separate streak counter. Nieve (12 pts) — good balance of task quality and points, easier requirements than Duradel.",
+  },
+];
 
 export const SLAYER_MASTERS: SlayerMaster[] = [
   {
@@ -22,6 +189,7 @@ export const SLAYER_MASTERS: SlayerMaster[] = [
     combatRequired: 3,
     slayerRequired: 1,
     location: "Burthorpe",
+    pointsPerTask: 0,
     tasks: [
       { monster: "Banshees", amount: "15-30", weight: 8, slayerLevel: 15, combatLevel: 3 },
       { monster: "Bats", amount: "15-30", weight: 7, slayerLevel: 1, combatLevel: 3 },
@@ -54,6 +222,7 @@ export const SLAYER_MASTERS: SlayerMaster[] = [
     combatRequired: 75,
     slayerRequired: 1,
     location: "Mount Karuulm",
+    pointsPerTask: 18,
     tasks: [
       { monster: "Aberrant spectres", amount: "120-170", weight: 6, slayerLevel: 60, combatLevel: 75 },
       { monster: "Abyssal demons", amount: "120-170", weight: 9, slayerLevel: 85, combatLevel: 75 },
@@ -101,6 +270,7 @@ export const SLAYER_MASTERS: SlayerMaster[] = [
     combatRequired: 3,
     slayerRequired: 1,
     location: "Edgeville",
+    pointsPerTask: 25,
     tasks: [
       { monster: "Abyssal demons", amount: "75-125", weight: 5, slayerLevel: 85, combatLevel: 3 },
       { monster: "Ankou", amount: "75-125", weight: 6, slayerLevel: 1, combatLevel: 3 },
@@ -146,6 +316,7 @@ export const SLAYER_MASTERS: SlayerMaster[] = [
     combatRequired: 85,
     slayerRequired: 1,
     location: "Stronghold Slayer Cave",
+    pointsPerTask: 12,
     tasks: [
       { monster: "Aberrant spectres", amount: "120-185", weight: 6, slayerLevel: 60, combatLevel: 85 },
       { monster: "Abyssal demons", amount: "120-185", weight: 9, slayerLevel: 85, combatLevel: 85 },
@@ -200,6 +371,7 @@ export const SLAYER_MASTERS: SlayerMaster[] = [
     combatRequired: 100,
     slayerRequired: 50,
     location: "Shilo Village",
+    pointsPerTask: 15,
     tasks: [
       { monster: "Aberrant spectres", amount: "130-200", weight: 7, slayerLevel: 60, combatLevel: 100 },
       { monster: "Abyssal demons", amount: "130-200", weight: 12, slayerLevel: 85, combatLevel: 100 },
