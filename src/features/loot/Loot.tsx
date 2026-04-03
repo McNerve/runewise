@@ -14,6 +14,7 @@ import { TableSkeleton } from "../../components/Skeleton";
 import EmptyState from "../../components/EmptyState";
 
 import BossProfitRanking from "./components/BossProfitRanking";
+import ItemTooltip from "../../components/ItemTooltip";
 
 type LootTab = "drops" | "profit" | "ranking";
 
@@ -682,7 +683,9 @@ function ProfitCalculatorTab({
                   <td className="px-4 py-2">
                     <div className="flex items-center gap-2">
                       <WikiImage src={itemIcon(row.itemName)} alt="" className="w-5 h-5" fallback={row.itemName[0]} />
-                      <span className={categoryColor(row.category)}>{row.itemName}</span>
+                      <ItemTooltip itemName={row.itemName}>
+                        <span className={`cursor-default ${categoryColor(row.category)}`}>{row.itemName}</span>
+                      </ItemTooltip>
                     </div>
                   </td>
                   <td className="text-right px-4 py-2 text-text-secondary">

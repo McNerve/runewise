@@ -155,6 +155,7 @@ export default function BossGuide({ hiscores }: Props) {
   const [bucketFallbackDrops, setBucketFallbackDrops] = useState<BossWikiDrop[]>([]);
   const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
   const [itemMap, setItemMap] = useState<Map<string, number>>(new Map());
+  const [iconMap, setIconMap] = useState<Map<string, string>>(new Map());
   const activeRequest = useRef(0);
   const contentRef = useRef<HTMLDivElement>(null);
   const guideContentRef = useRef<HTMLDivElement>(null);
@@ -305,10 +306,13 @@ export default function BossGuide({ hiscores }: Props) {
         if (cancelled) return;
         setPrices(nextPrices);
         const nameToId = new Map<string, number>();
+        const nameToIcon = new Map<string, string>();
         for (const item of mapping) {
           nameToId.set(item.name.toLowerCase(), item.id);
+          if (item.icon) nameToIcon.set(item.name.toLowerCase(), item.icon);
         }
         setItemMap(nameToId);
+        setIconMap(nameToIcon);
       }
     );
 
@@ -775,6 +779,7 @@ export default function BossGuide({ hiscores }: Props) {
                   drops={wikiDrops}
                   prices={prices}
                   itemMap={itemMap}
+                  iconMap={iconMap}
                   killsPerHour={lootKillsPerHour}
                   onKillsPerHourChange={setLootKillsPerHour}
                   showProfit
