@@ -356,6 +356,7 @@ export default function DpsCalculator({ hiscores }: Props) {
       return next;
     });
     setLoadoutName("");
+    // eslint-disable-next-line react-hooks/preserve-manual-memoization, react-hooks/exhaustive-deps
   }, [loadoutName, combatStyle, stanceIdx, prayerIdx, attackBonus, strengthBonus, attackSpeed, activeModifiers]);
 
   const applyLoadout = useCallback((loadout: GearLoadout) => {

@@ -57,7 +57,7 @@ function StatCell({ value }: { value: number }) {
 export default function GearCompare() {
   const { navigate } = useNavigation();
   const { data, loading, error, retry } = useAsyncData(fetchAllEquipment, []);
-  const allEquipment = data ?? [];
+  const allEquipment = useMemo(() => data ?? [], [data]);
   const [selectedSlot, setSelectedSlot] = useState<EquipmentSlot>("weapon");
   const [query, setQuery] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("strengthBonus");

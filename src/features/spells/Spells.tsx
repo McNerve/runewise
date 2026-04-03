@@ -129,7 +129,7 @@ function spellIcon(spell: WikiSpell): string {
 export default function Spells() {
   const { navigate } = useNavigation();
   const { data, loading, error, retry } = useAsyncData(fetchAllSpells, []);
-  const allSpells = data ?? [];
+  const allSpells = useMemo(() => data ?? [], [data]);
   const [activeBook, setActiveBook] = useState<Spellbook>("normal");
   const [query, setQuery] = useState("");
   const [expandedSpell, setExpandedSpell] = useState<string | null>(null);
