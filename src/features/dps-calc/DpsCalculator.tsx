@@ -280,7 +280,8 @@ export default function DpsCalculator({ hiscores }: Props) {
     [activeModifiers]
   );
 
-  const result = useMemo( // eslint-disable-line react-hooks/preserve-manual-memoization
+  /* eslint-disable react-hooks/preserve-manual-memoization */
+  const result = useMemo(
     () =>
       calculateDps({
         attackLevel,
@@ -302,7 +303,6 @@ export default function DpsCalculator({ hiscores }: Props) {
         modifiers: modifierList,
         defReductions,
       }),
-    // eslint-disable-next-line react-hooks/preserve-manual-memoization
     [
       attackLevel,
       strengthLevel,
@@ -322,6 +322,7 @@ export default function DpsCalculator({ hiscores }: Props) {
       defReductions,
     ]
   );
+  /* eslint-enable react-hooks/preserve-manual-memoization */
 
   const toggleModifier = useCallback((id: string) => { // eslint-disable-line react-hooks/preserve-manual-memoization
     setActiveModifiers((prev) => {
