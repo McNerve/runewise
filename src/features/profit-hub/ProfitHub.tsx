@@ -91,7 +91,7 @@ export default function ProfitHub() {
     if (sourceFilter === "boss")
       result = result.filter((e) => e.source === "Boss Loot");
     else if (sourceFilter === "money")
-      result = result.filter((e) => e.category === "Combat");
+      result = result.filter((e) => e.source === "Money Method" && e.category === "Combat");
     else if (sourceFilter === "skilling")
       result = result.filter(
         (e) => e.category === "Skilling" || e.category === "Processing" || e.category === "Collecting"
