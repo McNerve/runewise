@@ -217,24 +217,36 @@ export default function Overview({ hiscores, rsn }: Props) {
         )}
       </div>
 
-      {/* WOM data: EHP, EHB, account type */}
-      <div className="flex items-center gap-3 mb-4 text-xs text-text-secondary">
-        {overallRank > 0 && <span>Overall rank #{overallRank.toLocaleString()}</span>}
-        {womPlayer?.type && womPlayer.type !== "regular" && (
-          <span className="bg-accent/15 text-accent px-1.5 py-0.5 rounded capitalize">
-            {womPlayer.type.replace("_", " ")}
-          </span>
+      {/* WOM data: Rank, EHP, EHB, account type */}
+      <div className="flex flex-wrap justify-center gap-3 mb-4">
+        {overallRank > 0 && (
+          <div className="text-center px-3 py-1.5">
+            <div className="text-sm font-bold tabular-nums">#{overallRank.toLocaleString()}</div>
+            <div className="text-[10px] text-text-secondary">Overall Rank</div>
+          </div>
         )}
         {womPlayer?.ehp != null && womPlayer.ehp > 0 && (
-          <span title="Efficient Hours Played">EHP: {womPlayer.ehp.toFixed(0)}</span>
+          <div className="text-center px-3 py-1.5" title="Efficient Hours Played">
+            <div className="text-sm font-bold tabular-nums">{womPlayer.ehp.toFixed(0)}</div>
+            <div className="text-[10px] text-text-secondary">EHP</div>
+          </div>
         )}
         {womPlayer?.ehb != null && womPlayer.ehb > 0 && (
-          <span title="Efficient Hours Bossed">EHB: {womPlayer.ehb.toFixed(0)}</span>
+          <div className="text-center px-3 py-1.5" title="Efficient Hours Bossed">
+            <div className="text-sm font-bold tabular-nums">{womPlayer.ehb.toFixed(0)}</div>
+            <div className="text-[10px] text-text-secondary">EHB</div>
+          </div>
+        )}
+        {womPlayer?.type && womPlayer.type !== "regular" && (
+          <div className="text-center px-3 py-1.5">
+            <div className="text-sm font-bold text-accent capitalize">{womPlayer.type.replace("_", " ")}</div>
+            <div className="text-[10px] text-text-secondary">Account Type</div>
+          </div>
         )}
       </div>
 
       {/* Profile sub-tabs */}
-      <div className="flex gap-1 mb-5 overflow-x-auto">
+      <div className="flex gap-1 mb-5 overflow-x-auto justify-center">
         {([
           { id: "overview" as const, label: "Overview", icon: `${WIKI_IMG}/Stats_icon.png` },
           { id: "quests" as const, label: `Quests${questPoints ? ` (${questPoints} QP)` : ""}`, icon: `${WIKI_IMG}/Quest_point_icon.png` },

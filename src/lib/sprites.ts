@@ -141,7 +141,7 @@ export const NAV_ICONS: Record<string, string> = {
   overview: `${WIKI_IMG}/Character_Summary_tab_icon.png`,
   "collection-log": `${WIKI_IMG}/Collection_log.png`,
   lookup: `${WIKI_IMG}/Magnifying_glass.png`,
-  "skill-calc": `${WIKI_IMG}/Antique_lamp.png`,
+  "skill-calc": `${WIKI_IMG}/Stats_icon.png`,
   "dry-calc": `${WIKI_IMG}/Ring_of_wealth.png`,
   "xp-table": `${WIKI_IMG}/Book_of_knowledge.png`,
   tracker: `${WIKI_IMG}/Adventurer%27s_log.png`,
