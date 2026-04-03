@@ -217,7 +217,7 @@ export const FEATURE_REGISTRY = {
   },
   timers: {
     title: "Farm Timers",
-    navLabel: "Timers",
+    navLabel: "Farming Timers",
     family: "Planning",
     sidebar: true,
     search: true,
