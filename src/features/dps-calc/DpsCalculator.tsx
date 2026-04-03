@@ -124,6 +124,11 @@ interface Props {
 export default function DpsCalculator({ hiscores }: Props) {
   const { params, navigate } = useNavigation();
   const [combatStyle, setCombatStyle] = useState<CombatStyle>("melee");
+  const [defReductions, setDefReductions] = useState(0);
+  const [poisonType, setPoisonType] = useState<"none" | "poison" | "venom">("none");
+  const [showRaidScaling, setShowRaidScaling] = useState(false);
+  const [toaInvocation, setToaInvocation] = useState(0);
+  const [coxPartySize, setCoxPartySize] = useState(1);
   const [attackLevel, setAttackLevel] = useState(99);
   const [strengthLevel, setStrengthLevel] = useState(99);
   const [rangedLevel, setRangedLevel] = useState(99);
@@ -289,6 +294,7 @@ export default function DpsCalculator({ hiscores }: Props) {
         targetHp,
         targetMagicLevel: selectedMonster?.magicLevel,
         modifiers: modifierList,
+        defReductions,
       }),
     [
       attackLevel,
@@ -306,6 +312,7 @@ export default function DpsCalculator({ hiscores }: Props) {
       targetHp,
       selectedMonster?.magicLevel,
       modifierList,
+      defReductions,
     ]
   );
 
@@ -366,6 +373,17 @@ export default function DpsCalculator({ hiscores }: Props) {
       return next;
     });
   }, []);
+
+  // Inline until poisonDps is exported from formulas/dps.ts
+  const poisonDpsValue = useMemo(() => {
+    if (poisonType === "none") return 0;
+    // Poison: starts at 6 damage, ticks every 18 seconds (30 ticks)
+    // Venom: starts at 6, increases by 2 each tick, ticks every 18 seconds
+    if (poisonType === "poison") return 6 / (18); // ~0.33 DPS
+    return 8 / (18); // Venom starts at 6, averages higher ~0.44 DPS
+  }, [poisonType]);
+
+  const totalDps = result.dps + poisonDpsValue;
 
   return (
     <div className="max-w-3xl">
@@ -667,18 +685,65 @@ export default function DpsCalculator({ hiscores }: Props) {
               />
             </div>
           )}
+
+          <div className="mt-3 max-w-[120px]">
+            <label className="text-[10px] uppercase tracking-wider text-text-secondary/50">DWH Specs</label>
+            <input
+              type="number"
+              min={0}
+              max={10}
+              value={defReductions}
+              onChange={(e) => setDefReductions(Math.min(10, Math.max(0, Number(e.target.value))))}
+              className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm mt-1"
+            />
+          </div>
+
+          <div className="mt-3">
+            <button
+              onClick={() => setShowRaidScaling(!showRaidScaling)}
+              className="text-[10px] uppercase tracking-wider text-text-secondary/50 hover:text-text-primary transition-colors"
+            >
+              Raid Scaling {showRaidScaling ? "▾" : "▸"}
+            </button>
+            {showRaidScaling && (
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[10px] text-text-secondary/50">ToA Invocations</label>
+                  <input type="number" min={0} max={600} value={toaInvocation} onChange={(e) => setToaInvocation(Number(e.target.value))} className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm mt-1" />
+                </div>
+                <div>
+                  <label className="text-[10px] text-text-secondary/50">CoX Party Size</label>
+                  <input type="number" min={1} max={100} value={coxPartySize} onChange={(e) => setCoxPartySize(Number(e.target.value))} className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm mt-1" />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Results */}
         <div>
           <div className="flex items-center justify-between mb-3">
             <div className="section-kicker">Results</div>
-            <button
-              onClick={() => setShowBreakdown((p) => !p)}
-              className="text-xs text-text-secondary hover:text-accent transition-colors"
-            >
-              {showBreakdown ? "Hide" : "Show"} breakdown
-            </button>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <label className="text-[10px] uppercase tracking-wider text-text-secondary/50">Poison</label>
+                <select
+                  value={poisonType}
+                  onChange={(e) => setPoisonType(e.target.value as "none" | "poison" | "venom")}
+                  className="bg-bg-tertiary border border-border rounded px-2 py-1 text-xs"
+                >
+                  <option value="none">None</option>
+                  <option value="poison">Poison (+)</option>
+                  <option value="venom">Venom</option>
+                </select>
+              </div>
+              <button
+                onClick={() => setShowBreakdown((p) => !p)}
+                className="text-xs text-text-secondary hover:text-accent transition-colors"
+              >
+                {showBreakdown ? "Hide" : "Show"} breakdown
+              </button>
+            </div>
           </div>
           <DpsBreakdown
             maxHit={result.maxHit}
@@ -688,6 +753,18 @@ export default function DpsCalculator({ hiscores }: Props) {
             attackRoll={result.attackRoll}
             defenseRoll={result.defenseRoll}
           />
+          {poisonType !== "none" && (
+            <div className="mt-3 flex gap-6 items-start">
+              <div className="text-center">
+                <div className="text-sm font-bold text-success">+{poisonDpsValue.toFixed(2)}</div>
+                <div className="text-[10px] text-text-secondary capitalize">{poisonType} DPS</div>
+              </div>
+              <div className="text-center">
+                <div className="text-sm font-bold text-accent">{totalDps.toFixed(2)}</div>
+                <div className="text-[10px] text-text-secondary">Total DPS</div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

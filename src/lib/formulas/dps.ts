@@ -16,6 +16,7 @@ export interface DpsInput {
   targetHp: number;
   targetMagicLevel?: number;
   modifiers?: DpsModifier[];
+  defReductions?: number; // number of successful DWH/BGS specs (each reduces def by 30%)
 }
 
 export interface DpsModifier {
@@ -157,6 +158,27 @@ export const DPS_MODIFIERS: Record<string, DpsModifier> = {
     damageMult: 1.175,
     condition: "melee",
   },
+  tumekens_shadow: {
+    id: "tumekens_shadow",
+    name: "Tumeken's shadow",
+    accuracyMult: 3.0,
+    damageMult: 3.0,
+    condition: "magic",
+  },
+  virtus: {
+    id: "virtus",
+    name: "Virtus robes",
+    accuracyMult: 1.0,
+    damageMult: 1.05,
+    condition: "magic",
+  },
+  dinhs_bulwark: {
+    id: "dinhs_bulwark",
+    name: "Dinh's bulwark",
+    accuracyMult: 1.0,
+    damageMult: 1.20,
+    condition: "melee",
+  },
 };
 
 function twistedBowAccuracy(targetMagicLevel: number): number {
@@ -274,10 +296,55 @@ export function calculateDps(input: DpsInput) {
     mh = Math.floor(mh * damageMult);
   }
 
-  const dr = defenseRoll(input.targetDefLevel, input.targetDefBonus);
+  let effectiveDefLevel = input.targetDefLevel;
+  if (input.defReductions && input.defReductions > 0) {
+    for (let i = 0; i < input.defReductions; i++) {
+      effectiveDefLevel = Math.floor(effectiveDefLevel * 0.7); // DWH: 30% reduction each
+    }
+  }
+  const dr = defenseRoll(effectiveDefLevel, input.targetDefBonus);
   const acc = hitChance(ar, dr);
   const d = dps(mh, acc, input.attackSpeed);
   const ttk = timeToKill(input.targetHp, d);
 
   return { maxHit: mh, accuracy: acc, dps: d, ttk, attackRoll: ar, defenseRoll: dr };
+}
+
+export function poisonDps(type: "none" | "poison" | "venom"): number {
+  if (type === "poison") return 4 / (30 * 0.6); // avg 4 dmg per 30 ticks
+  if (type === "venom") return 12 / (30 * 0.6); // avg 12 dmg per 30 ticks (scales up)
+  return 0;
+}
+
+export interface DpsComparison {
+  setup1: ReturnType<typeof calculateDps>;
+  setup2: ReturnType<typeof calculateDps>;
+  dpsGain: number;
+  dpsGainPct: number;
+  ttkDiff: number;
+}
+
+export function compareDps(input1: DpsInput, input2: DpsInput): DpsComparison {
+  const setup1 = calculateDps(input1);
+  const setup2 = calculateDps(input2);
+  return {
+    setup1,
+    setup2,
+    dpsGain: setup2.dps - setup1.dps,
+    dpsGainPct: setup1.dps > 0 ? ((setup2.dps - setup1.dps) / setup1.dps) * 100 : 0,
+    ttkDiff: setup1.ttk - setup2.ttk,
+  };
+}
+
+export function toaDefenseScale(baseDefLevel: number, invocationLevel: number): number {
+  // ToA scales monster defense based on invocation level
+  // ~1% increase per invocation level above 0
+  const scale = 1 + (invocationLevel / 100);
+  return Math.floor(baseDefLevel * scale);
+}
+
+export function coxScale(baseDefLevel: number, partySize: number, challengeMode: boolean): number {
+  // CoX scales with party size, CM adds ~50%
+  const sizeScale = 1 + ((partySize - 1) * 0.5);
+  return Math.floor(baseDefLevel * sizeScale * (challengeMode ? 1.5 : 1));
 }

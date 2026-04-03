@@ -382,9 +382,10 @@ export default function Settings() {
             </div>
             <button
               onClick={() => {
-                const keys = Object.keys(localStorage).filter(k => k.startsWith("bucket:") || k.startsWith("temple-") || k.startsWith("wom-") || k.startsWith("ge-") || k.startsWith("wiki-"));
+                const keys = Object.keys(localStorage).filter(k => k.startsWith("runewise_cache:"));
                 keys.forEach(k => localStorage.removeItem(k));
-                alert(`Cleared ${keys.length} cached entries.`);
+                alert(`Cleared ${keys.length} cached entries. Reload the page to fetch fresh data.`);
+                window.location.reload();
               }}
               className="rounded-lg bg-bg-tertiary px-3 py-1.5 text-xs text-text-secondary transition-colors hover:text-text-primary"
             >
