@@ -22,16 +22,16 @@ export const POPULAR_DROPS: DropEntry[] = [
   { item: "Bandos tassets", source: "General Graardor", rate: 384, category: "GWD" },
   { item: "Armadyl chestplate", source: "Kree'arra", rate: 384, category: "GWD" },
   { item: "Armadyl chainskirt", source: "Kree'arra", rate: 384, category: "GWD" },
-  { item: "Hilt (any)", source: "Commander Zilyana", rate: 508, category: "GWD" },
-  { item: "Godsword shard", source: "GWD Bosses", rate: 256, category: "GWD" },
+  { item: "Armadyl hilt", source: "Commander Zilyana", rate: 508, category: "GWD", note: "Rate is for any hilt drop." },
+  { item: "Godsword shard 1", source: "GWD Bosses", rate: 256, category: "GWD", note: "Rate is for any shard." },
 
   // Slayer bosses
   { item: "Hydra's claw", source: "Alchemical Hydra", rate: 1001, category: "Slayer" },
   { item: "Hydra leather", source: "Alchemical Hydra", rate: 514, category: "Slayer" },
   { item: "Abyssal whip", source: "Abyssal demons", rate: 512, category: "Slayer" },
   { item: "Kraken tentacle", source: "Kraken", rate: 400, category: "Slayer" },
-  { item: "Cerberus primordial crystal", source: "Cerberus", rate: 512, category: "Slayer" },
-  { item: "Grotesque Guardians pet", source: "Grotesque Guardians", rate: 3000, category: "Slayer" },
+  { item: "Primordial crystal", source: "Cerberus", rate: 512, category: "Slayer" },
+  { item: "Noon", source: "Grotesque Guardians", rate: 3000, category: "Pets" },
 
   // Wilderness
   { item: "Dragon pickaxe", source: "Chaos Elemental", rate: 256, category: "Wilderness" },
@@ -43,12 +43,12 @@ export const POPULAR_DROPS: DropEntry[] = [
   { item: "Vorki", source: "Vorkath", rate: 3000, category: "Other" },
   { item: "Uncut onyx", source: "Zulrah", rate: 512, category: "Other" },
   { item: "Tanzanite fang", source: "Zulrah", rate: 512, category: "Other" },
-  { item: "Nex pet", source: "Nex", rate: 500, category: "Other" },
+  { item: "Nexling", source: "Nex", rate: 500, category: "Pets" },
   { item: "Inquisitor's mace", source: "Nightmare", rate: 600, category: "Other" },
   { item: "Sarachnis cudgel", source: "Sarachnis", rate: 384, category: "Other" },
 
   // Skilling pets
-  { item: "Rift guardian", source: "Runecraft", rate: 1795758, category: "Pets", note: "Rate varies by method. Shown for ZMI altar." },
+  { item: "Rift guardian chathead", source: "Runecraft", rate: 1795758, category: "Pets", note: "Rate varies by method. Shown for ZMI altar." },
   { item: "Rock golem", source: "Mining", rate: 244725, category: "Pets", note: "Rate varies by ore type. Shown for iron." },
   { item: "Heron", source: "Fishing", rate: 257770, category: "Pets", note: "Rate varies by fish type. Shown for barbarian fishing." },
   { item: "Beaver", source: "Woodcutting", rate: 264367, category: "Pets", note: "Rate varies by tree type. Shown for teaks." },
@@ -100,7 +100,7 @@ export const POPULAR_DROPS: DropEntry[] = [
   { item: "Wizard boots", source: "Reward casket (medium)", rate: 1133, category: "Clues" },
 
   // Wilderness boss rings
-  { item: "Ring of the Gods", source: "Vet'ion", rate: 512, category: "Wilderness" },
+  { item: "Ring of the gods", source: "Vet'ion", rate: 512, category: "Wilderness" },
   { item: "Treasonous ring", source: "Venenatis", rate: 512, category: "Wilderness" },
   { item: "Tyrannical ring", source: "Callisto", rate: 512, category: "Wilderness" },
 
@@ -120,7 +120,7 @@ export const POPULAR_DROPS: DropEntry[] = [
   { item: "Kalphite princess", source: "Kalphite Queen", rate: 3000, category: "Pets" },
 
   // Barrows
-  { item: "Barrows equipment (any piece)", source: "Barrows", rate: 353, category: "Other" },
+  { item: "Guthan's helm", source: "Barrows", rate: 353, category: "Other", note: "Rate is for any Barrows piece." },
 
   // Varlamore
   { item: "Tonalztics of ralos", source: "Sol Heredit", rate: 80, category: "Other" },
@@ -159,7 +159,7 @@ export const POPULAR_DROPS: DropEntry[] = [
   { item: "Ancient icon", source: "Phantom Muspah", rate: 75, category: "Other" },
 
   // Royal Titans
-  { item: "Titan's grip", source: "Royal Titans", rate: 300, category: "Other" },
+  { item: "Titan's sigil", source: "Royal Titans", rate: 300, category: "Other" },
 
   // Yama
   { item: "Sulphur blades", source: "Yama", rate: 400, category: "Other" },

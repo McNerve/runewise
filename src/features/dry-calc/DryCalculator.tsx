@@ -137,7 +137,7 @@ export default function DryCalculator() {
 
         {/* Presets */}
         <div className="bg-bg-secondary rounded-lg p-3 overflow-y-auto max-h-[500px]">
-          <div className="section-kicker mb-2">Boss Presets</div>
+          <div className="section-kicker mb-2">Drop Presets</div>
           <div className="flex flex-wrap gap-1 mb-3">
             <button
               onClick={() => setSelectedCategory("All")}
@@ -148,7 +148,7 @@ export default function DryCalculator() {
                   : "bg-bg-tertiary text-text-secondary"
               }`}
             >
-              All
+              Popular
             </button>
             {DROP_CATEGORIES.map((cat) => (
               <button
