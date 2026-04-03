@@ -302,6 +302,7 @@ export default function DpsCalculator({ hiscores }: Props) {
         modifiers: modifierList,
         defReductions,
       }),
+    // eslint-disable-next-line react-hooks/preserve-manual-memoization
     [
       attackLevel,
       strengthLevel,
