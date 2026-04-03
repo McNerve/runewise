@@ -30,6 +30,7 @@ export default function PlayerBar({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onLookup(input);
+    setEditing(false);
   };
 
   const handleClear = () => {
