@@ -154,7 +154,7 @@ export const NAV_ICONS: Record<string, string> = {
   news: `${WIKI_IMG}/Newspaper.png`,
   "dps-calc": `${WIKI_IMG}/archive/20220902042551%21Damage_hitsplat_%28max_hit%29.png`,
   "training-plan": `${WIKI_IMG}/Quest_point_icon.png`,
-  "gear-compare": `${WIKI_IMG}/Armour_case.png`,
+  "gear-compare": `${WIKI_IMG}/Worn_Equipment.png`,
   watchlist: `${WIKI_IMG}/Platinum_token_detail.png`,
   timers: `${WIKI_IMG}/Farming_icon.png`,
   spells: `${WIKI_IMG}/Magic_icon.png`,
