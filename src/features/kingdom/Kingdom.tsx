@@ -61,6 +61,7 @@ export default function Kingdom() {
       next[index] = { ...current, workers: clamped };
       return next;
     });
+    setIsOptimal(false);
   }, []);
 
   const rows = useMemo(() => {
@@ -79,6 +80,8 @@ export default function Kingdom() {
 
   const netProfit = totalDailyGp - DAILY_UPKEEP;
 
+  const [isOptimal, setIsOptimal] = useState(false);
+
   const optimize = useCallback(() => {
     const gpPerWorker = DEFAULT_RESOURCES.map((r) => {
       const price = getPrice(r.itemId, prices);
@@ -86,31 +89,54 @@ export default function Kingdom() {
       return (r.outputPer10 / MAX_WORKERS) * price;
     });
 
+    // Rank resources by GP per worker
     const sorted = gpPerWorker
       .map((gp, i) => ({ gp, index: i }))
       .sort((a, b) => b.gp - a.gp);
 
+    // OSRS Kingdom: max 10 workers, distribute across top resources
+    // Best strategy is typically all 10 on rank 1, but if rank 2 is close
+    // the community recommends a 5/5 or 7/3 split. We do greedy fill:
+    // each resource gets workers proportional to its GP value
     const optimal = DEFAULT_RESOURCES.map((r) => ({ ...r, workers: 0 }));
-    let budget = MAX_WORKERS;
+    const totalGp = sorted.reduce((s, x) => s + Math.max(0, x.gp), 0);
 
-    for (const { index } of sorted) {
-      if (budget <= 0) break;
-      const assign = Math.min(budget, MAX_WORKERS);
-      optimal[index]!.workers = assign;
-      budget -= assign;
+    if (totalGp > 0) {
+      let budget = MAX_WORKERS;
+      // Give at least 5 to the best, then distribute rest proportionally
+      const bestIdx = sorted[0]?.index;
+      if (bestIdx != null) {
+        const bestShare = Math.min(budget, Math.max(5, Math.round((sorted[0].gp / totalGp) * MAX_WORKERS)));
+        optimal[bestIdx]!.workers = bestShare;
+        budget -= bestShare;
+      }
+      // Fill remaining from 2nd best onwards
+      for (let i = 1; i < sorted.length && budget > 0; i++) {
+        const { index, gp } = sorted[i];
+        if (gp <= 0) continue;
+        const share = Math.min(budget, Math.max(1, Math.round((gp / totalGp) * MAX_WORKERS)));
+        optimal[index]!.workers = share;
+        budget -= share;
+      }
+      // If any budget remains, add to best
+      if (budget > 0 && bestIdx != null) {
+        optimal[bestIdx]!.workers += budget;
+      }
     }
 
     setResources(optimal);
+    setIsOptimal(true);
   }, [prices]);
 
   const resetAll = useCallback(() => {
     setResources(DEFAULT_RESOURCES.map((r) => ({ ...r, workers: 0 })));
+    setIsOptimal(false);
   }, []);
 
   if (loading) {
     return (
       <div className="max-w-3xl">
-        <h2 className="text-xl font-semibold mb-1">Kingdom of Miscellania</h2>
+        <h2 className="text-xl font-semibold mb-1">Kingdom Calculator</h2>
         <div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4" />
       </div>
     );
@@ -118,16 +144,19 @@ export default function Kingdom() {
 
   return (
     <div className="max-w-3xl">
-      <h2 className="text-xl font-semibold mb-1">Kingdom of Miscellania</h2>
+      <h2 className="text-xl font-semibold mb-1">Kingdom Calculator</h2>
       <p className="text-xs text-text-secondary mb-4">
-        Allocate 10 workers across resources to maximize daily profit
+        Allocate 10 workers across resources to maximize daily profit from Managing Miscellania
       </p>
 
       {/* Controls */}
       <div className="flex items-center gap-3 mb-4">
         <button
           onClick={optimize}
-          className="px-3 py-1.5 rounded text-xs font-medium bg-accent text-white hover:opacity-90 transition-opacity"
+          aria-pressed={isOptimal}
+          className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+            isOptimal ? "bg-accent text-white" : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+          }`}
         >
           Optimal
         </button>
@@ -142,8 +171,19 @@ export default function Kingdom() {
         </span>
       </div>
 
-      {/* Resource rows */}
+      {/* Column labels */}
       <div className="section-kicker mb-2">Worker Allocation</div>
+      <div className="flex items-center gap-3 px-2 mb-1 text-[10px] text-text-secondary/50 uppercase tracking-wider">
+        <span className="w-5 shrink-0" />
+        <span className="w-28 shrink-0">Resource</span>
+        <span className="flex-1" />
+        <span className="w-12 text-center">Qty</span>
+        <span className="w-14 text-right">Output</span>
+        <span className="w-10 text-right">Price</span>
+        <span className="w-16 text-right">GP/day</span>
+      </div>
+
+      {/* Resource rows */}
       <div className="space-y-1 mb-6">
         {rows.map((row, i) => (
           <div
@@ -186,17 +226,6 @@ export default function Kingdom() {
             </span>
           </div>
         ))}
-      </div>
-
-      {/* Column labels */}
-      <div className="flex items-center gap-3 px-2 mb-1 text-[11px] text-text-secondary/60 uppercase tracking-wider">
-        <span className="w-5 shrink-0" />
-        <span className="w-28 shrink-0">Resource</span>
-        <span className="flex-1" />
-        <span className="w-12 text-center">Workers</span>
-        <span className="w-14 text-right">Output</span>
-        <span className="w-10 text-right">Price</span>
-        <span className="w-16 text-right">GP/day</span>
       </div>
 
       {/* Summary */}
