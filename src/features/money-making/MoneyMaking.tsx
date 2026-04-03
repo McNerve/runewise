@@ -1,11 +1,16 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, lazy, Suspense } from "react";
 import { MONEY_METHODS, type MoneyMethod } from "../../lib/data/money-methods";
 import { fetchAllMoneyMethods, type WikiMoneyMethod } from "../../lib/api/moneyMaking";
 import { type HiscoreData } from "../../lib/api/hiscores";
 import { formatGp } from "../../lib/format";
-import { SKILL_ICONS, NAV_ICONS } from "../../lib/sprites";
+import { WIKI_IMG, SKILL_ICONS, NAV_ICONS } from "../../lib/sprites";
 import { useNavigation } from "../../lib/NavigationContext";
 import EmptyState from "../../components/EmptyState";
+
+const ProfitHub = lazy(() => import("../profit-hub/ProfitHub"));
+const AlchCalculator = lazy(() => import("../alch-calc/AlchCalculator"));
+
+type MainTab = "methods" | "rankings" | "alch" | "wiki";
 
 interface Props {
   hiscores: HiscoreData | null;
@@ -55,7 +60,7 @@ export default function MoneyMaking({ hiscores }: Props) {
   const [membersOnly, setMembersOnly] = useState(true);
   const [bestForMe, setBestForMe] = useState(false);
   const [wikiMethods, setWikiMethods] = useState<WikiMoneyMethod[]>([]);
-  const [showWiki, setShowWiki] = useState(false);
+  const [mainTab, setMainTab] = useState<MainTab>("methods");
 
   useEffect(() => {
     fetchAllMoneyMethods().then((methods) => {
@@ -110,21 +115,35 @@ export default function MoneyMaking({ hiscores }: Props) {
 
   return (
     <div className="max-w-4xl">
-      <div className="flex items-center justify-between mb-1">
-        <h2 className="text-xl font-semibold">Money Making Guide</h2>
-        {wikiMethods.length > 0 && (
-          <button
-            onClick={() => setShowWiki(!showWiki)}
-            className={`text-xs transition-colors ${showWiki ? "text-accent" : "text-text-secondary/50 hover:text-text-primary"}`}
-          >
-            {showWiki ? `Wiki Methods (${wikiMethods.length})` : `Show Wiki (${wikiMethods.length})`}
-          </button>
-        )}
-      </div>
+      <h2 className="text-xl font-semibold mb-1">Money Making</h2>
       <p className="text-xs text-text-secondary mb-4">
-        {showWiki ? wikiMethods.length : totalMethods} methods
-        {!showWiki && availableCount !== null && ` — ${availableCount} available for your stats`}
+        {totalMethods} curated methods
+        {availableCount !== null && ` — ${availableCount} available for your stats`}
       </p>
+
+      {/* Main tabs */}
+      <div className="flex gap-1 mb-4">
+        {([
+          { id: "methods" as const, label: "Methods", icon: `${WIKI_IMG}/Coins_detail.png` },
+          { id: "rankings" as const, label: "Profit Rankings", icon: `${WIKI_IMG}/Coins_10000.png` },
+          { id: "alch" as const, label: "Alch Profits", icon: `${WIKI_IMG}/High_Level_Alchemy.png` },
+          { id: "wiki" as const, label: `Wiki (${wikiMethods.length})`, icon: `${WIKI_IMG}/Coins_10000_detail.png` },
+        ]).map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setMainTab(tab.id)}
+            aria-pressed={mainTab === tab.id}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              mainTab === tab.id
+                ? "bg-accent text-white"
+                : "text-text-secondary hover:bg-bg-secondary/50"
+            }`}
+          >
+            <img src={tab.icon} alt="" className="w-4 h-4" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3 mb-4">
@@ -180,7 +199,7 @@ export default function MoneyMaking({ hiscores }: Props) {
       </div>
 
       {/* Methods list */}
-      {!showWiki && (
+      {mainTab === "methods" && (
       <div className="space-y-1.5">
         {filtered.map((method) => {
           const canDo = hiscores ? meetsRequirements(method, hiscores) : true;
@@ -294,7 +313,7 @@ export default function MoneyMaking({ hiscores }: Props) {
       </div>
       )}
 
-      {!showWiki && filtered.length === 0 && (
+      {mainTab === "methods" && filtered.length === 0 && (
         <EmptyState
           icon={NAV_ICONS["money-making"]}
           title="No methods match your filters"
@@ -302,7 +321,19 @@ export default function MoneyMaking({ hiscores }: Props) {
         />
       )}
 
-      {showWiki && (
+      {mainTab === "rankings" && (
+        <Suspense fallback={<div className="py-8"><div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4 mx-auto" /></div>}>
+          <ProfitHub />
+        </Suspense>
+      )}
+
+      {mainTab === "alch" && (
+        <Suspense fallback={<div className="py-8"><div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4 mx-auto" /></div>}>
+          <AlchCalculator />
+        </Suspense>
+      )}
+
+      {mainTab === "wiki" && (
         <div className="space-y-2 mt-2">
           {(() => {
             let methods = [...wikiMethods];
@@ -369,7 +400,7 @@ export default function MoneyMaking({ hiscores }: Props) {
         </div>
       )}
 
-      {!showWiki && !hiscores && (
+      {mainTab === "methods" && !hiscores && (
         <p className="text-sm text-text-secondary mt-4">
           Look up your RSN above to see which methods you can do and enable "Best for me" filtering.
         </p>

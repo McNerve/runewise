@@ -235,7 +235,7 @@ export const FEATURE_REGISTRY = {
     title: "Profit Rankings",
     navLabel: "Profit Rankings",
     family: "Market",
-    sidebar: true,
+    sidebar: false,
     search: true,
     aliases: ["profit", "rankings", "gp per hour", "best money", "profit comparison"],
   },
