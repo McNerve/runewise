@@ -40,56 +40,54 @@ export default function ItemTooltip({ itemName, children }: Props) {
   }
 
   return (
-    <Tooltip.Root delayDuration={300} onOpenChange={handleOpen}>
+    <Tooltip.Root delayDuration={200} onOpenChange={handleOpen}>
       <Tooltip.Trigger asChild>{children}</Tooltip.Trigger>
-      <Tooltip.Portal>
-        <Tooltip.Content className="item-tooltip-content" sideOffset={6} side="top">
-          {item ? (
-            <div className="flex gap-3 items-start">
-              <img
-                src={`https://oldschool.runescape.wiki/images/${item.icon}`}
-                alt=""
-                className="w-8 h-8 shrink-0 mt-0.5"
-                onError={(e) => { e.currentTarget.style.display = "none"; }}
-              />
-              <div className="min-w-0">
-                <div className="font-semibold text-text-primary text-xs">{item.name}</div>
-                {item.examine && (
-                  <div className="text-[10px] text-text-secondary/60 mt-0.5 italic">{item.examine}</div>
+      <Tooltip.Content className="item-tooltip-content" sideOffset={6} side="top" collisionPadding={8}>
+        {item ? (
+          <div className="flex gap-3 items-start">
+            <img
+              src={`https://oldschool.runescape.wiki/images/${item.icon}`}
+              alt=""
+              className="w-8 h-8 shrink-0 mt-0.5"
+              onError={(e) => { e.currentTarget.style.display = "none"; }}
+            />
+            <div className="min-w-0">
+              <div className="font-semibold text-text-primary text-xs">{item.name}</div>
+              {item.examine && (
+                <div className="text-[10px] text-text-secondary/60 mt-0.5 italic">{item.examine}</div>
+              )}
+              <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-[10px]">
+                {price?.high != null && (
+                  <span>
+                    <span className="text-text-secondary/50">GE: </span>
+                    <span className="text-success font-medium">{formatGp(price.high)}</span>
+                  </span>
                 )}
-                <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-[10px]">
-                  {price?.high != null && (
-                    <span>
-                      <span className="text-text-secondary/50">GE: </span>
-                      <span className="text-success font-medium">{formatGp(price.high)}</span>
-                    </span>
-                  )}
-                  {item.highalch != null && (
-                    <span>
-                      <span className="text-text-secondary/50">Alch: </span>
-                      <span className="text-warning font-medium">{formatGp(item.highalch)}</span>
-                    </span>
-                  )}
-                  {item.limit != null && (
-                    <span>
-                      <span className="text-text-secondary/50">Limit: </span>
-                      <span className="text-text-primary">{item.limit.toLocaleString()}</span>
-                    </span>
-                  )}
-                  {item.members && (
-                    <span className="text-accent">P2P</span>
-                  )}
-                </div>
+                {item.highalch != null && (
+                  <span>
+                    <span className="text-text-secondary/50">Alch: </span>
+                    <span className="text-warning font-medium">{formatGp(item.highalch)}</span>
+                  </span>
+                )}
+                {item.limit != null && (
+                  <span>
+                    <span className="text-text-secondary/50">Limit: </span>
+                    <span className="text-text-primary">{item.limit.toLocaleString()}</span>
+                  </span>
+                )}
+                {item.members && (
+                  <span className="text-accent">P2P</span>
+                )}
               </div>
             </div>
-          ) : loaded ? (
-            <div className="text-[10px] text-text-secondary">No data for {itemName}</div>
-          ) : (
-            <div className="text-[10px] text-text-secondary">Loading...</div>
-          )}
-          <Tooltip.Arrow className="fill-[var(--color-bg-tertiary)]" />
-        </Tooltip.Content>
-      </Tooltip.Portal>
+          </div>
+        ) : loaded ? (
+          <div className="text-[10px] text-text-secondary">No data for {itemName}</div>
+        ) : (
+          <div className="text-[10px] text-text-secondary">Loading...</div>
+        )}
+        <Tooltip.Arrow className="fill-[var(--color-bg-tertiary)]" />
+      </Tooltip.Content>
     </Tooltip.Root>
   );
 }
