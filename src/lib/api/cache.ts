@@ -78,3 +78,12 @@ export function getCacheTimestamp(
 export function setCache<T>(key: string, data: T, options?: CacheOptions): void {
   remember(key, { data, timestamp: Date.now() }, options);
 }
+
+export function clearCacheKey(key: string): void {
+  store.delete(key);
+  try {
+    localStorage.removeItem(`${STORAGE_PREFIX}${key}`);
+  } catch {
+    // ignore
+  }
+}

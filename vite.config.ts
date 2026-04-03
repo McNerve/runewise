@@ -61,6 +61,12 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api\/maps/, ""),
         headers: { "User-Agent": "runewise - osrs companion app" },
       },
+      "/api/temple": {
+        target: "https://templeosrs.com",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/temple/, "/api"),
+        headers: { "User-Agent": "runewise - osrs companion app" },
+      },
     },
   },
 });

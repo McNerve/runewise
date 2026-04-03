@@ -7,6 +7,8 @@ import {
   fetchTemplePlayerInfo,
   type TempleCollectionLog,
 } from "../../lib/api/temple";
+import { fetchMapping } from "../../lib/api/ge";
+import { clearCacheKey } from "../../lib/api/cache";
 import EmptyState from "../../components/EmptyState";
 
 const STORAGE_KEY = "runewise_collection_log";
@@ -63,103 +65,304 @@ function ProgressRing({
   );
 }
 
+// Common untradeable collection log items not in GE mapping
+const UNTRADEABLE_NAMES: Record<number, string> = {
+  7979: "Bludgeon spine", 13274: "Bludgeon axon", 13275: "Bludgeon claw",
+  13276: "Unsired", 25624: "Abyssal orphan", 12650: "Baby mole",
+  12655: "Pet kraken", 12648: "Pet smoke devil", 13247: "Hellpuppy",
+  21273: "Skotos", 22988: "Ikkle Hydra", 13321: "Heron",
+  20663: "Rock golem", 20665: "Rift guardian", 23956: "Youngllef",
+  21907: "Vorki", 27627: "Muphin", 12004: "Trident of the seas (full)",
+  26219: "Elidinis' ward", 26245: "Virtus mask", 23077: "Alchemical hydra heads",
+  29836: "Nid", 31283: "Huberte", 28947: "Dizana's quiver",
+  11920: "Dragon pickaxe", 21730: "Granite dust", 21726: "Black tourmaline core",
+  22883: "White lily seed", 22885: "Bottomless compost bucket",
+  22881: "Hespori seed", 28270: "Chromium ingot", 28333: "Baron",
+  28268: "Executioner's axe head", 28330: "Ultor vestige",
+  29684: "Tormented synapse", 30088: "Hueycoatl hide",
+  29889: "Sunfire splinted birch", 29892: "Sunfire fanatic cuirass",
+  29895: "Sunfire relic", 28991: "Blue moon helm",
+  30626: "Titan's grip", 30637: "Titan's sigil", 30631: "Titan's crest",
+  30640: "Titanic ore", 28798: "Scurrius' spine",
+  21295: "Jal-nib-rek", 6570: "TzRek-Jad",
+  28924: "Sunfire fanatic helm", 30775: "Yama's ashes",
+  30753: "Sulphur blades", 30756: "Scorching bow",
+  30765: "Yama's blood", 30806: "Searing page",
+  30763: "Demon horn", 30805: "Burning ember", 30795: "Infernal thread",
+  31111: "Doom essence",
+};
+
+type ItemFilter = "all" | "obtained" | "missing";
+
 function TempleView({ data }: { data: TempleCollectionLog }) {
-  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [itemFilter, setItemFilter] = useState<ItemFilter>("all");
+  const [itemNames, setItemNames] = useState<Map<number, string>>(new Map());
+
+  useEffect(() => {
+    fetchMapping()
+      .then((mapping) => {
+        const map = new Map<number, string>();
+        for (const item of mapping) map.set(item.id, item.name);
+        for (const [id, name] of Object.entries(UNTRADEABLE_NAMES)) {
+          if (!map.has(Number(id))) map.set(Number(id), name);
+        }
+        setItemNames(map);
+      })
+      .catch(() => {
+        const map = new Map<number, string>();
+        for (const [id, name] of Object.entries(UNTRADEABLE_NAMES)) {
+          map.set(Number(id), name);
+        }
+        setItemNames(map);
+      });
+  }, []);
+
+  const resolveName = useCallback(
+    (item: { id: number; name?: string }) =>
+      item.name ?? itemNames.get(item.id) ?? `Item ${item.id}`,
+    [itemNames]
+  );
 
   const sortedCategories = useMemo(() => {
-    return Object.entries(data.categories).sort(([a], [b]) =>
-      a.localeCompare(b)
-    );
+    return Object.entries(data.categories).sort(([a], [b]) => a.localeCompare(b));
   }, [data.categories]);
+
+  const completedCats = useMemo(
+    () => sortedCategories.filter(([, items]) => items.length > 0 && items.every((i) => i.count > 0)).length,
+    [sortedCategories]
+  );
+
+  // Recent items — last 6 obtained sorted by date
+  const recentItems = useMemo(() => {
+    const all: { id: number; name?: string; count: number; obtained_at?: string; category: string }[] = [];
+    for (const [catName, items] of Object.entries(data.categories)) {
+      for (const item of items) {
+        if (item.count > 0 && item.obtained_at) {
+          all.push({ ...item, category: catName });
+        }
+      }
+    }
+    return all
+      .sort((a, b) => (b.obtained_at ?? "").localeCompare(a.obtained_at ?? ""))
+      .slice(0, 8);
+  }, [data.categories]);
+
+  // Selected category items
+  const activeCategory = selectedCategory
+    ? sortedCategories.find(([name]) => name === selectedCategory)
+    : null;
+
+  const activeCatItems = useMemo(() => {
+    if (!activeCategory) return [];
+    const [, items] = activeCategory;
+    let filtered = [...items];
+    if (itemFilter === "obtained") filtered = filtered.filter((i) => i.count > 0);
+    if (itemFilter === "missing") filtered = filtered.filter((i) => i.count === 0);
+    return filtered.sort((a, b) => {
+      if (a.count > 0 !== b.count > 0) return a.count > 0 ? -1 : 1;
+      return resolveName(a).localeCompare(resolveName(b));
+    });
+  }, [activeCategory, itemFilter, resolveName]);
+
+  const activeCatObtained = activeCategory
+    ? activeCategory[1].filter((i) => i.count > 0).length
+    : 0;
+  const activeCatTotal = activeCategory ? activeCategory[1].length : 0;
 
   return (
     <>
-      <div className="flex items-center gap-4 mb-6">
-        <ProgressRing obtained={data.finished} total={data.total} size={48} />
-        <div>
-          <div className="text-lg font-bold tabular-nums">
-            {data.finished} / {data.total}
-          </div>
-          <div className="text-xs text-text-secondary">
-            {((data.finished / data.total) * 100).toFixed(1)}% complete
-          </div>
+      {/* ── Summary stats ── */}
+      <div className="grid grid-cols-3 gap-px rounded-xl overflow-hidden border border-border/40 mb-6">
+        <div className="bg-bg-secondary/50 px-4 py-3 text-center">
+          <div className="text-[10px] uppercase tracking-wider text-text-secondary/50">Collections</div>
+          <div className="text-lg font-bold tabular-nums mt-1">{data.finished} / {data.total}</div>
+          <div className="text-[10px] text-text-secondary/40">{((data.finished / data.total) * 100).toFixed(1)}%</div>
         </div>
-        <span className="ml-auto text-[10px] text-text-secondary/50 bg-bg-secondary px-2 py-0.5 rounded">
-          via TempleOSRS
-        </span>
+        <div className="bg-bg-secondary/50 px-4 py-3 text-center">
+          <div className="text-[10px] uppercase tracking-wider text-text-secondary/50">Categories</div>
+          <div className="text-lg font-bold tabular-nums mt-1">{completedCats} / {sortedCategories.length}</div>
+          <div className="text-[10px] text-text-secondary/40">completed</div>
+        </div>
+        <div className="bg-bg-secondary/50 px-4 py-3 text-center">
+          <div className="text-[10px] uppercase tracking-wider text-text-secondary/50">Source</div>
+          <div className="text-sm font-medium mt-1 text-accent">TempleOSRS</div>
+          <div className="text-[10px] text-text-secondary/40">live sync</div>
+        </div>
       </div>
 
-      <div className="space-y-2">
-        {sortedCategories.map(([catName, items]) => {
-          const catObtained = items.filter((i) => i.count > 0).length;
-          const isExpanded = expandedCategory === catName;
-          const isComplete = catObtained === items.length;
+      {/* ── Recent items ── */}
+      {recentItems.length > 0 && (
+        <div className="mb-6">
+          <div className="text-[10px] uppercase tracking-wider text-text-secondary/50 mb-2">Recently Obtained</div>
+          <div className="flex gap-3 overflow-x-auto pb-2">
+            {recentItems.map((item) => {
+              const name = resolveName(item);
+              const date = item.obtained_at ? new Date(item.obtained_at + " UTC") : null;
+              return (
+                <div key={`recent-${item.id}-${item.obtained_at}`} className="flex flex-col items-center gap-1.5 min-w-[80px]">
+                  <div className="relative">
+                    <div className="w-12 h-12 rounded-xl bg-bg-tertiary/50 border border-border/30 flex items-center justify-center">
+                      <img
+                        src={itemIcon(name)}
+                        alt=""
+                        className="w-8 h-8 object-contain"
+                        onError={(e) => { e.currentTarget.style.display = "none"; }}
+                      />
+                    </div>
+                    {item.count > 1 && (
+                      <span className="absolute -top-1 -right-1 bg-accent text-white text-[9px] font-bold rounded-full px-1 min-w-[16px] text-center">
+                        {item.count}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-[10px] text-text-primary text-center truncate max-w-[80px]">{name}</span>
+                  {date && (
+                    <span className="text-[9px] text-text-secondary/40">
+                      {date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
-          return (
-            <div key={catName}>
-              <button
-                onClick={() =>
-                  setExpandedCategory(isExpanded ? null : catName)
-                }
-                aria-expanded={isExpanded}
-                className="w-full flex items-center gap-3 py-2 px-2 rounded hover:bg-bg-secondary/50 transition-colors"
-              >
-                <ProgressRing obtained={catObtained} total={items.length} />
-                <span
-                  className={`text-sm flex-1 text-left ${isComplete ? "text-success" : ""}`}
+      {/* ── Two-column: categories + items ── */}
+      <div className="grid gap-5 xl:grid-cols-[240px_minmax(0,1fr)]">
+        {/* Category sidebar */}
+        <div>
+          <div className="text-[10px] uppercase tracking-wider text-text-secondary/50 mb-2 px-1">Categories</div>
+          <div className="space-y-0.5 max-h-[60vh] overflow-y-auto pr-1">
+            {sortedCategories.map(([catName, items]) => {
+              const catObtained = items.filter((i) => i.count > 0).length;
+              const isComplete = catObtained === items.length && items.length > 0;
+              const isActive = selectedCategory === catName;
+              const pct = items.length > 0 ? (catObtained / items.length) * 100 : 0;
+
+              return (
+                <button
+                  key={catName}
+                  onClick={() => { setSelectedCategory(catName); setItemFilter("all"); }}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-colors ${
+                    isActive
+                      ? "bg-accent/10 border border-accent/25"
+                      : "hover:bg-bg-secondary/50 border border-transparent"
+                  }`}
                 >
-                  {catName}
-                </span>
-                <span className="text-xs text-text-secondary tabular-nums">
-                  {catObtained}/{items.length}
-                </span>
-                <span className="text-xs text-text-secondary/40">
-                  {isExpanded ? "▾" : "▸"}
-                </span>
-              </button>
+                  <div className="flex-1 min-w-0">
+                    <div className={`text-xs font-medium truncate ${isComplete ? "text-success" : "text-text-primary"}`}>
+                      {catName}
+                    </div>
+                    <div className="mt-1 h-0.5 w-full rounded-full bg-bg-tertiary overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${isComplete ? "bg-success" : "bg-accent/60"}`}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  </div>
+                  <span className="text-[10px] text-text-secondary/50 tabular-nums shrink-0">
+                    {catObtained}/{items.length}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
-              {isExpanded && (
-                <div className="ml-12 mb-3 grid grid-cols-2 gap-1">
-                  {[...items]
-                    .sort((a, b) => {
-                      if (a.count > 0 !== b.count > 0)
-                        return a.count > 0 ? -1 : 1;
-                      return (a.name ?? "").localeCompare(b.name ?? "");
-                    })
-                    .map((item) => {
-                      const isObtained = item.count > 0;
-                      const name = item.name ?? `Item ${item.id}`;
-                      return (
-                        <div
-                          key={item.id}
-                          className={`flex items-center gap-2 px-2 py-1.5 rounded text-sm ${
-                            isObtained
-                              ? "bg-success/8 text-success"
-                              : "text-text-secondary"
-                          }`}
-                        >
+        {/* Items panel */}
+        <div>
+          {!selectedCategory ? (
+            <div className="py-12 text-center text-sm text-text-secondary">
+              Select a category to view items
+            </div>
+          ) : activeCategory ? (
+            <>
+              {/* Category header */}
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <div>
+                  <h3 className={`text-base font-semibold ${activeCatObtained === activeCatTotal && activeCatTotal > 0 ? "text-success" : ""}`}>
+                    {selectedCategory}
+                  </h3>
+                  <div className="text-xs text-text-secondary mt-0.5 tabular-nums">
+                    {activeCatObtained} / {activeCatTotal} items
+                  </div>
+                </div>
+                <div className="flex gap-1">
+                  {(["all", "obtained", "missing"] as const).map((f) => (
+                    <button
+                      key={f}
+                      onClick={() => setItemFilter(f)}
+                      aria-pressed={itemFilter === f}
+                      className={`px-2.5 py-1 rounded text-[11px] font-medium transition-colors ${
+                        itemFilter === f
+                          ? "bg-accent text-white"
+                          : "text-text-secondary hover:text-text-primary"
+                      }`}
+                    >
+                      {f === "all" ? "All" : f === "obtained" ? "Obtained" : "Missing"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Items icon grid */}
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
+                {activeCatItems.map((item) => {
+                  const isObtained = item.count > 0;
+                  const name = resolveName(item);
+                  return (
+                    <div
+                      key={item.id}
+                      className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-colors ${
+                        isObtained
+                          ? "bg-success/6 hover:bg-success/10"
+                          : "opacity-40 hover:opacity-60"
+                      }`}
+                      title={`${name}${isObtained ? ` (×${item.count})` : " — not obtained"}`}
+                    >
+                      <div className="relative">
+                        <div className={`w-10 h-10 rounded-lg border flex items-center justify-center ${
+                          isObtained
+                            ? "bg-bg-tertiary/40 border-success/20"
+                            : "bg-bg-tertiary/20 border-border/20"
+                        }`}>
                           <img
                             src={itemIcon(name)}
                             alt=""
-                            className={`w-5 h-5 shrink-0 ${isObtained ? "" : "opacity-30"}`}
+                            className={`w-7 h-7 object-contain ${isObtained ? "" : "grayscale"}`}
                             onError={(e) => {
                               e.currentTarget.style.display = "none";
                             }}
                           />
-                          <span className="truncate">{name}</span>
-                          {isObtained && item.count > 1 && (
-                            <span className="ml-auto text-[10px] text-success/60 tabular-nums shrink-0">
-                              ×{item.count}
-                            </span>
-                          )}
                         </div>
-                      );
-                    })}
+                        {isObtained && item.count > 1 && (
+                          <span className="absolute -top-1 -right-1.5 bg-success text-white text-[8px] font-bold rounded-full px-1 min-w-[14px] text-center leading-[14px]">
+                            {item.count}
+                          </span>
+                        )}
+                      </div>
+                      <span className={`text-[10px] text-center leading-tight truncate max-w-full ${
+                        isObtained ? "text-text-primary" : "text-text-secondary/50"
+                      }`}>
+                        {name}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {activeCatItems.length === 0 && (
+                <div className="py-8 text-center text-sm text-text-secondary">
+                  {itemFilter === "obtained" ? "No obtained items in this category" :
+                   itemFilter === "missing" ? "All items obtained!" :
+                   "No items in this category"}
                 </div>
               )}
-            </div>
-          );
-        })}
+            </>
+          ) : null}
+        </div>
       </div>
     </>
   );
@@ -285,9 +488,15 @@ export default function CollectionLog({ rsn }: Props) {
   useEffect(() => {
     if (!rsn) return;
 
+    // Clear previous RSN's cache so we fetch fresh data
+    clearCacheKey(`temple-player-info:${rsn.toLowerCase()}`);
+    clearCacheKey(`temple-clog:${rsn.toLowerCase()}`);
+
     let cancelled = false;
+    setTempleData(null);
     setTempleLoading(true); // eslint-disable-line react-hooks/set-state-in-effect -- loading state for async fetch
     setTempleError(null);
+    setTempleSynced(null);
 
     (async () => {
       try {
@@ -297,14 +506,17 @@ export default function CollectionLog({ rsn }: Props) {
         ]);
         if (cancelled) return;
 
-        if (!info || !info.clog_synced) {
+        // Check clog data directly — clog_synced flag may be missing from player_info
+        const hasClogData = clog && Object.keys(clog.categories).length > 0;
+
+        if (!hasClogData && (!info || !info.clog_synced)) {
           setTempleSynced(false);
           setTempleLoading(false);
           return;
         }
 
         setTempleSynced(true);
-        if (clog && Object.keys(clog.categories).length > 0) {
+        if (hasClogData) {
           setTempleData(clog);
           setMode("temple");
         }
@@ -389,6 +601,8 @@ export default function CollectionLog({ rsn }: Props) {
             </a>
             <button
               onClick={() => {
+                clearCacheKey(`temple-player-info:${rsn.toLowerCase()}`);
+                clearCacheKey(`temple-clog:${rsn.toLowerCase()}`);
                 setTempleLoading(true);
                 setTempleError(null);
                 setTempleSynced(null);
