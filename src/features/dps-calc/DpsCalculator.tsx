@@ -56,6 +56,8 @@ interface GearLoadout {
   strengthBonus: number;
   attackSpeed: number;
   modifiers: string[];
+  bonusMode?: BonusMode;
+  gear?: Record<string, WikiEquipment>;
 }
 
 const LOADOUTS_KEY = "runewise_dps_loadouts";
@@ -108,6 +110,7 @@ export default function DpsCalculator({ hiscores }: Props) {
   const [strengthBonus, setStrengthBonus] = useState(0);
   const [attackSpeed, setAttackSpeed] = useState(DEFAULT_SPEED.melee);
   const [stanceIdx, setStanceIdx] = useState(0);
+  const [activeLoadout, setActiveLoadout] = useState<string | null>(null);
   const [prayerIdx, setPrayerIdx] = useState(0);
   const [selectedMonster, setSelectedMonster] = useState<WikiMonster | null>(null);
   const [customDef, setCustomDef] = useState({ defLevel: 1, defBonus: 0, hp: 100 });
@@ -317,6 +320,8 @@ export default function DpsCalculator({ hiscores }: Props) {
       strengthBonus,
       attackSpeed,
       modifiers: [...activeModifiers],
+      bonusMode,
+      gear: bonusMode === "equipment" ? { ...equippedGear } as Record<string, WikiEquipment> : undefined,
     };
     setLoadouts((prev) => {
       const next = prev.filter((l) => l.name !== name);
@@ -328,16 +333,19 @@ export default function DpsCalculator({ hiscores }: Props) {
   }, [loadoutName, combatStyle, stanceIdx, prayerIdx, attackBonus, strengthBonus, attackSpeed, activeModifiers]);
 
   const applyLoadout = useCallback((loadout: GearLoadout) => {
-    if (loadout.combatStyle === combatStyle) {
-      // Same style — apply directly, no effect needed
+    const apply = () => {
       setStanceIdx(loadout.stanceIdx);
       setPrayerIdx(loadout.prayerIdx);
       setAttackBonus(loadout.attackBonus);
       setStrengthBonus(loadout.strengthBonus);
       setAttackSpeed(loadout.attackSpeed);
       setActiveModifiers(new Set(loadout.modifiers));
+      if (loadout.bonusMode) setBonusMode(loadout.bonusMode);
+      if (loadout.gear) setEquippedGear(loadout.gear as EquippedGear);
+    };
+    if (loadout.combatStyle === combatStyle) {
+      apply();
     } else {
-      // Different style — stash loadout and let the combatStyle effect apply it
       pendingLoadout.current = loadout;
       setCombatStyle(loadout.combatStyle);
     }
@@ -387,31 +395,56 @@ export default function DpsCalculator({ hiscores }: Props) {
 
         {/* Loadout Presets */}
         <div>
-          <div className="section-kicker mb-3">Loadouts</div>
+          <div className="flex items-center justify-between mb-3">
+            <div className="section-kicker">Loadouts</div>
+            {loadouts.length > 0 && (
+              <button
+                onClick={() => {
+                  setEquippedGear({});
+                  setActiveModifiers(new Set());
+                  setStanceIdx(0);
+                  setPrayerIdx(0);
+                  setAttackBonus(0);
+                  setStrengthBonus(0);
+                  setDefReductions(0);
+                  setPoisonType("none");
+                  setActiveLoadout(null);
+                }}
+                className="text-[10px] text-text-secondary/40 hover:text-danger transition-colors"
+              >
+                Clear All
+              </button>
+            )}
+          </div>
           {loadouts.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-3">
-              {loadouts.map((l) => (
-                <div
-                  key={l.name}
-                  className="flex items-center gap-1 bg-bg-secondary border border-border rounded-lg overflow-hidden"
-                >
-                  <button
-                    onClick={() => applyLoadout(l)}
-                    className="px-3 py-1.5 text-xs font-medium hover:bg-bg-tertiary transition-colors"
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {loadouts.map((l) => {
+                const isActive = activeLoadout === l.name;
+                return (
+                  <div
+                    key={l.name}
+                    className={`flex items-center gap-1 rounded-lg overflow-hidden border transition-colors ${
+                      isActive ? "border-accent bg-accent/10" : "border-border bg-bg-secondary"
+                    }`}
                   >
-                    {l.name}
-                    <span className="ml-1.5 text-text-secondary/50 capitalize">
-                      {l.combatStyle}
-                    </span>
-                  </button>
-                  <button
-                    onClick={() => deleteLoadout(l.name)}
-                    className="px-1.5 py-1.5 text-text-secondary/40 hover:text-danger text-xs transition-colors"
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
+                    <button
+                      onClick={() => { applyLoadout(l); setActiveLoadout(l.name); }}
+                      className="px-2.5 py-1.5 text-xs font-medium hover:bg-bg-tertiary/50 transition-colors"
+                    >
+                      {l.name}
+                      <span className={`ml-1.5 text-[10px] capitalize ${isActive ? "text-accent" : "text-text-secondary/40"}`}>
+                        {l.combatStyle}
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => deleteLoadout(l.name)}
+                      className="px-1.5 py-1.5 text-text-secondary/30 hover:text-danger text-xs transition-colors"
+                    >
+                      ×
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
           <div className="flex gap-2">
@@ -498,7 +531,17 @@ export default function DpsCalculator({ hiscores }: Props) {
                     return (
                       <button
                         onClick={() => setOpenSlot(slot)}
-                        title={equipped?.name ?? label}
+                        onContextMenu={(e) => {
+                          e.preventDefault();
+                          if (equipped) {
+                            setEquippedGear((prev) => {
+                              const next = { ...prev };
+                              delete next[slot];
+                              return next;
+                            });
+                          }
+                        }}
+                        title={equipped ? `${equipped.name} (right-click to clear)` : label}
                         className={`flex flex-col items-center justify-center gap-0.5 w-full aspect-square rounded-lg border transition-colors ${
                           equipped
                             ? "border-accent/40 bg-accent/8 hover:bg-accent/15"
@@ -631,6 +674,14 @@ export default function DpsCalculator({ hiscores }: Props) {
                 );
               })}
             </div>
+            {prayer.name !== "None" && (
+              <div className="mt-1.5 text-[10px] text-text-secondary">
+                <span className="text-text-primary font-medium">{prayer.name}</span>
+                {prayer.level ? <span className="text-text-secondary/40"> Lvl {prayer.level}</span> : null}
+                {prayer.attackMult > 1 && <span className="text-success"> +{Math.round((prayer.attackMult - 1) * 100)}% atk</span>}
+                {prayer.strengthMult > 1 && <span className="text-success"> +{Math.round((prayer.strengthMult - 1) * 100)}% str</span>}
+              </div>
+            )}
           </div>
 
           <div>
