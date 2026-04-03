@@ -82,6 +82,13 @@ const METRIC_FIXUPS: Record<string, string> = {
   the_royal_titans: "The Royal Titans",
   fortis_colosseum: "The Fortis Colosseum",
   sol_heredit: "Sol Heredit",
+  clue_scrolls_all: "Clue Scrolls (all)",
+  clue_scrolls_beginner: "Clue Scrolls (beginner)",
+  clue_scrolls_easy: "Clue Scrolls (easy)",
+  clue_scrolls_medium: "Clue Scrolls (medium)",
+  clue_scrolls_hard: "Clue Scrolls (hard)",
+  clue_scrolls_elite: "Clue Scrolls (elite)",
+  clue_scrolls_master: "Clue Scrolls (master)",
   collections_logged: "Collection Log",
   last_man_standing: "Last Man Standing",
   soul_wars_zeal: "Soul Wars",
@@ -96,8 +103,12 @@ const METRIC_FIXUPS: Record<string, string> = {
 function metricIconUrl(rawMetric: string): string | null {
   const fixedName = METRIC_FIXUPS[rawMetric];
   if (fixedName) {
-    if (rawMetric in SKILL_NAMES || fixedName === "Overall" || fixedName === "Collection Log") {
-      return skillIconUrl(fixedName);
+    if (rawMetric in SKILL_NAMES) return skillIconUrl(SKILL_NAMES[rawMetric]!);
+    if (fixedName === "Overall") return skillIconUrl("Overall");
+    if (fixedName === "Collection Log") return `${WIKI_IMG}/Collection_log.png`;
+    if (fixedName.startsWith("Clue Scrolls")) {
+      const tier = fixedName.match(/\((\w+)\)/)?.[1] ?? "hard";
+      return `${WIKI_IMG}/Clue_scroll_%28${tier}%29.png`;
     }
     return bossIconSmall(fixedName);
   }

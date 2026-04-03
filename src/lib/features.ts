@@ -131,7 +131,7 @@ export const FEATURE_REGISTRY = {
     title: "Character Progress",
     navLabel: "Character Progress",
     family: "Guides",
-    sidebar: true,
+    sidebar: false,
     search: true,
     aliases: ["quests", "quest requirements", "diaries", "achievement diaries", "progress", "combat tasks", "combat achievements"],
   },

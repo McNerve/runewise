@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { type HiscoreData } from "../../lib/api/hiscores";
 import { fetchWomPlayer, type WomPlayer } from "../../lib/api/wom";
 import { xpForLevel } from "../../lib/formulas/xp";
@@ -7,6 +7,14 @@ import { WIKI_IMG, SKILL_ICONS, NAV_ICONS, bossIconSmall, bossIcon, itemIcon } f
 import { useNavigation } from "../../lib/NavigationContext";
 import WikiImage from "../../components/WikiImage";
 import { TRAINING_METHODS } from "../../lib/data/training-methods";
+import QuestTracker from "../quests/QuestTracker";
+import DiaryTracker from "../diaries/DiaryTracker";
+import EmptyState from "../../components/EmptyState";
+
+const CombatTasks = lazy(() => import("../combat-tasks/CombatTasks"));
+const QuestUnlock = lazy(() => import("../progress/components/QuestUnlock"));
+
+type ProfileTab = "overview" | "quests" | "diaries" | "combat" | "unlock";
 
 function ProgressRing({ obtained, total, size = 22 }: { obtained: number; total: number; size?: number }) {
   const pct = total > 0 ? obtained / total : 0;
@@ -54,8 +62,15 @@ const SKILL_ORDER = [
 ];
 
 export default function Overview({ hiscores, rsn }: Props) {
-  const { navigate } = useNavigation();
+  const { navigate, params } = useNavigation();
   const [womPlayer, setWomPlayer] = useState<WomPlayer | null>(null);
+  const initialTab: ProfileTab =
+    params.tab === "quests" ? "quests" :
+    params.tab === "diaries" ? "diaries" :
+    params.tab === "combat" ? "combat" :
+    params.tab === "unlock" ? "unlock" :
+    "overview";
+  const [profileTab, setProfileTab] = useState<ProfileTab>(initialTab);
 
   useEffect(() => {
     if (!rsn) return;
@@ -95,6 +110,11 @@ export default function Overview({ hiscores, rsn }: Props) {
   const colosseumGlory = hiscores.activities?.find(
     (a) => a.name === "Colosseum Glory"
   )?.score ?? null;
+
+  const questPoints = hiscores.activities?.find(
+    (a) => a.name === "Quest Points"
+  )?.score ?? null;
+
 
   const clueTiers = ["beginner", "easy", "medium", "hard", "elite", "master"].map((tier) => ({
     tier,
@@ -216,6 +236,61 @@ export default function Overview({ hiscores, rsn }: Props) {
         )}
       </div>
 
+      {/* Profile sub-tabs */}
+      <div className="flex gap-1 mb-5 overflow-x-auto">
+        {([
+          { id: "overview" as const, label: "Overview", icon: `${WIKI_IMG}/Stats_icon.png` },
+          { id: "quests" as const, label: `Quests${questPoints ? ` (${questPoints} QP)` : ""}`, icon: `${WIKI_IMG}/Quest_point_icon.png` },
+          { id: "diaries" as const, label: "Diaries", icon: `${WIKI_IMG}/Achievement_Diaries_icon.png` },
+          { id: "combat" as const, label: "Combat Tasks", icon: `${WIKI_IMG}/Combat_Achievements_icon.png` },
+          { id: "unlock" as const, label: "What Can I Do?", icon: `${WIKI_IMG}/Quest_point_cape_detail.png` },
+        ]).map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setProfileTab(tab.id)}
+            aria-pressed={profileTab === tab.id}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
+              profileTab === tab.id
+                ? "bg-accent text-white"
+                : "text-text-secondary hover:bg-bg-secondary/50"
+            }`}
+          >
+            <img src={tab.icon} alt="" className="w-4 h-4" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Sub-tab: Quests ── */}
+      {profileTab === "quests" && <QuestTracker hiscores={hiscores} />}
+
+      {/* ── Sub-tab: Diaries ── */}
+      {profileTab === "diaries" && <DiaryTracker hiscores={hiscores} />}
+
+      {/* ── Sub-tab: Combat Tasks ── */}
+      {profileTab === "combat" && (
+        <Suspense fallback={<div className="py-8 text-center"><div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4 mx-auto" /></div>}>
+          <CombatTasks />
+        </Suspense>
+      )}
+
+      {/* ── Sub-tab: What Can I Do? ── */}
+      {profileTab === "unlock" && hiscores && (
+        <Suspense fallback={<div className="py-8 text-center"><div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4 mx-auto" /></div>}>
+          <QuestUnlock hiscores={hiscores} />
+        </Suspense>
+      )}
+      {profileTab === "unlock" && !hiscores && (
+        <EmptyState
+          icon={NAV_ICONS.progress}
+          title="No hiscores loaded"
+          description="Look up your RSN above to see which quests you can tackle."
+        />
+      )}
+
+      {/* ── Sub-tab: Overview (skills, bosses, etc.) ── */}
+      {profileTab === "overview" && (
+      <>
       {/* Skill grid — 3 columns, OSRS layout */}
       <div className="grid grid-cols-3 gap-1.5">
         {SKILL_ORDER.map((skillName) => {
@@ -381,6 +456,8 @@ export default function Overview({ hiscores, rsn }: Props) {
         </div>
       )}
 
+      </>
+      )}
     </div>
   );
 }

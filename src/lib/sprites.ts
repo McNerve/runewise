@@ -6,7 +6,11 @@ export function skillIcon(skill: string): string {
 }
 
 export function itemIcon(itemName: string): string {
-  const name = itemName.replace(/ /g, "_").replace(/'/g, "%27");
+  const name = itemName
+    .replace(/ /g, "_")
+    .replace(/'/g, "%27")
+    .replace(/\(/g, "%28")
+    .replace(/\)/g, "%29");
   return `${WIKI_IMG}/${name}.png`;
 }
 
@@ -134,7 +138,7 @@ export function bossIconSmall(bossName: string): string {
 }
 
 export const NAV_ICONS: Record<string, string> = {
-  overview: `${WIKI_IMG}/Stats_icon.png`,
+  overview: `${WIKI_IMG}/Character_Summary_tab_icon.png`,
   "collection-log": `${WIKI_IMG}/Collection_log.png`,
   lookup: `${WIKI_IMG}/Magnifying_glass.png`,
   "skill-calc": `${WIKI_IMG}/Antique_lamp.png`,
