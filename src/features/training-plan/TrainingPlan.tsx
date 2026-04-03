@@ -44,6 +44,7 @@ const PREFERENCES: { id: TrainingPreference; label: string; desc: string }[] = [
 export default function TrainingPlan({ hiscores }: Props) {
   const [targets, setTargets] = useState<Record<string, number>>({});
   const [preference, setPreference] = useState<TrainingPreference>("fastest");
+  const [activePreset, setActivePreset] = useState<string | null>(null);
   const [methodOverrides, setMethodOverrides] = useState<Record<string, string>>({});
   const [expandedSkill, setExpandedSkill] = useState<string | null>(null);
 
@@ -78,8 +79,11 @@ export default function TrainingPlan({ hiscores }: Props) {
       <div className="section-kicker mb-2">Quick Presets</div>
       <div className="flex gap-2 mb-5">
         <button
-          onClick={() => setAllTo(99)}
-          className="px-3 py-1.5 rounded text-xs bg-bg-secondary text-text-secondary hover:bg-bg-tertiary transition-colors"
+          onClick={() => { setAllTo(99); setActivePreset("all99"); }}
+          aria-pressed={activePreset === "all99"}
+          className={`px-3 py-1.5 rounded text-xs transition-colors ${
+            activePreset === "all99" ? "bg-accent text-white" : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+          }`}
         >
           All 99
         </button>
@@ -92,13 +96,17 @@ export default function TrainingPlan({ hiscores }: Props) {
             setTarget("Prayer", 99);
             setTarget("Magic", 99);
             setTarget("Hitpoints", 99);
+            setActivePreset("combat");
           }}
-          className="px-3 py-1.5 rounded text-xs bg-bg-secondary text-text-secondary hover:bg-bg-tertiary transition-colors"
+          aria-pressed={activePreset === "combat"}
+          className={`px-3 py-1.5 rounded text-xs transition-colors ${
+            activePreset === "combat" ? "bg-accent text-white" : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+          }`}
         >
           Max Combat
         </button>
         <button
-          onClick={() => setTargets({})}
+          onClick={() => { setTargets({}); setActivePreset(null); }}
           className="px-3 py-1.5 rounded text-xs bg-bg-secondary text-text-secondary hover:bg-bg-tertiary transition-colors"
         >
           Clear

@@ -176,7 +176,7 @@ export default function Overview({ hiscores, rsn }: Props) {
         {collectionLog != null && collectionLog > 0 && (
           <div className="p-3 text-center">
             <div className="flex items-center justify-center gap-1.5 mb-1">
-              <WikiImage src={NAV_ICONS.tracker} alt="" className="w-4 h-4" fallback="C" />
+              <WikiImage src={NAV_ICONS["collection-log"]} alt="" className="w-4 h-4" fallback="C" />
               <div className="text-lg font-bold">{collectionLog}<span className="text-xs text-text-secondary font-normal">/1,699</span></div>
             </div>
             <div className="text-xs text-text-secondary">Collection Log</div>

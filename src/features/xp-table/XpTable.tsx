@@ -1,48 +1,72 @@
-import { useState } from "react";
-import { XP_TABLE, XP_TABLE_VIRTUAL } from "../../lib/formulas/xp";
+import { useState, useMemo } from "react";
+import { XP_TABLE_VIRTUAL } from "../../lib/formulas/xp";
 import EmptyState from "../../components/EmptyState";
+
+type Range = "all" | "1-30" | "31-60" | "61-90" | "91-99" | "virtual";
+
+const RANGES: { id: Range; label: string; min: number; max: number }[] = [
+  { id: "all", label: "All", min: 1, max: 126 },
+  { id: "1-30", label: "1–30", min: 1, max: 30 },
+  { id: "31-60", label: "31–60", min: 31, max: 60 },
+  { id: "61-90", label: "61–90", min: 61, max: 90 },
+  { id: "91-99", label: "91–99", min: 91, max: 99 },
+  { id: "virtual", label: "100–126", min: 100, max: 126 },
+];
 
 export default function XpTable() {
   const [search, setSearch] = useState("");
-  const [showVirtual, setShowVirtual] = useState(false);
+  const [range, setRange] = useState<Range>("all");
 
-  const source = showVirtual ? XP_TABLE_VIRTUAL : XP_TABLE;
-  const filtered = search
-    ? source.filter(
+  const activeRange = RANGES.find((r) => r.id === range) ?? RANGES[0];
+
+  const filtered = useMemo(() => {
+    let rows = XP_TABLE_VIRTUAL.filter(
+      (row) => row.level >= activeRange.min && row.level <= activeRange.max
+    );
+    if (search) {
+      rows = rows.filter(
         (row) =>
           String(row.level) === search ||
           String(row.xp).includes(search.replace(/,/g, ""))
-      )
-    : source;
+      );
+    }
+    return rows;
+  }, [search, activeRange]);
 
   return (
     <div className="max-w-lg">
       <h2 className="text-xl font-semibold mb-4">XP Table</h2>
 
-      <div className="flex gap-3 items-center mb-4">
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by level or XP..."
-          aria-label="Search by level or XP"
-          className="flex-1 bg-bg-secondary border border-border rounded-lg px-4 py-2 text-sm"
-        />
-        <button
-          onClick={() => setShowVirtual(!showVirtual)}
-          aria-pressed={showVirtual}
-          className={`px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
-            showVirtual
-              ? "bg-accent text-white"
-              : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
-          }`}
-        >
-          Virtual Levels
-        </button>
+      <input
+        type="text"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder="Search by level or XP..."
+        aria-label="Search by level or XP"
+        className="w-full bg-bg-secondary border border-border rounded-lg px-4 py-2 text-sm mb-3"
+      />
+
+      <div className="flex gap-1 mb-4">
+        {RANGES.map((r) => (
+          <button
+            key={r.id}
+            onClick={() => setRange(r.id)}
+            aria-pressed={range === r.id}
+            className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
+              range === r.id
+                ? "bg-accent text-white"
+                : "text-text-secondary hover:bg-bg-secondary"
+            }`}
+          >
+            {r.label}
+          </button>
+        ))}
       </div>
 
       <div className="section-kicker mb-2">
-        Levels 1–{showVirtual ? "126" : "99"} {search && `(${filtered.length} results)`}
+        {activeRange.id === "all" ? "Levels 1–126" : `Levels ${activeRange.min}–${activeRange.max}`}
+        {activeRange.id === "virtual" && " (Virtual)"}
+        {search && ` (${filtered.length} results)`}
       </div>
 
       {filtered.length === 0 ? (
