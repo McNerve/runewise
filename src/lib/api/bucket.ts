@@ -21,7 +21,7 @@ function buildBucketQueryString(
   let query = `bucket("${bucket}").select(${selectList})`;
 
   if (where) {
-    query += `.where({"${where.field}":"${where.value}"})`;
+    query += `.where({"${where.field}","${where.value}"})`;
   }
 
   query += `.limit(${limit ?? MAX_PER_QUERY})`;
