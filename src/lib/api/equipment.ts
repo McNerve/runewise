@@ -150,7 +150,7 @@ export async function fetchAllEquipment(): Promise<WikiEquipment[]> {
     )
       .then((raw) => {
         const equipment = raw.map(toWikiEquipment);
-        setCache(CACHE_KEY, equipment, { persist: true });
+        if (equipment.length > 0) setCache(CACHE_KEY, equipment, { persist: true });
         equipmentPromise = null;
         return equipment;
       })

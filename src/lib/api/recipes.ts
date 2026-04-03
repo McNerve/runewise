@@ -93,7 +93,7 @@ export async function fetchAllRecipes(): Promise<WikiRecipe[]> {
         const recipes = raw
           .map(toWikiRecipe)
           .filter((r): r is WikiRecipe => r !== null);
-        setCache(CACHE_KEY, recipes, { persist: true });
+        if (recipes.length > 0) setCache(CACHE_KEY, recipes, { persist: true });
         recipesPromise = null;
         return recipes;
       })

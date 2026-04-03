@@ -599,21 +599,38 @@ export default function DpsCalculator({ hiscores }: Props) {
         {/* Prayer + Stance */}
         <div className="grid grid-cols-2 gap-5">
           <div>
-            <div className="section-kicker mb-3">Prayer</div>
-            <select
-              value={prayerIdx}
-              onChange={(e) => setPrayerIdx(Number(e.target.value))}
-              className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm"
-            >
-              {filteredPrayers.map((p, i) => (
-                <option key={p.name} value={i}>
-                  {p.name}
-                  {p.attackMult > 1 || p.strengthMult > 1
-                    ? ` (+${Math.round((p.attackMult - 1) * 100)}% atk, +${Math.round((p.strengthMult - 1) * 100)}% str)`
-                    : ""}
-                </option>
-              ))}
-            </select>
+            <div className="section-kicker mb-2">Prayer</div>
+            <div className="flex flex-wrap gap-1">
+              {filteredPrayers.map((p, i) => {
+                const isActive = prayerIdx === i;
+                const WIKI_IMG_BASE = "https://oldschool.runescape.wiki/images";
+                return (
+                  <button
+                    key={p.name}
+                    onClick={() => setPrayerIdx(i)}
+                    aria-pressed={isActive}
+                    title={`${p.name}${p.level ? ` (Lvl ${p.level})` : ""}${p.attackMult > 1 ? ` +${Math.round((p.attackMult - 1) * 100)}% atk` : ""}${p.strengthMult > 1 ? ` +${Math.round((p.strengthMult - 1) * 100)}% str` : ""}`}
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
+                      isActive
+                        ? "bg-accent text-white ring-2 ring-accent/40 scale-110"
+                        : "bg-bg-tertiary/50 hover:bg-bg-tertiary"
+                    }`}
+                  >
+                    {p.icon ? (
+                      <img
+                        src={`${WIKI_IMG_BASE}/${p.icon}`}
+                        alt={p.name}
+                        className={`w-5 h-5 ${isActive ? "" : "opacity-60"}`}
+                        onError={(e) => { e.currentTarget.style.display = "none"; const next = e.currentTarget.nextElementSibling; if (next instanceof HTMLElement) next.style.display = "block"; }}
+                      />
+                    ) : null}
+                    <span className={`text-[9px] font-medium ${p.icon ? "hidden" : ""}`}>
+                      {p.name === "None" ? "—" : p.name[0]}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <div>

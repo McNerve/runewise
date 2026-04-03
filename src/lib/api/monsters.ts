@@ -151,7 +151,7 @@ export async function fetchAllMonsters(): Promise<WikiMonster[]> {
     )
       .then((raw) => {
         const monsters = raw.map(toWikiMonster);
-        setCache(CACHE_KEY, monsters, { persist: true });
+        if (monsters.length > 0) setCache(CACHE_KEY, monsters, { persist: true });
         monstersPromise = null;
         return monsters;
       })

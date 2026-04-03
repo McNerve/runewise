@@ -95,7 +95,7 @@ export async function fetchAllSpells(): Promise<WikiSpell[]> {
           .map(toWikiSpell)
           .filter((s): s is WikiSpell => s !== null)
           .sort((a, b) => a.level - b.level);
-        setCache(CACHE_KEY, spells, { persist: true });
+        if (spells.length > 0) setCache(CACHE_KEY, spells, { persist: true });
         spellsPromise = null;
         return spells;
       })
