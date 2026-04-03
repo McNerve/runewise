@@ -122,7 +122,7 @@ interface Props {
 }
 
 export default function DpsCalculator({ hiscores }: Props) {
-  const { params } = useNavigation();
+  const { params, navigate } = useNavigation();
   const [combatStyle, setCombatStyle] = useState<CombatStyle>("melee");
   const [attackLevel, setAttackLevel] = useState(99);
   const [strengthLevel, setStrengthLevel] = useState(99);
@@ -467,21 +467,30 @@ export default function DpsCalculator({ hiscores }: Props) {
           <div>
             <div className="flex items-center justify-between mb-3">
               <div className="section-kicker">Equipment Bonuses</div>
-              <div className="flex gap-1">
-                {(["equipment", "manual"] as const).map((m) => (
-                  <button
-                    key={m}
-                    onClick={() => setBonusMode(m)}
-                    aria-pressed={bonusMode === m}
-                    className={`px-2 py-0.5 rounded text-[10px] capitalize transition-colors ${
-                      bonusMode === m
-                        ? "bg-accent text-white"
-                        : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
-                    }`}
-                  >
-                    {m}
-                  </button>
-                ))}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => navigate("gear-compare")}
+                  className="text-[11px] text-text-secondary/50 hover:text-accent transition-colors"
+                >
+                  Compare gear →
+                </button>
+                <div className="flex gap-1">
+                  {(["equipment", "manual"] as const).map((m) => (
+                    <button
+                      key={m}
+                      onClick={() => setBonusMode(m)}
+                      aria-pressed={bonusMode === m}
+                      className={`px-2 py-0.5 rounded text-[10px] capitalize transition-colors ${
+                        bonusMode === m
+                          ? "bg-accent text-white"
+                          : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+                      }`}
+                    >
+                      {m}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 

@@ -4,6 +4,7 @@ import { TOB_ROOMS, TOB_UNIQUES } from "./data/tob";
 import { TOA_ROOMS, TOA_UNIQUES } from "./data/toa";
 import { itemIcon } from "../../lib/sprites";
 import RaidLootCalc from "./components/RaidLootCalc";
+import { useNavigation } from "../../lib/NavigationContext";
 
 type RaidTab = "cox" | "tob" | "toa";
 
@@ -77,12 +78,14 @@ function RaidContent({
   lootDescription,
   expandedRoom,
   onToggleRoom,
+  onNavigateMarket,
 }: {
   rooms: RaidRoom[];
   uniques: RaidUnique[];
   lootDescription: string;
   expandedRoom: string | null;
   onToggleRoom: (name: string) => void;
+  onNavigateMarket: (name: string) => void;
 }) {
   const combatRooms = rooms.filter((r) => r.type === "combat");
   const puzzleRooms = rooms.filter((r) => r.type === "puzzle");
@@ -129,7 +132,13 @@ function RaidContent({
                 className="w-6 h-6 shrink-0 object-contain"
                 onError={(e) => { e.currentTarget.style.display = "none"; }}
               />
-              <span className="text-sm flex-1 font-medium">{item.name}</span>
+              <button
+                type="button"
+                onClick={() => onNavigateMarket(item.name)}
+                className="text-sm flex-1 text-left font-medium cursor-pointer hover:text-accent transition-colors"
+              >
+                {item.name}
+              </button>
               <span className="text-xs text-text-secondary tabular-nums text-right">
                 {item.rateDescription}
               </span>
@@ -148,6 +157,7 @@ const RAID_TABS = [
 ];
 
 export default function Raids() {
+  const { navigate } = useNavigation();
   const [tab, setTab] = useState<RaidTab>("cox");
   const [expandedRoom, setExpandedRoom] = useState<string | null>(null);
 
@@ -188,6 +198,7 @@ export default function Raids() {
             lootDescription="CoX uses a points-based system. Each player earns points from damaging bosses and completing tasks. Unique drop chance scales with total team points. At 30,000 personal points, each unique has approximately a 1/34.5 chance to appear."
             expandedRoom={expandedRoom}
             onToggleRoom={(name) => setExpandedRoom(expandedRoom === name ? null : name)}
+            onNavigateMarket={(name) => navigate("market", { query: name })}
           />
           <RaidLootCalc
             uniques={COX_UNIQUES}
@@ -208,6 +219,7 @@ export default function Raids() {
             lootDescription="ToB uses an MVP-based reward system. The player who deals the most damage across all rooms receives a weighted chance at unique drops. Each completion has approximately a 1/86 chance for a unique."
             expandedRoom={expandedRoom}
             onToggleRoom={(name) => setExpandedRoom(expandedRoom === name ? null : name)}
+            onNavigateMarket={(name) => navigate("market", { query: name })}
           />
           <RaidLootCalc
             uniques={TOB_UNIQUES}
@@ -227,6 +239,7 @@ export default function Raids() {
             lootDescription="ToA uses an invocation-based system. Higher invocation levels increase difficulty and unique drop rates. At 150 invocations, each unique has approximately a 1/48 chance. Expert mode (300+) significantly improves rates."
             expandedRoom={expandedRoom}
             onToggleRoom={(name) => setExpandedRoom(expandedRoom === name ? null : name)}
+            onNavigateMarket={(name) => navigate("market", { query: name })}
           />
           <RaidLootCalc
             uniques={TOA_UNIQUES}

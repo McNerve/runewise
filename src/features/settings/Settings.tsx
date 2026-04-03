@@ -375,6 +375,25 @@ export default function Settings() {
 
           <div className="flex items-center justify-between gap-4 pt-3 border-t border-border/30">
             <div>
+              <span className="text-sm font-medium text-text-primary">Clear data cache</span>
+              <p className="mt-0.5 text-xs text-text-secondary/70">
+                Remove cached API responses. Useful if data appears stale.
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                const keys = Object.keys(localStorage).filter(k => k.startsWith("bucket:") || k.startsWith("temple-") || k.startsWith("wom-") || k.startsWith("ge-") || k.startsWith("wiki-"));
+                keys.forEach(k => localStorage.removeItem(k));
+                alert(`Cleared ${keys.length} cached entries.`);
+              }}
+              className="rounded-lg bg-bg-tertiary px-3 py-1.5 text-xs text-text-secondary transition-colors hover:text-text-primary"
+            >
+              Clear Cache
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between gap-4 pt-3 border-t border-border/30">
+            <div>
               <span className="text-sm font-medium text-text-primary">Reset settings</span>
               <p className="mt-0.5 text-xs text-text-secondary/70">
                 Clear saved preferences, theme choices, and custom shortcuts.

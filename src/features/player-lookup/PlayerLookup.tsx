@@ -305,7 +305,20 @@ export default function PlayerLookup() {
             ) : null}
 
             {data && lookupRsn ? (
-              <Overview hiscores={data} rsn={lookupRsn} />
+              <>
+                {localStorage.getItem("runewise_rsn") !== lookupRsn && (
+                  <div className="mt-2 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => { localStorage.setItem("runewise_rsn", lookupRsn); window.location.reload(); }}
+                      className="text-[11px] text-text-secondary/50 hover:text-accent transition-colors"
+                    >
+                      Set as saved RSN
+                    </button>
+                  </div>
+                )}
+                <Overview hiscores={data} rsn={lookupRsn} />
+              </>
             ) : null}
           </>
         ) : (

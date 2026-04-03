@@ -4,6 +4,7 @@ import { fetchLatestPrices, fetchMapping, type ItemPrice } from "../../lib/api/g
 import { formatGp } from "../../lib/format";
 import { itemIcon, skillIcon } from "../../lib/sprites";
 import ErrorState from "../../components/ErrorState";
+import { useNavigation } from "../../lib/NavigationContext";
 
 function getItemPrice(
   name: string,
@@ -54,6 +55,7 @@ function calcRecipe(
 }
 
 export default function ProductionCalc() {
+  const { navigate } = useNavigation();
   const [recipes, setRecipes] = useState<WikiRecipe[]>([]);
   const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
   const [itemMap, setItemMap] = useState<Map<string, number>>(new Map());
@@ -244,7 +246,13 @@ export default function ProductionCalc() {
                       className="w-4 h-4 shrink-0"
                       onError={(e) => { e.currentTarget.style.display = "none"; }}
                     />
-                    <span className="text-sm flex-1">{mat.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => navigate("market", { query: mat.name })}
+                      className="text-sm flex-1 text-left text-text-primary hover:text-accent transition-colors"
+                    >
+                      {mat.name}
+                    </button>
                     <span className="text-xs text-text-secondary tabular-nums">
                       x{mat.quantity}
                     </span>

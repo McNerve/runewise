@@ -26,7 +26,7 @@ interface Props {
 }
 
 export default function SkillCalculator({ hiscores }: Props) {
-  const { params } = useNavigation();
+  const { params, navigate } = useNavigation();
   const [selectedSkill, setSelectedSkill] = useState<string>(params.skill ?? "Attack");
   const [currentXp, setCurrentXp] = useState(0);
   const [targetLevel, setTargetLevel] = useState(99);
@@ -156,9 +156,18 @@ export default function SkillCalculator({ hiscores }: Props) {
             )}
           </div>
           <div>
-            <label className="block text-xs text-text-secondary mb-1">
-              Target Level
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs text-text-secondary">
+                Target Level
+              </label>
+              <button
+                type="button"
+                onClick={() => navigate("training-plan")}
+                className="text-[11px] text-text-secondary/50 hover:text-accent transition-colors"
+              >
+                Build training plan →
+              </button>
+            </div>
             <div className="flex gap-2">
               <input
                 type="number"

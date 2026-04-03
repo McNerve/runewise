@@ -4,6 +4,7 @@ import { fetchAllMoneyMethods, type WikiMoneyMethod } from "../../lib/api/moneyM
 import { type HiscoreData } from "../../lib/api/hiscores";
 import { formatGp } from "../../lib/format";
 import { SKILL_ICONS, NAV_ICONS } from "../../lib/sprites";
+import { useNavigation } from "../../lib/NavigationContext";
 import EmptyState from "../../components/EmptyState";
 
 interface Props {
@@ -48,6 +49,7 @@ function getMissingSkills(
 }
 
 export default function MoneyMaking({ hiscores }: Props) {
+  const { navigate } = useNavigation();
   const [category, setCategory] = useState<Category>("All");
   const [search, setSearch] = useState("");
   const [membersOnly, setMembersOnly] = useState(true);
@@ -264,6 +266,15 @@ export default function MoneyMaking({ hiscores }: Props) {
                   <span className="text-[10px] text-text-secondary block">
                     GP/hr
                   </span>
+                  {method.category === "Combat" && (
+                    <button
+                      type="button"
+                      onClick={() => navigate("bosses", { boss: method.name })}
+                      className="text-[10px] text-text-secondary/40 hover:text-accent transition-colors"
+                    >
+                      Guide
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
