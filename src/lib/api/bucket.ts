@@ -52,6 +52,8 @@ export async function bucketQuery<T extends Record<string, unknown>>(
       if (Array.isArray(json)) return json as T[];
       const obj = json as Record<string, unknown>;
       if (obj?.results && Array.isArray(obj.results)) return obj.results as T[];
+      // API returns { bucket: [...] } directly (array, not { results: [...] })
+      if (obj?.bucket && Array.isArray(obj.bucket)) return obj.bucket as T[];
       if (
         typeof json === "object" &&
         json !== null &&

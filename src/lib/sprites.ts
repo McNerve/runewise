@@ -151,7 +151,7 @@ export const NAV_ICONS: Record<string, string> = {
   progress: `${WIKI_IMG}/Character_Summary_tab_icon.png`,
   slayer: `${WIKI_IMG}/Slayer_icon.png`,
   news: `${WIKI_IMG}/Newspaper.png`,
-  "dps-calc": `${WIKI_IMG}/Dragon_claws_detail.png`,
+  "dps-calc": `${WIKI_IMG}/Hitsplat.png`,
   "training-plan": `${WIKI_IMG}/Quest_point_icon.png`,
   "gear-compare": `${WIKI_IMG}/Armour_case.png`,
   watchlist: `${WIKI_IMG}/Platinum_token_detail.png`,
