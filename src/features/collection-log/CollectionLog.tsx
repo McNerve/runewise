@@ -5,9 +5,9 @@ import { itemIcon, NAV_ICONS } from "../../lib/sprites";
 import {
   fetchTempleCollectionLog,
   fetchTemplePlayerInfo,
+  fetchTempleClogItemNames,
   type TempleCollectionLog,
 } from "../../lib/api/temple";
-import { fetchMapping } from "../../lib/api/ge";
 import { clearCacheKey } from "../../lib/api/cache";
 import EmptyState from "../../components/EmptyState";
 
@@ -65,31 +65,42 @@ function ProgressRing({
   );
 }
 
-// Common untradeable collection log items not in GE mapping
-const UNTRADEABLE_NAMES: Record<number, string> = {
-  7979: "Bludgeon spine", 13274: "Bludgeon axon", 13275: "Bludgeon claw",
-  13276: "Unsired", 25624: "Abyssal orphan", 12650: "Baby mole",
-  12655: "Pet kraken", 12648: "Pet smoke devil", 13247: "Hellpuppy",
-  21273: "Skotos", 22988: "Ikkle Hydra", 13321: "Heron",
-  20663: "Rock golem", 20665: "Rift guardian", 23956: "Youngllef",
-  21907: "Vorki", 27627: "Muphin", 12004: "Trident of the seas (full)",
-  26219: "Elidinis' ward", 26245: "Virtus mask", 23077: "Alchemical hydra heads",
-  29836: "Nid", 31283: "Huberte", 28947: "Dizana's quiver",
-  11920: "Dragon pickaxe", 21730: "Granite dust", 21726: "Black tourmaline core",
-  22883: "White lily seed", 22885: "Bottomless compost bucket",
-  22881: "Hespori seed", 28270: "Chromium ingot", 28333: "Baron",
-  28268: "Executioner's axe head", 28330: "Ultor vestige",
-  29684: "Tormented synapse", 30088: "Hueycoatl hide",
-  29889: "Sunfire splinted birch", 29892: "Sunfire fanatic cuirass",
-  29895: "Sunfire relic", 28991: "Blue moon helm",
-  30626: "Titan's grip", 30637: "Titan's sigil", 30631: "Titan's crest",
-  30640: "Titanic ore", 28798: "Scurrius' spine",
-  21295: "Jal-nib-rek", 6570: "TzRek-Jad",
-  28924: "Sunfire fanatic helm", 30775: "Yama's ashes",
-  30753: "Sulphur blades", 30756: "Scorching bow",
-  30765: "Yama's blood", 30806: "Searing page",
-  30763: "Demon horn", 30805: "Burning ember", 30795: "Infernal thread",
-  31111: "Doom essence",
+// Temple clog categories grouped like the in-game Collection Log
+const CLOG_TABS: Record<string, string[]> = {
+  Bosses: [
+    "Abyssal Sire", "Alchemical Hydra", "Amoxliatl", "Araxxor", "Barrows Chests",
+    "Bryophyta", "Callisto And Artio", "Cerberus", "Chaos Elemental", "Chaos Fanatic",
+    "Commander Zilyana", "Corporeal Beast", "Crazy Archaeologist", "Dagannoth Kings",
+    "Deranged Archaeologist", "Doom Of Mokhaiotl", "Duke Sucellus", "General Graardor",
+    "Giant Mole", "Grotesque Guardians", "Hespori", "Hueycoatl", "Kalphite Queen",
+    "King Black Dragon", "Kraken", "Kree Arra", "Kril Tsutsaroth", "Moons Of Peril",
+    "Nex", "Obor", "Phantom Muspah", "Royal Titans", "Sarachnis", "Scorpia", "Scurrius",
+    "Shellbane Gryphon", "Skotizo", "Tempoross", "Thermonuclear Smoke Devil", "The Leviathan",
+    "The Nightmare", "The Whisperer", "Vardorvis", "Venenatis And Spindel",
+    "Vetion And Calvarion", "Vorkath", "Wintertodt", "Yama", "Zalcano", "Zulrah",
+  ],
+  Raids: ["Chambers Of Xeric", "Theatre Of Blood", "Tombs Of Amascut"],
+  Clues: [
+    "Beginner Treasure Trails", "Easy Treasure Trails", "Medium Treasure Trails",
+    "Hard Treasure Trails", "Elite Treasure Trails", "Master Treasure Trails",
+    "Gilded", "Third Age", "Mimic", "Shared Treasure Trail Rewards", "Scroll Cases",
+  ],
+  Minigames: [
+    "Barbarian Assault", "Barracuda Trials", "Brimhaven Agility Arena", "Castle Wars",
+    "Fishing Trawler", "Giants Foundry", "Gnome Restaurant", "Guardians Of The Rift",
+    "Hallowed Sepulchre", "Last Man Standing", "Magic Training Arena", "Mahogany Homes",
+    "Mastering Mixology", "Pest Control", "Rogues Den", "Shades Of Mortton", "Soul Wars",
+    "Temple Trekking", "Tithe Farm", "Trouble Brewing", "Vale Totems", "Volcanic Mine",
+  ],
+  Other: [
+    "Aerial Fishing", "All Pets", "Boat Paints", "Brutus", "Camdozaal", "Champions Challenge",
+    "Chaos Druids", "Chompy Bird Hunting", "Colossal Wyrm Agility", "Creature Creation",
+    "Cyclopes", "Forestry", "Fossil Island Notes", "Gloughs Experiments", "Hunter Guild",
+    "Lost Schematics", "Monkey Backpacks", "Motherlode Mine", "My Notes", "Ocean Encounters",
+    "Random Events", "Revenants", "Rooftop Agility", "Sailing Miscellaneous", "Sea Treasures",
+    "Shayzien Armour", "Shooting Stars", "Skilling Pets", "Slayer", "The Fight Caves",
+    "The Gauntlet", "The Inferno", "Fortis Colosseum", "Tormented Demons", "Tzhaar", "Miscellaneous",
+  ],
 };
 
 type ItemFilter = "all" | "obtained" | "missing";
@@ -97,25 +108,13 @@ type ItemFilter = "all" | "obtained" | "missing";
 function TempleView({ data }: { data: TempleCollectionLog }) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [itemFilter, setItemFilter] = useState<ItemFilter>("all");
+  const [activeTab, setActiveTab] = useState<string>("Bosses");
   const [itemNames, setItemNames] = useState<Map<number, string>>(new Map());
 
   useEffect(() => {
-    fetchMapping()
-      .then((mapping) => {
-        const map = new Map<number, string>();
-        for (const item of mapping) map.set(item.id, item.name);
-        for (const [id, name] of Object.entries(UNTRADEABLE_NAMES)) {
-          if (!map.has(Number(id))) map.set(Number(id), name);
-        }
-        setItemNames(map);
-      })
-      .catch(() => {
-        const map = new Map<number, string>();
-        for (const [id, name] of Object.entries(UNTRADEABLE_NAMES)) {
-          map.set(Number(id), name);
-        }
-        setItemNames(map);
-      });
+    fetchTempleClogItemNames()
+      .then(setItemNames)
+      .catch(() => {});
   }, []);
 
   const resolveName = useCallback(
@@ -124,9 +123,33 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
     [itemNames]
   );
 
+  // Match Temple category slugs to our tab groups
+  const matchTab = useCallback((catSlug: string): string => {
+    const normalized = catSlug.toLowerCase().replace(/_/g, " ");
+    for (const [tab, cats] of Object.entries(CLOG_TABS)) {
+      if (cats.some((c) => c.toLowerCase() === normalized)) return tab;
+    }
+    return "Other";
+  }, []);
+
   const sortedCategories = useMemo(() => {
     return Object.entries(data.categories).sort(([a], [b]) => a.localeCompare(b));
   }, [data.categories]);
+
+  const tabCategories = useMemo(() => {
+    return sortedCategories.filter(([catName]) => matchTab(catName) === activeTab);
+  }, [sortedCategories, activeTab, matchTab]);
+
+  const tabStats = useMemo(() => {
+    const stats: Record<string, { obtained: number; total: number }> = {};
+    for (const tab of Object.keys(CLOG_TABS)) {
+      const cats = sortedCategories.filter(([name]) => matchTab(name) === tab);
+      const obtained = cats.reduce((s, [, items]) => s + items.filter((i) => i.count > 0).length, 0);
+      const total = cats.reduce((s, [, items]) => s + items.length, 0);
+      stats[tab] = { obtained, total };
+    }
+    return stats;
+  }, [sortedCategories, matchTab]);
 
   const completedCats = useMemo(
     () => sortedCategories.filter(([, items]) => items.length > 0 && items.every((i) => i.count > 0)).length,
@@ -229,13 +252,40 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
         </div>
       )}
 
+      {/* ── Tab bar (Bosses / Raids / Clues / Minigames / Other) ── */}
+      <div className="flex gap-1 mb-4 overflow-x-auto">
+        {Object.keys(CLOG_TABS).map((tab) => {
+          const stats = tabStats[tab];
+          const isActive = activeTab === tab;
+          return (
+            <button
+              key={tab}
+              onClick={() => { setActiveTab(tab); setSelectedCategory(null); }}
+              aria-pressed={isActive}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
+                isActive
+                  ? "bg-accent text-white"
+                  : "text-text-secondary hover:bg-bg-secondary/50"
+              }`}
+            >
+              {tab}
+              {stats && (
+                <span className={`tabular-nums ${isActive ? "text-white/70" : "text-text-secondary/40"}`}>
+                  {stats.obtained}/{stats.total}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
       {/* ── Two-column: categories + items ── */}
       <div className="grid gap-5 xl:grid-cols-[240px_minmax(0,1fr)]">
         {/* Category sidebar */}
         <div>
-          <div className="text-[10px] uppercase tracking-wider text-text-secondary/50 mb-2 px-1">Categories</div>
+          <div className="text-[10px] uppercase tracking-wider text-text-secondary/50 mb-2 px-1">{activeTab}</div>
           <div className="space-y-0.5 max-h-[60vh] overflow-y-auto pr-1">
-            {sortedCategories.map(([catName, items]) => {
+            {tabCategories.map(([catName, items]) => {
               const catObtained = items.filter((i) => i.count > 0).length;
               const isComplete = catObtained === items.length && items.length > 0;
               const isActive = selectedCategory === catName;

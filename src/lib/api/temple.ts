@@ -102,6 +102,25 @@ export async function fetchTempleCollectionLog(
   });
 }
 
+export async function fetchTempleClogItemNames(): Promise<Map<number, string>> {
+  return fetchJson<Map<number, string>>({
+    url: `${TEMPLE_BASE}/collection-log/items.php`,
+    cacheKey: "temple-clog-items",
+    ttlMs: 24 * 60 * 60 * 1000, // 24 hours — item names rarely change
+    transform: (json) => {
+      const data = json as Record<string, unknown>;
+      const items = data.items as Record<string, string> | undefined;
+      const map = new Map<number, string>();
+      if (items) {
+        for (const [id, name] of Object.entries(items)) {
+          map.set(Number(id), name);
+        }
+      }
+      return map;
+    },
+  });
+}
+
 export async function fetchTemplePets(
   rsn: string
 ): Promise<TemplePetData | null> {
