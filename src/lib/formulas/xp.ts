@@ -38,5 +38,13 @@ export const XP_TABLE: { level: number; xp: number; diff: number }[] =
     diff: i > 0 ? xp - XP_LOOKUP[i - 1] : 0,
   }));
 
+/** Extended XP table including virtual levels 100-126 */
+export const XP_TABLE_VIRTUAL: { level: number; xp: number; diff: number }[] =
+  XP_LOOKUP.map((xp, i) => ({
+    level: i + 1,
+    xp,
+    diff: i > 0 ? xp - XP_LOOKUP[i - 1] : 0,
+  }));
+
 export const MAX_XP = 200_000_000;
 export const MAX_LEVEL = 99;
