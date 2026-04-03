@@ -41,7 +41,7 @@ export const FEATURE_REGISTRY = {
   },
   "skill-calc": {
     title: "Skill Calculator",
-    navLabel: "Skill Calc",
+    navLabel: "Skill Calculator",
     family: "Tools",
     sidebar: true,
     search: true,
@@ -49,7 +49,7 @@ export const FEATURE_REGISTRY = {
   },
   "dps-calc": {
     title: "DPS Calculator",
-    navLabel: "DPS Calc",
+    navLabel: "DPS Calculator",
     family: "Tools",
     sidebar: true,
     search: true,
@@ -57,7 +57,7 @@ export const FEATURE_REGISTRY = {
   },
   "dry-calc": {
     title: "Dry Calculator",
-    navLabel: "Dry Calc",
+    navLabel: "Dry Calculator",
     family: "Tools",
     sidebar: true,
     search: true,
@@ -81,7 +81,7 @@ export const FEATURE_REGISTRY = {
   },
   "pet-calc": {
     title: "Pet Calculator",
-    navLabel: "Pet Calc",
+    navLabel: "Pet Calculator",
     family: "Tools",
     sidebar: true,
     search: true,

@@ -158,7 +158,7 @@ export default function TrainingPlan({ hiscores }: Props) {
                 min={current}
                 max={126}
                 value={target}
-                onChange={(e) => setTarget(skill, Math.max(current, Number(e.target.value)))}
+                onChange={(e) => setTarget(skill, Math.min(126, Math.max(current, Number(e.target.value))))}
                 className={`w-10 bg-bg-tertiary border rounded px-1 py-0.5 text-xs text-center tabular-nums ${
                   hasGap ? "border-accent/30" : "border-border"
                 }`}

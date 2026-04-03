@@ -3,7 +3,7 @@ import { xpForLevel } from "../../lib/formulas/xp";
 import { getSkillXp, type HiscoreData } from "../../lib/api/hiscores";
 import { fetchLatestPrices, fetchMapping, type ItemPrice } from "../../lib/api/ge";
 import { formatGp } from "../../lib/format";
-import { SKILL_ICONS } from "../../lib/sprites";
+import { SKILL_ICONS, itemIcon } from "../../lib/sprites";
 import { useNavigation } from "../../lib/NavigationContext";
 import { TRAINING_METHODS } from "../../lib/data/training-methods";
 import { HERBLORE_RECIPES } from "../../lib/data/herblore-recipes";
@@ -85,8 +85,9 @@ export default function SkillCalculator({ hiscores }: Props) {
   }, [selectedSkill]);
 
   const handleTargetChange = (value: number) => {
-    setTargetLevel(value);
-    customTargets.current.set(selectedSkill, value);
+    const clamped = Math.max(2, Math.min(126, value));
+    setTargetLevel(clamped);
+    customTargets.current.set(selectedSkill, clamped);
   };
 
   const [intensityFilter, setIntensityFilter] = useState<string>("All");
@@ -286,6 +287,7 @@ export default function SkillCalculator({ hiscores }: Props) {
                 {[...methods]
                   .sort((a, b) => (b.xpPerHour ?? 0) - (a.xpPerHour ?? 0))
                   .map((method) => {
+                    const maxXpHr = methods.reduce((m, x) => Math.max(m, x.xpPerHour ?? 0), 1);
                     const actions = Math.ceil(xpNeeded / method.xp);
                     const hours = method.xpPerHour ? xpNeeded / method.xpPerHour : null;
                     const meetsLevel = !method.levelReq || !currentLevel || currentLevel >= method.levelReq;
@@ -297,7 +299,15 @@ export default function SkillCalculator({ hiscores }: Props) {
                         className={`border-b border-border/50 hover:bg-bg-tertiary transition-colors ${!meetsLevel ? "opacity-40" : ""}`}
                       >
                         <td className="px-4 py-1.5 font-medium">
-                          {method.name}
+                          <span className="flex items-center gap-2">
+                            <img
+                              src={method.itemName ? itemIcon(method.itemName) : SKILL_ICONS[selectedSkill]}
+                              alt=""
+                              className="w-4 h-4 shrink-0"
+                              onError={(e) => { e.currentTarget.style.display = "none"; }}
+                            />
+                            {method.name}
+                          </span>
                           {method.intensity && (
                             <span className={`ml-1.5 px-1 py-0.5 rounded text-[9px] font-normal ${
                               method.intensity === "afk" ? "bg-success/10 text-success" :
@@ -315,7 +325,13 @@ export default function SkillCalculator({ hiscores }: Props) {
                         <td className="px-4 py-1.5 text-right text-text-secondary">
                           {method.xp.toLocaleString()}
                         </td>
-                        <td className="px-4 py-1.5 text-right text-text-secondary">
+                        <td className={`px-4 py-1.5 text-right font-medium tabular-nums ${
+                          method.xpPerHour
+                            ? (method.xpPerHour / maxXpHr) >= 0.7 ? "text-success"
+                              : (method.xpPerHour / maxXpHr) >= 0.35 ? "text-warning"
+                              : "text-danger"
+                            : "text-text-secondary"
+                        }`}>
                           {method.xpPerHour
                             ? method.xpPerHour >= 1_000_000
                               ? `${(method.xpPerHour / 1_000_000).toFixed(1)}M`
