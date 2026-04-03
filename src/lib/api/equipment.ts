@@ -1,7 +1,7 @@
 import { bucketQueryAll, type BucketWhere } from "./bucket";
 import { getCached, setCache } from "./cache";
 
-const CACHE_KEY = "wiki-equipment:v3";
+const CACHE_KEY = "wiki-equipment:v4";
 const CACHE_TTL = 24 * 60 * 60 * 1000;
 
 export type EquipmentSlot =
@@ -37,7 +37,6 @@ const EQUIPMENT_FIELDS = [
   "magic_damage_bonus",
   "prayer_bonus",
   "combat_style",
-  "aspeed",
 ] as const;
 
 interface RawBucketEquipment {
@@ -60,7 +59,6 @@ interface RawBucketEquipment {
   magic_damage_bonus?: string;
   prayer_bonus?: string;
   combat_style?: string;
-  aspeed?: string;
 }
 
 export interface WikiEquipment {
@@ -131,7 +129,7 @@ function toWikiEquipment(raw: RawBucketEquipment): WikiEquipment {
     magicDamage: num(raw.magic_damage_bonus),
     prayerBonus: num(raw.prayer_bonus),
     combatStyle: raw.combat_style || null,
-    attackSpeed: num(raw.aspeed) || 0,
+    attackSpeed: 0, // not available in infobox_bonuses bucket
   };
 }
 
