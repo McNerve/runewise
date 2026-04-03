@@ -600,7 +600,7 @@ export default function DpsCalculator({ hiscores }: Props) {
         <div className="grid grid-cols-2 gap-5">
           <div>
             <div className="section-kicker mb-2">Prayer</div>
-            <div className="flex flex-wrap gap-1">
+            <div className="grid grid-cols-5 gap-1.5">
               {filteredPrayers.map((p, i) => {
                 const isActive = prayerIdx === i;
                 const WIKI_IMG_BASE = "https://oldschool.runescape.wiki/images";
@@ -610,21 +610,21 @@ export default function DpsCalculator({ hiscores }: Props) {
                     onClick={() => setPrayerIdx(i)}
                     aria-pressed={isActive}
                     title={`${p.name}${p.level ? ` (Lvl ${p.level})` : ""}${p.attackMult > 1 ? ` +${Math.round((p.attackMult - 1) * 100)}% atk` : ""}${p.strengthMult > 1 ? ` +${Math.round((p.strengthMult - 1) * 100)}% str` : ""}`}
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
+                    className={`w-10 h-10 rounded-lg flex flex-col items-center justify-center transition-all ${
                       isActive
-                        ? "bg-accent text-white ring-2 ring-accent/40 scale-110"
-                        : "bg-bg-tertiary/50 hover:bg-bg-tertiary"
+                        ? "bg-accent/20 ring-2 ring-accent scale-105"
+                        : "bg-bg-tertiary/40 hover:bg-bg-tertiary border border-border/20"
                     }`}
                   >
                     {p.icon ? (
                       <img
                         src={`${WIKI_IMG_BASE}/${p.icon}`}
                         alt={p.name}
-                        className={`w-5 h-5 ${isActive ? "" : "opacity-60"}`}
-                        onError={(e) => { e.currentTarget.style.display = "none"; const next = e.currentTarget.nextElementSibling; if (next instanceof HTMLElement) next.style.display = "block"; }}
+                        className={`w-7 h-7 ${isActive ? "" : "opacity-50 grayscale"}`}
+                        onError={(e) => { e.currentTarget.style.display = "none"; const next = e.currentTarget.nextElementSibling; if (next instanceof HTMLElement) next.style.display = "flex"; }}
                       />
                     ) : null}
-                    <span className={`text-[9px] font-medium ${p.icon ? "hidden" : ""}`}>
+                    <span className={`w-7 h-7 items-center justify-center text-[10px] font-medium ${p.icon ? "hidden" : "flex"} ${isActive ? "text-accent" : "text-text-secondary/50"}`}>
                       {p.name === "None" ? "—" : p.name[0]}
                     </span>
                   </button>

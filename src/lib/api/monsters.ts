@@ -99,8 +99,8 @@ function num(value: string | undefined): number {
   return isNaN(n) ? 0 : n;
 }
 
-function parseAttackStyles(raw: string | undefined): string[] {
-  if (!raw) return [];
+function parseAttackStyles(raw: unknown): string[] {
+  if (!raw || typeof raw !== "string") return [];
   return raw
     .split(",")
     .map((s) => s.trim())

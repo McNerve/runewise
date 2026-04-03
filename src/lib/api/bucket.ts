@@ -94,23 +94,16 @@ export async function bucketQueryAll<T extends Record<string, unknown>>(
         if (Array.isArray(json)) return json as T[];
         const obj = json as Record<string, unknown>;
         if (obj?.results && Array.isArray(obj.results)) return obj.results as T[];
-        if (obj?.bucket && Array.isArray(obj.bucket)) return obj.bucket as T[];
-        if (
-          typeof json === "object" &&
-          json !== null &&
-          "bucket" in json &&
-          typeof json.bucket === "object" &&
-          json.bucket !== null &&
-          "results" in json.bucket &&
-          Array.isArray(json.bucket.results)
-        ) {
-          return json.bucket.results as T[];
+        if (obj?.bucket && Array.isArray(obj.bucket)) {
+          console.log(`[RuneWise] bucketQueryAll: got ${(obj.bucket as T[]).length} items for ${bucket} offset=${offset}`);
+          return obj.bucket as T[];
         }
-        console.warn("[RuneWise] Unexpected bucket response shape:", typeof json, json !== null && typeof json === "object" ? Object.keys(json as Record<string, unknown>).join(",") : "");
+        console.warn("[RuneWise] Unexpected bucketQueryAll response:", typeof json, json !== null && typeof json === "object" ? Object.keys(json as Record<string, unknown>).join(",") : "");
         return [];
       },
     });
 
+    console.log(`[RuneWise] bucketQueryAll batch: ${batch.length} items, offset=${offset}`);
     results.push(...batch);
 
     if (batch.length < MAX_PER_QUERY) break;
