@@ -6,7 +6,9 @@ import {
   fetchTempleCollectionLog,
   fetchTemplePlayerInfo,
   fetchTempleClogItemNames,
+  fetchTempleClogSchema,
   type TempleCollectionLog,
+  type TempleClogSchema,
 } from "../../lib/api/temple";
 import { clearCacheKey } from "../../lib/api/cache";
 import EmptyState from "../../components/EmptyState";
@@ -65,55 +67,35 @@ function ProgressRing({
   );
 }
 
-// Temple clog categories grouped like the in-game Collection Log
-const CLOG_TABS: Record<string, string[]> = {
-  Bosses: [
-    "Abyssal Sire", "Alchemical Hydra", "Amoxliatl", "Araxxor", "Barrows Chests",
-    "Bryophyta", "Callisto And Artio", "Cerberus", "Chaos Elemental", "Chaos Fanatic",
-    "Commander Zilyana", "Corporeal Beast", "Crazy Archaeologist", "Dagannoth Kings",
-    "Deranged Archaeologist", "Doom Of Mokhaiotl", "Duke Sucellus", "General Graardor",
-    "Giant Mole", "Grotesque Guardians", "Hespori", "Hueycoatl", "Kalphite Queen",
-    "King Black Dragon", "Kraken", "Kree Arra", "Kril Tsutsaroth", "Moons Of Peril",
-    "Nex", "Obor", "Phantom Muspah", "Royal Titans", "Sarachnis", "Scorpia", "Scurrius",
-    "Shellbane Gryphon", "Skotizo", "Tempoross", "Thermonuclear Smoke Devil", "The Leviathan",
-    "The Nightmare", "The Whisperer", "Vardorvis", "Venenatis And Spindel",
-    "Vetion And Calvarion", "Vorkath", "Wintertodt", "Yama", "Zalcano", "Zulrah",
-  ],
-  Raids: ["Chambers Of Xeric", "Theatre Of Blood", "Tombs Of Amascut"],
-  Clues: [
-    "Beginner Treasure Trails", "Easy Treasure Trails", "Medium Treasure Trails",
-    "Hard Treasure Trails", "Elite Treasure Trails", "Master Treasure Trails",
-    "Gilded", "Third Age", "Mimic", "Shared Treasure Trail Rewards", "Scroll Cases",
-  ],
-  Minigames: [
-    "Barbarian Assault", "Barracuda Trials", "Brimhaven Agility Arena", "Castle Wars",
-    "Fishing Trawler", "Giants Foundry", "Gnome Restaurant", "Guardians Of The Rift",
-    "Hallowed Sepulchre", "Last Man Standing", "Magic Training Arena", "Mahogany Homes",
-    "Mastering Mixology", "Pest Control", "Rogues Den", "Shades Of Mortton", "Soul Wars",
-    "Temple Trekking", "Tithe Farm", "Trouble Brewing", "Vale Totems", "Volcanic Mine",
-  ],
-  Other: [
-    "Aerial Fishing", "All Pets", "Boat Paints", "Brutus", "Camdozaal", "Champions Challenge",
-    "Chaos Druids", "Chompy Bird Hunting", "Colossal Wyrm Agility", "Creature Creation",
-    "Cyclopes", "Forestry", "Fossil Island Notes", "Gloughs Experiments", "Hunter Guild",
-    "Lost Schematics", "Monkey Backpacks", "Motherlode Mine", "My Notes", "Ocean Encounters",
-    "Random Events", "Revenants", "Rooftop Agility", "Sailing Miscellaneous", "Sea Treasures",
-    "Shayzien Armour", "Shooting Stars", "Skilling Pets", "Slayer", "The Fight Caves",
-    "The Gauntlet", "The Inferno", "Fortis Colosseum", "Tormented Demons", "Tzhaar", "Miscellaneous",
-  ],
-};
 
 type ItemFilter = "all" | "obtained" | "missing";
 
 function TempleView({ data }: { data: TempleCollectionLog }) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [itemFilter, setItemFilter] = useState<ItemFilter>("all");
-  const [activeTab, setActiveTab] = useState<string>("Bosses");
+  const [activeTab, setActiveTab] = useState<string>("bosses");
   const [itemNames, setItemNames] = useState<Map<number, string>>(new Map());
+  const [schema, setSchema] = useState<TempleClogSchema | null>(null);
+
+  // Build a set of obtained item IDs with counts from player data
+  const obtainedMap = useMemo(() => {
+    const map = new Map<number, { count: number; date?: string }>();
+    for (const items of Object.values(data.categories)) {
+      for (const item of items) {
+        if (item.count > 0) {
+          map.set(item.id, { count: item.count, date: item.obtained_at });
+        }
+      }
+    }
+    return map;
+  }, [data.categories]);
 
   useEffect(() => {
-    fetchTempleClogItemNames()
-      .then(setItemNames)
+    Promise.all([fetchTempleClogItemNames(), fetchTempleClogSchema()])
+      .then(([names, s]) => {
+        setItemNames(names);
+        setSchema(s);
+      })
       .catch(() => {});
   }, []);
 
@@ -123,38 +105,47 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
     [itemNames]
   );
 
-  // Match Temple category slugs to our tab groups
-  const matchTab = useCallback((catSlug: string): string => {
-    const normalized = catSlug.toLowerCase().replace(/_/g, " ");
-    for (const [tab, cats] of Object.entries(CLOG_TABS)) {
-      if (cats.some((c) => c.toLowerCase() === normalized)) return tab;
-    }
-    return "Other";
-  }, []);
-
-  const sortedCategories = useMemo(() => {
-    return Object.entries(data.categories).sort(([a], [b]) => a.localeCompare(b));
-  }, [data.categories]);
-
-  const tabCategories = useMemo(() => {
-    return sortedCategories.filter(([catName]) => matchTab(catName) === activeTab);
-  }, [sortedCategories, activeTab, matchTab]);
+  // Schema-based categories: shows ALL items, not just obtained
+  const schemaCategories = useMemo(() => {
+    if (!schema) return [];
+    const tabCats = schema.tabs[activeTab] ?? {};
+    return Object.entries(tabCats)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([slug, itemIds]) => {
+        const catName = slug.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+        const obtained = itemIds.filter((id) => obtainedMap.has(id)).length;
+        return { slug, catName, itemIds, obtained, total: itemIds.length };
+      });
+  }, [schema, activeTab, obtainedMap]);
 
   const tabStats = useMemo(() => {
+    if (!schema) return {};
     const stats: Record<string, { obtained: number; total: number }> = {};
-    for (const tab of Object.keys(CLOG_TABS)) {
-      const cats = sortedCategories.filter(([name]) => matchTab(name) === tab);
-      const obtained = cats.reduce((s, [, items]) => s + items.filter((i) => i.count > 0).length, 0);
-      const total = cats.reduce((s, [, items]) => s + items.length, 0);
-      stats[tab] = { obtained, total };
+    for (const [tab, cats] of Object.entries(schema.tabs)) {
+      const allIds = Object.values(cats).flat();
+      stats[tab] = {
+        obtained: allIds.filter((id) => obtainedMap.has(id)).length,
+        total: allIds.length,
+      };
     }
     return stats;
-  }, [sortedCategories, matchTab]);
+  }, [schema, obtainedMap]);
 
-  const completedCats = useMemo(
-    () => sortedCategories.filter(([, items]) => items.length > 0 && items.every((i) => i.count > 0)).length,
-    [sortedCategories]
-  );
+  const completedCats = useMemo(() => {
+    if (!schema) return 0;
+    let count = 0;
+    for (const cats of Object.values(schema.tabs)) {
+      for (const itemIds of Object.values(cats)) {
+        if (itemIds.length > 0 && itemIds.every((id) => obtainedMap.has(id))) count++;
+      }
+    }
+    return count;
+  }, [schema, obtainedMap]);
+
+  const totalCats = useMemo(() => {
+    if (!schema) return 0;
+    return Object.values(schema.tabs).reduce((s, cats) => s + Object.keys(cats).length, 0);
+  }, [schema]);
 
   // Recent items — last 6 obtained sorted by date
   const recentItems = useMemo(() => {
@@ -171,27 +162,27 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
       .slice(0, 8);
   }, [data.categories]);
 
-  // Selected category items
-  const activeCategory = selectedCategory
-    ? sortedCategories.find(([name]) => name === selectedCategory)
-    : null;
+  // Selected category — full items from schema
+  const activeSchemaCat = useMemo(
+    () => schemaCategories.find((c) => c.slug === selectedCategory) ?? null,
+    [schemaCategories, selectedCategory]
+  );
 
   const activeCatItems = useMemo(() => {
-    if (!activeCategory) return [];
-    const [, items] = activeCategory;
-    let filtered = [...items];
-    if (itemFilter === "obtained") filtered = filtered.filter((i) => i.count > 0);
-    if (itemFilter === "missing") filtered = filtered.filter((i) => i.count === 0);
-    return filtered.sort((a, b) => {
-      if (a.count > 0 !== b.count > 0) return a.count > 0 ? -1 : 1;
-      return resolveName(a).localeCompare(resolveName(b));
+    if (!activeSchemaCat) return [];
+    let items = activeSchemaCat.itemIds.map((id) => {
+      const obtained = obtainedMap.get(id);
+      return {
+        id,
+        name: itemNames.get(id) ?? `Item ${id}`,
+        count: obtained?.count ?? 0,
+        obtained_at: obtained?.date,
+      };
     });
-  }, [activeCategory, itemFilter, resolveName]);
-
-  const activeCatObtained = activeCategory
-    ? activeCategory[1].filter((i) => i.count > 0).length
-    : 0;
-  const activeCatTotal = activeCategory ? activeCategory[1].length : 0;
+    if (itemFilter === "obtained") items = items.filter((i) => i.count > 0);
+    if (itemFilter === "missing") items = items.filter((i) => i.count === 0);
+    return items;
+  }, [activeSchemaCat, obtainedMap, itemNames, itemFilter]);
 
   return (
     <>
@@ -204,7 +195,7 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
         </div>
         <div className="bg-bg-secondary/50 px-4 py-3 text-center">
           <div className="text-[10px] uppercase tracking-wider text-text-secondary/50">Categories</div>
-          <div className="text-lg font-bold tabular-nums mt-1">{completedCats} / {sortedCategories.length}</div>
+          <div className="text-lg font-bold tabular-nums mt-1">{completedCats} / {totalCats}</div>
           <div className="text-[10px] text-text-secondary/40">completed</div>
         </div>
         <div className="bg-bg-secondary/50 px-4 py-3 text-center">
@@ -252,9 +243,9 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
         </div>
       )}
 
-      {/* ── Tab bar (Bosses / Raids / Clues / Minigames / Other) ── */}
+      {/* ── Tab bar ── */}
       <div className="flex gap-1 mb-4 overflow-x-auto">
-        {Object.keys(CLOG_TABS).map((tab) => {
+        {Object.keys(schema?.tabs ?? {}).map((tab) => {
           const stats = tabStats[tab];
           const isActive = activeTab === tab;
           return (
@@ -268,7 +259,7 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
                   : "text-text-secondary hover:bg-bg-secondary/50"
               }`}
             >
-              {tab}
+              {tab.charAt(0).toUpperCase() + tab.slice(1)}
               {stats && (
                 <span className={`tabular-nums ${isActive ? "text-white/70" : "text-text-secondary/40"}`}>
                   {stats.obtained}/{stats.total}
@@ -283,18 +274,19 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
       <div className="grid gap-5 xl:grid-cols-[240px_minmax(0,1fr)]">
         {/* Category sidebar */}
         <div>
-          <div className="text-[10px] uppercase tracking-wider text-text-secondary/50 mb-2 px-1">{activeTab}</div>
+          <div className="text-[10px] uppercase tracking-wider text-text-secondary/50 mb-2 px-1">
+            {activeTab.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+          </div>
           <div className="space-y-0.5 max-h-[60vh] overflow-y-auto pr-1">
-            {tabCategories.map(([catName, items]) => {
-              const catObtained = items.filter((i) => i.count > 0).length;
-              const isComplete = catObtained === items.length && items.length > 0;
-              const isActive = selectedCategory === catName;
-              const pct = items.length > 0 ? (catObtained / items.length) * 100 : 0;
+            {schemaCategories.map((cat) => {
+              const isComplete = cat.obtained === cat.total && cat.total > 0;
+              const isActive = selectedCategory === cat.slug;
+              const pct = cat.total > 0 ? (cat.obtained / cat.total) * 100 : 0;
 
               return (
                 <button
-                  key={catName}
-                  onClick={() => { setSelectedCategory(catName); setItemFilter("all"); }}
+                  key={cat.slug}
+                  onClick={() => { setSelectedCategory(cat.slug); setItemFilter("all"); }}
                   className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-colors ${
                     isActive
                       ? "bg-accent/10 border border-accent/25"
@@ -303,7 +295,7 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
                 >
                   <div className="flex-1 min-w-0">
                     <div className={`text-xs font-medium truncate ${isComplete ? "text-success" : "text-text-primary"}`}>
-                      {catName}
+                      {cat.catName}
                     </div>
                     <div className="mt-1 h-0.5 w-full rounded-full bg-bg-tertiary overflow-hidden">
                       <div
@@ -313,7 +305,7 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
                     </div>
                   </div>
                   <span className="text-[10px] text-text-secondary/50 tabular-nums shrink-0">
-                    {catObtained}/{items.length}
+                    {cat.obtained}/{cat.total}
                   </span>
                 </button>
               );
@@ -323,20 +315,20 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
 
         {/* Items panel */}
         <div>
-          {!selectedCategory ? (
+          {!selectedCategory || !activeSchemaCat ? (
             <div className="py-12 text-center text-sm text-text-secondary">
               Select a category to view items
             </div>
-          ) : activeCategory ? (
+          ) : (
             <>
               {/* Category header */}
               <div className="flex items-center justify-between gap-3 mb-4">
                 <div>
-                  <h3 className={`text-base font-semibold ${activeCatObtained === activeCatTotal && activeCatTotal > 0 ? "text-success" : ""}`}>
-                    {selectedCategory}
+                  <h3 className={`text-base font-semibold ${activeSchemaCat.obtained === activeSchemaCat.total ? "text-success" : ""}`}>
+                    {activeSchemaCat.catName}
                   </h3>
                   <div className="text-xs text-text-secondary mt-0.5 tabular-nums">
-                    {activeCatObtained} / {activeCatTotal} items
+                    {activeSchemaCat.obtained} / {activeSchemaCat.total} items
                   </div>
                 </div>
                 <div className="flex gap-1">
@@ -365,23 +357,23 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
                   return (
                     <div
                       key={item.id}
-                      className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-colors ${
+                      className={`group flex flex-col items-center gap-1 p-2 rounded-lg transition-all cursor-default ${
                         isObtained
-                          ? "bg-success/6 hover:bg-success/10"
-                          : "opacity-40 hover:opacity-60"
+                          ? "bg-success/6 hover:bg-success/12 hover:scale-105"
+                          : "opacity-35 hover:opacity-80 hover:scale-105"
                       }`}
                       title={`${name}${isObtained ? ` (×${item.count})` : " — not obtained"}`}
                     >
                       <div className="relative">
-                        <div className={`w-10 h-10 rounded-lg border flex items-center justify-center ${
+                        <div className={`w-11 h-11 rounded-lg border flex items-center justify-center transition-all ${
                           isObtained
-                            ? "bg-bg-tertiary/40 border-success/20"
-                            : "bg-bg-tertiary/20 border-border/20"
+                            ? "bg-bg-tertiary/40 border-success/20 group-hover:border-success/50 group-hover:bg-bg-tertiary/70"
+                            : "bg-bg-tertiary/15 border-border/15 group-hover:border-border/40 group-hover:bg-bg-tertiary/30"
                         }`}>
                           <img
                             src={itemIcon(name)}
                             alt=""
-                            className={`w-7 h-7 object-contain ${isObtained ? "" : "grayscale"}`}
+                            className={`w-8 h-8 object-contain transition-all ${isObtained ? "group-hover:scale-110" : "grayscale group-hover:grayscale-0"}`}
                             onError={(e) => {
                               e.currentTarget.style.display = "none";
                             }}
@@ -411,7 +403,7 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
                 </div>
               )}
             </>
-          ) : null}
+          )}
         </div>
       </div>
     </>

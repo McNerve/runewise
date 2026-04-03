@@ -102,6 +102,22 @@ export async function fetchTempleCollectionLog(
   });
 }
 
+export interface TempleClogSchema {
+  tabs: Record<string, Record<string, number[]>>;
+}
+
+export async function fetchTempleClogSchema(): Promise<TempleClogSchema> {
+  return fetchJson<TempleClogSchema>({
+    url: `${TEMPLE_BASE}/collection-log/categories.php`,
+    cacheKey: "temple-clog-schema",
+    ttlMs: 24 * 60 * 60 * 1000,
+    transform: (json) => {
+      const data = json as Record<string, Record<string, number[]>>;
+      return { tabs: data };
+    },
+  });
+}
+
 export async function fetchTempleClogItemNames(): Promise<Map<number, string>> {
   return fetchJson<Map<number, string>>({
     url: `${TEMPLE_BASE}/collection-log/items.php`,
