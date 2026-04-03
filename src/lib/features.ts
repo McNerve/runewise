@@ -227,7 +227,7 @@ export const FEATURE_REGISTRY = {
     title: "XP Table",
     navLabel: "XP Table",
     family: "Tools",
-    sidebar: true,
+    sidebar: false,
     search: true,
     aliases: ["xp table", "levels"],
   },

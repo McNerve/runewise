@@ -14,8 +14,9 @@ import WikiRecipeTable from "./components/WikiRecipeTable";
 import ConstructionPlanner from "./components/ConstructionPlanner";
 
 const TrainingPlan = lazy(() => import("../training-plan/TrainingPlan"));
+const XpTable = lazy(() => import("../xp-table/XpTable"));
 
-type SkillTab = "calculator" | "plan";
+type SkillTab = "calculator" | "plan" | "xp-table";
 
 const SKILLS = [
   "Attack", "Strength", "Defence", "Ranged", "Prayer", "Magic",
@@ -113,7 +114,8 @@ export default function SkillCalculator({ hiscores }: Props) {
       <div className="flex gap-1 mb-5">
         {([
           { id: "calculator" as const, label: "Skill Calculator", icon: `${WIKI_IMG}/Stats_icon.png` },
-          { id: "plan" as const, label: "Training Plan", icon: `${WIKI_IMG}/Quest_point_icon.png` },
+          { id: "plan" as const, label: "Training Plan", icon: `${WIKI_IMG}/Max_cape.png` },
+          { id: "xp-table" as const, label: "XP Table", icon: `${WIKI_IMG}/Book_of_knowledge.png` },
         ]).map((tab) => (
           <button
             key={tab.id}
@@ -135,6 +137,13 @@ export default function SkillCalculator({ hiscores }: Props) {
       {skillTab === "plan" && (
         <Suspense fallback={<div className="py-8 text-center"><div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4 mx-auto" /></div>}>
           <TrainingPlan hiscores={hiscores} />
+        </Suspense>
+      )}
+
+      {/* XP Table tab */}
+      {skillTab === "xp-table" && (
+        <Suspense fallback={<div className="py-8 text-center"><div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4 mx-auto" /></div>}>
+          <XpTable />
         </Suspense>
       )}
 
