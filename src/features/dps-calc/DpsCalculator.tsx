@@ -19,6 +19,7 @@ import MonsterSearch from "./components/MonsterSearch";
 import ModifierToggles from "./components/ModifierToggles";
 import DpsBreakdown from "./components/DpsBreakdown";
 import GearSelector from "./GearSelector";
+import { getPhaseBoss, type BossPhase } from "../../lib/data/boss-phases";
 
 type CombatStyle = "melee" | "ranged" | "magic";
 type BonusMode = "equipment" | "manual";
@@ -263,6 +264,21 @@ export default function DpsCalculator({ hiscores }: Props) {
   );
   const prayer: Prayer = filteredPrayers[prayerIdx] ?? filteredPrayers[0];
 
+  // Phase boss detection
+  const bossPhases = useMemo<BossPhase[] | null>(
+    () => selectedMonster ? getPhaseBoss(selectedMonster.name) : null,
+    [selectedMonster]
+  );
+  const phaseMonsters = useMemo(() => {
+    if (!bossPhases || !selectedMonster) return [];
+    return bossPhases.map((phase) => {
+      const match = wikiMonsters.find(
+        (m) => m.name === selectedMonster.name && m.version === phase.version
+      );
+      return { phase, monster: match ?? null };
+    }).filter((p) => p.monster !== null) as Array<{ phase: BossPhase; monster: WikiMonster }>;
+  }, [bossPhases, selectedMonster, wikiMonsters]);
+
   const isCustom = !selectedMonster;
   const targetDefLevel = isCustom
     ? customDef.defLevel
@@ -323,6 +339,39 @@ export default function DpsCalculator({ hiscores }: Props) {
     ]
   );
   /* eslint-enable react-hooks/preserve-manual-memoization */
+
+  const stanceAttackBonus = stance.attackBonus;
+  const stanceStrengthBonus = stance.strengthBonus;
+  const prayerAttackMult = prayer.attackMult;
+  const prayerStrengthMult = prayer.strengthMult;
+
+  const phaseResults = useMemo(() => {
+    if (phaseMonsters.length === 0) return [];
+    return phaseMonsters.map(({ phase, monster }) => ({
+      phase,
+      monster,
+      result: calculateDps({
+        attackLevel,
+        strengthLevel,
+        rangedLevel,
+        magicLevel,
+        attackBonus: effectiveAttackBonus,
+        strengthBonus: effectiveStrengthBonus,
+        prayerAttackMult,
+        prayerStrengthMult,
+        stanceAttackBonus,
+        stanceStrengthBonus,
+        attackSpeed: effectiveAttackSpeed,
+        combatStyle,
+        targetDefLevel: monster.defenceLevel,
+        targetDefBonus: getDefBonus(monster, combatStyle),
+        targetHp: monster.hitpoints,
+        targetMagicLevel: monster.magicLevel,
+        modifiers: modifierList,
+        defReductions,
+      }),
+    }));
+  }, [phaseMonsters, attackLevel, strengthLevel, rangedLevel, magicLevel, effectiveAttackBonus, effectiveStrengthBonus, prayerAttackMult, prayerStrengthMult, stanceAttackBonus, stanceStrengthBonus, effectiveAttackSpeed, combatStyle, modifierList, defReductions]);
 
   const toggleModifier = useCallback((id: string) => { // eslint-disable-line react-hooks/preserve-manual-memoization
     setActiveModifiers((prev) => {
@@ -400,18 +449,16 @@ export default function DpsCalculator({ hiscores }: Props) {
   const totalDps = result.dps + poisonDpsValue;
 
   return (
-    <div className="max-w-3xl">
-      <h2 className="text-xl font-semibold mb-5">DPS Calculator</h2>
-
-      <div className="space-y-5">
-        {/* Combat Style */}
-        <div className="flex gap-2">
+    <div className="max-w-5xl">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-semibold">DPS Calculator</h2>
+        <div className="flex gap-1.5">
           {(["melee", "ranged", "magic"] as const).map((style) => (
             <button
               key={style}
               onClick={() => setCombatStyle(style)}
               aria-pressed={combatStyle === style}
-              className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium capitalize transition-colors ${
+              className={`px-4 py-1.5 rounded-lg text-xs font-medium capitalize transition-colors ${
                 combatStyle === style
                   ? "bg-accent text-white"
                   : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
@@ -421,45 +468,46 @@ export default function DpsCalculator({ hiscores }: Props) {
             </button>
           ))}
         </div>
+      </div>
 
-        {/* Gear Presets + Loadouts */}
-        <div className="space-y-3">
-          {/* Preset templates */}
+      <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-6 items-start">
+
+      {/* ====== LEFT COLUMN — Configuration ====== */}
+      <div className="space-y-5">
+
+        {/* Presets + Loadouts — compact row */}
+        <div className="grid grid-cols-2 gap-3">
           <div>
-            <div className="section-kicker mb-2">Gear Presets</div>
-            <div className="flex gap-2">
-              <select
-                value=""
-                onChange={(e) => {
-                  const preset = GEAR_PRESETS.find((p) => p.name === e.target.value);
-                  if (preset) applyPreset(preset);
-                }}
-                className="flex-1 bg-bg-tertiary border border-border rounded-lg px-3 py-1.5 text-sm"
-              >
-                <option value="">Load a preset...</option>
-                <optgroup label="Melee">
-                  {GEAR_PRESETS.filter((p) => p.style === "melee").map((p) => (
-                    <option key={p.name} value={p.name}>{p.name} — {p.description}</option>
-                  ))}
-                </optgroup>
-                <optgroup label="Ranged">
-                  {GEAR_PRESETS.filter((p) => p.style === "ranged").map((p) => (
-                    <option key={p.name} value={p.name}>{p.name} — {p.description}</option>
-                  ))}
-                </optgroup>
-                <optgroup label="Magic">
-                  {GEAR_PRESETS.filter((p) => p.style === "magic").map((p) => (
-                    <option key={p.name} value={p.name}>{p.name} — {p.description}</option>
-                  ))}
-                </optgroup>
-              </select>
-            </div>
+            <div className="section-kicker mb-1.5">Preset</div>
+            <select
+              value=""
+              onChange={(e) => {
+                const preset = GEAR_PRESETS.find((p) => p.name === e.target.value);
+                if (preset) applyPreset(preset);
+              }}
+              className="w-full bg-bg-tertiary border border-border rounded-lg px-3 py-1.5 text-sm"
+            >
+              <option value="">Load a preset...</option>
+              <optgroup label="Melee">
+                {GEAR_PRESETS.filter((p) => p.style === "melee").map((p) => (
+                  <option key={p.name} value={p.name}>{p.name} — {p.description}</option>
+                ))}
+              </optgroup>
+              <optgroup label="Ranged">
+                {GEAR_PRESETS.filter((p) => p.style === "ranged").map((p) => (
+                  <option key={p.name} value={p.name}>{p.name} — {p.description}</option>
+                ))}
+              </optgroup>
+              <optgroup label="Magic">
+                {GEAR_PRESETS.filter((p) => p.style === "magic").map((p) => (
+                  <option key={p.name} value={p.name}>{p.name} — {p.description}</option>
+                ))}
+              </optgroup>
+            </select>
           </div>
-
-          {/* Saved loadouts */}
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <div className="section-kicker">Saved Loadouts</div>
+            <div className="flex items-center justify-between mb-1.5">
+              <div className="section-kicker">Loadout</div>
               <button
                 onClick={() => {
                   setEquippedGear({});
@@ -477,8 +525,8 @@ export default function DpsCalculator({ hiscores }: Props) {
                 Clear
               </button>
             </div>
-            {loadouts.length > 0 && (
-              <div className="flex gap-2 mb-2">
+            {loadouts.length > 0 ? (
+              <div className="flex gap-1.5">
                 <select
                   value={activeLoadout ?? ""}
                   onChange={(e) => {
@@ -494,36 +542,30 @@ export default function DpsCalculator({ hiscores }: Props) {
                 </select>
                 {activeLoadout && (
                   <button
-                    onClick={() => {
-                      if (activeLoadout) deleteLoadout(activeLoadout);
-                      setActiveLoadout(null);
-                    }}
+                    onClick={() => { if (activeLoadout) deleteLoadout(activeLoadout); setActiveLoadout(null); }}
                     className="px-2 py-1.5 text-xs text-text-secondary/40 hover:text-danger transition-colors"
-                    title="Delete selected loadout"
-                  >
-                    ×
-                  </button>
+                    title="Delete"
+                  >×</button>
                 )}
               </div>
+            ) : (
+              <div className="flex gap-1.5">
+                <input
+                  type="text"
+                  value={loadoutName}
+                  onChange={(e) => setLoadoutName(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && saveLoadout()}
+                  placeholder="Save as..."
+                  aria-label="Loadout name"
+                  className="flex-1 bg-bg-secondary border border-border rounded-lg px-3 py-1.5 text-sm"
+                />
+                <button
+                  onClick={saveLoadout}
+                  disabled={!loadoutName.trim()}
+                  className="px-3 py-1.5 text-xs font-medium bg-accent text-white rounded-lg hover:bg-accent-hover transition-colors disabled:opacity-40"
+                >Save</button>
+              </div>
             )}
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={loadoutName}
-                onChange={(e) => setLoadoutName(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && saveLoadout()}
-                placeholder="Save as..."
-                aria-label="Loadout name"
-                className="flex-1 bg-bg-secondary border border-border rounded-lg px-3 py-1.5 text-sm"
-              />
-              <button
-                onClick={saveLoadout}
-                disabled={!loadoutName.trim()}
-                className="px-3 py-1.5 text-xs font-medium bg-accent text-white rounded-lg hover:bg-accent-hover transition-colors disabled:opacity-40"
-              >
-                Save
-              </button>
-            </div>
           </div>
         </div>
 
@@ -751,32 +793,63 @@ export default function DpsCalculator({ hiscores }: Props) {
                 <span className="ml-1.5 text-accent/60 normal-case tracking-normal">({weaponType.name})</span>
               )}
             </div>
-            <div className="grid grid-cols-2 gap-1">
+            <div className={`grid gap-1.5 ${
+              stances.length === 2 ? "grid-cols-2" :
+              stances.length === 3 ? "grid-cols-3" :
+              "grid-cols-2"
+            }`}>
               {stances.map((s, i) => {
                 const isActive = stanceIdx === i;
+                const typeColor =
+                  s.attackType === "stab" ? "text-red-400" :
+                  s.attackType === "slash" ? "text-orange-400" :
+                  s.attackType === "crush" ? "text-amber-400" :
+                  s.attackType === "ranged" ? "text-green-400" :
+                  s.attackType === "magic" ? "text-blue-400" :
+                  "text-text-secondary";
+                const bonusParts: string[] = [];
+                if (s.attackBonus > 0) bonusParts.push(`+${s.attackBonus} atk`);
+                if (s.strengthBonus > 0) bonusParts.push(`+${s.strengthBonus} str`);
+                if (s.defenceBonus > 0) bonusParts.push(`+${s.defenceBonus} def`);
+                if (s.speedMod < 0) bonusParts.push("1 tick faster");
+                if (s.speedMod > 0) bonusParts.push("1 tick slower");
                 return (
                   <button
                     key={`${s.name}-${i}`}
                     onClick={() => setStanceIdx(i)}
                     aria-pressed={isActive}
-                    className={`px-2.5 py-2 rounded-lg text-left text-xs transition-colors ${
+                    title={`${s.name} — ${s.style} (${s.attackType})${bonusParts.length ? ` · ${bonusParts.join(", ")}` : ""}`}
+                    className={`px-2.5 py-2 rounded-lg text-left text-xs transition-all ${
                       isActive
-                        ? "bg-accent text-white"
-                        : "bg-bg-tertiary/50 text-text-secondary hover:bg-bg-tertiary"
+                        ? "bg-accent/15 ring-1 ring-accent/50 text-text-primary"
+                        : "bg-bg-tertiary/40 text-text-secondary hover:bg-bg-tertiary border border-border/20"
                     }`}
                   >
-                    <div className="font-medium">{s.name}</div>
-                    <div className={`text-[9px] mt-0.5 ${isActive ? "text-white/60" : "text-text-secondary/40"}`}>
-                      {s.attackType}
-                      {s.attackBonus > 0 && ` · +${s.attackBonus} atk`}
-                      {s.strengthBonus > 0 && ` · +${s.strengthBonus} str`}
-                      {s.defenceBonus > 0 && ` · +${s.defenceBonus} def`}
-                      {s.speedMod !== 0 && ` · ${s.speedMod > 0 ? "+" : ""}${s.speedMod} speed`}
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="font-medium">{s.name}</span>
+                      <span className={`text-[9px] uppercase tracking-wider ${isActive ? typeColor : "text-text-secondary/35"}`}>
+                        {s.attackType}
+                      </span>
                     </div>
+                    <div className={`text-[10px] mt-0.5 ${isActive ? "text-accent" : "text-text-secondary/40"}`}>
+                      {s.style}
+                    </div>
+                    {bonusParts.length > 0 && (
+                      <div className={`text-[9px] mt-0.5 ${isActive ? "text-text-secondary" : "text-text-secondary/30"}`}>
+                        {bonusParts.join(" · ")}
+                      </div>
+                    )}
                   </button>
                 );
               })}
             </div>
+            {stance && (
+              <div className="mt-1.5 text-[10px] text-text-secondary">
+                <span className="text-text-primary font-medium">{stance.name}</span>
+                <span className="text-text-secondary/40"> {stance.style} · {stance.attackType}</span>
+                {stance.speedMod < 0 && <span className="text-success"> · 1 tick faster</span>}
+              </div>
+            )}
           </div>
         </div>
 
@@ -790,6 +863,12 @@ export default function DpsCalculator({ hiscores }: Props) {
           />
         </div>
 
+      </div>
+      {/* ====== END LEFT COLUMN ====== */}
+
+      {/* ====== RIGHT COLUMN — Target + Results (sticky) ====== */}
+      <div className="lg:sticky lg:top-4 lg:self-start space-y-5">
+
         {/* Target */}
         <div>
           <div className="section-kicker mb-3">Target</div>
@@ -799,6 +878,30 @@ export default function DpsCalculator({ hiscores }: Props) {
             onSelect={setSelectedMonster}
             combatStyle={combatStyle}
           />
+
+          {phaseMonsters.length > 1 && (
+            <div className="mt-2">
+              <div className="text-[10px] uppercase tracking-wider text-text-secondary/50 mb-1.5">
+                Phases — {selectedMonster?.name}
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {phaseMonsters.map(({ phase, monster }) => (
+                  <button
+                    key={phase.version}
+                    onClick={() => setSelectedMonster(monster)}
+                    className={`px-2.5 py-1.5 rounded-lg text-xs transition-all ${
+                      selectedMonster?.version === phase.version
+                        ? "bg-accent/15 ring-1 ring-accent/50 text-text-primary"
+                        : "bg-bg-tertiary/40 text-text-secondary hover:bg-bg-tertiary border border-border/20"
+                    }`}
+                  >
+                    <span className="font-medium">{phase.label}</span>
+                    <span className="ml-1.5 text-text-secondary/40">{monster.hitpoints} HP</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {isCustom && (
             <div className="grid grid-cols-3 gap-3 mt-3">
@@ -905,8 +1008,71 @@ export default function DpsCalculator({ hiscores }: Props) {
               </div>
             </div>
           )}
+          {phaseResults.length > 1 && (
+            <div className="mt-4 rounded-xl border border-border/60 overflow-hidden">
+              <div className="px-3 py-2 text-[10px] uppercase tracking-wider text-text-secondary/50 border-b border-border/40">
+                Per-Phase Breakdown
+              </div>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border/40 text-xs text-text-secondary">
+                    <th className="text-left px-3 py-1.5">Phase</th>
+                    <th className="text-right px-3 py-1.5">HP</th>
+                    <th className="text-right px-3 py-1.5">Acc</th>
+                    <th className="text-right px-3 py-1.5">Max Hit</th>
+                    <th className="text-right px-3 py-1.5">DPS</th>
+                    <th className="text-right px-3 py-1.5">TTK</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {phaseResults.map(({ phase, monster, result: pr }) => {
+                    const accColor = pr.accuracy >= 0.8 ? "text-success" : pr.accuracy >= 0.5 ? "text-warning" : "text-danger";
+                    return (
+                      <tr
+                        key={phase.version}
+                        className={`border-b border-border/20 transition-colors ${
+                          selectedMonster?.version === phase.version
+                            ? "bg-accent/5"
+                            : "even:bg-bg-primary/25"
+                        }`}
+                      >
+                        <td className="px-3 py-1.5 font-medium">{phase.label}</td>
+                        <td className="px-3 py-1.5 text-right tabular-nums text-text-secondary">{monster.hitpoints}</td>
+                        <td className={`px-3 py-1.5 text-right tabular-nums ${accColor}`}>{(pr.accuracy * 100).toFixed(1)}%</td>
+                        <td className="px-3 py-1.5 text-right tabular-nums text-accent">{pr.maxHit}</td>
+                        <td className="px-3 py-1.5 text-right tabular-nums font-medium text-accent">{pr.dps.toFixed(2)}</td>
+                        <td className="px-3 py-1.5 text-right tabular-nums text-text-secondary">
+                          {pr.ttk < 60 ? `${pr.ttk.toFixed(1)}s` : `${Math.floor(pr.ttk / 60)}m ${Math.round(pr.ttk % 60)}s`}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  <tr className="border-t border-border/40 bg-bg-tertiary/30">
+                    <td className="px-3 py-1.5 font-medium text-text-secondary">Total</td>
+                    <td className="px-3 py-1.5 text-right tabular-nums font-medium">
+                      {phaseResults.reduce((sum, p) => sum + p.monster.hitpoints, 0)}
+                    </td>
+                    <td className="px-3 py-1.5" />
+                    <td className="px-3 py-1.5" />
+                    <td className="px-3 py-1.5" />
+                    <td className="px-3 py-1.5 text-right tabular-nums font-medium text-text-primary">
+                      {(() => {
+                        const totalTtk = phaseResults.reduce((sum, p) => sum + p.result.ttk, 0);
+                        return totalTtk < 60 ? `${totalTtk.toFixed(1)}s` : `${Math.floor(totalTtk / 60)}m ${Math.round(totalTtk % 60)}s`;
+                      })()}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
+
       </div>
+      {/* ====== END RIGHT COLUMN ====== */}
+
+      </div>
+      {/* ====== END GRID ====== */}
     </div>
   );
 }

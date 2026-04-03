@@ -26,16 +26,15 @@ export default function GearSelector({ slot, onSelect, onClose }: Props) {
   }, []);
 
   const results = useMemo(() => {
-    const slotFilter = slot === "weapon" ? undefined : slot;
-    const raw = searchEquipment(allEquipment, query, slotFilter as EquipmentSlot | undefined, 40);
-    // For weapon slot, include both "weapon" and "2h"
     if (slot === "weapon") {
-      return allEquipment
-        .filter((e) => e.slot === "weapon" || e.slot === "2h")
-        .filter((e) => !query.trim() || e.name.toLowerCase().includes(query.toLowerCase()))
-        .slice(0, 40);
+      // For weapon slot, search both "weapon" and "2h" items
+      const weapons = searchEquipment(allEquipment, query, "weapon" as EquipmentSlot, 40);
+      const twoHanders = searchEquipment(allEquipment, query, "2h" as EquipmentSlot, 40);
+      const combined = [...weapons, ...twoHanders];
+      if (query.trim()) return combined.slice(0, 40);
+      return combined.sort((a, b) => (b.strengthBonus + b.rangedStrength) - (a.strengthBonus + a.rangedStrength)).slice(0, 40);
     }
-    return raw;
+    return searchEquipment(allEquipment, query, slot as EquipmentSlot, 40);
   }, [allEquipment, query, slot]);
 
   return (
