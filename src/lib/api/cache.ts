@@ -59,6 +59,7 @@ export function getCached<T>(
   if (!entry) return null;
   if (Date.now() - entry.timestamp > ttlMs) {
     store.delete(key);
+    try { localStorage.removeItem(`${STORAGE_PREFIX}${key}`); } catch { /* ignore */ }
     return null;
   }
   return entry.data;

@@ -97,6 +97,9 @@ async fn proxy_fetch(
     headers: Option<HashMap<String, String>>,
 ) -> Result<ProxyResponse, String> {
     let parsed = url::Url::parse(&url).map_err(|e| e.to_string())?;
+    if parsed.scheme() != "https" {
+        return Err("Only HTTPS requests are allowed".to_string());
+    }
     let host = parsed.host_str().unwrap_or("");
     if !ALLOWED_HOSTS.iter().any(|&h| host == h) {
         return Err(format!("Blocked request to unauthorized host: {}", host));

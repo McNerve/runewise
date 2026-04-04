@@ -1,8 +1,12 @@
 changelog:
   categories:
     - title: New Features
-      labels: [enhancement]
+      labels: [enhancement, feat]
     - title: Bug Fixes
-      labels: [bug]
+      labels: [bug, fix]
+    - title: Performance
+      labels: [performance, perf]
+    - title: Maintenance
+      labels: [chore, deps, ci, docs, refactor]
     - title: Other Changes
       labels: ["*"]
