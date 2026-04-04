@@ -67,7 +67,7 @@ export async function getCachedAsync<T>(
   return persisted.data;
 }
 
-export function getStaleCached<T>(key: string, options?: CacheOptions): T | null {
+export function getStaleCached<T>(key: string, _options?: CacheOptions): T | null {
   return getMemoryEntry<T>(key)?.data ?? null;
 }
 
@@ -85,7 +85,7 @@ export async function getStaleCachedAsync<T>(key: string, options?: CacheOptions
 
 export function getCacheTimestamp(
   key: string,
-  options?: CacheOptions
+  _options?: CacheOptions
 ): number | null {
   return getMemoryEntry(key)?.timestamp ?? null;
 }

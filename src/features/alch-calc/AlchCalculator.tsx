@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { itemIcon } from "../../lib/sprites";
-import type { ItemMapping, ItemPrice } from "../../lib/api/ge";
+import type { ItemMapping } from "../../lib/api/ge";
 import { useGEData } from "../../hooks/useGEData";
 import { formatGp } from "../../lib/format";
 import ItemTooltip from "../../components/ItemTooltip";

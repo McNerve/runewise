@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { BOSS_DROP_TABLES, type BossDropTable } from "../../lib/data/boss-drops";
-import type { ItemPrice, ItemMapping } from "../../lib/api/ge";
+import type { ItemMapping } from "../../lib/api/ge";
 import { useGEData } from "../../hooks/useGEData";
 import { fetchDropTable, type DropItem } from "../../lib/api/wiki";
 import { formatGp } from "../../lib/format";
@@ -45,7 +45,7 @@ export default function BossLootCalculator() {
   const { mapping, prices, loading, fetchIfNeeded } = useGEData();
   const [selectedBoss, setSelectedBoss] = useState<BossDropTable | null>(BOSS_DROP_TABLES[0]);
   const [killsPerHour, setKillsPerHour] = useState(BOSS_DROP_TABLES[0].killsPerHour);
-  const [error, setError] = useState<string | null>(null);
+  const [error] = useState<string | null>(null);
   const [unsupportedBoss, setUnsupportedBoss] = useState<string | null>(null);
   const [wikiFallbackBoss, setWikiFallbackBoss] = useState<string | null>(null);
   const [wikiDropCategories, setWikiDropCategories] = useState<{ name: string; drops: DropItem[] }[]>([]);
