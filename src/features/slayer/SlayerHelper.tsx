@@ -500,6 +500,14 @@ export default function SlayerHelper() {
                         >
                           {task.monster}
                         </button>
+                        {(task.monster === "Bosses" || task.monster === "Wilderness bosses") && (
+                          <button
+                            onClick={() => navigate("bosses")}
+                            className="text-[9px] text-accent/50 hover:text-accent transition-colors"
+                          >
+                            Guides
+                          </button>
+                        )}
                         {task.locked && (
                           <span className="text-[9px] text-warning/60">Unlock: {task.requiredUnlock}</span>
                         )}

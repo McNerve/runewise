@@ -118,6 +118,14 @@ export default function MonsterSearch({
           {selected.slayerLevel > 1 && (
             <span>Slayer: {selected.slayerLevel}</span>
           )}
+          <a
+            href={`https://oldschool.runescape.wiki/w/${encodeURIComponent(selected.name.replace(/ /g, "_"))}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-accent/50 hover:text-accent transition-colors"
+          >
+            Wiki
+          </a>
           <button
             onClick={() => onSelect(null)}
             aria-label="Clear monster selection"

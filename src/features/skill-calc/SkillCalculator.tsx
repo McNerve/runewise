@@ -154,7 +154,7 @@ export default function SkillCalculator({ hiscores }: Props) {
       <>
 
 
-      <div className="grid grid-cols-6 gap-1.5 mb-6">
+      <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5 mb-6">
         {SKILLS.map((skill) => {
           const level = getLevel(skill);
           return (
@@ -320,7 +320,7 @@ export default function SkillCalculator({ hiscores }: Props) {
               No {intensityFilter.toLowerCase()} intensity methods for {selectedSkill}.
             </p>
           ) : (
-          <div className="bg-bg-secondary rounded-lg overflow-hidden">
+          <div className="bg-bg-secondary rounded-lg overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-text-secondary text-xs">

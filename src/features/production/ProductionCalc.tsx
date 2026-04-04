@@ -240,7 +240,13 @@ export default function ProductionCalc() {
               <h3 className="text-lg font-semibold">{selected.name}</h3>
               <div className="flex items-center gap-2 text-xs text-text-secondary">
                 <img src={skillIcon(selected.skill)} alt="" className="w-3.5 h-3.5" />
-                <span>{selected.skill} — Level {selected.levelReq}</span>
+                <button
+                  type="button"
+                  onClick={() => navigate("skill-calc", { skill: selected.skill })}
+                  className="hover:text-accent transition-colors"
+                >
+                  {selected.skill} — Level {selected.levelReq}
+                </button>
                 {selected.facility && (
                   <span className="text-text-secondary/50">
                     — {selected.facility}
@@ -249,6 +255,14 @@ export default function ProductionCalc() {
                 {selected.members && (
                   <span className="text-warning text-[10px]">Members</span>
                 )}
+                <a
+                  href={`https://oldschool.runescape.wiki/w/${encodeURIComponent(selected.name.replace(/ /g, "_"))}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-accent/50 hover:text-accent transition-colors"
+                >
+                  Wiki
+                </a>
               </div>
             </div>
           </div>
