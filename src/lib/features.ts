@@ -170,7 +170,7 @@ export const FEATURE_REGISTRY = {
   "shop-helper": {
     title: "Shop Helper",
     navLabel: "Shop Helper",
-    family: "Tools",
+    family: "Guides",
     sidebar: true,
     search: true,
     aliases: ["shop", "shops", "store", "npc", "buy", "sell", "shopkeeper"],

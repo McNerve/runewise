@@ -255,7 +255,7 @@ export const NAV_ICONS: Record<string, string> = {
   "combat-tasks": `${WIKI_IMG}/Combat_Achievements_icon.png`,
   "money-making": `${WIKI_IMG}/Coins_detail.png`,
   "production-calc": `${WIKI_IMG}/Crafting_icon.png`,
-  "shop-helper": `${WIKI_IMG}/Shop_icon.png`,
+  "shop-helper": `${WIKI_IMG}/General_store_icon.png`,
   kingdom: `${WIKI_IMG}/Royal_crown.png`,
   wiki: `${WIKI_IMG}/Enchanted_scroll.png`,
   "pet-calc": `${WIKI_IMG}/Heron.png`,
