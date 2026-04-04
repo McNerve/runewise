@@ -27,8 +27,8 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Test with coverage
-        run: npx vitest run --coverage --coverage.reporter=text --coverage.reporter=json-summary
+      - name: Test
+        run: npm test
 
       - name: Check bundle size
         run: |
