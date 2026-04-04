@@ -71,7 +71,7 @@ export default function Overview({ hiscores, rsn }: Props) {
 
   useEffect(() => {
     if (!rsn) return;
-    fetchWomPlayer(rsn).then(setWomPlayer).catch(() => {});
+    fetchWomPlayer(rsn).then(setWomPlayer).catch(() => { /* WOM data is optional */ });
   }, [rsn]);
   const totalLevel = hiscores.skills
     .filter((s) => s.name !== "Overall")

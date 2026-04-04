@@ -112,7 +112,9 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
         setItemNames(names);
         setSchema(s);
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.error("[RuneWise] Collection log data fetch failed:", err);
+      });
   }, []);
 
   const resolveName = useCallback(
