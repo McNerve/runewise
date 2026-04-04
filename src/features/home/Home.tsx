@@ -1,15 +1,24 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import type { HiscoreData, IronmanType } from "../../lib/api/hiscores";
+import type { ItemPrice } from "../../lib/api/ge";
 import { NAV_ICONS, WIKI_IMG } from "../../lib/sprites";
 import { getFeatureAccent } from "../../lib/featureAccent";
 import { useNavigation, type View } from "../../lib/NavigationContext";
 import WikiImage from "../../components/WikiImage";
 import ShellIcon from "../../components/ShellIcon";
-import { useWatchlist } from "../../hooks/useWatchlist";
 import { useSettings } from "../../hooks/useSettings";
 import { loadRecentEntities } from "../../lib/recentEntities";
 import { formatGp } from "../../lib/format";
+import { loadJSON } from "../../lib/localStorage";
+import { fetchLatestPrices } from "../../lib/api/ge";
+
+interface WatchItem {
+  itemId: number;
+  itemName: string;
+  targetPrice?: number | null;
+  direction?: "above" | "below";
+}
 
 interface HomeProps {
   hiscores?: {
@@ -76,8 +85,20 @@ function getCombatLevel(data: HiscoreData): number {
   return Math.floor(base + Math.max(melee, range, magic));
 }
 
+function useWatchlistSnapshot() {
+  const [items] = useState<WatchItem[]>(() => loadJSON<WatchItem[]>("runewise_watchlist", []));
+  const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
+
+  useEffect(() => {
+    if (items.length === 0) return;
+    fetchLatestPrices().then(setPrices);
+  }, [items.length]);
+
+  return { items, prices };
+}
+
 export default function Home({ hiscores }: HomeProps) {
-  const { items: watchlistItems, prices } = useWatchlist();
+  const { items: watchlistItems, prices } = useWatchlistSnapshot();
   const { settings } = useSettings();
   const { navigate } = useNavigation();
   const [recentEntities] = useState(() => loadRecentEntities().slice(0, 4));

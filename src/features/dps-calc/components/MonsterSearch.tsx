@@ -6,6 +6,7 @@ interface MonsterSearchProps {
   selected: WikiMonster | null;
   onSelect: (monster: WikiMonster | null) => void;
   combatStyle: "melee" | "ranged" | "magic";
+  onFocusLoad?: () => void;
 }
 
 function getDefForStyle(m: WikiMonster, style: "melee" | "ranged" | "magic"): number {
@@ -19,6 +20,7 @@ export default function MonsterSearch({
   selected,
   onSelect,
   combatStyle,
+  onFocusLoad,
 }: MonsterSearchProps) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
@@ -69,6 +71,7 @@ export default function MonsterSearch({
           setOpen(true);
         }}
         onFocus={() => {
+          onFocusLoad?.();
           setOpen(true);
           setQuery("");
         }}
