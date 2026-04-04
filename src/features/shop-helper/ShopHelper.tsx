@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { fetchAllShops, searchShops, type Shop } from "../../lib/api/shops";
 import { fetchLatestPrices, fetchMapping, type ItemPrice } from "../../lib/api/ge";
 import { useDebounce } from "../../hooks/useDebounce";
-import { encodeIconFilename, WIKI_IMG } from "../../lib/sprites";
+import { encodeIconFilename, WIKI_IMG, itemIcon } from "../../lib/sprites";
 import { formatGp } from "../../lib/format";
 import WikiImage from "../../components/WikiImage";
 import ItemTooltip from "../../components/ItemTooltip";
@@ -37,15 +37,21 @@ export default function ShopHelper() {
   const [sortAsc, setSortAsc] = useState(true);
   const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
   const [nameToId, setNameToId] = useState<Map<string, number>>(new Map());
+  const [iconMap, setIconMap] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
     Promise.all([fetchAllShops(), fetchLatestPrices(), fetchMapping()])
       .then(([s, p, m]) => {
         setShops(s);
         setPrices(p);
-        const map = new Map<string, number>();
-        for (const item of m) map.set(item.name.toLowerCase(), item.id);
-        setNameToId(map);
+        const idMap = new Map<string, number>();
+        const icons = new Map<string, string>();
+        for (const item of m) {
+          idMap.set(item.name.toLowerCase(), item.id);
+          if (item.icon) icons.set(item.name.toLowerCase(), item.icon);
+        }
+        setNameToId(idMap);
+        setIconMap(icons);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -296,7 +302,12 @@ export default function ShopHelper() {
                         >
                           <td className="px-3 py-1.5">
                             <WikiImage
-                              src={item.image ? `${WIKI_IMG}/${encodeIconFilename(item.image)}` : ""}
+                              src={(() => {
+                                const geIcon = iconMap.get(item.name.toLowerCase());
+                                if (geIcon) return `${WIKI_IMG}/${encodeIconFilename(geIcon)}`;
+                                if (item.image) return `${WIKI_IMG}/${encodeIconFilename(item.image)}`;
+                                return itemIcon(item.name);
+                              })()}
                               alt=""
                               className="w-5 h-5"
                               fallback={item.name[0]}
