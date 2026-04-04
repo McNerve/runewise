@@ -249,7 +249,12 @@ export default function Settings() {
   };
 
   const resetKeybinds = () => {
-    update({ keybinds: { ...DEFAULT_KEYBINDS } });
+    // Fully replace — don't merge with old saved keys
+    const fresh: Record<string, string> = {};
+    for (const action of Object.keys(KEYBIND_LABELS)) {
+      fresh[action] = DEFAULT_KEYBINDS[action] ?? "";
+    }
+    update({ keybinds: fresh });
   };
 
   return (
@@ -375,8 +380,8 @@ export default function Settings() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1">
                 {entries.map(([action, info]) => {
                   const key = (settings.keybinds[action] ?? DEFAULT_KEYBINDS[action] ?? "").toLowerCase();
-                  const conflict = Array.from(Object.entries(KEYBIND_LABELS)).some(
-                    ([a]) => a !== action && (settings.keybinds[a] ?? DEFAULT_KEYBINDS[a] ?? "").toLowerCase() === key && key
+                  const conflict = key.length > 0 && Array.from(Object.entries(KEYBIND_LABELS)).some(
+                    ([a]) => a !== action && (settings.keybinds[a] ?? DEFAULT_KEYBINDS[a] ?? "").toLowerCase() === key
                   );
                   return (
                     <div key={action} className="flex items-center justify-between gap-3 py-1">
