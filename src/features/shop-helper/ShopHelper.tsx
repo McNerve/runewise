@@ -230,11 +230,13 @@ export default function ShopHelper() {
               {/* Shop header card */}
               <div className="rounded-xl border border-border/40 bg-bg-primary/20 overflow-hidden">
                 {shopImage && (
-                  <img
-                    src={shopImage}
-                    alt={selectedShop.name}
-                    className="w-full h-40 object-contain bg-bg-tertiary/30 border-b border-border/30"
-                  />
+                  <div className="flex items-center justify-center h-36 bg-bg-tertiary/20 border-b border-border/30">
+                    <img
+                      src={shopImage}
+                      alt={selectedShop.name}
+                      className="max-h-full max-w-full object-contain"
+                    />
+                  </div>
                 )}
                 <div className="p-4">
                 <div className="flex items-start justify-between gap-3">
@@ -290,7 +292,7 @@ export default function ShopHelper() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border text-text-secondary text-xs">
-                      <th className="text-left px-3 py-2 w-6" />
+                      <th className="px-2 py-2 w-10" />
                       <th
                         className="text-left px-3 py-2 cursor-pointer hover:text-text-primary"
                         onClick={() => handleSort("name")}
@@ -329,7 +331,7 @@ export default function ShopHelper() {
                           key={`${item.name}-${i}`}
                           className="border-b border-border/20 even:bg-bg-primary/25 hover:bg-bg-secondary/40 transition-colors"
                         >
-                          <td className="px-3 py-1.5">
+                          <td className="px-2 py-1.5 w-10">
                             <WikiImage
                               src={(() => {
                                 const geIcon = iconMap.get(item.name.toLowerCase());
@@ -337,7 +339,7 @@ export default function ShopHelper() {
                                 return itemIcon(item.name);
                               })()}
                               alt={item.name}
-                              className="w-5 h-5"
+                              className="w-6 h-6"
                               fallback={item.name[0]}
                             />
                           </td>
