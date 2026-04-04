@@ -3,7 +3,7 @@ declare const __APP_VERSION__: string;
 export default function About() {
   return (
     <div className="max-w-lg">
-      <h2 className="text-xl font-semibold mb-4">About RuneWise</h2>
+      <h2 className="text-2xl font-semibold tracking-tight mb-4">About RuneWise</h2>
 
       <div className="bg-bg-secondary rounded-lg p-4 mb-4">
         <div className="text-2xl font-bold mb-1">RuneWise</div>

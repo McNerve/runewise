@@ -319,7 +319,8 @@ export default function FarmTimers() {
 
   return (
     <div className="max-w-3xl">
-      <h2 className="text-xl font-semibold mb-4">Farm & Birdhouse Timers</h2>
+      <h2 className="text-2xl font-semibold tracking-tight">Farm & Birdhouse Timers</h2>
+      <p className="text-sm text-text-secondary mb-4">Track growth cycles for farming patches and birdhouse runs.</p>
 
       <div className="flex gap-1 mb-6">
         {(
