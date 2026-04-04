@@ -18,6 +18,7 @@ const FEATURE_ACCENTS: Record<View, string> = {
   "combat-tasks": "#fb7185",
   market: "#22c55e",
   "production-calc": "#10b981",
+  "shop-helper": "#10b981",
   kingdom: "#d97706",
   watchlist: "#22c55e",
   progress: "#2dd4bf",
