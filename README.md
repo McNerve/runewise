@@ -25,13 +25,11 @@ Updates are automatic — RuneWise checks for new versions and installs them in 
 
 ## Screenshots
 
-<!-- Add screenshots to /docs/screenshots/ and uncomment these -->
-<!-- ![DPS Calculator](docs/screenshots/dps-calc.png) -->
-<!-- ![Boss Guides](docs/screenshots/boss-guides.png) -->
-<!-- ![Shop Helper](docs/screenshots/shop-helper.png) -->
-<!-- ![Market](docs/screenshots/market.png) -->
-
-*Screenshots coming soon — see [Releases](https://github.com/McNerve/runewise/releases) for the latest builds.*
+| | |
+|---|---|
+| ![Home](docs/screenshots/home.png) | ![DPS Calculator](docs/screenshots/dps-calc.png) |
+| ![Boss Guides](docs/screenshots/boss-guides.png) | ![Market](docs/screenshots/market.png) |
+| ![Shop Helper](docs/screenshots/shop-helper.png) | ![Slayer Helper](docs/screenshots/slayer.png) |
 
 ## Features
 
