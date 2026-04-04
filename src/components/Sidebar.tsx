@@ -85,6 +85,39 @@ export default function Sidebar({ currentView, onNavigate }: SidebarProps) {
         aria-label="Main navigation"
         className={`sidebar-scroll flex-1 overflow-y-auto overflow-x-hidden ${collapsed ? "compact-sidebar-scroll px-2 py-2" : "px-2 py-2"}`}
       >
+        {/* Pinned section */}
+        {settings.sidebar.pinned.length > 0 && (
+          <div>
+            {settings.sidebar.pinned.map((pinnedId) => {
+              const item = SIDEBAR_FEATURES.find((f) => f.id === pinnedId);
+              if (!item) return null;
+              const accent = getFeatureAccent(item.id);
+              return (
+                <button
+                  key={`pin-${item.id}`}
+                  onClick={() => onNavigate(item.id)}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    const next = settings.sidebar.pinned.filter((p) => p !== item.id);
+                    update({ sidebar: { ...settings.sidebar, pinned: next } });
+                  }}
+                  aria-current={currentView === item.id ? "page" : undefined}
+                  style={{ "--item-accent": accent } as React.CSSProperties}
+                  className={`sidebar-nav-item w-full text-left ${collapsed ? "mx-auto h-9 w-9 justify-center px-0 py-0" : "px-2.5 py-[3px]"} rounded-lg text-[13px] flex items-center gap-2.5 transition-colors ${
+                    currentView === item.id ? "font-medium" : "text-text-secondary hover:text-text-primary"
+                  }`}
+                >
+                  <span className={`inline-flex shrink-0 items-center justify-center ${collapsed ? "h-7 w-7" : "h-5 w-5"}`} style={getIconStyle(item.id, currentView === item.id)}>
+                    <ShellIcon view={item.id} className={`${collapsed ? "h-4.5 w-4.5" : "h-[18px] w-[18px]"} shrink-0`} />
+                  </span>
+                  {!collapsed && <span className="min-w-0 flex-1 truncate">{item.navLabel}</span>}
+                </button>
+              );
+            })}
+            <div className={`border-t border-accent/20 ${collapsed ? "my-1 mx-1" : "my-1.5 mx-2"}`} />
+          </div>
+        )}
+
         {groupedFeatures.map((section, index) => (
           <div key={section.family}>
             {index > 0 && (
@@ -93,10 +126,20 @@ export default function Sidebar({ currentView, onNavigate }: SidebarProps) {
             <div>
               {section.items.map((item) => {
                 const accent = getFeatureAccent(item.id);
+                const isPinned = settings.sidebar.pinned.includes(item.id);
                 const navButton = (
                   <button
                     key={item.id}
                     onClick={() => onNavigate(item.id)}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      if (isPinned) {
+                        const next = settings.sidebar.pinned.filter((p) => p !== item.id);
+                        update({ sidebar: { ...settings.sidebar, pinned: next } });
+                      } else if (settings.sidebar.pinned.length < 5) {
+                        update({ sidebar: { ...settings.sidebar, pinned: [...settings.sidebar.pinned, item.id] } });
+                      }
+                    }}
                     aria-current={currentView === item.id ? "page" : undefined}
                     style={{ "--item-accent": accent } as React.CSSProperties}
                     className={`sidebar-nav-item w-full text-left ${collapsed ? "mx-auto h-9 w-9 justify-center px-0 py-0" : "px-2.5 py-[3px]"} rounded-lg text-[13px] flex items-center gap-2.5 transition-colors ${
