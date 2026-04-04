@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, memo } from "react";
 import type { WikiDrop } from "../lib/api/drops";
 import { formatGp } from "../lib/format";
 import { itemIcon, encodeIconFilename, WIKI_IMG } from "../lib/sprites";
@@ -63,7 +63,7 @@ function getItemPrice(
   return p?.high ?? p?.low ?? null;
 }
 
-export default function DropTable({
+export default memo(function DropTable({
   drops,
   prices,
   itemMap,
@@ -296,4 +296,4 @@ export default function DropTable({
       ))}
     </div>
   );
-}
+});

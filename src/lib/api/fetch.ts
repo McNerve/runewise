@@ -12,7 +12,11 @@ export async function apiFetch(
   options?: RequestInit
 ): Promise<Response> {
   if (!isTauri) {
-    return globalThis.fetch(url, options);
+    const timeout = AbortSignal.timeout(20_000);
+    const signal = options?.signal
+      ? AbortSignal.any([options.signal, timeout])
+      : timeout;
+    return globalThis.fetch(url, { ...options, signal });
   }
 
   const headers: Record<string, string> = {};

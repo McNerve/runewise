@@ -57,14 +57,18 @@ const IRONMAN_URLS: Record<Exclude<IronmanType, "none">, string> = {
 export async function detectIronmanType(rsn: string): Promise<IronmanType> {
   // Only run in Tauri — dev mode proxy 404s are noisy and non-functional
   if (!isTauri) return "none";
-  for (const type of ["hardcore", "ultimate", "ironman"] as const) {
-    try {
-      const url = `${IRONMAN_URLS[type]}/index_lite.json?player=${encodeURIComponent(rsn)}`;
-      const res = await apiFetch(url);
-      if (res.ok) return type;
-    } catch {
-      // Not on this hiscore = not this type
-    }
+
+  const types = ["hardcore", "ultimate", "ironman"] as const;
+  const results = await Promise.allSettled(
+    types.map((type) =>
+      apiFetch(`${IRONMAN_URLS[type]}/index_lite.json?player=${encodeURIComponent(rsn)}`)
+        .then((res) => (res.ok ? type : null))
+    )
+  );
+
+  // Return most specific match (hardcore > ultimate > ironman)
+  for (const result of results) {
+    if (result.status === "fulfilled" && result.value) return result.value;
   }
   return "none";
 }

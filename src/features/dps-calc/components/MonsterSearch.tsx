@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, memo } from "react";
 import type { WikiMonster } from "../../../lib/api/monsters";
 
 interface MonsterSearchProps {
@@ -15,7 +15,7 @@ function getDefForStyle(m: WikiMonster, style: "melee" | "ranged" | "magic"): nu
   return Math.min(m.defStab, m.defSlash, m.defCrush);
 }
 
-export default function MonsterSearch({
+export default memo(function MonsterSearch({
   monsters,
   selected,
   onSelect,
@@ -140,4 +140,4 @@ export default function MonsterSearch({
       )}
     </div>
   );
-}
+});

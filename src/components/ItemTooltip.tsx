@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useState, memo } from "react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { fetchMapping, fetchLatestPrices, type ItemMapping, type ItemPrice } from "../lib/api/ge";
 import { formatGp } from "../lib/format";
@@ -20,7 +20,7 @@ interface Props {
   children: ReactNode;
 }
 
-export default function ItemTooltip({ itemName, children }: Props) {
+export default memo(function ItemTooltip({ itemName, children }: Props) {
   const [item, setItem] = useState<ItemMapping | null>(null);
   const [price, setPrice] = useState<ItemPrice | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -94,4 +94,4 @@ export default function ItemTooltip({ itemName, children }: Props) {
       </Tooltip.Content>
     </Tooltip.Root>
   );
-}
+});

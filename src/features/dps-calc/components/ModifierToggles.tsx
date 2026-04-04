@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { DPS_MODIFIERS, type DpsModifier } from "../../../lib/formulas/dps";
 
 type CombatStyle = "melee" | "ranged" | "magic";
@@ -45,7 +46,7 @@ function isRelevant(mod: DpsModifier, style: CombatStyle): boolean {
   return !mod.condition || mod.condition === style;
 }
 
-export default function ModifierToggles({
+export default memo(function ModifierToggles({
   activeIds,
   onToggle,
   combatStyle,
@@ -85,4 +86,4 @@ export default function ModifierToggles({
       ))}
     </div>
   );
-}
+});

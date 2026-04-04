@@ -36,6 +36,7 @@ Thumbs.db
 
 # Claude Code
 .claude/
+CLAUDE.md
 
 # iCloud sync duplicates
 * 2.*
