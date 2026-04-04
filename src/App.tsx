@@ -10,7 +10,7 @@ import { CardSkeleton } from "./components/Skeleton";
 import { useHiscores } from "./hooks/useHiscores";
 import { useKeyboardNav } from "./hooks/useKeyboardNav";
 import { NavigationProvider, useNavigation } from "./lib/NavigationContext";
-import { SettingsContext } from "./hooks/useSettings";
+import { SettingsContext, useSettings } from "./hooks/useSettings";
 import { useSettingsProvider } from "./hooks/useSettings";
 import { VIEW_RENDERERS } from "./lib/viewRegistry";
 import { getFeatureAccent } from "./lib/featureAccent";
