@@ -2,6 +2,53 @@
 
 All notable changes to RuneWise are documented here. Versions follow [Semantic Versioning](https://semver.org/).
 
+## [1.4.1] - 2026-04-03
+
+### Security
+- Fixed `useAsyncData` retry not resetting loading/error state
+- Removed `style` from DOMPurify allowed attributes (CSS injection vector)
+- Replaced `innerHTML` with DOM APIs for tile marker buttons
+- Added URL protocol validation to `openExternal` (blocks non-HTTP schemes)
+- Hardened CSP: explicit `script-src`, `frame-src 'none'`, `object-src 'none'`
+- Enforced HTTPS-only in Rust proxy
+- Added `res.ok` checks to wiki, news, and shop API calls
+
+### Bug Fixes
+- Switched Shooting Stars from Star Miners API (key revoked) to 07.gg public endpoint
+- Fixed World Map not loading in Tauri (missing `cdn.runescape.com` in CSP `img-src`)
+- Fixed Bulk Lookup showing all items as "Not found" (mapping only loaded on Browse tab)
+- Fixed XP Tracker header text overlapping with refresh controls
+- Fixed `fetchShopImage` using raw `fetch` instead of `apiFetch` (broken in Tauri)
+- Fixed News article race condition on rapid clicks (request ID tracking)
+
+### Performance
+- Added `React.memo` to 5 hot components (MonsterSearch, ModifierToggles, DpsBreakdown, DropTable, ItemTooltip)
+- DPS Calculator lazy-loads monsters on first search (was eagerly fetching 3K+ items on mount)
+- Home dashboard uses static watchlist snapshot instead of 60-second polling
+- Equipment deduplication cached (was running O(5000) on every search keystroke)
+- ItemTooltip prices refresh via TTL cache instead of stale module-level variable
+- Expired cache entries now cleaned from localStorage
+- FarmTimers skip ticks when tab is hidden
+- Browser fetch timeout (20s) for dev mode
+- Single retry with 1s delay for transient API errors (429/5xx)
+- Parallel ironman detection (3x RTT reduced to 1x)
+- Deferred icon cache initialization to after first render
+
+### Tests
+- Added 97 new tests across 7 files (36 → 133 total)
+- Covers: combat level, XP table, dry/pet calculators, formatGp, timeAgo, quest eligibility, hiscores validator
+
+### Maintenance
+- Removed 16 tracked files from repo (worktree refs, boilerplate, dead code, 1.2MB source icon)
+- Rewrote `.gitignore` comprehensively
+- Added `CHANGELOG.md` with full version history
+- Updated all 13 GitHub release notes
+- Dependabot commits no longer use scopes
+- Release note categories expanded (Features, Bugs, Performance, Maintenance)
+- Vitest excludes `.claude/` directory (tests no longer run twice)
+- 65+ star location key mappings for 07.gg API
+- 4 missing wiki map tile entries added
+
 ## [1.4.0] - 2026-04-03
 
 ### New Features
