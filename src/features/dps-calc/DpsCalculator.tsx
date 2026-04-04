@@ -12,7 +12,7 @@ import { type HiscoreData } from "../../lib/api/hiscores";
 import { type WikiEquipment, type EquipmentSlot } from "../../lib/api/equipment";
 import { loadJSON, saveJSON } from "../../lib/localStorage";
 import { useNavigation } from "../../lib/NavigationContext";
-import { itemIcon } from "../../lib/sprites";
+import { itemIcon, WIKI_IMG } from "../../lib/sprites";
 import { getWeaponType, type WeaponStance } from "../../lib/data/weapon-stances";
 import { GEAR_PRESETS, type GearPreset } from "../../lib/data/gear-presets";
 import MonsterSearch from "./components/MonsterSearch";
@@ -323,6 +323,7 @@ export default function DpsCalculator({ hiscores }: Props) {
   const activeSpellBase = useMemo(() => {
     if (combatStyle !== "magic" || !selectedSpell) return undefined;
     if (selectedSpell.id === "magic_dart") return magicDartBaseMaxHit(magicLevel);
+    if (selectedSpell.levelScaling) return selectedSpell.levelScaling(magicLevel);
     return selectedSpell.baseMaxHit;
   }, [combatStyle, selectedSpell, magicLevel]);
 
@@ -884,7 +885,6 @@ export default function DpsCalculator({ hiscores }: Props) {
             <div className="grid grid-cols-5 gap-1.5">
               {filteredPrayers.map((p, i) => {
                 const isActive = prayerIdx === i;
-                const WIKI_IMG_BASE = "https://oldschool.runescape.wiki/images";
                 return (
                   <button
                     key={p.name}
@@ -899,7 +899,7 @@ export default function DpsCalculator({ hiscores }: Props) {
                   >
                     {p.icon ? (
                       <img
-                        src={`${WIKI_IMG_BASE}/${p.icon}`}
+                        src={`${WIKI_IMG}/${p.icon}`}
                         alt={p.name}
                         className={`w-7 h-7 ${isActive ? "" : "opacity-50 grayscale"}`}
                         onError={(e) => { e.currentTarget.style.display = "none"; const next = e.currentTarget.nextElementSibling; if (next instanceof HTMLElement) next.style.display = "flex"; }}

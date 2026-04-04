@@ -85,7 +85,13 @@ export default function ItemTooltip({ itemName, children }: Props) {
         ) : loaded ? (
           <div className="text-[10px] text-text-secondary">No data for {itemName}</div>
         ) : (
-          <div className="text-[10px] text-text-secondary">Loading...</div>
+          <div className="flex gap-2 items-center w-32">
+            <div className="w-6 h-6 rounded bg-bg-tertiary/50 animate-pulse shrink-0" />
+            <div className="flex-1 space-y-1">
+              <div className="h-3 rounded bg-bg-tertiary/50 animate-pulse w-full" />
+              <div className="h-2 rounded bg-bg-tertiary/50 animate-pulse w-2/3" />
+            </div>
+          </div>
         )}
         <Tooltip.Arrow className="fill-[var(--color-bg-tertiary)]" />
       </Tooltip.Content>

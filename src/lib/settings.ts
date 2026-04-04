@@ -11,7 +11,7 @@ export interface AppSettings {
   keybinds: KeybindMap;
   keybindsEnabled: boolean;
   notifications: { priceAlerts: boolean };
-  sidebar: { collapsed: boolean };
+  sidebar: { collapsed: boolean; pinned: string[] };
   ironmanMode: boolean;
 }
 
@@ -49,7 +49,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   keybinds: DEFAULT_KEYBINDS,
   keybindsEnabled: true,
   notifications: { priceAlerts: true },
-  sidebar: { collapsed: false },
+  sidebar: { collapsed: false, pinned: [] },
   ironmanMode: false,
 };
 

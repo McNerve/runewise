@@ -954,43 +954,6 @@ body {
   box-shadow: 0 2px 8px rgba(0,0,0,0.4);
 }
 
-/* ── Button utilities ── */
-.btn-primary {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  border-radius: 0.75rem;
-  background: var(--color-accent);
-  padding: 0.5rem 0.75rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: white;
-  transition: background-color 140ms ease;
-}
-
-.btn-primary:hover {
-  background: var(--color-accent-hover);
-}
-
-.btn-ghost {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  border-radius: 0.75rem;
-  border: 1px solid var(--color-border);
-  background: color-mix(in srgb, var(--color-bg-primary) 60%, transparent);
-  padding: 0.5rem 0.75rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: var(--color-text-secondary);
-  transition: border-color 140ms ease, color 140ms ease;
-}
-
-.btn-ghost:hover {
-  border-color: color-mix(in srgb, var(--color-accent) 35%, var(--color-border));
-  color: var(--color-text-primary);
-}
-
 /* ── Stat card accents ── */
 .stat-card {
   border-top: 2px solid transparent;

@@ -25,6 +25,8 @@ export interface CombatSpell {
   autocasting: boolean;
   /** Short note for edge-case mechanics */
   notes?: string;
+  /** For powered staves: function to compute base max hit from magic level */
+  levelScaling?: (magicLevel: number) => number;
 }
 
 export const COMBAT_SPELLS: CombatSpell[] = [
@@ -515,6 +517,51 @@ export const COMBAT_SPELLS: CombatSpell[] = [
     element: "none",
     autocasting: false,
     notes: "Binds target for 8 ticks (4.8s). Only usable on undead targets.",
+  },
+  // ─── Powered Staves ─────────────────────────────────────────────────────
+  {
+    id: "trident_seas",
+    name: "Trident of the seas",
+    spellbook: "standard",
+    baseMaxHit: 28, // at 99 magic
+    magicLevel: 75,
+    element: "none",
+    autocasting: false,
+    notes: "Powered staff. Max hit scales with Magic level.",
+    levelScaling: (lvl: number) => Math.max(1, Math.floor(lvl / 3) - 5),
+  },
+  {
+    id: "trident_swamp",
+    name: "Trident of the swamp",
+    spellbook: "standard",
+    baseMaxHit: 31, // at 99 magic
+    magicLevel: 75,
+    element: "none",
+    autocasting: false,
+    notes: "Powered staff. +3 max hit over seas trident.",
+    levelScaling: (lvl: number) => Math.max(1, Math.floor(lvl / 3) - 2),
+  },
+  {
+    id: "sanguinesti_staff",
+    name: "Sanguinesti staff",
+    spellbook: "standard",
+    baseMaxHit: 32, // at 99 magic
+    magicLevel: 75,
+    element: "none",
+    autocasting: false,
+    notes: "Powered staff. Heals 50% of damage (1/6 chance). +1 over swamp trident.",
+    levelScaling: (lvl: number) => Math.max(1, Math.floor(lvl / 3) - 1),
+  },
+  {
+    id: "tumekens_shadow",
+    name: "Tumeken's shadow",
+    spellbook: "standard",
+    baseMaxHit: 34, // at 99 magic
+    magicLevel: 85,
+    element: "none",
+    autocasting: false,
+    notes: "Powered staff. 3× magic attack and damage bonuses from gear.",
+    levelScaling: (lvl: number) => Math.max(1, Math.floor(lvl / 3) + 1),
   },
 ];
 

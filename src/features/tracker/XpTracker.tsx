@@ -471,7 +471,10 @@ export default function XpTracker({ rsn }: Props) {
         </div>
       )}
 
-      {tab === "achievements" && !loading && (
+      {tab === "achievements" && !loading && achievements.length === 0 && (
+        <EmptyState title="No achievements recorded" description="Achievements appear as you unlock levels and milestones while being tracked on Wise Old Man." />
+      )}
+      {tab === "achievements" && !loading && achievements.length > 0 && (
         <div className="rounded-xl border border-border/60 overflow-hidden max-h-[500px] overflow-y-auto">
           <table className="w-full text-sm">
             <thead className="sticky top-0 bg-bg-secondary">

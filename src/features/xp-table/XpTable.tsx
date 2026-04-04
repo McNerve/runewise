@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { XP_TABLE_VIRTUAL } from "../../lib/formulas/xp";
+import { XP_TABLE_VIRTUAL, MAX_XP } from "../../lib/formulas/xp";
 
 export default function XpTable() {
   const [selected, setSelected] = useState<number | null>(null);
@@ -10,7 +10,7 @@ export default function XpTable() {
 
   return (
     <div>
-      <h2 className="text-xl font-semibold mb-4">XP Table</h2>
+      <h2 className="text-2xl font-semibold tracking-tight mb-4">XP Table</h2>
 
       {/* Selected level detail card */}
       {selectedRow ? (
@@ -81,6 +81,10 @@ export default function XpTable() {
             </button>
           );
         })}
+      </div>
+
+      <div className="text-xs text-text-secondary/40 mb-4">
+        Max XP per skill: <span className="text-text-primary font-medium tabular-nums">{MAX_XP.toLocaleString()}</span> (200M)
       </div>
 
       {/* Virtual levels */}

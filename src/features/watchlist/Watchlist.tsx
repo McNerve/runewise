@@ -94,23 +94,23 @@ export default function Watchlist() {
   return (
     <div className="max-w-3xl">
       <div className="mb-4">
-        <h2 className="text-xl font-semibold">Price Watchlist</h2>
+        <h2 className="text-2xl font-semibold tracking-tight">Price Watchlist</h2>
         <p className="mt-1 text-sm text-text-secondary">
           Monitor tracked items, set alert thresholds, and jump straight into the item workspace when something moves.
         </p>
       </div>
 
       <div className="mb-5 grid gap-3 md:grid-cols-3">
-        <div className="px-4 py-3">
-          <div className="section-kicker">Tracked Items</div>
+        <div className="rounded-xl border border-border/60 bg-bg-primary/45 px-4 py-3">
+          <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">Tracked Items</div>
           <div className="mt-1 text-lg font-semibold text-text-primary">{trackedCount}</div>
         </div>
-        <div className="px-4 py-3">
-          <div className="section-kicker">Thresholds Set</div>
+        <div className="rounded-xl border border-border/60 bg-bg-primary/45 px-4 py-3">
+          <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">Thresholds Set</div>
           <div className="mt-1 text-lg font-semibold text-text-primary">{thresholdCount}</div>
         </div>
-        <div className="px-4 py-3">
-          <div className="section-kicker">Triggered</div>
+        <div className="rounded-xl border border-border/60 bg-bg-primary/45 px-4 py-3">
+          <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">Triggered</div>
           <div className={`mt-1 text-lg font-semibold ${triggeredCount > 0 ? "text-warning" : "text-text-primary"}`}>
             {triggeredCount}
           </div>

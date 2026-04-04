@@ -71,7 +71,7 @@ export default function Overview({ hiscores, rsn }: Props) {
 
   useEffect(() => {
     if (!rsn) return;
-    fetchWomPlayer(rsn).then(setWomPlayer).catch(() => {});
+    fetchWomPlayer(rsn).then(setWomPlayer).catch(() => { /* WOM data is optional */ });
   }, [rsn]);
   const totalLevel = hiscores.skills
     .filter((s) => s.name !== "Overall")
@@ -302,7 +302,7 @@ export default function Overview({ hiscores, rsn }: Props) {
             <button
               key={skillName}
               onClick={() => navigate("skill-calc", { skill: skillName })}
-              className="bg-bg-secondary rounded px-3 py-2 flex items-center justify-between hover:bg-bg-tertiary transition-colors cursor-pointer text-left"
+              className="group bg-bg-secondary rounded px-3 py-2 flex items-center justify-between hover:bg-bg-tertiary hover:border-accent/20 border border-transparent transition-all cursor-pointer text-left"
             >
               <div className="flex items-center gap-2">
                 <WikiImage src={SKILL_ICONS[skillName]} alt="" className="w-4 h-4" fallback={skillName[0]} />
@@ -313,7 +313,7 @@ export default function Overview({ hiscores, rsn }: Props) {
                 >
                   {skill.level}
                 </span>
-                <span className="text-xs text-text-secondary">{skillName}</span>
+                <span className="text-xs text-text-secondary group-hover:text-accent transition-colors">{skillName}</span>
               </div>
               <div className="flex items-center gap-2">
                 {skill.level < 99 ? (

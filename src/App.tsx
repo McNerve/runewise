@@ -6,6 +6,7 @@ import PlayerBar from "./components/PlayerBar";
 import GlobalSearch from "./components/GlobalSearch";
 const UpdateDialog = lazy(() => import("./components/UpdateDialog"));
 import ErrorBoundary from "./components/ErrorBoundary";
+import { initItemIconCache } from "./lib/itemIcons";
 import { CardSkeleton } from "./components/Skeleton";
 import { useHiscores } from "./hooks/useHiscores";
 import { useKeyboardNav } from "./hooks/useKeyboardNav";
@@ -62,6 +63,7 @@ function AppContent() {
                             hiscores: {
                               rsn: hiscores.rsn,
                               data: hiscores.data,
+                              ironmanType: hiscores.ironmanType,
                             },
                           })
                         : <div className="py-16 text-center text-text-secondary">View not found.</div>}
@@ -80,6 +82,9 @@ function AppContent() {
     </>
   );
 }
+
+// Pre-populate the global item icon cache on module load
+initItemIconCache();
 
 function App() {
   const settingsValue = useSettingsProvider();
