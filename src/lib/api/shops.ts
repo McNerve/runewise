@@ -59,15 +59,32 @@ function parseImage(raw: string | undefined): string | null {
   return raw.replace(/^File:/, "").replace(/ /g, "_");
 }
 
+function cleanWikiText(raw: string): string {
+  return raw
+    // Strip wikilinks: [[Page|Display]] → Display, [[Page]] → Page
+    .replace(/\[\[([^\]|]*)\|([^\]]*)\]\]/g, "$2")
+    .replace(/\[\[([^\]]*)\]\]/g, "$1")
+    // Strip all HTML tags
+    .replace(/<[^>]+>/g, "")
+    // Decode HTML entities
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&#91;/g, "[")
+    .replace(/&#93;/g, "]")
+    .replace(/&bull;/g, "")
+    .replace(/&quot;/g, '"')
+    // Clean up whitespace
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function parseJson(raw: string | undefined): { members: boolean; location: string | null } {
   if (!raw) return { members: false, location: null };
   try {
     const data = JSON.parse(raw);
     const members = data.Members === "Yes";
-    let location = data.Location ?? null;
-    if (location) {
-      location = location.replace(/\[\[([^\]|]+)(?:\|[^\]]+)?\]\]/g, "$1");
-    }
+    const rawLocation = data.Location ?? null;
+    const location = rawLocation ? cleanWikiText(rawLocation) || null : null;
     return { members, location };
   } catch {
     return { members: false, location: null };
