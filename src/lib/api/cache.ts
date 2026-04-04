@@ -67,6 +67,7 @@ export async function getCachedAsync<T>(
   return persisted.data;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function getStaleCached<T>(key: string, _options?: CacheOptions): T | null {
   return getMemoryEntry<T>(key)?.data ?? null;
 }
@@ -85,6 +86,7 @@ export async function getStaleCachedAsync<T>(key: string, options?: CacheOptions
 
 export function getCacheTimestamp(
   key: string,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _options?: CacheOptions
 ): number | null {
   return getMemoryEntry(key)?.timestamp ?? null;
