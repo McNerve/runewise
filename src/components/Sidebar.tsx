@@ -22,7 +22,7 @@ export default function Sidebar({ currentView, onNavigate }: SidebarProps) {
   const collapsed = settings.sidebar.collapsed;
 
   const toggleCollapse = () => {
-    update({ sidebar: { collapsed: !collapsed } });
+    update({ sidebar: { ...settings.sidebar, collapsed: !collapsed } });
   };
 
   const openGlobalSearch = () => {
@@ -85,6 +85,39 @@ export default function Sidebar({ currentView, onNavigate }: SidebarProps) {
         aria-label="Main navigation"
         className={`sidebar-scroll flex-1 overflow-y-auto overflow-x-hidden ${collapsed ? "compact-sidebar-scroll px-2 py-2" : "px-2 py-2"}`}
       >
+        {/* Pinned section */}
+        {settings.sidebar.pinned.length > 0 && (
+          <div>
+            {settings.sidebar.pinned.map((pinnedId) => {
+              const item = SIDEBAR_FEATURES.find((f) => f.id === pinnedId);
+              if (!item) return null;
+              const accent = getFeatureAccent(item.id);
+              return (
+                <button
+                  key={`pin-${item.id}`}
+                  onClick={() => onNavigate(item.id)}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    const next = settings.sidebar.pinned.filter((p) => p !== item.id);
+                    update({ sidebar: { ...settings.sidebar, pinned: next } });
+                  }}
+                  aria-current={currentView === item.id ? "page" : undefined}
+                  style={{ "--item-accent": accent } as React.CSSProperties}
+                  className={`sidebar-nav-item w-full text-left ${collapsed ? "mx-auto h-9 w-9 justify-center px-0 py-0" : "px-2.5 py-[3px]"} rounded-lg text-[13px] flex items-center gap-2.5 transition-colors ${
+                    currentView === item.id ? "font-medium" : "text-text-secondary hover:text-text-primary"
+                  }`}
+                >
+                  <span className={`inline-flex shrink-0 items-center justify-center ${collapsed ? "h-7 w-7" : "h-5 w-5"}`} style={getIconStyle(item.id, currentView === item.id)}>
+                    <ShellIcon view={item.id} className={`${collapsed ? "h-4.5 w-4.5" : "h-[18px] w-[18px]"} shrink-0`} />
+                  </span>
+                  {!collapsed && <span className="min-w-0 flex-1 truncate">{item.navLabel}</span>}
+                </button>
+              );
+            })}
+            <div className={`border-t border-accent/20 ${collapsed ? "my-1 mx-1" : "my-1.5 mx-2"}`} />
+          </div>
+        )}
+
         {groupedFeatures.map((section, index) => (
           <div key={section.family}>
             {index > 0 && (
@@ -93,10 +126,20 @@ export default function Sidebar({ currentView, onNavigate }: SidebarProps) {
             <div>
               {section.items.map((item) => {
                 const accent = getFeatureAccent(item.id);
+                const isPinned = settings.sidebar.pinned.includes(item.id);
                 const navButton = (
                   <button
                     key={item.id}
                     onClick={() => onNavigate(item.id)}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      if (isPinned) {
+                        const next = settings.sidebar.pinned.filter((p) => p !== item.id);
+                        update({ sidebar: { ...settings.sidebar, pinned: next } });
+                      } else if (settings.sidebar.pinned.length < 5) {
+                        update({ sidebar: { ...settings.sidebar, pinned: [...settings.sidebar.pinned, item.id] } });
+                      }
+                    }}
                     aria-current={currentView === item.id ? "page" : undefined}
                     style={{ "--item-accent": accent } as React.CSSProperties}
                     className={`sidebar-nav-item w-full text-left ${collapsed ? "mx-auto h-9 w-9 justify-center px-0 py-0" : "px-2.5 py-[3px]"} rounded-lg text-[13px] flex items-center gap-2.5 transition-colors ${
@@ -151,30 +194,33 @@ export default function Sidebar({ currentView, onNavigate }: SidebarProps) {
             <ShellIcon view="settings" className="h-4.5 w-4.5 shrink-0" />
           </button>
         ) : (
-          <div className="flex items-center gap-1.5">
+          <div className="space-y-1.5">
             <button
               type="button"
               onClick={openGlobalSearch}
-              className="flex-1 flex items-center justify-between rounded-lg px-2 py-1 text-[11px] text-text-secondary/60 transition hover:bg-bg-secondary/40 hover:text-text-primary"
+              className="flex w-full items-center justify-between rounded-lg border border-border/40 bg-bg-secondary/30 px-2.5 py-1.5 text-[11px] text-text-secondary transition hover:bg-bg-secondary/60 hover:text-text-primary"
             >
               <span>Search</span>
-              <span className="rounded border border-border/60 px-1 py-0.5 font-mono text-[9px] text-text-secondary/50">
+              <kbd className="rounded border border-border/50 bg-bg-tertiary/40 px-1.5 py-0.5 font-mono text-[9px] text-text-secondary/60">
                 {mod}K
-              </span>
+              </kbd>
             </button>
-            <button
-              onClick={() => onNavigate("settings")}
-              aria-current={currentView === "settings" ? "page" : undefined}
-              title="Settings"
-              className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors ${
-                currentView === "settings"
-                  ? "text-accent"
-                  : "text-text-secondary/50 hover:text-text-primary"
-              }`}
-            >
-              <ShellIcon view="settings" className="h-4 w-4" />
-            </button>
-            <span className="text-[9px] text-text-secondary/25 tabular-nums shrink-0">v{__APP_VERSION__}</span>
+            <div className="flex items-center justify-between px-1">
+              <button
+                onClick={() => onNavigate("settings")}
+                aria-current={currentView === "settings" ? "page" : undefined}
+                title="Settings"
+                className={`inline-flex items-center gap-1.5 rounded-lg px-1.5 py-1 text-[11px] transition-colors ${
+                  currentView === "settings"
+                    ? "text-accent"
+                    : "text-text-secondary/60 hover:text-text-primary"
+                }`}
+              >
+                <ShellIcon view="settings" className="h-3.5 w-3.5" />
+                Settings
+              </button>
+              <span className="text-[9px] text-text-secondary/30 tabular-nums">v{__APP_VERSION__}</span>
+            </div>
           </div>
         )}
       </div>

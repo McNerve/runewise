@@ -379,7 +379,12 @@ export default function News() {
             className="text-xs text-text-secondary hover:text-text-primary transition-colors disabled:opacity-50"
             title="Refresh news"
           >
-            {loading ? "Loading..." : "Refresh"}
+            {loading ? (
+              <span className="inline-flex items-center gap-1">
+                <span className="w-3 h-3 border-2 border-text-secondary/30 border-t-accent rounded-full animate-spin" />
+                Loading
+              </span>
+            ) : "Refresh"}
           </button>
           {!loading && posts.length > 0 && (
             <span className="text-xs text-text-secondary/40">

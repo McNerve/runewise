@@ -1,7 +1,8 @@
 /* eslint-disable react-refresh/only-export-components */
 import { lazy, type LazyExoticComponent, type ComponentType, type ReactNode } from "react";
-import type { HiscoreData } from "./api/hiscores";
+import type { HiscoreData, IronmanType } from "./api/hiscores";
 import type { View } from "./features";
+import ViewErrorBoundary from "../components/ViewErrorBoundary";
 
 const Home = lazy(() => import("../features/home/Home"));
 const Overview = lazy(() => import("../features/overview/Overview"));
@@ -44,13 +45,18 @@ interface AppViewContext {
   hiscores: {
     rsn: string;
     data: HiscoreData | null;
+    ironmanType: IronmanType;
   };
 }
 
 type ViewRenderer = (context: AppViewContext) => ReactNode;
 
-function renderComponent(Component: LazyExoticComponent<ComponentType>) {
-  return () => <Component />;
+function renderComponent(Component: LazyExoticComponent<ComponentType>, name?: string) {
+  return () => (
+    <ViewErrorBoundary viewName={name}>
+      <Component />
+    </ViewErrorBoundary>
+  );
 }
 
 export const VIEW_RENDERERS: Record<View, ViewRenderer> = {

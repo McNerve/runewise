@@ -75,7 +75,7 @@ export default function TrainingPlan({ hiscores }: Props) {
 
   return (
     <div>
-      <h2 className="text-xl font-semibold mb-5">Training Plan</h2>
+      <h2 className="text-2xl font-semibold tracking-tight mb-5">Training Plan</h2>
 
       {/* Quick presets */}
       <div className="section-kicker mb-2">Quick Presets</div>

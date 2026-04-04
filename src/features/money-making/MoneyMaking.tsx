@@ -115,8 +115,8 @@ export default function MoneyMaking({ hiscores }: Props) {
 
   return (
     <div className="max-w-4xl">
-      <h2 className="text-xl font-semibold mb-1">Money Making</h2>
-      <p className="text-xs text-text-secondary mb-4">
+      <h2 className="text-2xl font-semibold tracking-tight">Money Making</h2>
+      <p className="text-sm text-text-secondary mb-4">
         {totalMethods} curated methods
         {availableCount !== null && ` — ${availableCount} available for your stats`}
       </p>

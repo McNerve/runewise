@@ -103,15 +103,14 @@ export default function SkillCalculator({ hiscores }: Props) {
 
   const targetXp = xpForLevel(targetLevel);
   const xpNeeded = Math.max(0, targetXp - currentXp);
-  const allMethods = (TRAINING_METHODS[selectedSkill] ?? [])
-    .filter((m) => !settings.ironmanMode || m.ironmanViable !== false);
+  const allMethods = TRAINING_METHODS[selectedSkill] ?? [];
   const methods = intensityFilter === "All"
     ? allMethods
     : allMethods.filter((m) => m.intensity?.toLowerCase() === intensityFilter.toLowerCase());
 
   return (
     <div className="max-w-3xl">
-      <h2 className="text-xl font-semibold mb-4">Skills</h2>
+      <h2 className="text-2xl font-semibold tracking-tight mb-4">Skills</h2>
 
       {/* Tab bar */}
       <div className="flex gap-1 mb-5">
@@ -155,7 +154,7 @@ export default function SkillCalculator({ hiscores }: Props) {
       <>
 
 
-      <div className="grid grid-cols-6 gap-1.5 mb-6">
+      <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5 mb-6">
         {SKILLS.map((skill) => {
           const level = getLevel(skill);
           return (
@@ -321,7 +320,7 @@ export default function SkillCalculator({ hiscores }: Props) {
               No {intensityFilter.toLowerCase()} intensity methods for {selectedSkill}.
             </p>
           ) : (
-          <div className="bg-bg-secondary rounded-lg overflow-hidden">
+          <div className="bg-bg-secondary rounded-lg overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-text-secondary text-xs">
@@ -348,7 +347,7 @@ export default function SkillCalculator({ hiscores }: Props) {
                     return (
                       <tr
                         key={method.name}
-                        className={`border-b border-border/50 hover:bg-bg-tertiary transition-colors ${!meetsLevel ? "opacity-40" : ""}`}
+                        className={`border-b border-border/50 even:bg-bg-primary/25 hover:bg-bg-tertiary transition-colors ${!meetsLevel ? "opacity-40" : ""} ${settings.ironmanMode && method.ironmanViable === false ? "opacity-30" : ""}`}
                       >
                         <td className="px-4 py-1.5 font-medium">
                           <span className="flex items-center gap-2">
@@ -359,6 +358,9 @@ export default function SkillCalculator({ hiscores }: Props) {
                               onError={(e) => { e.currentTarget.style.display = "none"; }}
                             />
                             {method.name}
+                            {settings.ironmanMode && method.ironmanViable === false && (
+                              <span className="text-[8px] text-warning/60 border border-warning/20 rounded px-1 py-0.5">GE</span>
+                            )}
                           </span>
                           {method.intensity && (
                             <span className={`ml-1.5 px-1 py-0.5 rounded text-[9px] font-normal ${

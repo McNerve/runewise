@@ -116,7 +116,7 @@ export default function ProfitHub() {
 
   return (
     <div className="max-w-3xl">
-      <h2 className="text-xl font-semibold mb-1">Profit Rankings</h2>
+      <h2 className="text-2xl font-semibold tracking-tight mb-1">Profit Rankings</h2>
       <p className="text-xs text-text-secondary/60 mb-5">
         All GP-earning activities ranked by hourly profit. Boss loot uses live
         GE prices.

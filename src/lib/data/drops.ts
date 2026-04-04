@@ -73,10 +73,10 @@ export const POPULAR_DROPS: DropEntry[] = [
   { item: "Justiciar legguards", source: "Theatre of Blood", rate: 86, category: "Raids", note: "Rate per completion. Scales with team size." },
   { item: "Sanguinesti staff", source: "Theatre of Blood", rate: 86, category: "Raids", note: "Rate per completion. Scales with team size." },
 
-  // Araxxor
-  { item: "Noxious pommel", source: "Araxxor", rate: 200, category: "Other" },
-  { item: "Noxious point", source: "Araxxor", rate: 200, category: "Other" },
-  { item: "Noxious blade", source: "Araxxor", rate: 200, category: "Other" },
+  // Araxxor — each component is 1/600 per kill
+  { item: "Noxious pommel", source: "Araxxor", rate: 600, category: "Other" },
+  { item: "Noxious point", source: "Araxxor", rate: 600, category: "Other" },
+  { item: "Noxious blade", source: "Araxxor", rate: 600, category: "Other" },
   { item: "Araxyte fang", source: "Araxxor", rate: 600, category: "Other" },
 
   // More slayer

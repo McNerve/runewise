@@ -10,9 +10,19 @@ export function encodeIconFilename(filename: string): string {
   return filename.replace(/ /g, "_").replace(/'/g, "%27");
 }
 
+// Global icon cache from GE mapping — populated by initItemIconCache() in itemIcons.ts
+let _iconCache: Map<string, string> | null = null;
+export function setIconCache(cache: Map<string, string>) { _iconCache = cache; }
+
 export function itemIcon(itemName: string): string {
+  // Try GE mapping icon first (handles quantity variants like "5" suffix)
+  if (_iconCache) {
+    const geIcon = _iconCache.get(itemName.toLowerCase());
+    if (geIcon) return `${WIKI_IMG}/${encodeIconFilename(geIcon)}`;
+  }
+  // Fallback: generate URL from item name
   const name = itemName
-    .replace(/ \((\d)\)/g, "($1)")  // "Prayer potion (4)" → "Prayer potion(4)" (dose only)
+    .replace(/ \((\d)\)/g, "($1)")
     .replace(/ /g, "_")
     .replace(/'/g, "%27")
     .replace(/\(/g, "%28")

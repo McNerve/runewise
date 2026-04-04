@@ -26,7 +26,8 @@ export default function DryCalculator() {
 
   return (
     <div className="max-w-3xl">
-      <h2 className="text-xl font-semibold mb-4">Dry Calculator</h2>
+      <h2 className="text-2xl font-semibold tracking-tight">Dry Calculator</h2>
+      <p className="text-sm text-text-secondary mb-4">Calculate the probability of going dry on any drop. Select a boss preset or enter custom rates.</p>
 
       <div className="grid grid-cols-[1fr_280px] gap-4">
         {/* Calculator */}

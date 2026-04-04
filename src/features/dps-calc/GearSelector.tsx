@@ -53,6 +53,7 @@ export default function GearSelector({ slot, onSelect, onClose }: Props) {
           </span>
           <button
             onClick={onClose}
+            aria-label="Close gear selector"
             className="text-text-secondary hover:text-text-primary transition-colors text-lg leading-none"
           >
             ×
@@ -72,7 +73,14 @@ export default function GearSelector({ slot, onSelect, onClose }: Props) {
 
         <div className="max-h-80 overflow-y-auto">
           {loading && (
-            <div className="py-8 text-center text-sm text-text-secondary">Loading equipment...</div>
+            <div className="space-y-2 px-4 py-4">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <div className="w-6 h-6 rounded bg-bg-tertiary/50 animate-pulse" />
+                  <div className="flex-1 h-4 rounded bg-bg-tertiary/50 animate-pulse" />
+                </div>
+              ))}
+            </div>
           )}
           {!loading && (
             <>

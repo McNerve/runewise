@@ -113,7 +113,8 @@ export default function GearCompare() {
 
   return (
     <div>
-      <h2 className="text-xl font-semibold mb-5">Gear Compare</h2>
+      <h2 className="text-2xl font-semibold tracking-tight">Gear Compare</h2>
+      <p className="text-sm text-text-secondary mb-5">Compare equipment stats side by side. Browse by slot and sort by any stat.</p>
 
       {/* Slot selector */}
       <div className="flex flex-wrap gap-1.5 mb-4">
@@ -247,7 +248,7 @@ export default function GearCompare() {
                     className={`border-b border-border/30 cursor-pointer transition-colors ${
                       isSelected
                         ? "bg-accent/8"
-                        : "hover:bg-bg-secondary/50"
+                        : "even:bg-bg-primary/20 hover:bg-bg-secondary/50"
                     }`}
                   >
                     <td className="px-2 py-1.5">

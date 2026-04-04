@@ -127,7 +127,8 @@ export default function PetCalculator({ hiscores }: Props) {
 
   return (
     <div className="max-w-3xl">
-      <h2 className="text-xl font-semibold mb-4">Pet Chance Calculator</h2>
+      <h2 className="text-2xl font-semibold tracking-tight">Pet Chance Calculator</h2>
+      <p className="text-sm text-text-secondary mb-4">Calculate your odds of receiving a pet based on KC or actions completed.</p>
 
       {/* Category filters */}
       <div className="flex flex-wrap gap-1 mb-4">
