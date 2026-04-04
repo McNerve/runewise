@@ -401,9 +401,9 @@ export default function Settings() {
           </p>
           <button
             onClick={resetKeybinds}
-            className="text-xs text-text-secondary/70 hover:text-text-primary transition-colors"
+            className="rounded-lg border border-border bg-bg-secondary px-3 py-1 text-xs text-text-secondary hover:text-text-primary hover:border-accent/40 transition-colors"
           >
-            Reset all
+            Reset to Defaults
           </button>
         </div>
       </SettingsCard>

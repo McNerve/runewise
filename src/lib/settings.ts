@@ -15,31 +15,33 @@ export interface AppSettings {
   ironmanMode: boolean;
 }
 
+// Safe Cmd/Ctrl keybinds — avoids system shortcuts (C/X/V/Z/A/S/Q/W/F/R/N/P/O/H/L)
 export const DEFAULT_KEYBINDS: KeybindMap = {
+  // Player
   overview: "1",
   tracker: "2",
+  // Tools
   "skill-calc": "3",
   "dps-calc": "4",
-  bosses: "5",
-  loot: "6",
-  market: "7",
-  progress: "8",
-  stars: "9",
-  wiki: "0",
-  lookup: "h",
   "dry-calc": "d",
-  "pet-calc": "p",
+  "gear-compare": "g",
+  "money-making": "m",
+  timers: "t",
+  "training-plan": "y",
+  // Bossing
+  bosses: "5",
+  raids: "i",
+  // Market
+  market: "6",
+  loot: "7",
+  // Guides
+  progress: "8",
   slayer: "b",
   "clue-helper": "j",
-  "money-making": "m",
-  news: "n",
-  timers: "t",
-  "xp-table": "y",
-  watchlist: "w",
-  "gear-compare": "g",
-  raids: "i",
-  "training-plan": "l",
+  // Live
   "world-map": "e",
+  news: "9",
+  wiki: "0",
 };
 
 export const DEFAULT_SETTINGS: AppSettings = {
