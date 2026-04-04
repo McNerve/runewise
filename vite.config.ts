@@ -65,14 +65,10 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api\/news/, "/m=news"),
       },
       "/api/stars": {
-        target: "https://public.starminers.site",
+        target: "https://old.07.gg",
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/stars/, ""),
-        headers: {
-          "User-Agent": "RuneWise OSRS Companion",
-          // Public shared API key for Star Miners crowdsource endpoint (not a secret)
-          Authorization: "1E15qy2D4M4G",
-        },
+        headers: { "User-Agent": "runewise - osrs companion app" },
       },
       "/api/maps": {
         target: "https://maps.runescape.wiki",
