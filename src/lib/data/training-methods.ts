@@ -127,11 +127,11 @@ export const TRAINING_METHODS: Record<string, TrainingMethod[]> = {
     { name: "Hydra/high-level slayer", xp: 67, xpPerHour: 45_000, levelReq: 85, intensity: "high", ironmanViable: true },
   ],
   Crafting: [
-    { name: "Gold bracelets", xp: 25, xpPerHour: 60_000, levelReq: 7, itemId: 2357, itemName: "Gold bar", intensity: "low" },
+    { name: "Gold bracelets", xp: 25, xpPerHour: 60_000, levelReq: 7, itemId: 2357, itemName: "Gold bar", intensity: "low", ironmanViable: false },
     { name: "Green d'hide bodies", xp: 186, xpPerHour: 300_000, levelReq: 63, itemId: 1745, itemName: "Green dragon leather", intensity: "low", ironmanViable: false },
     { name: "Blue d'hide bodies", xp: 210, xpPerHour: 340_000, levelReq: 71, itemId: 2505, itemName: "Blue dragon leather", intensity: "low", ironmanViable: false },
     { name: "Black d'hide bodies", xp: 258, xpPerHour: 400_000, levelReq: 77, itemId: 2509, itemName: "Black dragon leather", intensity: "low", ironmanViable: false },
-    { name: "Cutting gems", xp: 85, xpPerHour: 100_000, levelReq: 20, intensity: "low" },
+    { name: "Cutting gems", xp: 85, xpPerHour: 100_000, levelReq: 20, intensity: "low", ironmanViable: false },
     { name: "Battlestaves", xp: 137.5, xpPerHour: 230_000, levelReq: 55, itemId: 1391, itemName: "Battlestaff", intensity: "low", ironmanViable: true },
     { name: "Unpowered orbs", xp: 52.5, xpPerHour: 90_000, levelReq: 46, itemId: 567, itemName: "Unpowered orb", intensity: "low", ironmanViable: true },
     { name: "Glassblowing (orbs)", xp: 52.5, xpPerHour: 160_000, levelReq: 46, itemId: 1779, itemName: "Molten glass", intensity: "medium", ironmanViable: true },

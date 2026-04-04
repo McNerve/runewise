@@ -103,8 +103,7 @@ export default function SkillCalculator({ hiscores }: Props) {
 
   const targetXp = xpForLevel(targetLevel);
   const xpNeeded = Math.max(0, targetXp - currentXp);
-  const allMethods = (TRAINING_METHODS[selectedSkill] ?? [])
-    .filter((m) => !settings.ironmanMode || m.ironmanViable !== false);
+  const allMethods = TRAINING_METHODS[selectedSkill] ?? [];
   const methods = intensityFilter === "All"
     ? allMethods
     : allMethods.filter((m) => m.intensity?.toLowerCase() === intensityFilter.toLowerCase());
@@ -348,7 +347,7 @@ export default function SkillCalculator({ hiscores }: Props) {
                     return (
                       <tr
                         key={method.name}
-                        className={`border-b border-border/50 hover:bg-bg-tertiary transition-colors ${!meetsLevel ? "opacity-40" : ""}`}
+                        className={`border-b border-border/50 hover:bg-bg-tertiary transition-colors ${!meetsLevel ? "opacity-40" : ""} ${settings.ironmanMode && method.ironmanViable === false ? "opacity-30" : ""}`}
                       >
                         <td className="px-4 py-1.5 font-medium">
                           <span className="flex items-center gap-2">
@@ -359,6 +358,9 @@ export default function SkillCalculator({ hiscores }: Props) {
                               onError={(e) => { e.currentTarget.style.display = "none"; }}
                             />
                             {method.name}
+                            {settings.ironmanMode && method.ironmanViable === false && (
+                              <span className="text-[8px] text-warning/60 border border-warning/20 rounded px-1 py-0.5">GE</span>
+                            )}
                           </span>
                           {method.intensity && (
                             <span className={`ml-1.5 px-1 py-0.5 rounded text-[9px] font-normal ${
