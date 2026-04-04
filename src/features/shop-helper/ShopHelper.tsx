@@ -233,7 +233,7 @@ export default function ShopHelper() {
                   <img
                     src={shopImage}
                     alt={selectedShop.name}
-                    className="w-full h-44 object-contain bg-bg-tertiary/30 border-b border-border/30"
+                    className="w-full h-40 object-contain bg-bg-tertiary/30 border-b border-border/30"
                   />
                 )}
                 <div className="p-4">
@@ -263,14 +263,24 @@ export default function ShopHelper() {
                       )}
                     </div>
                   </div>
-                  <a
-                    href={`https://oldschool.runescape.wiki/w/${encodeURIComponent(selectedShop.name.replace(/ /g, "_"))}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="shrink-0 rounded-lg border border-border bg-bg-primary/60 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:border-accent/40 transition-colors"
-                  >
-                    Wiki
-                  </a>
+                  <div className="flex gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => navigate("wiki", { page: selectedShop.name })}
+                      className="rounded-lg border border-accent/25 bg-accent/10 px-2.5 py-1.5 text-xs font-medium text-accent hover:border-accent/45 transition-colors"
+                    >
+                      Open in Wiki
+                    </button>
+                    {selectedShop.location && (
+                      <button
+                        type="button"
+                        onClick={() => navigate("wiki", { page: selectedShop.location! })}
+                        className="rounded-lg border border-border bg-bg-primary/60 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:border-accent/40 transition-colors"
+                      >
+                        View Location
+                      </button>
+                    )}
+                  </div>
                 </div>
                 </div>
               </div>
