@@ -19,6 +19,7 @@ import { useNavigation } from "../../lib/NavigationContext";
 import WikiImage from "../../components/WikiImage";
 import { Skeleton, TableSkeleton } from "../../components/Skeleton";
 import EmptyState from "../../components/EmptyState";
+import ItemTooltip from "../../components/ItemTooltip";
 import {
   PERIODS,
   PERIOD_TIMESTEP,
@@ -741,7 +742,7 @@ export default function Market({
                             fallback={item.name[0]}
                           />
                           <div>
-                            <div className="font-medium">{item.name}</div>
+                            <ItemTooltip itemName={item.name}><div className="font-medium cursor-default">{item.name}</div></ItemTooltip>
                             {item.members && (
                               <span className="text-[10px] text-warning">P2P</span>
                             )}

@@ -5,6 +5,7 @@ import { formatGp } from "../../lib/format";
 import { itemIcon, skillIcon } from "../../lib/sprites";
 import ErrorState from "../../components/ErrorState";
 import { useNavigation } from "../../lib/NavigationContext";
+import ItemTooltip from "../../components/ItemTooltip";
 
 function getItemPrice(
   name: string,
@@ -269,13 +270,15 @@ export default function ProductionCalc() {
                       className="w-4 h-4 shrink-0"
                       onError={(e) => { e.currentTarget.style.display = "none"; }}
                     />
-                    <button
-                      type="button"
-                      onClick={() => navigate("market", { query: mat.name })}
-                      className="text-sm flex-1 text-left text-text-primary hover:text-accent transition-colors"
-                    >
-                      {mat.name}
-                    </button>
+                    <ItemTooltip itemName={mat.name}>
+                      <button
+                        type="button"
+                        onClick={() => navigate("market", { query: mat.name })}
+                        className="text-sm flex-1 text-left text-text-primary hover:text-accent transition-colors"
+                      >
+                        {mat.name}
+                      </button>
+                    </ItemTooltip>
                     <span className="text-xs text-text-secondary tabular-nums">
                       x{mat.quantity}
                     </span>

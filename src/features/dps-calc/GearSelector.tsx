@@ -6,6 +6,7 @@ import {
   type EquipmentSlot,
 } from "../../lib/api/equipment";
 import { itemIcon } from "../../lib/sprites";
+import ItemTooltip from "../../components/ItemTooltip";
 
 interface Props {
   slot: EquipmentSlot | "2h";
@@ -97,12 +98,14 @@ export default function GearSelector({ slot, onSelect, onClose }: Props) {
                     }}
                   />
                   <div className="flex-1 text-left min-w-0">
-                    <div className="text-sm truncate">
-                      {item.name}
-                      {item.version && (
-                        <span className="text-text-secondary/50 ml-1 text-xs">({item.version})</span>
-                      )}
-                    </div>
+                    <ItemTooltip itemName={item.name}>
+                      <div className="text-sm truncate cursor-default">
+                        {item.name}
+                        {item.version && (
+                          <span className="text-text-secondary/50 ml-1 text-xs">({item.version})</span>
+                        )}
+                      </div>
+                    </ItemTooltip>
                     <div className="text-[10px] text-text-secondary/60 tabular-nums">
                       {item.attackStab !== 0 && `Stab ${item.attackStab > 0 ? "+" : ""}${item.attackStab} `}
                       {item.attackSlash !== 0 && `Slash ${item.attackSlash > 0 ? "+" : ""}${item.attackSlash} `}
