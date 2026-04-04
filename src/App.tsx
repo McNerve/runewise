@@ -1,4 +1,4 @@
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import Sidebar from "./components/Sidebar";
@@ -18,8 +18,17 @@ import { getFeatureAccent } from "./lib/featureAccent";
 function AppContent() {
   const { view, navigate } = useNavigation();
   const hiscores = useHiscores();
+  const { settings, update: updateSettings } = useSettings();
   useKeyboardNav(navigate);
   const renderView = VIEW_RENDERERS[view];
+
+  // Auto-toggle ironman mode when an ironman account is detected
+  useEffect(() => {
+    const isIronman = hiscores.ironmanType !== "none";
+    if (isIronman !== settings.ironmanMode) {
+      updateSettings({ ironmanMode: isIronman });
+    }
+  }, [hiscores.ironmanType]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <>
