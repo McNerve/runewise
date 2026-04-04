@@ -4,6 +4,8 @@ export interface SlayerTask {
   weight: number;
   slayerLevel: number;
   combatLevel: number;
+  /** Name of the reward unlock required to receive this task (if any) */
+  requiredUnlock?: string;
 }
 
 export interface SlayerMaster {
@@ -419,3 +421,26 @@ export const SLAYER_MASTERS: SlayerMaster[] = [
     ],
   },
 ];
+
+// Apply requiredUnlock to tasks that need a reward purchase
+const TASK_UNLOCK_MAP: Record<string, string> = {
+  "Bosses": "Like a Boss",
+  "Wilderness bosses": "Like a Boss",
+  "Red dragons": "Seeing Red",
+  "Aviansies": "Watch the Birdie",
+  "Basilisks": "Basilocked",
+  "Vampyres": "Actual Vampyre Slayer",
+  "Lizardmen": "Reptile Got Ripped",
+  "Warped creatures": "Warped Reality",
+  "TzHaar": "Hot Stuff",
+  "Aquanites": "Lured In",
+  "Gryphons": "Wings Spread",
+};
+
+for (const master of SLAYER_MASTERS) {
+  if (master.name === "Turael") continue;
+  for (const task of master.tasks) {
+    const unlock = TASK_UNLOCK_MAP[task.monster];
+    if (unlock) task.requiredUnlock = unlock;
+  }
+}

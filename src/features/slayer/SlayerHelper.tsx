@@ -199,23 +199,27 @@ export default function SlayerHelper() {
   const totalWeight = useMemo(() => {
     return selectedMaster.tasks
       .filter((t) => !blockedTasks.has(t.monster))
+      .filter((t) => !t.requiredUnlock || purchasedRewards.has(t.requiredUnlock))
       .reduce((sum, t) => sum + t.weight, 0);
-  }, [selectedMaster, blockedTasks]);
+  }, [selectedMaster, blockedTasks, purchasedRewards]);
 
   const tasksWithProbability = useMemo(() => {
     const tasks = selectedMaster.tasks
-      .map((task) => ({
-        ...task,
-        blocked: blockedTasks.has(task.monster),
-        probability: blockedTasks.has(task.monster)
-          ? 0
-          : (task.weight / totalWeight) * 100,
-      }));
+      .map((task) => {
+        const blocked = blockedTasks.has(task.monster);
+        const locked = Boolean(task.requiredUnlock && !purchasedRewards.has(task.requiredUnlock));
+        return {
+          ...task,
+          blocked,
+          locked,
+          probability: blocked || locked
+            ? 0
+            : (task.weight / totalWeight) * 100,
+        };
+      });
 
-    // Filter
-    const filtered = showBlocked ? tasks : tasks.filter((t) => !t.blocked);
+    const filtered = showBlocked ? tasks : tasks.filter((t) => !t.blocked && !t.locked);
 
-    // Sort
     return filtered.sort((a, b) => {
       let cmp = 0;
       switch (sortKey) {
@@ -226,7 +230,7 @@ export default function SlayerHelper() {
       }
       return sortAsc ? cmp : -cmp;
     });
-  }, [selectedMaster, blockedTasks, totalWeight, sortKey, sortAsc, showBlocked]);
+  }, [selectedMaster, blockedTasks, purchasedRewards, totalWeight, sortKey, sortAsc, showBlocked]);
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) setSortAsc(!sortAsc);
@@ -461,9 +465,11 @@ export default function SlayerHelper() {
                   <tr
                     key={task.monster}
                     className={`border-b border-border/30 transition-colors ${
-                      task.blocked
-                        ? "opacity-35 bg-danger/3"
-                        : "even:bg-bg-primary/25 hover:bg-bg-secondary/40"
+                      task.locked
+                        ? "opacity-30 bg-warning/3"
+                        : task.blocked
+                          ? "opacity-35 bg-danger/3"
+                          : "even:bg-bg-primary/25 hover:bg-bg-secondary/40"
                     }`}
                   >
                     <td className="px-3 py-2 text-center">
@@ -490,9 +496,13 @@ export default function SlayerHelper() {
                         <button
                           onClick={() => navigate("loot", { monster: task.monster, tab: "drops" })}
                           className="font-medium hover:text-accent transition-colors text-left"
+                          title={task.locked ? `Requires: ${task.requiredUnlock}` : undefined}
                         >
                           {task.monster}
                         </button>
+                        {task.locked && (
+                          <span className="text-[9px] text-warning/60">Unlock: {task.requiredUnlock}</span>
+                        )}
                       </div>
                     </td>
                     <td className="px-4 py-2 text-right text-text-secondary tabular-nums">
@@ -507,7 +517,7 @@ export default function SlayerHelper() {
                       task.probability >= 3 ? "text-accent" :
                       "text-text-secondary"
                     }`}>
-                      {task.blocked ? "—" : `${task.probability.toFixed(1)}%`}
+                      {task.locked ? "Locked" : task.blocked ? "—" : `${task.probability.toFixed(1)}%`}
                     </td>
                     <td className="px-4 py-2 text-right text-text-secondary tabular-nums">
                       {task.slayerLevel > 1 ? task.slayerLevel : "—"}
