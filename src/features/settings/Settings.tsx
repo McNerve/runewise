@@ -511,6 +511,8 @@ export default function Settings() {
           {[
             { label: "OSRS Wiki", href: "https://oldschool.runescape.wiki/", license: "CC BY-NC-SA 3.0" },
             { label: "Wise Old Man", href: "https://wiseoldman.net/", license: "MIT" },
+            { label: "Temple OSRS", href: "https://templeosrs.com/", license: "Temple OSRS" },
+            { label: "Star Miners", href: "https://starminers.site/", license: "Star Miners" },
             { label: "OSRS Hiscores", href: "https://secure.runescape.com/m=hiscore_oldschool/", license: "Jagex" },
           ].map(({ label, href, license }) => (
             <div key={label} className="flex justify-between gap-3 py-1">
