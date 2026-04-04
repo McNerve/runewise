@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { fetchAllShops, searchShops, fetchShopImage, type Shop } from "../../lib/api/shops";
+import { fetchAllShops, searchShops, type Shop } from "../../lib/api/shops";
 import { fetchLatestPrices, fetchMapping, type ItemPrice } from "../../lib/api/ge";
 import { useDebounce } from "../../hooks/useDebounce";
 import { encodeIconFilename, WIKI_IMG, itemIcon } from "../../lib/sprites";
@@ -38,7 +38,6 @@ export default function ShopHelper() {
   const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
   const [nameToId, setNameToId] = useState<Map<string, number>>(new Map());
   const [iconMap, setIconMap] = useState<Map<string, string>>(new Map());
-  const [shopImage, setShopImage] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([fetchAllShops(), fetchLatestPrices(), fetchMapping()])
@@ -57,14 +56,6 @@ export default function ShopHelper() {
       .finally(() => setLoading(false));
   }, []);
 
-  useEffect(() => {
-    if (!selectedShop) return;
-    let cancelled = false;
-    fetchShopImage(selectedShop.name).then((img) => {
-      if (!cancelled) setShopImage(img);
-    });
-    return () => { cancelled = true; };
-  }, [selectedShop]);
 
   const filtered = useMemo(() => {
     let results = searchShops(shops, debouncedQuery);
@@ -191,7 +182,7 @@ export default function ShopHelper() {
               {filtered.slice(0, 150).map((shop) => (
                 <button
                   key={shop.name}
-                  onClick={() => { setSelectedShop(shop); setShopImage(null); setSortKey("name"); setSortAsc(true); }}
+                  onClick={() => { setSelectedShop(shop); setSortKey("name"); setSortAsc(true); }}
                   className={`w-full text-left rounded-lg px-3 py-2 text-sm transition-colors ${
                     selectedShop?.name === shop.name
                       ? "bg-accent/10 ring-1 ring-accent/30"
@@ -228,17 +219,7 @@ export default function ShopHelper() {
           {selectedShop ? (
             <div className="space-y-4">
               {/* Shop header card */}
-              <div className="rounded-xl border border-border/40 bg-bg-primary/20 overflow-hidden">
-                {shopImage && (
-                  <div className="flex items-center justify-center h-36 bg-bg-tertiary/20 border-b border-border/30">
-                    <img
-                      src={shopImage}
-                      alt={selectedShop.name}
-                      className="max-h-full max-w-full object-contain"
-                    />
-                  </div>
-                )}
-                <div className="p-4">
+              <div className="rounded-xl border border-border/40 bg-bg-primary/20 p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <h3 className="text-lg font-semibold">{selectedShop.name}</h3>
@@ -284,8 +265,41 @@ export default function ShopHelper() {
                     )}
                   </div>
                 </div>
-                </div>
               </div>
+
+              {/* Best deals */}
+              {(() => {
+                const deals = sortedItems
+                  .map((item) => {
+                    const ge = getGEPrice(item.name, prices, nameToId);
+                    const saving = item.sellPrice != null && ge != null ? ge - item.sellPrice : null;
+                    return { ...item, ge, saving };
+                  })
+                  .filter((d) => d.saving != null && d.saving > 0)
+                  .sort((a, b) => (b.saving ?? 0) - (a.saving ?? 0))
+                  .slice(0, 3);
+                if (deals.length === 0) return null;
+                return (
+                  <div className="grid grid-cols-3 gap-2">
+                    {deals.map((d) => (
+                      <div key={d.name} className="rounded-lg border border-border/40 bg-bg-primary/30 px-3 py-2 text-center">
+                        <WikiImage
+                          src={(() => {
+                            const geIcon = iconMap.get(d.name.toLowerCase());
+                            if (geIcon) return `${WIKI_IMG}/${encodeIconFilename(geIcon)}`;
+                            return itemIcon(d.name);
+                          })()}
+                          alt={d.name}
+                          className="w-6 h-6 mx-auto mb-1"
+                          fallback={d.name[0]}
+                        />
+                        <div className="text-xs font-medium truncate">{d.name}</div>
+                        <div className="text-[10px] text-success">Save {formatGp(d.saving!)}</div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
 
               {/* Item table */}
               <div className="rounded-xl border border-border/40 overflow-hidden">
