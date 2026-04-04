@@ -114,7 +114,7 @@ export default function Sidebar({ currentView, onNavigate }: SidebarProps) {
                     {!collapsed && (
                       <span className="min-w-0 flex-1 truncate">{item.navLabel}</span>
                     )}
-                    {!collapsed && viewKeys[item.id] && (
+                    {!collapsed && settings.keybindsEnabled && viewKeys[item.id] && (
                       <span className="text-[10px] text-text-secondary/45 tabular-nums">{viewKeys[item.id]}</span>
                     )}
                   </button>
