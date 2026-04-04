@@ -323,6 +323,7 @@ export default function DpsCalculator({ hiscores }: Props) {
   const activeSpellBase = useMemo(() => {
     if (combatStyle !== "magic" || !selectedSpell) return undefined;
     if (selectedSpell.id === "magic_dart") return magicDartBaseMaxHit(magicLevel);
+    if (selectedSpell.levelScaling) return selectedSpell.levelScaling(magicLevel);
     return selectedSpell.baseMaxHit;
   }, [combatStyle, selectedSpell, magicLevel]);
 
