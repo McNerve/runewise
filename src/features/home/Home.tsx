@@ -86,7 +86,7 @@ function getCombatLevel(data: HiscoreData): number {
 }
 
 function useWatchlistSnapshot() {
-  const [items] = useState<WatchItem[]>(() => loadJSON<WatchItem[]>("runewise_watchlist") ?? []);
+  const [items] = useState<WatchItem[]>(() => loadJSON<WatchItem[]>("runewise_watchlist", []));
   const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
 
   useEffect(() => {
