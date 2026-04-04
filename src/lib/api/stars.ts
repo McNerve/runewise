@@ -7,6 +7,7 @@ const STARS_API = isTauri
   : "/api/stars/crowdsource";
 
 const STARS_TTL = 30 * 1000; // 30 seconds - stars change frequently
+// Public shared API key for Star Miners crowdsource endpoint (not a secret)
 const API_KEY = "1E15qy2D4M4G";
 
 export interface LiveStar {

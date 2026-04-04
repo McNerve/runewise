@@ -5,17 +5,14 @@ import { formatGp } from "../lib/format";
 import { encodeIconFilename, WIKI_IMG } from "../lib/sprites";
 
 let mappingCache: Map<string, ItemMapping> | null = null;
-let pricesCache: Record<string, ItemPrice> | null = null;
 
 async function ensureData() {
   if (!mappingCache) {
     const items = await fetchMapping();
     mappingCache = new Map(items.map((i) => [i.name.toLowerCase(), i]));
   }
-  if (!pricesCache) {
-    pricesCache = await fetchLatestPrices();
-  }
-  return { mapping: mappingCache, prices: pricesCache };
+  const prices = await fetchLatestPrices();
+  return { mapping: mappingCache, prices };
 }
 
 interface Props {

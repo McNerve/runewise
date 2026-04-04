@@ -133,8 +133,12 @@ function cleanSectionHtml(
     const json = (div.textContent ?? "").trim();
     if (!json) return;
     const wrapper = document.createElement("div");
-    wrapper.setAttribute("style", "margin:0.5rem 0;");
-    wrapper.innerHTML = `<button class="tile-marker-copy" data-tiles="${json.replace(/"/g, "&quot;")}" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.4rem 0.75rem;border-radius:0.5rem;border:1px solid #2e3345;background:rgba(59,130,246,0.1);color:#3b82f6;font-size:0.75rem;font-weight:500;cursor:pointer;">📋 Copy Tile Markers for RuneLite</button>`;
+    wrapper.className = "tile-marker-wrapper";
+    const btn = document.createElement("button");
+    btn.className = "tile-marker-copy";
+    btn.setAttribute("data-tiles", json);
+    btn.textContent = "📋 Copy Tile Markers for RuneLite";
+    wrapper.appendChild(btn);
     div.replaceWith(wrapper);
   });
 

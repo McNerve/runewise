@@ -134,6 +134,7 @@ function toWikiEquipment(raw: RawBucketEquipment): WikiEquipment {
 }
 
 let equipmentPromise: Promise<WikiEquipment[]> | null = null;
+let dedupedCache: WikiEquipment[] | null = null;
 
 export async function fetchAllEquipment(): Promise<WikiEquipment[]> {
   const cached = getCached<WikiEquipment[]>(CACHE_KEY, CACHE_TTL, {
@@ -149,6 +150,7 @@ export async function fetchAllEquipment(): Promise<WikiEquipment[]> {
       .then((raw) => {
         const equipment = raw.map(toWikiEquipment);
         if (equipment.length > 0) setCache(CACHE_KEY, equipment, { persist: true });
+        dedupedCache = null;
         equipmentPromise = null;
         return equipment;
       })
@@ -197,7 +199,10 @@ export function searchEquipment(
   slot?: EquipmentSlot,
   limit = 30
 ): WikiEquipment[] {
-  let results = dedupeEquipment(equipment);
+  if (!dedupedCache || dedupedCache.length === 0) {
+    dedupedCache = dedupeEquipment(equipment);
+  }
+  let results = dedupedCache;
 
   if (slot) {
     results = results.filter((e) => e.slot === slot);

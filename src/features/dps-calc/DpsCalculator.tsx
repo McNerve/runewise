@@ -174,7 +174,7 @@ export default function DpsCalculator({ hiscores }: Props) {
   // Sync hiscores stats
   useEffect(() => {
     if (hiscores) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- sync from external hiscores data
+       
       setAttackLevel(getSkillLevel(hiscores, "Attack"));
       setStrengthLevel(getSkillLevel(hiscores, "Strength"));
       setRangedLevel(getSkillLevel(hiscores, "Ranged"));
@@ -188,7 +188,7 @@ export default function DpsCalculator({ hiscores }: Props) {
     const match = wikiMonsters.find(
       (m) => m.name.toLowerCase() === params.monster?.toLowerCase()
     );
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync target from URL params
+     
     if (match) setSelectedMonster(match);
     else {
       // Fallback to old static monsters
@@ -327,7 +327,7 @@ export default function DpsCalculator({ hiscores }: Props) {
     return selectedSpell.baseMaxHit;
   }, [combatStyle, selectedSpell, magicLevel]);
 
-  /* eslint-disable react-hooks/preserve-manual-memoization */
+   
   const result = useMemo(
     () =>
       calculateDps({
@@ -371,7 +371,7 @@ export default function DpsCalculator({ hiscores }: Props) {
       activeSpellBase,
     ]
   );
-  /* eslint-enable react-hooks/preserve-manual-memoization */
+   
 
   const stanceAttackBonus = stance.attackBonus;
   const stanceStrengthBonus = stance.strengthBonus;
@@ -507,7 +507,7 @@ export default function DpsCalculator({ hiscores }: Props) {
     });
   }, [selectedSpec, attackLevel, strengthLevel, rangedLevel, magicLevel, effectiveAttackBonus, effectiveStrengthBonus, prayerAttackMult, prayerStrengthMult, stanceAttackBonus, stanceStrengthBonus, effectiveAttackSpeed, combatStyle, targetDefLevel, targetDefBonus, targetHp, selectedMonster?.magicLevel, modifierList, defReductions]);
 
-  const toggleModifier = useCallback((id: string) => { // eslint-disable-line react-hooks/preserve-manual-memoization
+  const toggleModifier = useCallback((id: string) => {  
     setActiveModifiers((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
@@ -519,7 +519,7 @@ export default function DpsCalculator({ hiscores }: Props) {
     });
   }, []);
 
-  const saveLoadout = useCallback(() => { // eslint-disable-line react-hooks/preserve-manual-memoization
+  const saveLoadout = useCallback(() => {  
     const name = loadoutName.trim();
     if (!name) return;
     const loadout: GearLoadout = {
@@ -541,7 +541,7 @@ export default function DpsCalculator({ hiscores }: Props) {
       return next;
     });
     setLoadoutName("");
-    // eslint-disable-next-line react-hooks/preserve-manual-memoization, react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadoutName, combatStyle, stanceIdx, prayerIdx, attackBonus, strengthBonus, attackSpeed, activeModifiers]);
 
   const applyLoadout = useCallback((loadout: GearLoadout) => {

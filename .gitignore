@@ -1,36 +1,45 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+dist-ssr/
+
+# Tauri
+src-tauri/target/
+src-tauri/gen/
+
 # Logs
-logs
 *.log
 npm-debug.log*
 yarn-debug.log*
-yarn-error.log*
 pnpm-debug.log*
-lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
+# Environment / secrets
 *.local
+.env
+.env.*
 
-# Editor directories and files
+# Editor
 .vscode/*
 !.vscode/extensions.json
-.idea
-.DS_Store
+.idea/
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
 
-# Tauri
-src-tauri/target/
-CLAUDE.md
+# OS
+.DS_Store
+Thumbs.db
 
-# Claude Code worktrees
-.claude/worktrees/
+# Claude Code
+.claude/
 
 # iCloud sync duplicates
 * 2.*
 * 2
+
+# Misc
 .superset/

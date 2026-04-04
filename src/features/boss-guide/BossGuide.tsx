@@ -28,6 +28,7 @@ import {
   BOSS_DROP_TABLES,
   type BossDropTable,
 } from "../../lib/data/boss-drops";
+import { openExternal } from "../../lib/openExternal";
 import { formatGp } from "../../lib/format";
 import SourceAttribution from "../../components/SourceAttribution";
 import { useNavigation } from "../../lib/NavigationContext";
@@ -748,7 +749,7 @@ export default function BossGuide({ hiscores }: Props) {
             <EmptyState
               title="No guide content available"
               description="No structured strategy sections were found for this boss. Try the wiki page for the full source."
-              action={{ label: "Open Wiki", onClick: () => window.open(`https://oldschool.runescape.wiki/w/${selectedBoss.wikiPage}`, "_blank") }}
+              action={{ label: "Open Wiki", onClick: () => openExternal(`https://oldschool.runescape.wiki/w/${selectedBoss.wikiPage}`) }}
             />
           ) : null}
 

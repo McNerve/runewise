@@ -231,6 +231,7 @@ function extractArticleHtml(html: string): string {
 async function fetchArticleContent(url: string): Promise<string> {
   const fetchUrl = resolveArticleUrl(url);
   const res = await apiFetch(fetchUrl);
+  if (!res.ok) throw new Error(`Failed to load article (${res.status})`);
   const html = await res.text();
   return extractArticleHtml(html);
 }

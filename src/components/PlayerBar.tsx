@@ -24,7 +24,7 @@ export default function PlayerBar({
 
   useEffect(() => {
     setInput(rsn); // eslint-disable-line react-hooks/set-state-in-effect
-    if (rsn) setEditing(false); // eslint-disable-line react-hooks/set-state-in-effect
+    if (rsn) setEditing(false);  
   }, [rsn]);
 
   const handleSubmit = (e: React.FormEvent) => {
