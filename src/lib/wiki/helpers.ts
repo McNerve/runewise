@@ -45,7 +45,6 @@ const SANITIZE_ATTRS = [
   "href",
   "target",
   "rel",
-  "style",
   "class",
   "title",
   "data-wiki-page",

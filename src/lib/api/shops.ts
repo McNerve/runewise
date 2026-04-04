@@ -1,5 +1,6 @@
 import { bucketQueryAll } from "./bucket";
 import { getCached, setCache } from "./cache";
+import { apiFetch } from "./fetch";
 import { isTauri } from "../env";
 
 const CACHE_KEY = "wiki-shops:v1";
@@ -156,7 +157,8 @@ export async function fetchShopImage(shopName: string): Promise<string | null> {
     : `/api/wiki-content?action=query&titles=${encodeURIComponent(wikiPage)}&prop=pageimages&format=json&pithumbsize=600`;
 
   try {
-    const res = await fetch(url);
+    const res = await apiFetch(url);
+    if (!res.ok) { imageCache.set(shopName, null); return null; }
     const json = await res.json();
     const pages = json?.query?.pages ?? {};
     const page = Object.values(pages)[0] as Record<string, unknown> | undefined;

@@ -70,6 +70,7 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api\/stars/, ""),
         headers: {
           "User-Agent": "RuneWise OSRS Companion",
+          // Public shared API key for Star Miners crowdsource endpoint (not a secret)
           Authorization: "1E15qy2D4M4G",
         },
       },

@@ -458,8 +458,8 @@ export default function CollectionLog({ rsn }: Props) {
 
     let cancelled = false;
     setTempleData(null); // eslint-disable-line react-hooks/set-state-in-effect
-    setTempleLoading(true); // eslint-disable-line react-hooks/set-state-in-effect
-    setTempleError(null); // eslint-disable-line react-hooks/set-state-in-effect
+    setTempleLoading(true);  
+    setTempleError(null);  
     setTempleSynced(null);
 
     (async () => {

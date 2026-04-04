@@ -239,7 +239,7 @@ export default function FarmTimers() {
   useEffect(() => {
     if (!hasGrowingTimers) return;
     const interval = setInterval(() => {
-      setNow(Date.now());
+      if (document.visibilityState === "visible") setNow(Date.now());
     }, 1000);
     return () => clearInterval(interval);
   }, [hasGrowingTimers]);

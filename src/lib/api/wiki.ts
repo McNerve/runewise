@@ -32,6 +32,7 @@ export async function searchMonsters(query: string): Promise<string[]> {
   // Search wiki pages within the Monsters category
   const url = `${WIKI_API}?action=query&list=search&srsearch=${encodeURIComponent(query)}+incategory:Monsters&srnamespace=0&srlimit=15&format=json`;
   const res = await apiFetch(url);
+  if (!res.ok) return [];
   const data = await res.json();
   const searchResults = data?.query?.search ?? [];
   const results: string[] = (searchResults as { title: string }[])
@@ -59,6 +60,7 @@ export async function fetchDropTable(
   // Find the drops section
   const sectionsUrl = `${WIKI_API}?action=parse&page=${encodeURIComponent(monsterName)}&prop=sections&format=json`;
   const sectionsRes = await apiFetch(sectionsUrl);
+  if (!sectionsRes.ok) return { categories: [] };
   const sectionsData = await sectionsRes.json();
 
   if (!sectionsData.parse) {
@@ -82,6 +84,7 @@ export async function fetchDropTable(
   // Fetch the drops section HTML
   const dropsUrl = `${WIKI_API}?action=parse&page=${encodeURIComponent(monsterName)}&prop=text&section=${dropsSection.number}&format=json`;
   const dropsRes = await apiFetch(dropsUrl);
+  if (!dropsRes.ok) return { categories: [] };
   const dropsData = await dropsRes.json();
   const html = dropsData.parse.text["*"];
 

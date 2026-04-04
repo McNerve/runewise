@@ -14,6 +14,8 @@ export function useAsyncData<T>(
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
+    setError(null);
 
     fetcherRef.current()
       .then((result) => {
