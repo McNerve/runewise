@@ -45,13 +45,13 @@ function getAccountType(data: HiscoreData | null, ironmanType?: IronmanType): { 
   const att = getCb("Attack"); const str = getCb("Strength"); const def = getCb("Defence");
   const ran = getCb("Ranged"); const mag = getCb("Magic"); const pray = getCb("Prayer");
   if (att <= 1 && str <= 1 && def <= 1 && ran <= 1 && mag <= 1 && pray <= 1) {
-    return { label: "Skiller", color: "text-success" };
+    return { label: "Skiller", color: "text-success", icon: "Skills_icon.png" };
   }
   // Detect 1 Defence pure
   if (def === 1 && (att > 60 || str > 60 || ran > 60)) {
-    return { label: "Pure", color: "text-warning" };
+    return { label: "Pure", color: "text-warning", icon: "Attack_icon.png" };
   }
-  return { label: "Main", color: "text-text-secondary" };
+  return { label: "Main", color: "text-[#d4a017]", icon: "Combat_icon.png" };
 }
 
 const TOOL_GRID: Array<{ id: View; label: string }> = [
@@ -131,18 +131,6 @@ export default function Home({ hiscores }: HomeProps) {
               : "Your OSRS companion. Set a RSN to get started."}
           </p>
         </div>
-        {!savedRsn && (
-          <button
-            type="button"
-            onClick={() => {
-              const input = document.querySelector<HTMLInputElement>('.topbar-shell input[type="text"]');
-              if (input) { input.focus(); input.select(); }
-            }}
-            className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover transition-colors"
-          >
-            Set Your RSN
-          </button>
-        )}
         {settings.ironmanMode && (
           <span className="text-[10px] text-warning border border-warning/20 bg-warning/5 rounded-full px-2.5 py-0.5">
             Ironman Mode
@@ -204,21 +192,16 @@ export default function Home({ hiscores }: HomeProps) {
               className="rounded-xl border border-border/40 bg-bg-primary/20 p-4"
             >
               <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center text-lg font-bold text-accent">
-                  {savedRsn[0].toUpperCase()}
+                <div className="w-12 h-12 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center">
+                  <img
+                    src={`${WIKI_IMG}/${accountType.icon ?? "Combat_icon.png"}`}
+                    alt={accountType.label}
+                    className="w-7 h-7"
+                    onError={(e) => { e.currentTarget.style.visibility = "hidden"; }}
+                  />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg font-semibold">{savedRsn}</span>
-                    {accountType.label && (
-                      <span className={`inline-flex items-center gap-1 text-[10px] border rounded-full px-2 py-0.5 ${accountType.color}`} style={{ borderColor: "currentColor", opacity: 0.7 }}>
-                        {accountType.icon && (
-                          <img src={`${WIKI_IMG}/${accountType.icon}`} alt="" className="w-3 h-3" onError={(e) => { e.currentTarget.style.display = "none"; }} />
-                        )}
-                        {accountType.label}
-                      </span>
-                    )}
-                  </div>
+                  <span className="text-lg font-semibold">{savedRsn}</span>
                   <div className="flex items-center gap-3 text-xs text-text-secondary">
                     <span>Combat {combatLevel}</span>
                     {questPoints != null && questPoints > 0 && <span>{questPoints} QP</span>}

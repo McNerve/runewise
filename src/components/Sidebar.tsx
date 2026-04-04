@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 
 declare const __APP_VERSION__: string;
 import * as Tooltip from "@radix-ui/react-tooltip";
@@ -17,7 +17,7 @@ interface SidebarProps {
   onNavigate: (view: View) => void;
 }
 
-export default function Sidebar({ currentView, onNavigate }: SidebarProps) {
+const Sidebar = memo(function Sidebar({ currentView, onNavigate }: SidebarProps) {
   const { settings, update } = useSettings();
   const collapsed = settings.sidebar.collapsed;
 
@@ -227,4 +227,6 @@ export default function Sidebar({ currentView, onNavigate }: SidebarProps) {
     </aside>
     </Tooltip.Provider>
   );
-}
+});
+
+export default Sidebar;

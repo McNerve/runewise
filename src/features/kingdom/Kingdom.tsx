@@ -1,7 +1,9 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { fetchLatestPrices, fetchMapping, type ItemPrice } from "../../lib/api/ge";
+import type { ItemPrice } from "../../lib/api/ge";
+import { useGEData } from "../../hooks/useGEData";
 import { formatGp } from "../../lib/format";
 import { itemIcon } from "../../lib/sprites";
+import { weightedHerbPrice } from "../../lib/data/kingdom";
 
 interface Resource {
   name: string;
@@ -25,33 +27,22 @@ const DAILY_UPKEEP = 75_000;
 const MAX_WORKERS = 10;
 
 function getPrice(
+  name: string,
   itemId: number,
   prices: Record<string, ItemPrice>,
 ): number | null {
+  if (name === "Herbs") return weightedHerbPrice(prices);
   const p = prices[String(itemId)];
   return p?.high ?? p?.low ?? null;
 }
 
 export default function Kingdom() {
-  const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
-  const [loading, setLoading] = useState(true);
+  const { prices, loading, fetchIfNeeded } = useGEData();
   const [resources, setResources] = useState<Resource[]>(
     DEFAULT_RESOURCES.map((r) => ({ ...r, workers: 0 })),
   );
 
-  useEffect(() => {
-    let cancelled = false;
-    Promise.all([fetchLatestPrices(), fetchMapping()])
-      .then(([p]) => {
-        if (cancelled) return;
-        setPrices(p);
-        setLoading(false);
-      })
-      .catch(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => { cancelled = true; };
-  }, []);
+  useEffect(() => { fetchIfNeeded(); }, [fetchIfNeeded]);
 
   const [isOptimal, setIsOptimal] = useState(false);
   const totalWorkers = resources.reduce((sum, r) => sum + r.workers, 0);
@@ -71,7 +62,7 @@ export default function Kingdom() {
 
   const rows = useMemo(() => {
     return resources.map((r) => {
-      const price = getPrice(r.itemId, prices);
+      const price = getPrice(r.name, r.itemId, prices);
       const dailyOutput = Math.floor(r.outputPer10 * (r.workers / MAX_WORKERS));
       const dailyGp = price != null ? dailyOutput * price : null;
       return { ...r, price, dailyOutput, dailyGp };
@@ -87,7 +78,7 @@ export default function Kingdom() {
 
   const optimize = useCallback(() => {
     const gpPerWorker = DEFAULT_RESOURCES.map((r) => {
-      const price = getPrice(r.itemId, prices);
+      const price = getPrice(r.name, r.itemId, prices);
       if (price == null) return 0;
       return (r.outputPer10 / MAX_WORKERS) * price;
     });

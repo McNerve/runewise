@@ -5,6 +5,7 @@ import { isTauri } from "../../lib/env";
 import EmptyState from "../../components/EmptyState";
 import { TableSkeleton, CardSkeleton } from "../../components/Skeleton";
 import { NAV_ICONS } from "../../lib/sprites";
+import { warn } from "../../lib/logger";
 
 interface NewsPost {
   title: string;
@@ -82,7 +83,8 @@ async function fetchMonth(year: number, month: number): Promise<NewsPost[]> {
         status: classifyPost(category, title),
       };
     });
-  } catch {
+  } catch (err: unknown) {
+    warn("News: parse archive HTML", err);
     return [];
   }
 }

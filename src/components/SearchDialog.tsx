@@ -145,6 +145,9 @@ export default function SearchDialog({ onClose }: SearchDialogProps) {
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Search RuneWise"
       className="fixed inset-0 z-50"
       onClick={() => {
         onClose();
@@ -182,7 +185,7 @@ export default function SearchDialog({ onClose }: SearchDialogProps) {
             </kbd>
           </div>
 
-          <div ref={listRef} className="max-h-[50vh] overflow-y-auto">
+          <div ref={listRef} aria-live="polite" className="max-h-[50vh] overflow-y-auto">
             {query.trim() && filtered.length === 0 && (
               <div className="px-4 py-8 text-center text-sm text-text-secondary/50">
                 No results for &ldquo;{query}&rdquo;

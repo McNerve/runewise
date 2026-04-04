@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef, lazy, Suspense } from "react";
+import { useState, useEffect, useRef, useMemo, lazy, Suspense } from "react";
 import { xpForLevel } from "../../lib/formulas/xp";
 import { getSkillXp, type HiscoreData } from "../../lib/api/hiscores";
-import { fetchLatestPrices, fetchMapping, type ItemPrice } from "../../lib/api/ge";
+import { useGEData } from "../../hooks/useGEData";
 import { formatGp } from "../../lib/format";
 import { WIKI_IMG, SKILL_ICONS, itemIcon } from "../../lib/sprites";
 import { useNavigation } from "../../lib/NavigationContext";
@@ -34,28 +34,23 @@ interface Props {
 export default function SkillCalculator({ hiscores }: Props) {
   const { settings } = useSettings();
   const { params, navigate } = useNavigation();
+  const { mapping, prices, fetchIfNeeded } = useGEData();
   const initialSkillTab: SkillTab = params.tab === "plan" ? "plan" : "calculator";
   const [skillTab, setSkillTab] = useState<SkillTab>(initialSkillTab);
   const [selectedSkill, setSelectedSkill] = useState<string>(params.skill ?? "Attack");
   const [currentXp, setCurrentXp] = useState(0);
   const [targetLevel, setTargetLevel] = useState(99);
-  const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
-  const [itemMap, setItemMap] = useState<Map<string, number>>(new Map());
   const [wikiRecipes, setWikiRecipes] = useState<WikiRecipe[]>([]);
   // Remember custom targets per skill
   const customTargets = useRef<Map<string, number>>(new Map());
 
-  useEffect(() => {
-    let cancelled = false;
-    Promise.all([fetchLatestPrices(), fetchMapping()]).then(([p, m]) => {
-      if (cancelled) return;
-      setPrices(p);
-      const nameToId = new Map<string, number>();
-      for (const item of m) nameToId.set(item.name.toLowerCase(), item.id);
-      setItemMap(nameToId);
-    });
-    return () => { cancelled = true; };
-  }, []);
+  useEffect(() => { fetchIfNeeded(); }, [fetchIfNeeded]);
+
+  const itemMap = useMemo(() => {
+    const nameToId = new Map<string, number>();
+    for (const item of mapping) nameToId.set(item.name.toLowerCase(), item.id);
+    return nameToId;
+  }, [mapping]);
 
   const getLevel = (skill: string) =>
     hiscores?.skills.find(

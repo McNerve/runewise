@@ -9,6 +9,7 @@ import {
 import { bossIcon, bossIconSmall } from "../../lib/sprites";
 import { itemIcon } from "../../lib/sprites";
 import type { HiscoreData } from "../../lib/api/hiscores";
+import { warn } from "../../lib/logger";
 import {
   fetchBossGuideDocument,
   type BossGuideDocument,
@@ -352,7 +353,7 @@ export default function BossGuide({ hiscores }: Props) {
             .then((rows) => {
               if (requestId === activeRequest.current) setBucketFallbackDrops(rows);
             })
-            .catch(() => {});
+            .catch((err: unknown) => { warn("BossGuide: fetch bucket drops", err); });
         }
       }
     } finally {

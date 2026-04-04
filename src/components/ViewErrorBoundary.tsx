@@ -28,7 +28,7 @@ export default class ViewErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="mx-auto max-w-md rounded-xl border border-danger/20 bg-danger/5 p-6 text-center mt-8">
+        <div role="alert" className="mx-auto max-w-md rounded-xl border border-danger/20 bg-danger/5 p-6 text-center mt-8">
           <div className="text-sm font-semibold text-danger mb-2">
             {this.props.viewName ?? "This view"} encountered an error
           </div>

@@ -3,6 +3,7 @@ import { useNavigation } from "../../lib/NavigationContext";
 import { WIKI_IMG, skillIcon, bossIconSmall } from "../../lib/sprites";
 import { TableSkeleton } from "../../components/Skeleton";
 import EmptyState from "../../components/EmptyState";
+import { warn } from "../../lib/logger";
 import { timeAgo } from "../../lib/format";
 
 function skillIconUrl(name: string): string {
@@ -259,7 +260,8 @@ export default function XpTracker({ rsn }: Props) {
         setCompetitions(data ?? []);
         setCompetitionsLoaded(true);
       })
-      .catch(() => {
+      .catch((err: unknown) => {
+        warn("XpTracker: fetch competitions", err);
         if (!cancelled) setCompetitionsLoaded(true);
       });
     return () => { cancelled = true; };

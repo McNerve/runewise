@@ -1,12 +1,11 @@
 import { lazy, Suspense, useState, useEffect, useMemo, useCallback } from "react";
 import {
   searchItems,
-  fetchMapping,
-  fetchLatestPrices,
   fetchVolumes,
   type ItemMapping,
   type ItemPrice,
 } from "../../lib/api/ge";
+import { useGEData } from "../../hooks/useGEData";
 import {
   fetchTimeseries,
   type TimeseriesPoint,
@@ -282,6 +281,7 @@ export default function Market({
   const { params, navigate } = useNavigation();
   const { settings } = useSettings();
   const { items: watchlistItems, addItem: addToWatchlist } = useWatchlist();
+  const { mapping: allItems, prices, pricesLoaded, fetchIfNeeded } = useGEData();
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebounce(query, 250);
 
@@ -292,17 +292,33 @@ export default function Market({
     "all"
   );
 
-  const [allItems, setAllItems] = useState<ItemMapping[]>([]);
   const [searchResults, setSearchResults] = useState<ItemMapping[]>([]);
-  const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
   const [volumes, setVolumes] = useState<Record<string, number>>({});
 
   const [selectedItem, setSelectedItem] = useState<ItemMapping | null>(null);
 
   const [loading, setLoading] = useState(false);
-  const [browseLoading, setBrowseLoading] = useState(false);
-  const [pricesLoaded, setPricesLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => { fetchIfNeeded(); }, [fetchIfNeeded]);
+
+  // Load volumes on mount (not part of GE context)
+  useEffect(() => {
+    let cancelled = false;
+    fetchVolumes()
+      .then((v) => {
+        if (!cancelled) setVolumes(v);
+      })
+      .catch(() => {
+        // volumes are optional — fail silently
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  const loadPrices = useCallback(() => {
+    // Prices now come from GE context; this is kept for the retry button
+    fetchIfNeeded();
+  }, [fetchIfNeeded]);
 
   useEffect(() => {
     setTab(initialTab);
@@ -331,40 +347,6 @@ export default function Market({
     }
   }, [params.query, searchResults, selectedItem]);
 
-  // Load prices on mount
-  const loadPrices = useCallback(() => {
-    setPricesLoaded(false);
-    setError(null);
-    let cancelled = false;
-    fetchLatestPrices()
-      .then((p) => {
-        if (!cancelled) {
-          setPrices(p);
-          setPricesLoaded(true);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setError("Failed to load prices. Try again later.");
-          setPricesLoaded(true);
-        }
-      });
-    fetchVolumes()
-      .then((v) => {
-        if (!cancelled) setVolumes(v);
-      })
-      .catch(() => {
-        // volumes are optional — fail silently
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    return loadPrices();
-  }, [loadPrices]);
-
   // Search items when query changes
   useEffect(() => {
     if (debouncedQuery.length < 2) {
@@ -391,28 +373,7 @@ export default function Market({
     };
   }, [debouncedQuery]);
 
-  // Load full item mapping when Browse or Bulk tab is activated
-  useEffect(() => {
-    if ((tab !== "browse" && tab !== "bulk") || allItems.length > 0) return;
-    let cancelled = false;
-    setBrowseLoading(true);
-    fetchMapping()
-      .then((items) => {
-        if (!cancelled) {
-          setAllItems(items);
-          setBrowseLoading(false);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setBrowseLoading(false);
-          setError("Failed to load item database.");
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [tab, allItems.length]);
+  const browseLoading = allItems.length === 0 && !pricesLoaded;
 
   // Auto-switch to search tab when typing
   useEffect(() => {

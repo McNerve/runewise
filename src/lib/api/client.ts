@@ -1,5 +1,5 @@
 import { apiFetch } from "./fetch";
-import { getCached, getStaleCached, setCache } from "./cache";
+import { getCached, getCachedAsync, getStaleCachedAsync, setCache } from "./cache";
 
 export interface JsonRequestOptions<T> {
   url: string;
@@ -41,9 +41,17 @@ export async function fetchJson<T>({
   transform,
 }: JsonRequestOptions<T>): Promise<T> {
   const cacheOptions = { persist };
+
   if (cacheKey && ttlMs != null) {
-    const cached = getCached<T>(cacheKey, ttlMs, cacheOptions);
-    if (cached) return cached;
+    // Fast synchronous check (memory cache)
+    const memCached = getCached<T>(cacheKey, ttlMs, cacheOptions);
+    if (memCached) return memCached;
+
+    // Async check (IndexedDB) for persisted entries
+    if (persist) {
+      const idbCached = await getCachedAsync<T>(cacheKey, ttlMs, cacheOptions);
+      if (idbCached) return idbCached;
+    }
   }
 
   const key = dedupeKey ?? cacheKey ?? url;
@@ -56,9 +64,9 @@ export async function fetchJson<T>({
       if (cacheKey) setCache(cacheKey, normalized, cacheOptions);
       return normalized;
     })
-    .catch((error: unknown) => {
+    .catch(async (error: unknown) => {
       if (cacheKey) {
-        const stale = getStaleCached<T>(cacheKey, cacheOptions);
+        const stale = await getStaleCachedAsync<T>(cacheKey, cacheOptions);
         if (stale) return stale;
       }
       throw error;

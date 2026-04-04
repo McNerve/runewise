@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { fetchLatestPrices, fetchMapping, type ItemPrice } from "../../../lib/api/ge";
+import { useGEData } from "../../../hooks/useGEData";
 import { formatGp } from "../../../lib/format";
 import { itemIcon } from "../../../lib/sprites";
 import type { RaidUnique } from "../data/cox";
@@ -22,20 +22,15 @@ export default function RaidLootCalc({
   calculateRate,
 }: RaidLootCalcProps) {
   const [inputValue, setInputValue] = useState(inputDefault);
-  const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
-  const [itemMap, setItemMap] = useState<Map<string, number>>(new Map());
+  const { mapping, prices, fetchIfNeeded } = useGEData();
 
-  useEffect(() => {
-    let cancelled = false;
-    Promise.all([fetchLatestPrices(), fetchMapping()]).then(([p, m]) => {
-      if (cancelled) return;
-      setPrices(p);
-      const map = new Map<string, number>();
-      for (const item of m) map.set(item.name.toLowerCase(), item.id);
-      setItemMap(map);
-    });
-    return () => { cancelled = true; };
-  }, []);
+  useEffect(() => { fetchIfNeeded(); }, [fetchIfNeeded]);
+
+  const itemMap = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const item of mapping) map.set(item.name.toLowerCase(), item.id);
+    return map;
+  }, [mapping]);
 
   const dropRate = calculateRate(inputValue);
 

@@ -1,3 +1,5 @@
+import { idbGet, idbSet, idbDelete } from "../storage";
+
 interface CacheEntry<T> {
   data: T;
   timestamp: number;
@@ -8,26 +10,7 @@ interface CacheOptions {
 }
 
 const store = new Map<string, CacheEntry<unknown>>();
-const STORAGE_PREFIX = "runewise_cache:";
 const MAX_ENTRIES = 200;
-
-function readPersisted<T>(key: string): CacheEntry<T> | null {
-  try {
-    const raw = localStorage.getItem(`${STORAGE_PREFIX}${key}`);
-    if (!raw) return null;
-    return JSON.parse(raw) as CacheEntry<T>;
-  } catch {
-    return null;
-  }
-}
-
-function writePersisted<T>(key: string, entry: CacheEntry<T>): void {
-  try {
-    localStorage.setItem(`${STORAGE_PREFIX}${key}`, JSON.stringify(entry));
-  } catch {
-    // Ignore storage write failures and keep the in-memory cache hot.
-  }
-}
 
 function remember<T>(key: string, entry: CacheEntry<T>, options?: CacheOptions): void {
   if (store.size >= MAX_ENTRIES) {
@@ -35,45 +18,78 @@ function remember<T>(key: string, entry: CacheEntry<T>, options?: CacheOptions):
     if (firstKey !== undefined) store.delete(firstKey);
   }
   store.set(key, entry);
-  if (options?.persist) writePersisted(key, entry);
+  if (options?.persist) {
+    void idbSet(key, entry);
+  }
 }
 
-function getEntry<T>(key: string, options?: CacheOptions): CacheEntry<T> | null {
-  const memoryEntry = store.get(key) as CacheEntry<T> | undefined;
-  if (memoryEntry) return memoryEntry;
-
-  if (!options?.persist) return null;
-
-  const persisted = readPersisted<T>(key);
-  if (!persisted) return null;
-  remember(key, persisted, options);
-  return persisted;
+function getMemoryEntry<T>(key: string): CacheEntry<T> | null {
+  return (store.get(key) as CacheEntry<T> | undefined) ?? null;
 }
 
+/** Synchronous cache read — checks in-memory store only. */
 export function getCached<T>(
   key: string,
   ttlMs: number,
   options?: CacheOptions
 ): T | null {
-  const entry = getEntry<T>(key, options);
+  const entry = getMemoryEntry<T>(key);
   if (!entry) return null;
   if (Date.now() - entry.timestamp > ttlMs) {
     store.delete(key);
-    try { localStorage.removeItem(`${STORAGE_PREFIX}${key}`); } catch { /* ignore */ }
+    if (options?.persist) void idbDelete(key);
     return null;
   }
   return entry.data;
 }
 
-export function getStaleCached<T>(key: string, options?: CacheOptions): T | null {
-  return getEntry<T>(key, options)?.data ?? null;
+/**
+ * Async cache read — checks memory first, then IndexedDB.
+ * Populates memory cache on IndexedDB hit for future sync reads.
+ */
+export async function getCachedAsync<T>(
+  key: string,
+  ttlMs: number,
+  options?: CacheOptions
+): Promise<T | null> {
+  const memResult = getCached<T>(key, ttlMs, options);
+  if (memResult) return memResult;
+
+  if (!options?.persist) return null;
+
+  const persisted = await idbGet<CacheEntry<T>>(key);
+  if (!persisted) return null;
+  if (Date.now() - persisted.timestamp > ttlMs) {
+    void idbDelete(key);
+    return null;
+  }
+  remember(key, persisted);
+  return persisted.data;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function getStaleCached<T>(key: string, _options?: CacheOptions): T | null {
+  return getMemoryEntry<T>(key)?.data ?? null;
+}
+
+export async function getStaleCachedAsync<T>(key: string, options?: CacheOptions): Promise<T | null> {
+  const mem = getMemoryEntry<T>(key);
+  if (mem) return mem.data;
+
+  if (!options?.persist) return null;
+
+  const persisted = await idbGet<CacheEntry<T>>(key);
+  if (!persisted) return null;
+  remember(key, persisted);
+  return persisted.data;
 }
 
 export function getCacheTimestamp(
   key: string,
-  options?: CacheOptions
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _options?: CacheOptions
 ): number | null {
-  return getEntry(key, options)?.timestamp ?? null;
+  return getMemoryEntry(key)?.timestamp ?? null;
 }
 
 export function setCache<T>(key: string, data: T, options?: CacheOptions): void {
@@ -82,9 +98,5 @@ export function setCache<T>(key: string, data: T, options?: CacheOptions): void 
 
 export function clearCacheKey(key: string): void {
   store.delete(key);
-  try {
-    localStorage.removeItem(`${STORAGE_PREFIX}${key}`);
-  } catch {
-    // ignore
-  }
+  void idbDelete(key);
 }

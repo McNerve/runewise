@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 
 export function useAsyncData<T>(
-  fetcher: () => Promise<T>,
+  fetcher: (signal?: AbortSignal) => Promise<T>,
   deps: unknown[] = [],
 ): { data: T | null; loading: boolean; error: string | null; retry: () => void } {
   const [data, setData] = useState<T | null>(null);
@@ -13,27 +13,27 @@ export function useAsyncData<T>(
   fetcherRef.current = fetcher;
 
   useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
     setLoading(true);
     setError(null);
 
-    fetcherRef.current()
+    fetcherRef.current(controller.signal)
       .then((result) => {
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
         setData(result);
       })
       .catch((err: unknown) => {
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
         const message =
           err instanceof Error ? err.message : "An unexpected error occurred";
         setError(message);
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       });
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [...deps, retryCount]);

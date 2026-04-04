@@ -7,7 +7,7 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
-    name: Lint & Typecheck
+    name: Lint, Typecheck & Test
 
     steps:
       - uses: actions/checkout@v6
@@ -30,10 +30,28 @@ jobs:
       - name: Test
         run: npm test
 
+      - name: Check bundle size
+        run: |
+          npm run build
+          echo "## Bundle Size" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          du -sh dist/assets/*.js | sort -rh >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          TOTAL=$(du -sh dist/ | cut -f1)
+          echo "**Total dist size:** $TOTAL" >> $GITHUB_STEP_SUMMARY
+
   tauri-smoke:
     needs: check
-    runs-on: macos-latest
-    name: Tauri Smoke Check
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            name: macOS
+          - os: windows-latest
+            name: Windows
+    runs-on: ${{ matrix.os }}
+    name: Tauri Smoke (${{ matrix.name }})
 
     steps:
       - uses: actions/checkout@v6

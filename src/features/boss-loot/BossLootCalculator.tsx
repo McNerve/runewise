@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { BOSS_DROP_TABLES, type BossDropTable } from "../../lib/data/boss-drops";
-import { fetchLatestPrices, fetchMapping, type ItemPrice, type ItemMapping } from "../../lib/api/ge";
+import type { ItemMapping } from "../../lib/api/ge";
+import { useGEData } from "../../hooks/useGEData";
 import { fetchDropTable, type DropItem } from "../../lib/api/wiki";
 import { formatGp } from "../../lib/format";
 import { itemIcon } from "../../lib/sprites";
@@ -41,36 +42,16 @@ function parseQuantity(quantity: string): number | null {
 
 export default function BossLootCalculator() {
   const { params, navigate } = useNavigation();
+  const { mapping, prices, loading, fetchIfNeeded } = useGEData();
   const [selectedBoss, setSelectedBoss] = useState<BossDropTable | null>(BOSS_DROP_TABLES[0]);
   const [killsPerHour, setKillsPerHour] = useState(BOSS_DROP_TABLES[0].killsPerHour);
-  const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
-  const [mapping, setMapping] = useState<ItemMapping[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error] = useState<string | null>(null);
   const [unsupportedBoss, setUnsupportedBoss] = useState<string | null>(null);
   const [wikiFallbackBoss, setWikiFallbackBoss] = useState<string | null>(null);
   const [wikiDropCategories, setWikiDropCategories] = useState<{ name: string; drops: DropItem[] }[]>([]);
   const [wikiFallbackLoading, setWikiFallbackLoading] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      setLoading(true);
-      try {
-        const [p, m] = await Promise.all([fetchLatestPrices(), fetchMapping()]);
-        if (!cancelled) {
-          setPrices(p);
-          setMapping(m);
-        }
-      } catch {
-        if (!cancelled) setError("Failed to load price data.");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    load();
-    return () => { cancelled = true; };
-  }, []);
+  useEffect(() => { fetchIfNeeded(); }, [fetchIfNeeded]);
 
   const getPrice = (itemId: number): number | null => {
     const p = prices[String(itemId)];
