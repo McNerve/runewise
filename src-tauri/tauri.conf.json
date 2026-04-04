@@ -20,7 +20,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; script-src 'self'; connect-src 'self' https://secure.runescape.com https://prices.runescape.wiki https://oldschool.runescape.wiki https://api.wiseoldman.net https://public.starminers.site https://templeosrs.com https://maps.runescape.wiki; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://oldschool.runescape.wiki https://maps.runescape.wiki https://secure.runescape.com; font-src 'self' data:; frame-src 'none'; object-src 'none'"
+      "csp": "default-src 'self'; script-src 'self'; connect-src 'self' https://secure.runescape.com https://prices.runescape.wiki https://oldschool.runescape.wiki https://api.wiseoldman.net https://old.07.gg https://templeosrs.com https://maps.runescape.wiki; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://oldschool.runescape.wiki https://maps.runescape.wiki https://secure.runescape.com https://cdn.runescape.com; font-src 'self' data:; frame-src 'none'; object-src 'none'"
     }
   },
   "bundle": {

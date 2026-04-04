@@ -55,7 +55,8 @@ const ALLOWED_HOSTS: &[&str] = &[
     "prices.runescape.wiki",
     "oldschool.runescape.wiki",
     "api.wiseoldman.net",
-    "public.starminers.site",
+    "old.07.gg",
+    "cdn.runescape.com",
     "templeosrs.com",
     "maps.runescape.wiki",
 ];
