@@ -10,7 +10,7 @@ import {
   type RuneLiteStatus,
 } from "../../lib/runelite/reader";
 import { formatGp } from "../../lib/format";
-import { fetchLatestPrices, fetchMapping, type ItemPrice } from "../../lib/api/ge";
+import { useGEData } from "../../hooks/useGEData";
 
 type Status = "checking" | "not-desktop" | "not-found" | "found";
 
@@ -25,6 +25,7 @@ const LOCAL_ITEM_FALLBACKS: Record<number, { name: string; price: number }> = {
 };
 
 export default function RuneLiteData() {
+  const { mapping, prices, fetchIfNeeded } = useGEData();
   const [status, setStatus] = useState<Status>(() =>
     isTauri ? "checking" : "not-desktop"
   );
@@ -34,21 +35,14 @@ export default function RuneLiteData() {
   const [lootLoading, setLootLoading] = useState(false);
   const [tab, setTab] = useState<"loot" | "info">("loot");
   const [pathInfo, setPathInfo] = useState<RuneLiteStatus | null>(null);
-  const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
-  const [itemNames, setItemNames] = useState<Map<number, string>>(new Map());
 
-  useEffect(() => {
-    fetchLatestPrices().then(setPrices).catch(() => {});
-    fetchMapping()
-      .then((mapping) => {
-        const next = new Map<number, string>();
-        for (const item of mapping) {
-          next.set(item.id, item.name);
-        }
-        setItemNames(next);
-      })
-      .catch(() => {});
-  }, []);
+  useEffect(() => { fetchIfNeeded(); }, [fetchIfNeeded]);
+
+  const itemNames = useMemo(() => {
+    const next = new Map<number, string>();
+    for (const item of mapping) next.set(item.id, item.name);
+    return next;
+  }, [mapping]);
 
   useEffect(() => {
     if (!isTauri) return;

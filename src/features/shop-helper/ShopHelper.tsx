@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { fetchAllShops, searchShops, type Shop } from "../../lib/api/shops";
-import { fetchLatestPrices, fetchMapping, type ItemPrice } from "../../lib/api/ge";
+import type { ItemPrice } from "../../lib/api/ge";
+import { useGEData } from "../../hooks/useGEData";
 import { useDebounce } from "../../hooks/useDebounce";
 import { encodeIconFilename, WIKI_IMG, itemIcon } from "../../lib/sprites";
 import { formatGp } from "../../lib/format";
@@ -26,8 +27,9 @@ function getGEPrice(
 
 export default function ShopHelper() {
   const { navigate } = useNavigation();
+  const { mapping, prices, fetchIfNeeded } = useGEData();
   const [shops, setShops] = useState<Shop[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [shopsLoading, setShopsLoading] = useState(true);
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebounce(query, 200);
   const [selectedShop, setSelectedShop] = useState<Shop | null>(null);
@@ -35,26 +37,30 @@ export default function ShopHelper() {
   const [membersFilter, setMembersFilter] = useState<MembersFilter>("all");
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortAsc, setSortAsc] = useState(true);
-  const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
-  const [nameToId, setNameToId] = useState<Map<string, number>>(new Map());
-  const [iconMap, setIconMap] = useState<Map<string, string>>(new Map());
+
+  useEffect(() => { fetchIfNeeded(); }, [fetchIfNeeded]);
+
+  const nameToId = useMemo(() => {
+    const idMap = new Map<string, number>();
+    for (const item of mapping) idMap.set(item.name.toLowerCase(), item.id);
+    return idMap;
+  }, [mapping]);
+
+  const iconMap = useMemo(() => {
+    const icons = new Map<string, string>();
+    for (const item of mapping) {
+      if (item.icon) icons.set(item.name.toLowerCase(), item.icon);
+    }
+    return icons;
+  }, [mapping]);
 
   useEffect(() => {
-    Promise.all([fetchAllShops(), fetchLatestPrices(), fetchMapping()])
-      .then(([s, p, m]) => {
-        setShops(s);
-        setPrices(p);
-        const idMap = new Map<string, number>();
-        const icons = new Map<string, string>();
-        for (const item of m) {
-          idMap.set(item.name.toLowerCase(), item.id);
-          if (item.icon) icons.set(item.name.toLowerCase(), item.icon);
-        }
-        setNameToId(idMap);
-        setIconMap(icons);
-      })
-      .finally(() => setLoading(false));
+    fetchAllShops()
+      .then((s) => setShops(s))
+      .finally(() => setShopsLoading(false));
   }, []);
+
+  const loading = shopsLoading;
 
 
   const filtered = useMemo(() => {

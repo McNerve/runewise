@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { fetchAllRecipes, type WikiRecipe } from "../../lib/api/recipes";
-import { fetchLatestPrices, fetchMapping, type ItemPrice } from "../../lib/api/ge";
+import type { ItemPrice } from "../../lib/api/ge";
+import { useGEData } from "../../hooks/useGEData";
 import { formatGp } from "../../lib/format";
 import { itemIcon, skillIcon } from "../../lib/sprites";
 import ErrorState from "../../components/ErrorState";
@@ -75,37 +76,42 @@ function calcRecipe(
 
 export default function ProductionCalc() {
   const { navigate } = useNavigation();
+  const { mapping, prices, loading: geLoading, fetchIfNeeded } = useGEData();
   const [recipes, setRecipes] = useState<WikiRecipe[]>([]);
-  const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
-  const [itemMap, setItemMap] = useState<Map<string, number>>(new Map());
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<WikiRecipe | null>(null);
   const [quantity, setQuantity] = useState(1);
-  const [loading, setLoading] = useState(true);
+  const [recipesLoading, setRecipesLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
 
+  useEffect(() => { fetchIfNeeded(); }, [fetchIfNeeded]);
+
+  const itemMap = useMemo(() => {
+    const nameToId = new Map<string, number>();
+    for (const item of mapping) nameToId.set(item.name.toLowerCase(), item.id);
+    return nameToId;
+  }, [mapping]);
+
   useEffect(() => {
     let cancelled = false;
-    Promise.all([fetchAllRecipes(), fetchLatestPrices(), fetchMapping()])
-      .then(([r, p, m]) => {
+    fetchAllRecipes()
+      .then((r) => {
         if (cancelled) return;
         setRecipes(r);
-        setPrices(p);
-        const nameToId = new Map<string, number>();
-        for (const item of m) nameToId.set(item.name.toLowerCase(), item.id);
-        setItemMap(nameToId);
-        setLoading(false);
+        setRecipesLoading(false);
       })
       .catch((err: unknown) => {
         if (cancelled) return;
         const message =
           err instanceof Error ? err.message : "Failed to load recipe data";
         setLoadError(message);
-        setLoading(false);
+        setRecipesLoading(false);
       });
     return () => { cancelled = true; };
   }, [retryCount]);
+
+  const loading = geLoading || recipesLoading;
 
   const results = useMemo(() => {
     if (search.length < 2) return [];

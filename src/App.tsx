@@ -7,6 +7,8 @@ import GlobalSearch from "./components/GlobalSearch";
 const UpdateDialog = lazy(() => import("./components/UpdateDialog"));
 import ErrorBoundary from "./components/ErrorBoundary";
 import { initItemIconCache } from "./lib/itemIcons";
+import { migrateFromLocalStorage } from "./lib/storage";
+import { GEDataProvider, useGEDataProvider } from "./hooks/useGEData";
 import { CardSkeleton } from "./components/Skeleton";
 import { useHiscores } from "./hooks/useHiscores";
 import { useKeyboardNav } from "./hooks/useKeyboardNav";
@@ -44,6 +46,7 @@ function AppContent() {
             onClear={hiscores.clear}
           />
           <main
+            aria-label="Main content"
             className="content-area flex-1 overflow-y-auto p-6"
             style={{ "--feature-accent": getFeatureAccent(view) } as React.CSSProperties}
           >
@@ -85,17 +88,21 @@ function AppContent() {
 
 function App() {
   useEffect(() => {
+    migrateFromLocalStorage();
     initItemIconCache();
   }, []);
   const settingsValue = useSettingsProvider();
+  const geData = useGEDataProvider();
 
   return (
     <SettingsContext.Provider value={settingsValue}>
-      <Tooltip.Provider delayDuration={300}>
-        <NavigationProvider>
-          <AppContent />
-        </NavigationProvider>
-      </Tooltip.Provider>
+      <GEDataProvider value={geData}>
+        <Tooltip.Provider delayDuration={300}>
+          <NavigationProvider>
+            <AppContent />
+          </NavigationProvider>
+        </Tooltip.Provider>
+      </GEDataProvider>
     </SettingsContext.Provider>
   );
 }

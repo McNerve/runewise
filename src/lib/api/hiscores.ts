@@ -55,9 +55,6 @@ const IRONMAN_URLS: Record<Exclude<IronmanType, "none">, string> = {
 };
 
 export async function detectIronmanType(rsn: string): Promise<IronmanType> {
-  // Only run in Tauri — dev mode proxy 404s are noisy and non-functional
-  if (!isTauri) return "none";
-
   const types = ["hardcore", "ultimate", "ironman"] as const;
   const results = await Promise.allSettled(
     types.map((type) =>

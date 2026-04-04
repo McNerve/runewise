@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { memo, useState, useEffect } from "react";
 import { useNavigation } from "../lib/NavigationContext";
 import { getFeature } from "../lib/features";
 
@@ -10,7 +10,7 @@ interface PlayerBarProps {
   onClear: () => void;
 }
 
-export default function PlayerBar({
+const PlayerBar = memo(function PlayerBar({
   rsn,
   loading,
   error,
@@ -123,4 +123,6 @@ export default function PlayerBar({
       )}
     </div>
   );
-}
+});
+
+export default PlayerBar;

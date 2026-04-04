@@ -1,11 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { itemIcon } from "../../lib/sprites";
-import {
-  fetchMapping,
-  fetchLatestPrices,
-  type ItemMapping,
-  type ItemPrice,
-} from "../../lib/api/ge";
+import type { ItemMapping, ItemPrice } from "../../lib/api/ge";
+import { useGEData } from "../../hooks/useGEData";
 import { formatGp } from "../../lib/format";
 import ItemTooltip from "../../components/ItemTooltip";
 
@@ -22,10 +18,8 @@ interface AlchRow {
 }
 
 export default function AlchCalculator() {
-  const [items, setItems] = useState<ItemMapping[]>([]);
-  const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { mapping: items, prices, loading, fetchIfNeeded } = useGEData();
+  const [error] = useState<string | null>(null);
 
   const [minProfit, setMinProfit] = useState(0);
   const [membersFilter, setMembersFilter] = useState<MembersFilter>("all");
@@ -33,25 +27,7 @@ export default function AlchCalculator() {
   const [sortKey, setSortKey] = useState<SortKey>("profit");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
 
-  useEffect(() => {
-    let cancelled = false;
-    Promise.all([fetchMapping(), fetchLatestPrices()])
-      .then(([mapping, priceData]) => {
-        if (cancelled) return;
-        setItems(mapping);
-        setPrices(priceData);
-        setLoading(false);
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setError("Failed to load data. Try again later.");
-          setLoading(false);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  useEffect(() => { fetchIfNeeded(); }, [fetchIfNeeded]);
 
   const natureRuneCost = prices["561"]?.high ?? 250;
 

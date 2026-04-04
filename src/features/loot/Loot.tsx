@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { searchMonsters, fetchDropTable, type DropItem } from "../../lib/api/wiki";
 import { fetchDropsForMonster, fetchBossDropsFromWiki, type WikiDrop } from "../../lib/api/drops";
-import { fetchLatestPrices, fetchMapping, type ItemPrice, type ItemMapping } from "../../lib/api/ge";
+import type { ItemPrice, ItemMapping } from "../../lib/api/ge";
+import { useGEData } from "../../hooks/useGEData";
 import { formatGp } from "../../lib/format";
 import { itemIcon } from "../../lib/sprites";
 import { useDebounce } from "../../hooks/useDebounce";
@@ -12,6 +13,7 @@ import { findBossByName, normalizeBossLookup } from "../../lib/data/bosses";
 import { BOSS_DROP_TABLES, type BossDropTable } from "../../lib/data/boss-drops";
 import { TableSkeleton } from "../../components/Skeleton";
 import EmptyState from "../../components/EmptyState";
+import { warn } from "../../lib/logger";
 
 import BossProfitRanking from "./components/BossProfitRanking";
 import ItemTooltip from "../../components/ItemTooltip";
@@ -499,7 +501,7 @@ function ProfitCalculatorTab({
     setWikiDropsLoading(true);
     fetchDropsForMonster(bossName)
       .then((t) => setFullWikiDrops(t.drops))
-      .catch(() => {})
+      .catch((err: unknown) => { warn("Loot: fetch wiki drops", err); })
       .finally(() => setWikiDropsLoading(false));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -728,36 +730,26 @@ function ProfitCalculatorTab({
 
 export default function Loot() {
   const { params, navigate } = useNavigation();
+  const { mapping, prices, loading, fetchIfNeeded } = useGEData();
   const [tab, setTab] = useState<LootTab>(
     params.tab === "profit" ? "profit" : params.tab === "ranking" ? "ranking" : "drops"
   );
-  const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
-  const [mapping, setMapping] = useState<ItemMapping[]>([]);
-  const [itemMap, setItemMap] = useState<Map<string, number>>(new Map());
-  const [iconMap, setIconMap] = useState<Map<string, string>>(new Map());
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let cancelled = false;
-    Promise.all([fetchLatestPrices(), fetchMapping()])
-      .then(([p, m]) => {
-        if (cancelled) return;
-        setPrices(p);
-        setMapping(m);
-        const nameToId = new Map<string, number>();
-        const nameToIcon = new Map<string, string>();
-        for (const item of m) {
-          nameToId.set(item.name.toLowerCase(), item.id);
-          if (item.icon) nameToIcon.set(item.name.toLowerCase(), item.icon);
-        }
-        setItemMap(nameToId);
-        setIconMap(nameToIcon);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => { cancelled = true; };
-  }, []);
+  useEffect(() => { fetchIfNeeded(); }, [fetchIfNeeded]);
+
+  const itemMap = useMemo(() => {
+    const nameToId = new Map<string, number>();
+    for (const item of mapping) nameToId.set(item.name.toLowerCase(), item.id);
+    return nameToId;
+  }, [mapping]);
+
+  const iconMap = useMemo(() => {
+    const nameToIcon = new Map<string, string>();
+    for (const item of mapping) {
+      if (item.icon) nameToIcon.set(item.name.toLowerCase(), item.icon);
+    }
+    return nameToIcon;
+  }, [mapping]);
 
   return (
     <div className="max-w-5xl">

@@ -31,7 +31,7 @@ export default class ErrorBoundary extends Component<
   render() {
     if (this.state.hasError) {
       return (
-        <div className="mx-auto max-w-2xl rounded-2xl border border-danger/25 bg-danger/8 p-6 text-center shadow-lg">
+        <div role="alert" className="mx-auto max-w-2xl rounded-2xl border border-danger/25 bg-danger/8 p-6 text-center shadow-lg">
           <div className="text-[10px] uppercase tracking-[0.2em] text-danger/70">
             View Error
           </div>
