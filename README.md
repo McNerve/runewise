@@ -23,6 +23,16 @@ Your all-in-one OSRS desktop companion. DPS calculators, boss guides, drop table
 
 Updates are automatic — RuneWise checks for new versions and installs them in the background.
 
+## Screenshots
+
+<!-- Add screenshots to /docs/screenshots/ and uncomment these -->
+<!-- ![DPS Calculator](docs/screenshots/dps-calc.png) -->
+<!-- ![Boss Guides](docs/screenshots/boss-guides.png) -->
+<!-- ![Shop Helper](docs/screenshots/shop-helper.png) -->
+<!-- ![Market](docs/screenshots/market.png) -->
+
+*Screenshots coming soon — see [Releases](https://github.com/McNerve/runewise/releases) for the latest builds.*
+
 ## Features
 
 ### 30+ Tools in One App

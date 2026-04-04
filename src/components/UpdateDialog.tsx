@@ -1,8 +1,10 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { isTauri } from "../lib/env";
 import AppIcon from "./AppIcon";
 
 type UpdateStage = "hidden" | "available" | "downloading" | "ready" | "error";
+
+const SNOOZE_KEY = "runewise_update_snoozed";
 
 interface UpdateInfo {
   version: string | null;
@@ -13,8 +15,9 @@ export default function UpdateDialog() {
   const [stage, setStage] = useState<UpdateStage>("hidden");
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo>({ version: null, body: null });
   const [downloadProgress, setDownloadProgress] = useState({ current: 0, total: 0 });
+  // Store the Update object from the first check to avoid a redundant second check
+  const updateRef = useRef<unknown>(null);
 
-  // Auto-check on mount (5 second delay to not block startup)
   useEffect(() => {
     if (!isTauri) return;
     const timer = setTimeout(async () => {
@@ -22,6 +25,11 @@ export default function UpdateDialog() {
         const { check } = await import("@tauri-apps/plugin-updater");
         const update = await check();
         if (update) {
+          // Skip if user snoozed this version
+          const snoozed = localStorage.getItem(SNOOZE_KEY);
+          if (snoozed === update.version) return;
+
+          updateRef.current = update;
           setUpdateInfo({
             version: update.version ?? null,
             body: update.body ?? null,
@@ -38,8 +46,10 @@ export default function UpdateDialog() {
   const startDownload = useCallback(async () => {
     setStage("downloading");
     try {
-      const { check } = await import("@tauri-apps/plugin-updater");
-      const update = await check();
+      // Reuse the stored Update object instead of checking again
+      const update = updateRef.current as {
+        downloadAndInstall: (cb: (event: { event: string; data: { contentLength?: number; chunkLength: number } }) => void) => Promise<void>;
+      } | null;
       if (!update) {
         setStage("error");
         return;
@@ -65,6 +75,13 @@ export default function UpdateDialog() {
       setStage("error");
     }
   }, []);
+
+  const snooze = useCallback(() => {
+    if (updateInfo.version) {
+      localStorage.setItem(SNOOZE_KEY, updateInfo.version);
+    }
+    setStage("hidden");
+  }, [updateInfo.version]);
 
   const installAndRelaunch = useCallback(async () => {
     try {
@@ -99,7 +116,6 @@ export default function UpdateDialog() {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div className="bg-bg-primary border border-border rounded-2xl shadow-2xl w-[480px] max-h-[80vh] overflow-hidden">
 
-        {/* Available stage — announcement with changelog */}
         {stage === "available" && (
           <div className="p-8">
             <div className="flex flex-col items-center mb-6">
@@ -137,23 +153,23 @@ export default function UpdateDialog() {
                 Download
               </button>
               <button
-                onClick={() => setStage("hidden")}
+                onClick={snooze}
                 className="w-full py-2 rounded-lg text-text-secondary hover:text-text-primary text-sm transition-colors"
               >
-                Remind me Later
+                Skip This Version
               </button>
             </div>
           </div>
         )}
 
-        {/* Downloading stage — progress bar */}
         {stage === "downloading" && (
           <div className="p-8 flex flex-col items-center">
             <div className="w-14 h-14 mb-6">
               <AppIcon view="home" className="w-14 h-14" />
             </div>
 
-            <p className="text-sm text-text-primary font-medium mb-4 tabular-nums">
+            <p className="text-sm text-text-primary font-medium mb-1">Downloading update...</p>
+            <p className="text-xs text-text-secondary mb-4 tabular-nums">
               {formatBytes(downloadProgress.current)} of {formatBytes(downloadProgress.total)}
             </p>
 
@@ -164,24 +180,23 @@ export default function UpdateDialog() {
               />
             </div>
 
-            <button
-              onClick={() => setStage("hidden")}
-              className="px-6 py-2 rounded-lg bg-bg-secondary border border-border text-text-secondary hover:text-text-primary text-sm transition-colors"
-            >
-              Cancel
-            </button>
+            <p className="text-[10px] text-text-secondary/40">
+              Download will continue in the background if dismissed
+            </p>
           </div>
         )}
 
-        {/* Ready stage — install button */}
         {stage === "ready" && (
           <div className="p-8 flex flex-col items-center">
             <div className="w-14 h-14 mb-6">
               <AppIcon view="home" className="w-14 h-14" />
             </div>
 
-            <p className="text-base font-semibold text-text-primary mb-4">
+            <p className="text-base font-semibold text-text-primary mb-2">
               Ready to Install
+            </p>
+            <p className="text-xs text-text-secondary mb-4">
+              {updateInfo.version && `Version ${updateInfo.version} downloaded successfully.`}
             </p>
 
             <div className="w-full h-2 bg-accent rounded-full mb-6" />
@@ -195,7 +210,6 @@ export default function UpdateDialog() {
           </div>
         )}
 
-        {/* Error stage */}
         {stage === "error" && (
           <div className="p-8 flex flex-col items-center">
             <div className="w-14 h-14 mb-6">
@@ -205,16 +219,26 @@ export default function UpdateDialog() {
             <p className="text-base font-semibold text-danger mb-2">
               Update Failed
             </p>
-            <p className="text-sm text-text-secondary mb-6">
-              Please try again later or download manually from GitHub.
+            <p className="text-sm text-text-secondary mb-4">
+              Download the latest version manually from GitHub.
             </p>
 
-            <button
-              onClick={() => setStage("hidden")}
-              className="px-6 py-2 rounded-lg bg-bg-secondary border border-border text-text-secondary hover:text-text-primary text-sm transition-colors"
-            >
-              Dismiss
-            </button>
+            <div className="flex gap-2">
+              <a
+                href="https://github.com/McNerve/runewise/releases/latest"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2 rounded-lg bg-accent hover:bg-accent-hover text-white text-sm transition-colors"
+              >
+                Download from GitHub
+              </a>
+              <button
+                onClick={() => setStage("hidden")}
+                className="px-4 py-2 rounded-lg bg-bg-secondary border border-border text-text-secondary hover:text-text-primary text-sm transition-colors"
+              >
+                Dismiss
+              </button>
+            </div>
           </div>
         )}
       </div>
