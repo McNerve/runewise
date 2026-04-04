@@ -42,25 +42,42 @@ async function fetchMonth(year: number, month: number): Promise<NewsPost[]> {
 
   try {
     const res = await apiFetch(proxyUrl);
+    if (!res.ok) return [];
+
     const html = await res.text();
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, "text/html");
-    const articles = doc.querySelectorAll("article");
+
+    // Try specific class first, fall back to generic <article> tag
+    let articles = doc.querySelectorAll("article.news-list-article");
+    if (articles.length === 0) articles = doc.querySelectorAll("article");
+    if (articles.length === 0) return [];
 
     return Array.from(articles).map((article) => {
-      const title =
-        article.querySelector("h4 a")?.textContent?.trim() ?? "Untitled";
+      // Title: try new class-based selector first, then generic
+      const titleLink =
+        article.querySelector(".news-list-article__title-link") ??
+        article.querySelector("h4 a") ??
+        article.querySelector("a");
+      const title = titleLink?.textContent?.trim() ?? "Untitled";
+      const url = titleLink?.getAttribute("href") ?? "#";
+
+      // Category: try specific span, then h5, then fallback
       const category =
-        article.querySelector("h5")?.textContent?.trim() ?? "News";
+        article.querySelector(".news-list-article__category")?.textContent?.trim() ??
+        article.querySelector("h5")?.textContent?.trim() ??
+        "News";
+
+      // Date: try time element, then date class
+      const date =
+        article.querySelector("time")?.textContent?.trim()?.replace(/^\| /, "") ??
+        article.querySelector(".news-list-article__date")?.textContent?.trim() ??
+        "";
+
       return {
         title,
-        url:
-          article.querySelector("h4 a")?.getAttribute("href") ?? "#",
-        date:
-          article
-            .querySelector("time")
-            ?.textContent?.trim()
-            ?.replace(/^\| /, "") ?? "",
+        url,
+        date,
         category,
         status: classifyPost(category, title),
       };
@@ -74,23 +91,24 @@ async function fetchBlogPosts(): Promise<NewsPost[]> {
   const now = new Date();
   const months: { year: number; month: number }[] = [];
 
-  // Fetch current month and previous 2 months for full coverage
   for (let i = 0; i < 3; i++) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     months.push({ year: d.getFullYear(), month: d.getMonth() + 1 });
   }
 
-  const results = await Promise.all(
+  const results = await Promise.allSettled(
     months.map((m) => fetchMonth(m.year, m.month))
   );
 
-  // Deduplicate by URL
   const seen = new Set<string>();
   const all: NewsPost[] = [];
-  for (const post of results.flat()) {
-    if (!seen.has(post.url)) {
-      seen.add(post.url);
-      all.push(post);
+  for (const result of results) {
+    if (result.status !== "fulfilled") continue;
+    for (const post of result.value) {
+      if (!seen.has(post.url)) {
+        seen.add(post.url);
+        all.push(post);
+      }
     }
   }
   return all;
@@ -145,6 +163,34 @@ function extractArticleHtml(html: string): string {
     if (style.includes("display:none") || style.includes("display: none")) el.remove();
   });
 
+  // Strip "If you can't see the image above" fallback paragraphs
+  content.querySelectorAll("p, center").forEach((el) => {
+    const text = el.textContent?.trim() ?? "";
+    if (text.match(/if you can'?t see the (image|asset) above/i)) el.remove();
+  });
+
+  // Convert .osrs-title divs to h3, .osrs-subtitle to h4, .osrs-subheading to h5
+  content.querySelectorAll(".osrs-title").forEach((el) => {
+    const h = document.createElement("h3");
+    h.textContent = el.textContent?.trim() ?? "";
+    el.replaceWith(h);
+  });
+  content.querySelectorAll(".osrs-subtitle").forEach((el) => {
+    const h = document.createElement("h4");
+    h.textContent = el.textContent?.trim() ?? "";
+    el.replaceWith(h);
+  });
+  content.querySelectorAll(".osrs-subheading").forEach((el) => {
+    const h = document.createElement("h5");
+    h.textContent = el.textContent?.trim() ?? "";
+    el.replaceWith(h);
+  });
+
+  // Convert .divider to <hr>
+  content.querySelectorAll(".divider").forEach((el) => {
+    el.replaceWith(document.createElement("hr"));
+  });
+
   // Strip event handlers
   content.querySelectorAll("*").forEach((el) => {
     for (const attr of [...el.attributes]) {
@@ -173,9 +219,10 @@ function extractArticleHtml(html: string): string {
   return DOMPurify.sanitize(content.innerHTML, {
     ALLOWED_TAGS: [
       "p", "h2", "h3", "h4", "h5", "ul", "ol", "li", "img",
-      "strong", "em", "b", "i", "br", "table", "thead", "tbody",
+      "strong", "em", "b", "i", "br", "hr", "table", "thead", "tbody",
       "tr", "th", "td", "span", "div", "figure", "figcaption",
       "blockquote", "dl", "dt", "dd", "sup", "sub", "a",
+      "details", "summary", "center",
     ],
     ALLOWED_ATTR: ["src", "alt", "loading", "colspan", "rowspan", "class", "href", "target", "rel"],
   });
@@ -292,20 +339,20 @@ export default function News() {
   );
 
   const filterButtons = (
-    <div className="flex gap-2 mb-4">
+    <div className="grid grid-cols-2 gap-1.5 mb-4">
       {(["all", "shipped", "proposed", "upcoming"] as const).map((f) => {
         const active = filter === f;
         const label =
           f === "all" ? "All"
             : f === "shipped" ? "Shipped"
-              : f === "proposed" ? "Proposed / Poll"
+              : f === "proposed" ? "Proposed"
                 : "Upcoming";
         return (
           <button
             key={f}
             onClick={() => setFilter(f)}
             aria-pressed={active}
-            className={`relative px-4 py-2 rounded-xl border text-xs font-medium transition-colors ${
+            className={`relative px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
               active
                 ? "border-accent/40 text-accent bg-accent/5"
                 : "border-border/60 text-text-secondary hover:border-border hover:text-text-primary"
@@ -366,7 +413,7 @@ export default function News() {
 
   return (
     <div className="grid grid-cols-[280px_minmax(0,1fr)] gap-5">
-      <aside>
+      <aside className="min-w-0">
         <div className="mb-3 px-2 text-[10px] uppercase tracking-[0.2em] text-text-secondary/45">
           Articles
         </div>

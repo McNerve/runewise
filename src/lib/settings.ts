@@ -9,41 +9,45 @@ export interface KeybindMap {
 export interface AppSettings {
   theme: "dark" | "light" | "system";
   keybinds: KeybindMap;
+  keybindsEnabled: boolean;
   notifications: { priceAlerts: boolean };
   sidebar: { collapsed: boolean };
   ironmanMode: boolean;
 }
 
+// Safe Cmd/Ctrl keybinds — avoids system shortcuts (C/X/V/Z/A/S/Q/W/F/R/N/P/O/H/L)
 export const DEFAULT_KEYBINDS: KeybindMap = {
+  // Player
   overview: "1",
   tracker: "2",
+  // Tools
   "skill-calc": "3",
   "dps-calc": "4",
-  bosses: "5",
-  loot: "6",
-  market: "7",
-  progress: "8",
-  stars: "9",
-  wiki: "0",
-  lookup: "h",
-  "dry-calc": "r",
-  "pet-calc": "p",
-  slayer: "b",
-  "clue-helper": "c",
-  "money-making": "m",
-  news: "n",
-  timers: "f",
-  "xp-table": "x",
-  watchlist: "w",
+  "dry-calc": "d",
   "gear-compare": "g",
+  "money-making": "m",
+  timers: "t",
+  "training-plan": "y",
+  // Bossing
+  bosses: "5",
   raids: "i",
-  "training-plan": "l",
+  // Market
+  market: "6",
+  loot: "7",
+  // Guides
+  progress: "8",
+  slayer: "b",
+  "clue-helper": "j",
+  // Live
   "world-map": "e",
+  news: "9",
+  wiki: "0",
 };
 
 export const DEFAULT_SETTINGS: AppSettings = {
   theme: "dark",
   keybinds: DEFAULT_KEYBINDS,
+  keybindsEnabled: true,
   notifications: { priceAlerts: true },
   sidebar: { collapsed: false },
   ironmanMode: false,
@@ -57,6 +61,7 @@ export function loadSettings(): AppSettings {
     keybinds: { ...DEFAULT_KEYBINDS, ...saved.keybinds },
     notifications: { ...DEFAULT_SETTINGS.notifications, ...saved.notifications },
     sidebar: { ...DEFAULT_SETTINGS.sidebar, ...saved.sidebar },
+    keybindsEnabled: saved.keybindsEnabled ?? true,
     ironmanMode: saved.ironmanMode ?? false,
   };
 }

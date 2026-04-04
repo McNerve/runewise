@@ -5,6 +5,11 @@ export function skillIcon(skill: string): string {
   return `${WIKI_IMG}/${name}_icon.png`;
 }
 
+/** Encode a raw GE mapping icon filename for use in a wiki image URL. */
+export function encodeIconFilename(filename: string): string {
+  return filename.replace(/ /g, "_").replace(/'/g, "%27");
+}
+
 export function itemIcon(itemName: string): string {
   const name = itemName
     .replace(/ \((\d)\)/g, "($1)")  // "Prayer potion (4)" → "Prayer potion(4)" (dose only)
@@ -250,6 +255,7 @@ export const NAV_ICONS: Record<string, string> = {
   "combat-tasks": `${WIKI_IMG}/Combat_Achievements_icon.png`,
   "money-making": `${WIKI_IMG}/Coins_detail.png`,
   "production-calc": `${WIKI_IMG}/Crafting_icon.png`,
+  "shop-helper": `${WIKI_IMG}/General_store_icon.png`,
   kingdom: `${WIKI_IMG}/Royal_crown.png`,
   wiki: `${WIKI_IMG}/Enchanted_scroll.png`,
   "pet-calc": `${WIKI_IMG}/Heron.png`,

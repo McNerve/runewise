@@ -4,6 +4,7 @@ import { itemIcon } from "../../../lib/sprites";
 import type { HerbloreRecipe } from "../../../lib/data/herblore-recipes";
 import type { CraftingRecipe } from "../../../lib/data/crafting-recipes";
 import type { ItemPrice } from "../../../lib/api/ge";
+import ItemTooltip from "../../../components/ItemTooltip";
 
 type Recipe = HerbloreRecipe | CraftingRecipe;
 
@@ -98,7 +99,7 @@ export default function RecipeCostTable({
                     className="w-4 h-4 shrink-0"
                     onError={(e) => { e.currentTarget.style.display = "none"; }}
                   />
-                  <span className="text-sm">{r.name}</span>
+                  <ItemTooltip itemName={r.name}><span className="text-sm cursor-default">{r.name}</span></ItemTooltip>
                 </div>
               </td>
               <td className="px-3 py-1.5 text-right text-xs text-text-secondary tabular-nums">

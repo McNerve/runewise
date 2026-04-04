@@ -213,11 +213,8 @@ export const BOSS_DROP_TABLES: BossDropTable[] = [
     bossName: "Araxxor",
     killsPerHour: 15,
     drops: [
-      { itemName: "Noxious pommel", itemId: 29370, rate: 200, quantity: 1, category: "unique" },
-      { itemName: "Noxious point", itemId: 29372, rate: 200, quantity: 1, category: "unique" },
-      { itemName: "Noxious blade", itemId: 29374, rate: 200, quantity: 1, category: "unique" },
-      { itemName: "Araxyte fang", itemId: 29376, rate: 600, quantity: 1, category: "unique" },
-      { itemName: "Araxyte venom sack", itemId: 29378, rate: 16, quantity: 1, category: "rare" },
+      { itemName: "Noxious halberd", itemId: 29796, rate: 600, quantity: 1, category: "unique" },
+      { itemName: "Araxyte venom sack", itemId: 29784, rate: 16, quantity: 1, category: "rare" },
     ],
   },
   {

@@ -9,6 +9,7 @@ import { itemIcon, NAV_ICONS } from "../../lib/sprites";
 import { useNavigation } from "../../lib/NavigationContext";
 import EmptyState from "../../components/EmptyState";
 import ErrorState from "../../components/ErrorState";
+import ItemTooltip from "../../components/ItemTooltip";
 import { useAsyncData } from "../../hooks/useAsyncData";
 
 const SLOTS: EquipmentSlot[] = [
@@ -167,7 +168,7 @@ export default function GearCompare() {
                     className="w-6 h-6"
                     onError={(e) => { e.currentTarget.style.display = "none"; }}
                   />
-                  <span className="text-sm font-medium truncate">{item.name}</span>
+                  <ItemTooltip itemName={item.name}><span className="text-sm font-medium truncate cursor-default">{item.name}</span></ItemTooltip>
                 </div>
                 <div className="grid grid-cols-3 gap-1 text-xs">
                   {STAT_COLUMNS.map((col) => {
@@ -263,7 +264,7 @@ export default function GearCompare() {
                       />
                     </td>
                     <td className="px-2 py-1.5 text-sm font-medium">
-                      {item.name}
+                      <ItemTooltip itemName={item.name}><span className="cursor-default">{item.name}</span></ItemTooltip>
                     </td>
                     {STAT_COLUMNS.map((col) => (
                       <StatCell key={col.key} value={item[col.key] as number} />

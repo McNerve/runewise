@@ -6,6 +6,7 @@ import {
   type EquipmentSlot,
 } from "../../lib/api/equipment";
 import { itemIcon } from "../../lib/sprites";
+import ItemTooltip from "../../components/ItemTooltip";
 
 interface Props {
   slot: EquipmentSlot | "2h";
@@ -26,16 +27,15 @@ export default function GearSelector({ slot, onSelect, onClose }: Props) {
   }, []);
 
   const results = useMemo(() => {
-    const slotFilter = slot === "weapon" ? undefined : slot;
-    const raw = searchEquipment(allEquipment, query, slotFilter as EquipmentSlot | undefined, 40);
-    // For weapon slot, include both "weapon" and "2h"
     if (slot === "weapon") {
-      return allEquipment
-        .filter((e) => e.slot === "weapon" || e.slot === "2h")
-        .filter((e) => !query.trim() || e.name.toLowerCase().includes(query.toLowerCase()))
-        .slice(0, 40);
+      // For weapon slot, search both "weapon" and "2h" items
+      const weapons = searchEquipment(allEquipment, query, "weapon" as EquipmentSlot, 40);
+      const twoHanders = searchEquipment(allEquipment, query, "2h" as EquipmentSlot, 40);
+      const combined = [...weapons, ...twoHanders];
+      if (query.trim()) return combined.slice(0, 40);
+      return combined.sort((a, b) => (b.strengthBonus + b.rangedStrength) - (a.strengthBonus + a.rangedStrength)).slice(0, 40);
     }
-    return raw;
+    return searchEquipment(allEquipment, query, slot as EquipmentSlot, 40);
   }, [allEquipment, query, slot]);
 
   return (
@@ -98,12 +98,14 @@ export default function GearSelector({ slot, onSelect, onClose }: Props) {
                     }}
                   />
                   <div className="flex-1 text-left min-w-0">
-                    <div className="text-sm truncate">
-                      {item.name}
-                      {item.version && (
-                        <span className="text-text-secondary/50 ml-1 text-xs">({item.version})</span>
-                      )}
-                    </div>
+                    <ItemTooltip itemName={item.name}>
+                      <div className="text-sm truncate cursor-default">
+                        {item.name}
+                        {item.version && (
+                          <span className="text-text-secondary/50 ml-1 text-xs">({item.version})</span>
+                        )}
+                      </div>
+                    </ItemTooltip>
                     <div className="text-[10px] text-text-secondary/60 tabular-nums">
                       {item.attackStab !== 0 && `Stab ${item.attackStab > 0 ? "+" : ""}${item.attackStab} `}
                       {item.attackSlash !== 0 && `Slash ${item.attackSlash > 0 ? "+" : ""}${item.attackSlash} `}

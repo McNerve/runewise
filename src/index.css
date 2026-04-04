@@ -734,12 +734,104 @@ body {
   color: var(--color-text-primary);
 }
 
+.article-content-collapse {
+  border: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+}
+
+.article-content-collapse[open] {
+  padding-bottom: 1rem;
+}
+
+.article-content-collapse summary {
+  list-style: none;
+}
+
+.article-content-collapse summary::before {
+  content: "▸ ";
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  margin-right: 0.25rem;
+}
+
+.article-content-collapse[open] summary::before {
+  content: "▾ ";
+}
+
+.article-content .infobox-bonuses {
+  width: auto;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.8rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.article-content .infobox-bonuses .infobox-subheader {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 6%, transparent);
+  border: none;
+}
+
+.article-content .infobox-bonuses td,
+.article-content .infobox-bonuses th {
+  padding: 0.3rem 0.6rem;
+  text-align: center;
+  border: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
+}
+
+.article-content .infobox-bonuses tr:last-child td {
+  border-bottom: none;
+}
+
+.article-content .infobox-bonuses td:empty {
+  display: none;
+}
+
+.article-content .infobox-bonuses img {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
 .article-content h4 {
   color: var(--color-text-primary);
   font-weight: 600;
   font-size: 0.95rem;
   margin-top: 1rem;
   margin-bottom: 0.4rem;
+}
+
+.article-content h5 {
+  color: var(--color-text-primary);
+  font-weight: 600;
+  font-size: 0.85rem;
+  margin-top: 0.75rem;
+  margin-bottom: 0.3rem;
+}
+
+.article-content hr {
+  border: none;
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
+  margin: 1.5rem 0;
+}
+
+.article-content center {
+  display: block;
+  text-align: center;
+  margin: 1rem 0;
+}
+
+.article-content center img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
 }
 
 .article-content li img,
@@ -944,6 +1036,18 @@ body {
   color: var(--color-text-primary);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
   animation: tooltip-in 120ms ease;
+}
+
+.item-tooltip-content {
+  border-radius: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  font-size: 0.75rem;
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+  animation: tooltip-in 120ms ease;
+  max-width: 280px;
 }
 
 @keyframes tooltip-in {

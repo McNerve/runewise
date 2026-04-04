@@ -6,6 +6,7 @@ import { formatGp } from "../../../lib/format";
 import { bossIconSmall } from "../../../lib/sprites";
 import WikiImage from "../../../components/WikiImage";
 import { Skeleton } from "../../../components/Skeleton";
+import ItemTooltip from "../../../components/ItemTooltip";
 import type { View } from "../../../lib/features";
 
 interface BossProfit {
@@ -156,7 +157,9 @@ export default function BossProfitRanking({
                   {boss.killsPerHour}
                 </td>
                 <td className="px-2 py-2 text-right text-xs text-text-secondary truncate max-w-[120px]">
-                  {boss.topUnique || "\u2014"}
+                  {boss.topUnique ? (
+                    <ItemTooltip itemName={boss.topUnique}><span className="cursor-default">{boss.topUnique}</span></ItemTooltip>
+                  ) : "\u2014"}
                   {boss.topUniqueValue != null && (
                     <span className="ml-1 text-accent">{formatGp(boss.topUniqueValue)}</span>
                   )}

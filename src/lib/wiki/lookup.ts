@@ -59,9 +59,11 @@ export interface WikiLookupDocument {
   infoboxTitle: string | null;
   infoboxImage: string | null;
   infoboxFields: Array<{ label: string; value: string }>;
+  totalInfoboxFields: number;
   leadHtml: string;
   sections: WikiLookupSection[];
   relatedPages: WikiRelatedPage[];
+  totalRelatedPages: number;
   fetchedAt: number;
 }
 
@@ -129,6 +131,38 @@ function parseLead(rawHtml: string, title: string) {
     .querySelectorAll("table, .thumb, .infobox-buttons, .hatnote, .infobox-switch-resources, .navigation-not-searchable")
     .forEach((element) => element.remove());
 
+  // Truncate at first section heading — only keep lead content
+  // .mw-heading2 wrappers are direct children; bare h2s may also be direct children
+  const children = Array.from(content.children);
+  let truncateFrom = -1;
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i];
+    if (
+      child.classList.contains("mw-heading2") ||
+      child.classList.contains("mw-heading3") ||
+      child.tagName === "H2" ||
+      child.tagName === "H3"
+    ) {
+      truncateFrom = i;
+      break;
+    }
+  }
+  if (truncateFrom >= 0) {
+    for (let i = children.length - 1; i >= truncateFrom; i--) {
+      children[i].remove();
+    }
+  }
+
+  // Remove standalone images not inside text (duplicate of sidebar infobox image)
+  content.querySelectorAll("a > img, div > img").forEach((img) => {
+    const parent = img.parentElement;
+    if (!parent) return;
+    const tag = parent.tagName;
+    if (tag === "P" || tag === "LI" || tag === "TD" || tag === "TH") return;
+    if (parent.children.length === 1) parent.remove();
+    else img.remove();
+  });
+
   const relatedPages = collectRelatedPages(content, title).slice(0, 12);
   stripUnsafeNodes(content);
 
@@ -137,7 +171,8 @@ function parseLead(rawHtml: string, title: string) {
     leadHtml: sanitizeHtml(content),
     infoboxTitle,
     infoboxImage,
-    infoboxFields: infoboxFields.slice(0, 10),
+    infoboxFields: infoboxFields.slice(0, 15),
+    totalInfoboxFields: infoboxFields.length,
     relatedPages,
   };
 }
@@ -147,7 +182,25 @@ function parseSection(rawHtml: string, title: string): WikiLookupSection | null 
   const doc = parser.parseFromString(rawHtml, "text/html");
   const content = doc.querySelector(".mw-parser-output") || doc.body;
 
-  content.querySelectorAll(".navbox, .hatnote").forEach((element) => element.remove());
+  content.querySelectorAll(".navbox, .hatnote, .mw-editsection").forEach((element) => element.remove());
+
+  // Strip duplicate heading that matches section title (including wrapper div)
+  const titleNorm = title.trim().toLowerCase();
+  const headingWrapper = content.querySelector(".mw-heading2, .mw-heading3");
+  if (headingWrapper) {
+    const headingText = (headingWrapper.textContent ?? "").trim().toLowerCase();
+    if (headingText === titleNorm) headingWrapper.remove();
+  }
+  // Fallback: bare heading without wrapper
+  const firstHeading = content.querySelector("h2, h3");
+  if (firstHeading) {
+    const headingText = (firstHeading.textContent ?? "").trim().toLowerCase();
+    if (headingText === titleNorm) firstHeading.remove();
+  }
+
+  // Strip character model images from equipment bonuses tables
+  content.querySelectorAll(".infobox-bonuses-image").forEach((el) => el.remove());
+
   stripUnsafeNodes(content);
 
   const html = sanitizeHtml(content);
@@ -195,14 +248,31 @@ async function fetchWikiSections(page: string) {
   });
 }
 
-async function fetchWikiHtml(page: string, section?: string): Promise<string> {
-  const url = section == null
-    ? `${WIKI_API}?action=parse&page=${encodeURIComponent(page)}&prop=text&${WIKI_PARSE_FLAGS}`
-    : `${WIKI_API}?action=parse&page=${encodeURIComponent(page)}&prop=text&section=${section}&${WIKI_PARSE_FLAGS}`;
+interface WikiFullParseResult {
+  html: string;
+  canonicalTitle: string;
+}
 
+async function fetchWikiHtmlFull(page: string): Promise<WikiFullParseResult> {
+  const url = `${WIKI_API}?action=parse&page=${encodeURIComponent(page)}&prop=text&${WIKI_PARSE_FLAGS}`;
+  return fetchJson<WikiFullParseResult>({
+    url,
+    dedupeKey: `wiki-lookup:${page}:full`,
+    transform: (json) => {
+      const parsed = json as WikiTextResponse & { parse?: { title?: string } };
+      return {
+        html: (parsed.parse?.text?.["*"] ?? "").trim(),
+        canonicalTitle: parsed.parse?.title ?? page,
+      };
+    },
+  });
+}
+
+async function fetchWikiHtmlSection(page: string, section: string): Promise<string> {
+  const url = `${WIKI_API}?action=parse&page=${encodeURIComponent(page)}&prop=text&section=${section}&${WIKI_PARSE_FLAGS}`;
   return fetchJson<string>({
     url,
-    dedupeKey: `wiki-lookup:${page}:${section ?? "full"}`,
+    dedupeKey: `wiki-lookup:${page}:${section}`,
     transform: (json) => ((json as WikiTextResponse).parse?.text?.["*"] ?? "").trim(),
   });
 }
@@ -210,18 +280,20 @@ async function fetchWikiHtml(page: string, section?: string): Promise<string> {
 export async function fetchWikiLookupDocument(
   page: string
 ): Promise<WikiLookupDocument> {
-  const cacheKey = `wiki-lookup:v3:${page}`;
+  const cacheKey = `wiki-lookup:v5:${page}`;
   const cached = getCached<WikiLookupDocument>(cacheKey, LOOKUP_TTL);
   if (cached) return cached;
 
-  const [fullHtml, sections] = await Promise.all([
-    fetchWikiHtml(page),
+  const [fullParse, sections] = await Promise.all([
+    fetchWikiHtmlFull(page),
     fetchWikiSections(page),
   ]);
 
-  const lead = parseLead(fullHtml, page);
+  const canonicalTitle = fullParse.canonicalTitle;
+  const lead = parseLead(fullParse.html, canonicalTitle);
+  const totalRelatedPages = lead.relatedPages.length;
   const [classification, relatedPages] = await Promise.all([
-    classifyWikiPageInternal(page),
+    classifyWikiPageInternal(canonicalTitle),
     Promise.all(
       lead.relatedPages.slice(0, 12).map(async (relatedPage) => ({
         title: relatedPage,
@@ -241,22 +313,24 @@ export async function fetchWikiLookupDocument(
   const normalizedSections = (
     await Promise.all(
       selectedSections.map(async (section) =>
-        parseSection(await fetchWikiHtml(page, section.number), section.line)
+        parseSection(await fetchWikiHtmlSection(page, section.number), section.line)
       )
     )
   ).filter((section: WikiLookupSection | null): section is WikiLookupSection => section !== null);
 
   const document: WikiLookupDocument = {
-    title: page,
+    title: canonicalTitle,
     pageType: classification.entityKind,
     template: classification.template,
     summary: lead.summary,
     infoboxTitle: lead.infoboxTitle,
     infoboxImage: lead.infoboxImage,
     infoboxFields: lead.infoboxFields,
+    totalInfoboxFields: lead.totalInfoboxFields,
     leadHtml: lead.leadHtml,
     sections: normalizedSections,
     relatedPages,
+    totalRelatedPages,
     fetchedAt: Date.now(),
   };
 

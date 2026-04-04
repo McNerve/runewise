@@ -162,13 +162,42 @@ export async function fetchAllEquipment(): Promise<WikiEquipment[]> {
   return equipmentPromise;
 }
 
+const EXCLUDED_VERSIONS = [
+  "broken", "locked", "inactive", "deadman", "cosmetic",
+  "uncharged", "discharged", "damaged", "last man standing",
+  "nightmare zone", "soul wars", "castle wars", "beta",
+];
+
+function isExcludedVersion(version: string | null): boolean {
+  if (!version) return false;
+  const lower = version.toLowerCase();
+  return EXCLUDED_VERSIONS.some((v) => lower.includes(v));
+}
+
+function dedupeEquipment(items: WikiEquipment[]): WikiEquipment[] {
+  const bestByName = new Map<string, WikiEquipment>();
+  for (const item of items) {
+    if (isExcludedVersion(item.version)) continue;
+    const existing = bestByName.get(item.name);
+    if (!existing) {
+      bestByName.set(item.name, item);
+      continue;
+    }
+    // Prefer the version with no suffix, or "Normal", over others
+    if (!item.version || item.version === "Normal") {
+      bestByName.set(item.name, item);
+    }
+  }
+  return [...bestByName.values()];
+}
+
 export function searchEquipment(
   equipment: WikiEquipment[],
   query: string,
   slot?: EquipmentSlot,
   limit = 30
 ): WikiEquipment[] {
-  let results = equipment;
+  let results = dedupeEquipment(equipment);
 
   if (slot) {
     results = results.filter((e) => e.slot === slot);

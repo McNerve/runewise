@@ -41,7 +41,8 @@ function scoreMethod(method: TrainingMethod, preference: TrainingPreference): nu
 export function generatePlan(
   currentLevels: Record<string, number>,
   targetLevels: Record<string, number>,
-  preference: TrainingPreference = "fastest"
+  preference: TrainingPreference = "fastest",
+  ironmanMode = false
 ): TrainingPlan {
   const steps: PlanStep[] = [];
 
@@ -58,6 +59,7 @@ export function generatePlan(
     // Find the best available method at the current level given the preference
     const available = methods
       .filter((m) => (m.levelReq ?? 1) <= current && m.xpPerHour && m.xpPerHour > 0)
+      .filter((m) => !ironmanMode || m.ironmanViable !== false)
       .sort((a, b) => scoreMethod(b, preference) - scoreMethod(a, preference));
 
     const method = available[0];

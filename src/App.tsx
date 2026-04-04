@@ -1,5 +1,6 @@
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import * as Tooltip from "@radix-ui/react-tooltip";
 import Sidebar from "./components/Sidebar";
 import PlayerBar from "./components/PlayerBar";
 import GlobalSearch from "./components/GlobalSearch";
@@ -9,7 +10,7 @@ import { CardSkeleton } from "./components/Skeleton";
 import { useHiscores } from "./hooks/useHiscores";
 import { useKeyboardNav } from "./hooks/useKeyboardNav";
 import { NavigationProvider, useNavigation } from "./lib/NavigationContext";
-import { SettingsContext } from "./hooks/useSettings";
+import { SettingsContext, useSettings } from "./hooks/useSettings";
 import { useSettingsProvider } from "./hooks/useSettings";
 import { VIEW_RENDERERS } from "./lib/viewRegistry";
 import { getFeatureAccent } from "./lib/featureAccent";
@@ -17,8 +18,17 @@ import { getFeatureAccent } from "./lib/featureAccent";
 function AppContent() {
   const { view, navigate } = useNavigation();
   const hiscores = useHiscores();
+  const { settings, update: updateSettings } = useSettings();
   useKeyboardNav(navigate);
   const renderView = VIEW_RENDERERS[view];
+
+  // Auto-toggle ironman mode when an ironman account is detected
+  useEffect(() => {
+    const isIronman = hiscores.ironmanType !== "none";
+    if (isIronman !== settings.ironmanMode) {
+      updateSettings({ ironmanMode: isIronman });
+    }
+  }, [hiscores.ironmanType]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <>
@@ -76,9 +86,11 @@ function App() {
 
   return (
     <SettingsContext.Provider value={settingsValue}>
-      <NavigationProvider>
-        <AppContent />
-      </NavigationProvider>
+      <Tooltip.Provider delayDuration={300}>
+        <NavigationProvider>
+          <AppContent />
+        </NavigationProvider>
+      </Tooltip.Provider>
     </SettingsContext.Provider>
   );
 }

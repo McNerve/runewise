@@ -14,11 +14,13 @@ import {
 import { useDebounce } from "../../hooks/useDebounce";
 import { useWatchlist } from "../../hooks/useWatchlist";
 import { formatGp, timeAgo } from "../../lib/format";
-import { itemIcon } from "../../lib/sprites";
+import { itemIcon, encodeIconFilename, WIKI_IMG } from "../../lib/sprites";
 import { useNavigation } from "../../lib/NavigationContext";
 import WikiImage from "../../components/WikiImage";
 import { Skeleton, TableSkeleton } from "../../components/Skeleton";
 import EmptyState from "../../components/EmptyState";
+import ItemTooltip from "../../components/ItemTooltip";
+import { useSettings } from "../../hooks/useSettings";
 import {
   PERIODS,
   PERIOD_TIMESTEP,
@@ -134,7 +136,7 @@ function MarketDetail({
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
           <WikiImage
-            src={`https://oldschool.runescape.wiki/images/${item.icon}`}
+            src={`${WIKI_IMG}/${encodeIconFilename(item.icon)}`}
             alt={item.name}
             className="w-8 h-8"
             fallback={item.name[0]}
@@ -278,6 +280,7 @@ export default function Market({
   subtitle = "Search items, compare prices, inspect trends, and move into watchlists from one shared workspace.",
 }: MarketProps) {
   const { params, navigate } = useNavigation();
+  const { settings } = useSettings();
   const { items: watchlistItems, addItem: addToWatchlist } = useWatchlist();
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebounce(query, 250);
@@ -488,6 +491,11 @@ export default function Market({
         <div className="mb-4">
           <h2 className="text-2xl font-semibold tracking-tight">{title}</h2>
           <p className="max-w-2xl text-sm text-text-secondary">{subtitle}</p>
+          {settings.ironmanMode && (
+            <div className="mt-2 rounded-lg border border-warning/30 bg-warning/5 px-3 py-1.5 text-xs text-warning">
+              Ironman mode — GE prices shown for reference only. Items must be self-obtained.
+            </div>
+          )}
         </div>
 
         {selectedItem ? (
@@ -735,13 +743,13 @@ export default function Market({
                       <td className="px-4 py-2">
                         <div className="flex items-center gap-2">
                           <WikiImage
-                            src={`https://oldschool.runescape.wiki/images/${item.icon}`}
+                            src={`${WIKI_IMG}/${encodeIconFilename(item.icon)}`}
                             alt=""
                             className="w-5 h-5 shrink-0"
                             fallback={item.name[0]}
                           />
                           <div>
-                            <div className="font-medium">{item.name}</div>
+                            <ItemTooltip itemName={item.name}><div className="font-medium cursor-default">{item.name}</div></ItemTooltip>
                             {item.members && (
                               <span className="text-[10px] text-warning">P2P</span>
                             )}

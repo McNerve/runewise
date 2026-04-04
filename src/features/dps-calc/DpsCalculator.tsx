@@ -19,6 +19,15 @@ import MonsterSearch from "./components/MonsterSearch";
 import ModifierToggles from "./components/ModifierToggles";
 import DpsBreakdown from "./components/DpsBreakdown";
 import GearSelector from "./GearSelector";
+import { getPhaseBoss, type BossPhase } from "../../lib/data/boss-phases";
+import { getSpecWeaponsForStyle, type SpecWeapon } from "../../lib/data/spec-weapons";
+import { calculateSpecDps, toaDefenseScale, toaHpScale, coxHpScale, compareDps, type DpsInput } from "../../lib/formulas/dps";
+import {
+  COMBAT_SPELLS,
+  spellMaxHit,
+  magicDartBaseMaxHit,
+  type CombatSpell,
+} from "../../lib/data/combat-spells";
 
 type CombatStyle = "melee" | "ranged" | "magic";
 type BonusMode = "equipment" | "manual";
@@ -123,6 +132,9 @@ export default function DpsCalculator({ hiscores }: Props) {
     loadJSON(LOADOUTS_KEY, [])
   );
   const [loadoutName, setLoadoutName] = useState("");
+  const [selectedSpec, setSelectedSpec] = useState<SpecWeapon | null>(null);
+  const [selectedSpell, setSelectedSpell] = useState<CombatSpell | null>(null);
+  const [compareLoadout, setCompareLoadout] = useState<GearLoadout | null>(null);
   const pendingLoadout = useRef<GearLoadout | null>(null);
 
   // Gear selector state
@@ -232,6 +244,8 @@ export default function DpsCalculator({ hiscores }: Props) {
       setPrayerIdx(0);
       setAttackSpeed(DEFAULT_SPEED[combatStyle]);
       setActiveModifiers(new Set());
+      setSelectedSpec(null);
+      setSelectedSpell(null);
     }
   }, [combatStyle]);
 
@@ -263,14 +277,39 @@ export default function DpsCalculator({ hiscores }: Props) {
   );
   const prayer: Prayer = filteredPrayers[prayerIdx] ?? filteredPrayers[0];
 
+  // Phase boss detection
+  const bossPhases = useMemo<BossPhase[] | null>(
+    () => selectedMonster ? getPhaseBoss(selectedMonster.name) : null,
+    [selectedMonster]
+  );
+  const phaseMonsters = useMemo(() => {
+    if (!bossPhases || !selectedMonster) return [];
+    return bossPhases.map((phase) => {
+      const match = wikiMonsters.find(
+        (m) => m.name === selectedMonster.name && m.version === phase.version
+      );
+      return { phase, monster: match ?? null };
+    }).filter((p) => p.monster !== null) as Array<{ phase: BossPhase; monster: WikiMonster }>;
+  }, [bossPhases, selectedMonster, wikiMonsters]);
+
   const isCustom = !selectedMonster;
-  const targetDefLevel = isCustom
+  const baseDefLevel = isCustom
     ? customDef.defLevel
     : selectedMonster.defenceLevel;
   const targetDefBonus = isCustom
     ? customDef.defBonus
     : getDefBonus(selectedMonster, combatStyle);
-  const targetHp = isCustom ? customDef.hp : selectedMonster.hitpoints;
+  const baseHp = isCustom ? customDef.hp : selectedMonster.hitpoints;
+
+  // Apply raid scaling
+  const targetDefLevel = toaInvocation > 0
+    ? toaDefenseScale(baseDefLevel, toaInvocation)
+    : baseDefLevel;
+  const targetHp = coxPartySize > 1
+    ? coxHpScale(baseHp, coxPartySize)
+    : toaInvocation > 0
+      ? toaHpScale(baseHp, toaInvocation)
+      : baseHp;
 
   const modifierList = useMemo<DpsModifier[]>(
     () =>
@@ -279,6 +318,13 @@ export default function DpsCalculator({ hiscores }: Props) {
         .filter((m): m is DpsModifier => m != null),
     [activeModifiers]
   );
+
+  // Spell-based max hit for magic combat style
+  const activeSpellBase = useMemo(() => {
+    if (combatStyle !== "magic" || !selectedSpell) return undefined;
+    if (selectedSpell.id === "magic_dart") return magicDartBaseMaxHit(magicLevel);
+    return selectedSpell.baseMaxHit;
+  }, [combatStyle, selectedSpell, magicLevel]);
 
   /* eslint-disable react-hooks/preserve-manual-memoization */
   const result = useMemo(
@@ -302,6 +348,7 @@ export default function DpsCalculator({ hiscores }: Props) {
         targetMagicLevel: selectedMonster?.magicLevel,
         modifiers: modifierList,
         defReductions,
+        spellBaseMaxHit: activeSpellBase,
       }),
     [
       attackLevel,
@@ -320,9 +367,144 @@ export default function DpsCalculator({ hiscores }: Props) {
       selectedMonster?.magicLevel,
       modifierList,
       defReductions,
+      activeSpellBase,
     ]
   );
   /* eslint-enable react-hooks/preserve-manual-memoization */
+
+  const stanceAttackBonus = stance.attackBonus;
+  const stanceStrengthBonus = stance.strengthBonus;
+  const prayerAttackMult = prayer.attackMult;
+  const prayerStrengthMult = prayer.strengthMult;
+
+  const phaseResults = useMemo(() => {
+    if (phaseMonsters.length === 0) return [];
+    return phaseMonsters.map(({ phase, monster }) => ({
+      phase,
+      monster,
+      result: calculateDps({
+        attackLevel,
+        strengthLevel,
+        rangedLevel,
+        magicLevel,
+        attackBonus: effectiveAttackBonus,
+        strengthBonus: effectiveStrengthBonus,
+        prayerAttackMult,
+        prayerStrengthMult,
+        stanceAttackBonus,
+        stanceStrengthBonus,
+        attackSpeed: effectiveAttackSpeed,
+        combatStyle,
+        targetDefLevel: monster.defenceLevel,
+        targetDefBonus: getDefBonus(monster, combatStyle),
+        targetHp: monster.hitpoints,
+        targetMagicLevel: monster.magicLevel,
+        modifiers: modifierList,
+        defReductions,
+      }),
+    }));
+  }, [phaseMonsters, attackLevel, strengthLevel, rangedLevel, magicLevel, effectiveAttackBonus, effectiveStrengthBonus, prayerAttackMult, prayerStrengthMult, stanceAttackBonus, stanceStrengthBonus, effectiveAttackSpeed, combatStyle, modifierList, defReductions]);
+
+  // Loadout comparison
+  const comparisonResult = useMemo(() => {
+    if (!compareLoadout) return null;
+    const compareStances = GENERIC_STANCES[compareLoadout.combatStyle];
+    const cmpStance = compareStances[compareLoadout.stanceIdx] ?? compareStances[0];
+    const cmpPrayer = PRAYERS.filter((p) => p.style === compareLoadout.combatStyle)[compareLoadout.prayerIdx] ?? PRAYERS[0];
+
+    let cmpAttackBonus = compareLoadout.attackBonus;
+    let cmpStrengthBonus = compareLoadout.attackBonus;
+    if (compareLoadout.gear) {
+      const bonuses = sumGearBonuses(compareLoadout.gear as EquippedGear);
+      if (compareLoadout.combatStyle === "melee") {
+        cmpAttackBonus = bonuses.attackBonus;
+        cmpStrengthBonus = bonuses.strengthBonus;
+      } else if (compareLoadout.combatStyle === "ranged") {
+        cmpAttackBonus = bonuses.rangedBonus;
+        cmpStrengthBonus = bonuses.rangedStrength;
+      } else {
+        cmpAttackBonus = bonuses.magicBonus;
+        cmpStrengthBonus = bonuses.magicDamage;
+      }
+    }
+
+    const cmpInput: DpsInput = {
+      attackLevel,
+      strengthLevel,
+      rangedLevel,
+      magicLevel,
+      attackBonus: cmpAttackBonus,
+      strengthBonus: cmpStrengthBonus,
+      prayerAttackMult: cmpPrayer.attackMult,
+      prayerStrengthMult: cmpPrayer.strengthMult,
+      stanceAttackBonus: cmpStance.attackBonus,
+      stanceStrengthBonus: cmpStance.strengthBonus,
+      attackSpeed: compareLoadout.attackSpeed,
+      combatStyle: compareLoadout.combatStyle,
+      targetDefLevel,
+      targetDefBonus,
+      targetHp,
+      targetMagicLevel: selectedMonster?.magicLevel,
+      modifiers: [...compareLoadout.modifiers].map((id) => DPS_MODIFIERS[id]).filter((m): m is DpsModifier => m != null),
+      defReductions,
+    };
+    const currentInput: DpsInput = {
+      attackLevel,
+      strengthLevel,
+      rangedLevel,
+      magicLevel,
+      attackBonus: effectiveAttackBonus,
+      strengthBonus: effectiveStrengthBonus,
+      prayerAttackMult,
+      prayerStrengthMult,
+      stanceAttackBonus,
+      stanceStrengthBonus,
+      attackSpeed: effectiveAttackSpeed,
+      combatStyle,
+      targetDefLevel,
+      targetDefBonus,
+      targetHp,
+      targetMagicLevel: selectedMonster?.magicLevel,
+      modifiers: modifierList,
+      defReductions,
+      spellBaseMaxHit: activeSpellBase,
+    };
+    return compareDps(cmpInput, currentInput);
+  }, [compareLoadout, attackLevel, strengthLevel, rangedLevel, magicLevel, effectiveAttackBonus, effectiveStrengthBonus, prayerAttackMult, prayerStrengthMult, stanceAttackBonus, stanceStrengthBonus, effectiveAttackSpeed, combatStyle, targetDefLevel, targetDefBonus, targetHp, selectedMonster?.magicLevel, modifierList, defReductions, activeSpellBase]);
+
+  const specWeapons = useMemo(
+    () => getSpecWeaponsForStyle(combatStyle),
+    [combatStyle]
+  );
+
+  const specResult = useMemo(() => {
+    if (!selectedSpec) return null;
+    return calculateSpecDps({
+      attackLevel,
+      strengthLevel,
+      rangedLevel,
+      magicLevel,
+      attackBonus: effectiveAttackBonus,
+      strengthBonus: effectiveStrengthBonus,
+      prayerAttackMult,
+      prayerStrengthMult,
+      stanceAttackBonus,
+      stanceStrengthBonus,
+      attackSpeed: effectiveAttackSpeed,
+      combatStyle,
+      targetDefLevel,
+      targetDefBonus,
+      targetHp,
+      targetMagicLevel: selectedMonster?.magicLevel,
+      modifiers: modifierList,
+      defReductions,
+      specAccuracyMult: selectedSpec.accuracyMult,
+      specDamageMult: selectedSpec.damageMult,
+      specHits: selectedSpec.hits,
+      specGuaranteedHit: selectedSpec.guaranteedHit,
+      specSpeed: effectiveAttackSpeed,
+    });
+  }, [selectedSpec, attackLevel, strengthLevel, rangedLevel, magicLevel, effectiveAttackBonus, effectiveStrengthBonus, prayerAttackMult, prayerStrengthMult, stanceAttackBonus, stanceStrengthBonus, effectiveAttackSpeed, combatStyle, targetDefLevel, targetDefBonus, targetHp, selectedMonster?.magicLevel, modifierList, defReductions]);
 
   const toggleModifier = useCallback((id: string) => { // eslint-disable-line react-hooks/preserve-manual-memoization
     setActiveModifiers((prev) => {
@@ -400,18 +582,16 @@ export default function DpsCalculator({ hiscores }: Props) {
   const totalDps = result.dps + poisonDpsValue;
 
   return (
-    <div className="max-w-3xl">
-      <h2 className="text-xl font-semibold mb-5">DPS Calculator</h2>
-
-      <div className="space-y-5">
-        {/* Combat Style */}
-        <div className="flex gap-2">
+    <div className="max-w-5xl">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-semibold">DPS Calculator</h2>
+        <div className="flex gap-1.5">
           {(["melee", "ranged", "magic"] as const).map((style) => (
             <button
               key={style}
               onClick={() => setCombatStyle(style)}
               aria-pressed={combatStyle === style}
-              className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium capitalize transition-colors ${
+              className={`px-4 py-1.5 rounded-lg text-xs font-medium capitalize transition-colors ${
                 combatStyle === style
                   ? "bg-accent text-white"
                   : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
@@ -421,45 +601,46 @@ export default function DpsCalculator({ hiscores }: Props) {
             </button>
           ))}
         </div>
+      </div>
 
-        {/* Gear Presets + Loadouts */}
-        <div className="space-y-3">
-          {/* Preset templates */}
+      <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-6 items-start">
+
+      {/* ====== LEFT COLUMN — Configuration ====== */}
+      <div className="space-y-5">
+
+        {/* Presets + Loadouts — compact row */}
+        <div className="grid grid-cols-2 gap-3">
           <div>
-            <div className="section-kicker mb-2">Gear Presets</div>
-            <div className="flex gap-2">
-              <select
-                value=""
-                onChange={(e) => {
-                  const preset = GEAR_PRESETS.find((p) => p.name === e.target.value);
-                  if (preset) applyPreset(preset);
-                }}
-                className="flex-1 bg-bg-tertiary border border-border rounded-lg px-3 py-1.5 text-sm"
-              >
-                <option value="">Load a preset...</option>
-                <optgroup label="Melee">
-                  {GEAR_PRESETS.filter((p) => p.style === "melee").map((p) => (
-                    <option key={p.name} value={p.name}>{p.name} — {p.description}</option>
-                  ))}
-                </optgroup>
-                <optgroup label="Ranged">
-                  {GEAR_PRESETS.filter((p) => p.style === "ranged").map((p) => (
-                    <option key={p.name} value={p.name}>{p.name} — {p.description}</option>
-                  ))}
-                </optgroup>
-                <optgroup label="Magic">
-                  {GEAR_PRESETS.filter((p) => p.style === "magic").map((p) => (
-                    <option key={p.name} value={p.name}>{p.name} — {p.description}</option>
-                  ))}
-                </optgroup>
-              </select>
-            </div>
+            <div className="section-kicker mb-1.5">Preset</div>
+            <select
+              value=""
+              onChange={(e) => {
+                const preset = GEAR_PRESETS.find((p) => p.name === e.target.value);
+                if (preset) applyPreset(preset);
+              }}
+              className="w-full bg-bg-tertiary border border-border rounded-lg px-3 py-1.5 text-sm"
+            >
+              <option value="">Load a preset...</option>
+              <optgroup label="Melee">
+                {GEAR_PRESETS.filter((p) => p.style === "melee").map((p) => (
+                  <option key={p.name} value={p.name}>{p.name} — {p.description}</option>
+                ))}
+              </optgroup>
+              <optgroup label="Ranged">
+                {GEAR_PRESETS.filter((p) => p.style === "ranged").map((p) => (
+                  <option key={p.name} value={p.name}>{p.name} — {p.description}</option>
+                ))}
+              </optgroup>
+              <optgroup label="Magic">
+                {GEAR_PRESETS.filter((p) => p.style === "magic").map((p) => (
+                  <option key={p.name} value={p.name}>{p.name} — {p.description}</option>
+                ))}
+              </optgroup>
+            </select>
           </div>
-
-          {/* Saved loadouts */}
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <div className="section-kicker">Saved Loadouts</div>
+            <div className="flex items-center justify-between mb-1.5">
+              <div className="section-kicker">Loadout</div>
               <button
                 onClick={() => {
                   setEquippedGear({});
@@ -477,8 +658,8 @@ export default function DpsCalculator({ hiscores }: Props) {
                 Clear
               </button>
             </div>
-            {loadouts.length > 0 && (
-              <div className="flex gap-2 mb-2">
+            {loadouts.length > 0 ? (
+              <div className="flex gap-1.5">
                 <select
                   value={activeLoadout ?? ""}
                   onChange={(e) => {
@@ -494,43 +675,38 @@ export default function DpsCalculator({ hiscores }: Props) {
                 </select>
                 {activeLoadout && (
                   <button
-                    onClick={() => {
-                      if (activeLoadout) deleteLoadout(activeLoadout);
-                      setActiveLoadout(null);
-                    }}
+                    onClick={() => { if (activeLoadout) deleteLoadout(activeLoadout); setActiveLoadout(null); }}
                     className="px-2 py-1.5 text-xs text-text-secondary/40 hover:text-danger transition-colors"
-                    title="Delete selected loadout"
-                  >
-                    ×
-                  </button>
+                    title="Delete"
+                  >×</button>
                 )}
               </div>
+            ) : (
+              <div className="flex gap-1.5">
+                <input
+                  type="text"
+                  value={loadoutName}
+                  onChange={(e) => setLoadoutName(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && saveLoadout()}
+                  placeholder="Save as..."
+                  aria-label="Loadout name"
+                  className="flex-1 bg-bg-secondary border border-border rounded-lg px-3 py-1.5 text-sm"
+                />
+                <button
+                  onClick={saveLoadout}
+                  disabled={!loadoutName.trim()}
+                  className="px-3 py-1.5 text-xs font-medium bg-accent text-white rounded-lg hover:bg-accent-hover transition-colors disabled:opacity-40"
+                >Save</button>
+              </div>
             )}
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={loadoutName}
-                onChange={(e) => setLoadoutName(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && saveLoadout()}
-                placeholder="Save as..."
-                aria-label="Loadout name"
-                className="flex-1 bg-bg-secondary border border-border rounded-lg px-3 py-1.5 text-sm"
-              />
-              <button
-                onClick={saveLoadout}
-                disabled={!loadoutName.trim()}
-                className="px-3 py-1.5 text-xs font-medium bg-accent text-white rounded-lg hover:bg-accent-hover transition-colors disabled:opacity-40"
-              >
-                Save
-              </button>
-            </div>
           </div>
         </div>
 
         {/* Stats + Equipment side by side */}
+        <div className="rounded-xl border border-border/40 bg-bg-primary/20 p-4">
         <div className="grid grid-cols-2 gap-5">
           <div>
-            <div className="section-kicker mb-3">Player Stats</div>
+            <div className="section-kicker mb-2">Player Stats</div>
             <div className="space-y-2">
               {combatStyle === "melee" && (
                 <>
@@ -553,7 +729,7 @@ export default function DpsCalculator({ hiscores }: Props) {
           </div>
 
           <div>
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-2">
               <div className="section-kicker">Equipment Bonuses</div>
               <div className="flex items-center gap-2">
                 <button
@@ -678,6 +854,7 @@ export default function DpsCalculator({ hiscores }: Props) {
             )}
           </div>
         </div>
+        </div>
 
         {/* Gear selector modal */}
         {openSlot !== null && (
@@ -700,6 +877,7 @@ export default function DpsCalculator({ hiscores }: Props) {
         )}
 
         {/* Prayer + Stance */}
+        <div className="rounded-xl border border-border/40 bg-bg-primary/20 p-4">
         <div className="grid grid-cols-2 gap-5">
           <div>
             <div className="section-kicker mb-2">Prayer</div>
@@ -751,38 +929,114 @@ export default function DpsCalculator({ hiscores }: Props) {
                 <span className="ml-1.5 text-accent/60 normal-case tracking-normal">({weaponType.name})</span>
               )}
             </div>
-            <div className="grid grid-cols-2 gap-1">
+            <div className={`grid gap-1.5 ${
+              stances.length === 2 ? "grid-cols-2" :
+              stances.length === 3 ? "grid-cols-3" :
+              "grid-cols-2"
+            }`}>
               {stances.map((s, i) => {
                 const isActive = stanceIdx === i;
+                const typeColor =
+                  s.attackType === "stab" ? "text-red-400" :
+                  s.attackType === "slash" ? "text-orange-400" :
+                  s.attackType === "crush" ? "text-amber-400" :
+                  s.attackType === "ranged" ? "text-green-400" :
+                  s.attackType === "magic" ? "text-blue-400" :
+                  "text-text-secondary";
+                const bonusParts: string[] = [];
+                if (s.attackBonus > 0) bonusParts.push(`+${s.attackBonus} atk`);
+                if (s.strengthBonus > 0) bonusParts.push(`+${s.strengthBonus} str`);
+                if (s.defenceBonus > 0) bonusParts.push(`+${s.defenceBonus} def`);
+                if (s.speedMod < 0) bonusParts.push("1 tick faster");
+                if (s.speedMod > 0) bonusParts.push("1 tick slower");
                 return (
                   <button
                     key={`${s.name}-${i}`}
                     onClick={() => setStanceIdx(i)}
                     aria-pressed={isActive}
-                    className={`px-2.5 py-2 rounded-lg text-left text-xs transition-colors ${
+                    title={`${s.name} — ${s.style} (${s.attackType})${bonusParts.length ? ` · ${bonusParts.join(", ")}` : ""}`}
+                    className={`px-2.5 py-2 rounded-lg text-left text-xs transition-all ${
                       isActive
-                        ? "bg-accent text-white"
-                        : "bg-bg-tertiary/50 text-text-secondary hover:bg-bg-tertiary"
+                        ? "bg-accent/15 ring-1 ring-accent/50 text-text-primary"
+                        : "bg-bg-tertiary/40 text-text-secondary hover:bg-bg-tertiary border border-border/20"
                     }`}
                   >
-                    <div className="font-medium">{s.name}</div>
-                    <div className={`text-[9px] mt-0.5 ${isActive ? "text-white/60" : "text-text-secondary/40"}`}>
-                      {s.attackType}
-                      {s.attackBonus > 0 && ` · +${s.attackBonus} atk`}
-                      {s.strengthBonus > 0 && ` · +${s.strengthBonus} str`}
-                      {s.defenceBonus > 0 && ` · +${s.defenceBonus} def`}
-                      {s.speedMod !== 0 && ` · ${s.speedMod > 0 ? "+" : ""}${s.speedMod} speed`}
+                    <div className="font-medium truncate">{s.name}</div>
+                    <div className={`text-[9px] mt-0.5 ${isActive ? "text-accent" : "text-text-secondary/40"}`}>
+                      <span className={isActive ? typeColor : ""}>{s.attackType}</span>
+                      <span className="mx-0.5">·</span>
+                      {s.style}
                     </div>
+                    {bonusParts.length > 0 && (
+                      <div className={`text-[9px] mt-0.5 ${isActive ? "text-text-secondary" : "text-text-secondary/30"}`}>
+                        {bonusParts.join(" · ")}
+                      </div>
+                    )}
                   </button>
                 );
               })}
             </div>
+            {stance && (
+              <div className="mt-1.5 text-[10px] text-text-secondary">
+                <span className="text-text-primary font-medium">{stance.name}</span>
+                <span className="text-text-secondary/40"> {stance.style} · {stance.attackType}</span>
+                {stance.speedMod < 0 && <span className="text-success"> · 1 tick faster</span>}
+              </div>
+            )}
           </div>
         </div>
+        </div>
+
+        {/* Spell Selection (magic only) */}
+        {combatStyle === "magic" && (
+          <div>
+            <div className="section-kicker mb-2">Spell</div>
+            <select
+              value={selectedSpell?.id ?? ""}
+              onChange={(e) => {
+                const spell = COMBAT_SPELLS.find((s) => s.id === e.target.value) ?? null;
+                setSelectedSpell(spell);
+              }}
+              className="w-full bg-bg-tertiary border border-border rounded-lg px-3 py-1.5 text-sm"
+            >
+              <option value="">Powered staff (level-based)</option>
+              <optgroup label="Standard">
+                {COMBAT_SPELLS.filter((s) => s.spellbook === "standard").map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name} — Base {s.id === "magic_dart" ? `${magicDartBaseMaxHit(magicLevel)}` : s.baseMaxHit} (Lvl {s.magicLevel})
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label="Ancient Magicks">
+                {COMBAT_SPELLS.filter((s) => s.spellbook === "ancient").map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name} — Base {s.baseMaxHit} (Lvl {s.magicLevel})
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label="Arceuus">
+                {COMBAT_SPELLS.filter((s) => s.spellbook === "arceuus").map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name} — Base {s.baseMaxHit} (Lvl {s.magicLevel})
+                  </option>
+                ))}
+              </optgroup>
+            </select>
+            {selectedSpell && (
+              <div className="mt-1.5 text-[10px] text-text-secondary">
+                <span className="text-text-primary font-medium">{selectedSpell.name}</span>
+                <span className="text-text-secondary/40"> · base {activeSpellBase} · with gear {spellMaxHit(activeSpellBase ?? 0, effectiveStrengthBonus)}</span>
+                {selectedSpell.notes && (
+                  <span className="text-text-secondary/30"> · {selectedSpell.notes}</span>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Modifiers */}
         <div>
-          <div className="section-kicker mb-3">Modifiers</div>
+          <div className="section-kicker mb-2">Modifiers</div>
           <ModifierToggles
             activeIds={activeModifiers}
             onToggle={toggleModifier}
@@ -790,9 +1044,15 @@ export default function DpsCalculator({ hiscores }: Props) {
           />
         </div>
 
+      </div>
+      {/* ====== END LEFT COLUMN ====== */}
+
+      {/* ====== RIGHT COLUMN — Target + Results (sticky) ====== */}
+      <div className="lg:sticky lg:top-4 lg:self-start space-y-5">
+
         {/* Target */}
-        <div>
-          <div className="section-kicker mb-3">Target</div>
+        <div className="rounded-xl border border-border/40 bg-bg-primary/20 p-4">
+          <div className="section-kicker mb-2">Target</div>
           <MonsterSearch
             monsters={wikiMonsters}
             selected={selectedMonster}
@@ -800,29 +1060,44 @@ export default function DpsCalculator({ hiscores }: Props) {
             combatStyle={combatStyle}
           />
 
+          {phaseMonsters.length > 1 && (
+            <div className="mt-2">
+              <div className="text-[10px] uppercase tracking-wider text-text-secondary/50 mb-1.5">
+                Phases — {selectedMonster?.name}
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {phaseMonsters.map(({ phase, monster }) => (
+                  <button
+                    key={phase.version}
+                    onClick={() => setSelectedMonster(monster)}
+                    className={`px-2.5 py-1.5 rounded-lg text-xs transition-all ${
+                      selectedMonster?.version === phase.version
+                        ? "bg-accent/15 ring-1 ring-accent/50 text-text-primary"
+                        : "bg-bg-tertiary/40 text-text-secondary hover:bg-bg-tertiary border border-border/20"
+                    }`}
+                  >
+                    <span className="font-medium">{phase.label}</span>
+                    <span className="ml-1.5 text-text-secondary/40">{monster.hitpoints} HP</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {isCustom && (
-            <div className="grid grid-cols-3 gap-3 mt-3">
-              <StatInput
-                label="Def level"
-                value={customDef.defLevel}
-                onChange={(v) => setCustomDef((p) => ({ ...p, defLevel: v }))}
-                min={1}
-                max={500}
-              />
-              <StatInput
-                label="Def bonus"
-                value={customDef.defBonus}
-                onChange={(v) => setCustomDef((p) => ({ ...p, defBonus: v }))}
-                min={-100}
-                max={500}
-              />
-              <StatInput
-                label="HP"
-                value={customDef.hp}
-                onChange={(v) => setCustomDef((p) => ({ ...p, hp: v }))}
-                min={1}
-                max={10000}
-              />
+            <div className="grid grid-cols-3 gap-2 mt-3">
+              <div>
+                <label className="text-[10px] text-text-secondary/50">Def Level</label>
+                <input type="number" min={1} max={500} value={customDef.defLevel} onChange={(e) => setCustomDef((p) => ({ ...p, defLevel: Number(e.target.value) }))} className="w-full bg-bg-tertiary border border-border rounded px-2 py-1.5 text-sm mt-0.5" />
+              </div>
+              <div>
+                <label className="text-[10px] text-text-secondary/50">Def Bonus</label>
+                <input type="number" min={-100} max={500} value={customDef.defBonus} onChange={(e) => setCustomDef((p) => ({ ...p, defBonus: Number(e.target.value) }))} className="w-full bg-bg-tertiary border border-border rounded px-2 py-1.5 text-sm mt-0.5" />
+              </div>
+              <div>
+                <label className="text-[10px] text-text-secondary/50">HP</label>
+                <input type="number" min={1} max={10000} value={customDef.hp} onChange={(e) => setCustomDef((p) => ({ ...p, hp: Number(e.target.value) }))} className="w-full bg-bg-tertiary border border-border rounded px-2 py-1.5 text-sm mt-0.5" />
+              </div>
             </div>
           )}
 
@@ -834,7 +1109,7 @@ export default function DpsCalculator({ hiscores }: Props) {
               max={10}
               value={defReductions}
               onChange={(e) => setDefReductions(Math.min(10, Math.max(0, Number(e.target.value))))}
-              className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm mt-1"
+              className="w-full bg-bg-tertiary border border-border rounded-lg px-3 py-1.5 text-sm mt-1"
             />
           </div>
 
@@ -846,23 +1121,83 @@ export default function DpsCalculator({ hiscores }: Props) {
               Raid Scaling {showRaidScaling ? "▾" : "▸"}
             </button>
             {showRaidScaling && (
-              <div className="mt-2 grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-[10px] text-text-secondary/50">ToA Invocations</label>
-                  <input type="number" min={0} max={600} value={toaInvocation} onChange={(e) => setToaInvocation(Number(e.target.value))} className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm mt-1" />
+              <>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[10px] text-text-secondary/50">ToA Invocations</label>
+                    <input type="number" min={0} max={600} value={toaInvocation} onChange={(e) => setToaInvocation(Number(e.target.value))} className="w-full bg-bg-tertiary border border-border rounded-lg px-3 py-1.5 text-sm mt-1" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-text-secondary/50">CoX Party Size</label>
+                    <input type="number" min={1} max={100} value={coxPartySize} onChange={(e) => setCoxPartySize(Number(e.target.value))} className="w-full bg-bg-tertiary border border-border rounded-lg px-3 py-1.5 text-sm mt-1" />
+                  </div>
                 </div>
-                <div>
-                  <label className="text-[10px] text-text-secondary/50">CoX Party Size</label>
-                  <input type="number" min={1} max={100} value={coxPartySize} onChange={(e) => setCoxPartySize(Number(e.target.value))} className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm mt-1" />
-                </div>
-              </div>
+                {(toaInvocation !== 0 || coxPartySize !== 1) && (
+                  <div className="mt-2 text-[10px] text-text-secondary/50">
+                    {toaInvocation !== 0 && (
+                      <span>Def: {baseDefLevel} {"\u2192"} <span className="text-warning">{targetDefLevel}</span> · HP: {baseHp} {"\u2192"} <span className="text-warning">{targetHp}</span></span>
+                    )}
+                    {coxPartySize !== 1 && (
+                      <span>HP: {baseHp} {"\u2192"} <span className="text-warning">{targetHp}</span> ({coxPartySize} players)</span>
+                    )}
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
 
-        {/* Results */}
+        {/* Spec Weapon */}
         <div>
-          <div className="flex items-center justify-between mb-3">
+          <div className="section-kicker mb-2">Special Attack</div>
+          <select
+            value={selectedSpec?.id ?? ""}
+            onChange={(e) => {
+              const spec = specWeapons.find((s) => s.id === e.target.value) ?? null;
+              setSelectedSpec(spec);
+            }}
+            className="w-full bg-bg-tertiary border border-border rounded-lg px-3 py-1.5 text-sm"
+          >
+            <option value="">None</option>
+            {specWeapons.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name} — {s.specName} ({s.specCost}%)
+              </option>
+            ))}
+          </select>
+          {selectedSpec && specResult && (
+            <div className="mt-2 rounded-lg border border-border/40 bg-bg-tertiary/30 p-3">
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div>
+                  <div className="text-lg font-bold text-accent tabular-nums">{specResult.specMaxHit}</div>
+                  <div className="text-[10px] text-text-secondary">Spec Max</div>
+                </div>
+                <div>
+                  <div className={`text-lg font-bold tabular-nums ${
+                    specResult.specAccuracy >= 0.8 ? "text-success" : specResult.specAccuracy >= 0.5 ? "text-warning" : "text-danger"
+                  }`}>
+                    {(specResult.specAccuracy * 100).toFixed(1)}%
+                  </div>
+                  <div className="text-[10px] text-text-secondary">Spec Acc</div>
+                </div>
+                <div>
+                  <div className="text-lg font-bold text-accent tabular-nums">{specResult.specDps.toFixed(2)}</div>
+                  <div className="text-[10px] text-text-secondary">Spec DPS</div>
+                </div>
+              </div>
+              {selectedSpec.hits > 1 && (
+                <div className="mt-1.5 text-[10px] text-text-secondary/50 text-center">
+                  {selectedSpec.hits} hits × {Math.floor(specResult.specMaxHit / selectedSpec.hits)} each
+                </div>
+              )}
+              <div className="mt-1.5 text-[10px] text-text-secondary/40 text-center">{selectedSpec.notes}</div>
+            </div>
+          )}
+        </div>
+
+        {/* Results */}
+        <div className="rounded-xl border border-border/40 bg-bg-primary/20 p-4">
+          <div className="flex items-center justify-between mb-2">
             <div className="section-kicker">Results</div>
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
@@ -870,7 +1205,7 @@ export default function DpsCalculator({ hiscores }: Props) {
                 <select
                   value={poisonType}
                   onChange={(e) => setPoisonType(e.target.value as "none" | "poison" | "venom")}
-                  className="bg-bg-tertiary border border-border rounded px-2 py-1 text-xs"
+                  className="bg-bg-tertiary border border-border rounded-lg px-2 py-1 text-xs"
                 >
                   <option value="none">None</option>
                   <option value="poison">Poison (+)</option>
@@ -892,6 +1227,7 @@ export default function DpsCalculator({ hiscores }: Props) {
             ttk={result.ttk}
             attackRoll={result.attackRoll}
             defenseRoll={result.defenseRoll}
+            showDetails={showBreakdown}
           />
           {poisonType !== "none" && (
             <div className="mt-3 flex gap-6 items-start">
@@ -905,8 +1241,131 @@ export default function DpsCalculator({ hiscores }: Props) {
               </div>
             </div>
           )}
+          {phaseResults.length > 1 && (
+            <div className="mt-4 rounded-lg border border-border/40 overflow-hidden">
+              <div className="px-3 py-2 text-[10px] uppercase tracking-wider text-text-secondary/50 border-b border-border/40">
+                Per-Phase Breakdown
+              </div>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border/40 text-xs text-text-secondary">
+                    <th className="text-left px-3 py-1.5">Phase</th>
+                    <th className="text-right px-3 py-1.5">HP</th>
+                    <th className="text-right px-3 py-1.5">Acc</th>
+                    <th className="text-right px-3 py-1.5">Max Hit</th>
+                    <th className="text-right px-3 py-1.5">DPS</th>
+                    <th className="text-right px-3 py-1.5">TTK</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {phaseResults.map(({ phase, monster, result: pr }) => {
+                    const accColor = pr.accuracy >= 0.8 ? "text-success" : pr.accuracy >= 0.5 ? "text-warning" : "text-danger";
+                    return (
+                      <tr
+                        key={phase.version}
+                        className={`border-b border-border/20 transition-colors ${
+                          selectedMonster?.version === phase.version
+                            ? "bg-accent/5"
+                            : "even:bg-bg-primary/25"
+                        }`}
+                      >
+                        <td className="px-3 py-1.5 font-medium">{phase.label}</td>
+                        <td className="px-3 py-1.5 text-right tabular-nums text-text-secondary">{monster.hitpoints}</td>
+                        <td className={`px-3 py-1.5 text-right tabular-nums ${accColor}`}>{(pr.accuracy * 100).toFixed(1)}%</td>
+                        <td className="px-3 py-1.5 text-right tabular-nums text-accent">{pr.maxHit}</td>
+                        <td className="px-3 py-1.5 text-right tabular-nums font-medium text-accent">{pr.dps.toFixed(2)}</td>
+                        <td className="px-3 py-1.5 text-right tabular-nums text-text-secondary">
+                          {pr.ttk < 60 ? `${pr.ttk.toFixed(1)}s` : `${Math.floor(pr.ttk / 60)}m ${Math.round(pr.ttk % 60)}s`}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  <tr className="border-t border-border/40 bg-bg-tertiary/30">
+                    <td className="px-3 py-1.5 font-medium text-text-secondary">Total</td>
+                    <td className="px-3 py-1.5 text-right tabular-nums font-medium">
+                      {phaseResults.reduce((sum, p) => sum + p.monster.hitpoints, 0)}
+                    </td>
+                    <td className="px-3 py-1.5" />
+                    <td className="px-3 py-1.5" />
+                    <td className="px-3 py-1.5" />
+                    <td className="px-3 py-1.5 text-right tabular-nums font-medium text-text-primary">
+                      {(() => {
+                        const totalTtk = phaseResults.reduce((sum, p) => sum + p.result.ttk, 0);
+                        return totalTtk < 60 ? `${totalTtk.toFixed(1)}s` : `${Math.floor(totalTtk / 60)}m ${Math.round(totalTtk % 60)}s`;
+                      })()}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Loadout Comparison */}
+          {loadouts.length > 0 && (
+            <div className="mt-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="text-[10px] uppercase tracking-wider text-text-secondary/50">Compare vs</div>
+                <select
+                  value={compareLoadout?.name ?? ""}
+                  onChange={(e) => {
+                    const l = loadouts.find((lo) => lo.name === e.target.value) ?? null;
+                    setCompareLoadout(l);
+                  }}
+                  className="flex-1 bg-bg-tertiary border border-border rounded-lg px-2 py-1 text-xs"
+                >
+                  <option value="">Select loadout...</option>
+                  {loadouts.map((l) => (
+                    <option key={l.name} value={l.name}>{l.name} ({l.combatStyle})</option>
+                  ))}
+                </select>
+              </div>
+              {comparisonResult && compareLoadout && (
+                <div className="rounded-lg border border-border/40 bg-bg-tertiary/30 p-3">
+                  <div className="grid grid-cols-3 gap-2 text-center text-sm">
+                    <div>
+                      <div className="text-text-secondary/50 text-[10px] mb-1">{compareLoadout.name}</div>
+                      <div className="font-bold tabular-nums">{comparisonResult.setup1.dps.toFixed(2)}</div>
+                      <div className="text-[10px] text-text-secondary">DPS</div>
+                    </div>
+                    <div>
+                      <div className="text-text-secondary/50 text-[10px] mb-1">Difference</div>
+                      <div className={`font-bold tabular-nums ${
+                        comparisonResult.dpsGain > 0 ? "text-success" :
+                        comparisonResult.dpsGain < 0 ? "text-danger" :
+                        "text-text-secondary"
+                      }`}>
+                        {comparisonResult.dpsGain > 0 ? "+" : ""}{comparisonResult.dpsGain.toFixed(2)}
+                      </div>
+                      <div className={`text-[10px] ${
+                        comparisonResult.dpsGainPct > 0 ? "text-success" :
+                        comparisonResult.dpsGainPct < 0 ? "text-danger" :
+                        "text-text-secondary"
+                      }`}>
+                        {comparisonResult.dpsGainPct > 0 ? "+" : ""}{comparisonResult.dpsGainPct.toFixed(1)}%
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-text-secondary/50 text-[10px] mb-1">Current</div>
+                      <div className="font-bold text-accent tabular-nums">{comparisonResult.setup2.dps.toFixed(2)}</div>
+                      <div className="text-[10px] text-text-secondary">DPS</div>
+                    </div>
+                  </div>
+                  {comparisonResult.ttkDiff !== 0 && isFinite(comparisonResult.ttkDiff) && (
+                    <div className={`mt-2 text-center text-[10px] ${comparisonResult.ttkDiff > 0 ? "text-success" : "text-danger"}`}>
+                      {comparisonResult.ttkDiff > 0 ? "Faster" : "Slower"} by {Math.abs(comparisonResult.ttkDiff).toFixed(1)}s
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
+
       </div>
+      {/* ====== END RIGHT COLUMN ====== */}
+
+      </div>
+      {/* ====== END GRID ====== */}
     </div>
   );
 }
@@ -927,8 +1386,8 @@ function StatInput({
   suffix?: string;
 }) {
   return (
-    <div className="flex items-center gap-3">
-      <label className="w-28 text-sm text-text-secondary shrink-0">
+    <div className="flex items-center gap-2">
+      <label className="w-20 text-xs text-text-secondary shrink-0">
         {label}
       </label>
       <div className="flex-1 flex items-center gap-2">
@@ -940,10 +1399,10 @@ function StatInput({
           onChange={(e) =>
             onChange(Math.max(min, Math.min(max, Number(e.target.value))))
           }
-          className="w-full bg-bg-tertiary border border-border rounded px-3 py-1.5 text-sm tabular-nums"
+          className="w-full bg-bg-tertiary border border-border rounded-lg px-3 py-1.5 text-sm tabular-nums"
         />
         {suffix && (
-          <span className="text-xs text-text-secondary shrink-0">
+          <span className="text-[10px] text-text-secondary/50 shrink-0">
             {suffix}
           </span>
         )}

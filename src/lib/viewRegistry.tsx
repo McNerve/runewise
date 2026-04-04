@@ -36,6 +36,7 @@ const TrainingPlan = lazy(() => import("../features/training-plan/TrainingPlan")
 const CollectionLog = lazy(() => import("../features/collection-log/CollectionLog"));
 const Raids = lazy(() => import("../features/raids/Raids"));
 const ProductionCalc = lazy(() => import("../features/production/ProductionCalc"));
+const ShopHelper = lazy(() => import("../features/shop-helper/ShopHelper"));
 const Kingdom = lazy(() => import("../features/kingdom/Kingdom"));
 const ProfitHub = lazy(() => import("../features/profit-hub/ProfitHub"));
 
@@ -91,6 +92,7 @@ export const VIEW_RENDERERS: Record<View, ViewRenderer> = {
   wiki: () => <WikiLookup key={window.location.hash} />,
   market: renderComponent(Market),
   "production-calc": renderComponent(ProductionCalc),
+  "shop-helper": renderComponent(ShopHelper),
   kingdom: renderComponent(Kingdom),
   "profit-hub": renderComponent(ProfitHub),
   about: renderComponent(About),
