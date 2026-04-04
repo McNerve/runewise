@@ -391,9 +391,9 @@ export default function Market({
     };
   }, [debouncedQuery]);
 
-  // Load full item mapping when Browse tab is activated
+  // Load full item mapping when Browse or Bulk tab is activated
   useEffect(() => {
-    if (tab !== "browse" || allItems.length > 0) return;
+    if ((tab !== "browse" && tab !== "bulk") || allItems.length > 0) return;
     let cancelled = false;
     setBrowseLoading(true);
     fetchMapping()
