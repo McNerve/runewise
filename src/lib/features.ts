@@ -167,6 +167,14 @@ export const FEATURE_REGISTRY = {
     search: true,
     aliases: ["production", "crafting", "recipes", "cost calculator", "profit calculator", "herblore", "smithing"],
   },
+  "shop-helper": {
+    title: "Shop Helper",
+    navLabel: "Shop Helper",
+    family: "Tools",
+    sidebar: true,
+    search: true,
+    aliases: ["shop", "shops", "store", "npc", "buy", "sell", "shopkeeper"],
+  },
   kingdom: {
     title: "Kingdom of Miscellania",
     navLabel: "Kingdom Calculator",

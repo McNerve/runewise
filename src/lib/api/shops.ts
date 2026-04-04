@@ -1,0 +1,139 @@
+import { bucketQueryAll } from "./bucket";
+import { getCached, setCache } from "./cache";
+
+const CACHE_KEY = "wiki-shops:v1";
+const CACHE_TTL = 24 * 60 * 60 * 1000;
+
+const SHOP_FIELDS = [
+  "page_name",
+  "sold_by",
+  "sold_item",
+  "sold_item_image",
+  "store_stock",
+  "restock_time",
+  "store_sell_price",
+  "store_buy_price",
+  "store_currency",
+  "sold_item_json",
+] as const;
+
+interface RawStoreLine {
+  [key: string]: unknown;
+  page_name: string;
+  sold_by?: string;
+  sold_item?: string;
+  sold_item_image?: string;
+  store_stock?: string;
+  restock_time?: string;
+  store_sell_price?: string;
+  store_buy_price?: string;
+  store_currency?: string;
+  sold_item_json?: string;
+}
+
+export interface ShopItem {
+  name: string;
+  image: string | null;
+  stock: string;
+  sellPrice: number | null;
+  buyPrice: number | null;
+  currency: string;
+  restockTime: string | null;
+}
+
+export interface Shop {
+  name: string;
+  location: string | null;
+  members: boolean;
+  items: ShopItem[];
+}
+
+function parseNum(v: string | undefined): number | null {
+  if (!v || v === "N/A") return null;
+  const n = parseInt(v, 10);
+  return isNaN(n) ? null : n;
+}
+
+function parseImage(raw: string | undefined): string | null {
+  if (!raw) return null;
+  return raw.replace(/^File:/, "").replace(/ /g, "_");
+}
+
+function parseJson(raw: string | undefined): { members: boolean; location: string | null } {
+  if (!raw) return { members: false, location: null };
+  try {
+    const data = JSON.parse(raw);
+    const members = data.Members === "Yes";
+    let location = data.Location ?? null;
+    if (location) {
+      location = location.replace(/\[\[([^\]|]+)(?:\|[^\]]+)?\]\]/g, "$1");
+    }
+    return { members, location };
+  } catch {
+    return { members: false, location: null };
+  }
+}
+
+let shopPromise: Promise<Shop[]> | null = null;
+
+export async function fetchAllShops(): Promise<Shop[]> {
+  const cached = getCached<Shop[]>(CACHE_KEY, CACHE_TTL, { persist: true });
+  if (cached) return cached;
+
+  if (!shopPromise) {
+    shopPromise = bucketQueryAll<RawStoreLine>("storeline", [...SHOP_FIELDS])
+      .then((raw) => {
+        const grouped = new Map<string, { items: RawStoreLine[]; meta: { members: boolean; location: string | null } }>();
+
+        for (const row of raw) {
+          const shopName = row.sold_by ?? row.page_name;
+          if (!grouped.has(shopName)) {
+            const meta = parseJson(row.sold_item_json);
+            grouped.set(shopName, { items: [], meta });
+          }
+          grouped.get(shopName)!.items.push(row);
+        }
+
+        const shops: Shop[] = [];
+        for (const [name, { items, meta }] of grouped) {
+          shops.push({
+            name,
+            location: meta.location,
+            members: meta.members,
+            items: items.map((row) => ({
+              name: row.sold_item ?? "Unknown",
+              image: parseImage(row.sold_item_image),
+              stock: row.store_stock ?? "?",
+              sellPrice: parseNum(row.store_sell_price),
+              buyPrice: parseNum(row.store_buy_price),
+              currency: row.store_currency ?? "Coins",
+              restockTime: row.restock_time && row.restock_time !== "N/A" ? row.restock_time : null,
+            })),
+          });
+        }
+
+        shops.sort((a, b) => a.name.localeCompare(b.name));
+        if (shops.length > 0) setCache(CACHE_KEY, shops, { persist: true });
+        shopPromise = null;
+        return shops;
+      })
+      .catch((err: unknown) => {
+        shopPromise = null;
+        console.error("[RuneWise] Failed to fetch shops:", err);
+        throw err;
+      });
+  }
+
+  return shopPromise;
+}
+
+export function searchShops(shops: Shop[], query: string): Shop[] {
+  if (!query.trim()) return shops;
+  const lower = query.toLowerCase();
+  return shops.filter(
+    (s) =>
+      s.name.toLowerCase().includes(lower) ||
+      (s.location && s.location.toLowerCase().includes(lower)) ||
+      s.items.some((i) => i.name.toLowerCase().includes(lower))
+  );
+}
