@@ -252,17 +252,16 @@ export default function ShopHelper() {
                       onClick={() => navigate("wiki", { page: selectedShop.name })}
                       className="rounded-lg border border-accent/25 bg-accent/10 px-2.5 py-1.5 text-xs font-medium text-accent hover:border-accent/45 transition-colors"
                     >
-                      Open in Wiki
+                      In-App Wiki
                     </button>
-                    {selectedShop.location && (
-                      <button
-                        type="button"
-                        onClick={() => navigate("wiki", { page: selectedShop.location! })}
-                        className="rounded-lg border border-border bg-bg-primary/60 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:border-accent/40 transition-colors"
-                      >
-                        View Location
-                      </button>
-                    )}
+                    <a
+                      href={`https://oldschool.runescape.wiki/w/${encodeURIComponent(selectedShop.name.replace(/ /g, "_"))}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-lg border border-border bg-bg-primary/60 px-2.5 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:border-accent/40 transition-colors"
+                    >
+                      External Wiki
+                    </a>
                   </div>
                 </div>
               </div>
