@@ -94,7 +94,7 @@ export default function Watchlist() {
   return (
     <div className="max-w-3xl">
       <div className="mb-4">
-        <h2 className="text-xl font-semibold">Price Watchlist</h2>
+        <h2 className="text-2xl font-semibold tracking-tight">Price Watchlist</h2>
         <p className="mt-1 text-sm text-text-secondary">
           Monitor tracked items, set alert thresholds, and jump straight into the item workspace when something moves.
         </p>

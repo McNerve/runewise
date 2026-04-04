@@ -89,7 +89,7 @@ export default function RecipeCostTable({
           {rows.map(({ recipe: r, actions, netCost, totalCost, costPerXp, meetsLevel }) => (
             <tr
               key={r.name}
-              className={`border-b border-border/50 hover:bg-bg-tertiary transition-colors ${!meetsLevel ? "opacity-40" : ""}`}
+              className={`border-b border-border/50 even:bg-bg-primary/25 hover:bg-bg-tertiary transition-colors ${!meetsLevel ? "opacity-40" : ""}`}
             >
               <td className="px-3 py-1.5">
                 <div className="flex items-center gap-2">

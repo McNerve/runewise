@@ -502,7 +502,7 @@ export default function CollectionLog({ rsn }: Props) {
 
   return (
     <div>
-      <h2 className="text-xl font-semibold mb-1">Collection Log</h2>
+      <h2 className="text-2xl font-semibold tracking-tight mb-1">Collection Log</h2>
       <p className="text-xs text-text-secondary/60 mb-5">
         Live collection log synced from TempleOSRS. Click any item to look it up on the wiki.
       </p>

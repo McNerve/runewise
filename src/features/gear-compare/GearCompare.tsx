@@ -248,7 +248,7 @@ export default function GearCompare() {
                     className={`border-b border-border/30 cursor-pointer transition-colors ${
                       isSelected
                         ? "bg-accent/8"
-                        : "hover:bg-bg-secondary/50"
+                        : "even:bg-bg-primary/20 hover:bg-bg-secondary/50"
                     }`}
                   >
                     <td className="px-2 py-1.5">

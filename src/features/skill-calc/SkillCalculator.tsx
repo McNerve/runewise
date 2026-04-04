@@ -110,7 +110,7 @@ export default function SkillCalculator({ hiscores }: Props) {
 
   return (
     <div className="max-w-3xl">
-      <h2 className="text-xl font-semibold mb-4">Skills</h2>
+      <h2 className="text-2xl font-semibold tracking-tight mb-4">Skills</h2>
 
       {/* Tab bar */}
       <div className="flex gap-1 mb-5">
