@@ -1,5 +1,6 @@
 import { bucketQueryAll } from "./bucket";
 import { getCached, setCache } from "./cache";
+import { apiFetch } from "./fetch";
 import { isTauri } from "../env";
 
 const CACHE_KEY = "wiki-shops:v1";
