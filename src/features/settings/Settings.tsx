@@ -342,6 +342,18 @@ export default function Settings() {
 
       {/* Keyboard Shortcuts */}
       <SettingsCard title="Keyboard Shortcuts">
+        <div className="flex items-center justify-between mb-4 pb-3 border-b border-border/40">
+          <div>
+            <div className="text-sm font-medium">Enable Shortcuts</div>
+            <div className="text-xs text-text-secondary">Ctrl/Cmd + key to navigate between views</div>
+          </div>
+          <button
+            onClick={() => update({ keybindsEnabled: !settings.keybindsEnabled })}
+            className={`w-10 h-5 rounded-full transition-colors ${settings.keybindsEnabled ? "bg-accent" : "bg-bg-tertiary"}`}
+          >
+            <div className={`w-4 h-4 rounded-full bg-white shadow transition-transform ${settings.keybindsEnabled ? "translate-x-5" : "translate-x-0.5"}`} />
+          </button>
+        </div>
         {(() => {
           const families = new Map<string, [string, { label: string; family: string }][]>();
           for (const [action, info] of Object.entries(KEYBIND_LABELS)) {

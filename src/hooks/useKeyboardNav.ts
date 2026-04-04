@@ -12,6 +12,8 @@ export function useKeyboardNav(onNavigate: (view: View) => void) {
       keyToView[key] = view as View;
     }
 
+    if (!settings.keybindsEnabled) return;
+
     const handler = (e: KeyboardEvent) => {
       if (
         e.target instanceof HTMLInputElement ||
@@ -30,5 +32,5 @@ export function useKeyboardNav(onNavigate: (view: View) => void) {
 
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [onNavigate, settings.keybinds]);
+  }, [onNavigate, settings.keybinds, settings.keybindsEnabled]);
 }

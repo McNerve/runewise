@@ -9,6 +9,7 @@ export interface KeybindMap {
 export interface AppSettings {
   theme: "dark" | "light" | "system";
   keybinds: KeybindMap;
+  keybindsEnabled: boolean;
   notifications: { priceAlerts: boolean };
   sidebar: { collapsed: boolean };
   ironmanMode: boolean;
@@ -26,14 +27,14 @@ export const DEFAULT_KEYBINDS: KeybindMap = {
   stars: "9",
   wiki: "0",
   lookup: "h",
-  "dry-calc": "r",
+  "dry-calc": "d",
   "pet-calc": "p",
   slayer: "b",
-  "clue-helper": "c",
+  "clue-helper": "j",
   "money-making": "m",
   news: "n",
-  timers: "f",
-  "xp-table": "x",
+  timers: "t",
+  "xp-table": "y",
   watchlist: "w",
   "gear-compare": "g",
   raids: "i",
@@ -44,6 +45,7 @@ export const DEFAULT_KEYBINDS: KeybindMap = {
 export const DEFAULT_SETTINGS: AppSettings = {
   theme: "dark",
   keybinds: DEFAULT_KEYBINDS,
+  keybindsEnabled: true,
   notifications: { priceAlerts: true },
   sidebar: { collapsed: false },
   ironmanMode: false,
@@ -57,6 +59,7 @@ export function loadSettings(): AppSettings {
     keybinds: { ...DEFAULT_KEYBINDS, ...saved.keybinds },
     notifications: { ...DEFAULT_SETTINGS.notifications, ...saved.notifications },
     sidebar: { ...DEFAULT_SETTINGS.sidebar, ...saved.sidebar },
+    keybindsEnabled: saved.keybindsEnabled ?? true,
     ironmanMode: saved.ironmanMode ?? false,
   };
 }
