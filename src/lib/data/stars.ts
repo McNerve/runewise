@@ -336,6 +336,10 @@ const WIKI_MAP_TILES: Record<string, string> = {
   "wilderness runite": "0_47_61",
   "pirates hideout": "0_47_61",
   "mudskipper": "0_46_50",
+  "colosseum entrance": "0_27_48",
+  "soul wars": "0_33_44",
+  "brimhaven northwest": "0_42_50",
+  "hunter guild": "0_22_48",
 };
 
 const WIKI_MAP_BASE = "https://maps.runescape.wiki/osrs/versions/2026-03-04_a/tiles/rendered/0/2";
