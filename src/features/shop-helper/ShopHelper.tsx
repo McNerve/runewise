@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { fetchAllShops, searchShops, type Shop } from "../../lib/api/shops";
+import { fetchAllShops, searchShops, fetchShopImage, type Shop } from "../../lib/api/shops";
 import { fetchLatestPrices, fetchMapping, type ItemPrice } from "../../lib/api/ge";
 import { useDebounce } from "../../hooks/useDebounce";
 import { encodeIconFilename, WIKI_IMG, itemIcon } from "../../lib/sprites";
@@ -38,6 +38,7 @@ export default function ShopHelper() {
   const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
   const [nameToId, setNameToId] = useState<Map<string, number>>(new Map());
   const [iconMap, setIconMap] = useState<Map<string, string>>(new Map());
+  const [shopImage, setShopImage] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([fetchAllShops(), fetchLatestPrices(), fetchMapping()])
@@ -55,6 +56,15 @@ export default function ShopHelper() {
       })
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (!selectedShop) return;
+    let cancelled = false;
+    fetchShopImage(selectedShop.name).then((img) => {
+      if (!cancelled) setShopImage(img);
+    });
+    return () => { cancelled = true; };
+  }, [selectedShop]);
 
   const filtered = useMemo(() => {
     let results = searchShops(shops, debouncedQuery);
@@ -181,7 +191,7 @@ export default function ShopHelper() {
               {filtered.slice(0, 150).map((shop) => (
                 <button
                   key={shop.name}
-                  onClick={() => { setSelectedShop(shop); setSortKey("name"); setSortAsc(true); }}
+                  onClick={() => { setSelectedShop(shop); setShopImage(null); setSortKey("name"); setSortAsc(true); }}
                   className={`w-full text-left rounded-lg px-3 py-2 text-sm transition-colors ${
                     selectedShop?.name === shop.name
                       ? "bg-accent/10 ring-1 ring-accent/30"
@@ -218,7 +228,15 @@ export default function ShopHelper() {
           {selectedShop ? (
             <div className="space-y-4">
               {/* Shop header card */}
-              <div className="rounded-xl border border-border/40 bg-bg-primary/20 p-4">
+              <div className="rounded-xl border border-border/40 bg-bg-primary/20 overflow-hidden">
+                {shopImage && (
+                  <img
+                    src={shopImage}
+                    alt={selectedShop.name}
+                    className="w-full h-40 object-cover border-b border-border/30"
+                  />
+                )}
+                <div className="p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <h3 className="text-lg font-semibold">{selectedShop.name}</h3>
@@ -253,6 +271,7 @@ export default function ShopHelper() {
                   >
                     Wiki
                   </a>
+                </div>
                 </div>
               </div>
 
@@ -301,16 +320,23 @@ export default function ShopHelper() {
                           className="border-b border-border/20 even:bg-bg-primary/25 hover:bg-bg-secondary/40 transition-colors"
                         >
                           <td className="px-3 py-1.5">
-                            <WikiImage
+                            <img
                               src={(() => {
                                 const geIcon = iconMap.get(item.name.toLowerCase());
                                 if (geIcon) return `${WIKI_IMG}/${encodeIconFilename(geIcon)}`;
-                                if (item.image) return `${WIKI_IMG}/${encodeIconFilename(item.image)}`;
                                 return itemIcon(item.name);
                               })()}
                               alt=""
-                              className="w-5 h-5"
-                              fallback={item.name[0]}
+                              className="w-5 h-5 object-contain"
+                              onError={(e) => {
+                                const el = e.currentTarget;
+                                if (!el.dataset.retried) {
+                                  el.dataset.retried = "1";
+                                  el.src = itemIcon(item.name);
+                                } else {
+                                  el.style.display = "none";
+                                }
+                              }}
                             />
                           </td>
                           <td className="px-3 py-1.5">

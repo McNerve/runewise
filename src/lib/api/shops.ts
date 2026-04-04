@@ -1,5 +1,6 @@
 import { bucketQueryAll } from "./bucket";
 import { getCached, setCache } from "./cache";
+import { isTauri } from "../env";
 
 const CACHE_KEY = "wiki-shops:v1";
 const CACHE_TTL = 24 * 60 * 60 * 1000;
@@ -142,6 +143,31 @@ export async function fetchAllShops(): Promise<Shop[]> {
   }
 
   return shopPromise;
+}
+
+const imageCache = new Map<string, string | null>();
+
+export async function fetchShopImage(shopName: string): Promise<string | null> {
+  if (imageCache.has(shopName)) return imageCache.get(shopName) ?? null;
+
+  const wikiPage = shopName.replace(/ /g, "_");
+  const url = isTauri
+    ? `https://oldschool.runescape.wiki/api.php?action=query&titles=${encodeURIComponent(wikiPage)}&prop=pageimages&format=json&pithumbsize=400`
+    : `/api/wiki-content?action=query&titles=${encodeURIComponent(wikiPage)}&prop=pageimages&format=json&pithumbsize=400`;
+
+  try {
+    const res = await fetch(url);
+    const json = await res.json();
+    const pages = json?.query?.pages ?? {};
+    const page = Object.values(pages)[0] as Record<string, unknown> | undefined;
+    const thumb = (page?.thumbnail as Record<string, unknown>)?.source as string | undefined;
+    const result = thumb ?? null;
+    imageCache.set(shopName, result);
+    return result;
+  } catch {
+    imageCache.set(shopName, null);
+    return null;
+  }
 }
 
 export function searchShops(shops: Shop[], query: string): Shop[] {
