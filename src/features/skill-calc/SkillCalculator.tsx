@@ -12,6 +12,7 @@ import { fetchRecipesForSkill, type WikiRecipe } from "../../lib/api/recipes";
 import RecipeCostTable from "./components/RecipeCostTable";
 import WikiRecipeTable from "./components/WikiRecipeTable";
 import ConstructionPlanner from "./components/ConstructionPlanner";
+import { useSettings } from "../../hooks/useSettings";
 
 const TrainingPlan = lazy(() => import("../training-plan/TrainingPlan"));
 const XpTable = lazy(() => import("../xp-table/XpTable"));
@@ -31,6 +32,7 @@ interface Props {
 }
 
 export default function SkillCalculator({ hiscores }: Props) {
+  const { settings } = useSettings();
   const { params, navigate } = useNavigation();
   const initialSkillTab: SkillTab = params.tab === "plan" ? "plan" : "calculator";
   const [skillTab, setSkillTab] = useState<SkillTab>(initialSkillTab);
@@ -101,7 +103,8 @@ export default function SkillCalculator({ hiscores }: Props) {
 
   const targetXp = xpForLevel(targetLevel);
   const xpNeeded = Math.max(0, targetXp - currentXp);
-  const allMethods = TRAINING_METHODS[selectedSkill] ?? [];
+  const allMethods = (TRAINING_METHODS[selectedSkill] ?? [])
+    .filter((m) => !settings.ironmanMode || m.ironmanViable !== false);
   const methods = intensityFilter === "All"
     ? allMethods
     : allMethods.filter((m) => m.intensity?.toLowerCase() === intensityFilter.toLowerCase());

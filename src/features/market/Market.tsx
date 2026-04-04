@@ -20,6 +20,7 @@ import WikiImage from "../../components/WikiImage";
 import { Skeleton, TableSkeleton } from "../../components/Skeleton";
 import EmptyState from "../../components/EmptyState";
 import ItemTooltip from "../../components/ItemTooltip";
+import { useSettings } from "../../hooks/useSettings";
 import {
   PERIODS,
   PERIOD_TIMESTEP,
@@ -279,6 +280,7 @@ export default function Market({
   subtitle = "Search items, compare prices, inspect trends, and move into watchlists from one shared workspace.",
 }: MarketProps) {
   const { params, navigate } = useNavigation();
+  const { settings } = useSettings();
   const { items: watchlistItems, addItem: addToWatchlist } = useWatchlist();
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebounce(query, 250);
@@ -489,6 +491,11 @@ export default function Market({
         <div className="mb-4">
           <h2 className="text-2xl font-semibold tracking-tight">{title}</h2>
           <p className="max-w-2xl text-sm text-text-secondary">{subtitle}</p>
+          {settings.ironmanMode && (
+            <div className="mt-2 rounded-lg border border-warning/30 bg-warning/5 px-3 py-1.5 text-xs text-warning">
+              Ironman mode — GE prices shown for reference only. Items must be self-obtained.
+            </div>
+          )}
         </div>
 
         {selectedItem ? (
