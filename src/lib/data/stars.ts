@@ -32,17 +32,80 @@ export interface StarSite {
 }
 
 const STAR_SITE_KEYS: Partial<Record<string, string>> = {
+  // Asgarnia
   MINING_GUILD_ENTRANCE: "West Falador mine",
+  DWARVEN_MINE_NORTHERN_ENTRANCE: "Dwarven mine next to Edgeville",
   TAVERLEY__WHITE_WOLF_TUNNEL_ENTRANCE: "Taverley (White Wolf Tunnel entrance)",
-  TREE_GNOME_STRONGHOLD_BANK: "Tree Gnome Stronghold bank",
-  MOUNT_QUIDAMORTEM__BANK: "Mount Quidamortem (bank)",
-  VER_SINHAZA__BANK: "Ver Sinhaza (bank)",
-  SOUTH_EAST_ARDOUGNE_MINE__MONASTERY: "South-east Ardougne mine (monastery)",
+  CRAFTING_GUILD_MINE: "Crafting Guild mine",
+  RIMMINGTON_MINE: "Rimmington mine",
+  MUDSKIPPER_POINT: "Mudskipper Point",
+  // Karamja
+  NORTH_BRIMHAVEN_MINE: "Brimhaven mine (gold)",
+  SOUTH_BRIMHAVEN_MINE: "South Brimhaven mine",
+  SHILO_VILLAGE_MINE: "Shilo Village gem mine",
+  NATURE_ALTAR_MINE: "Nature altar mine",
+  CRANDOR_MINE: "Crandor mine",
+  // Fremennik
+  RELLEKKA_MINE: "Rellekka mine",
+  KELDAGRIM_ENTRANCE_MINE: "Keldagrim mine",
+  MISCELLANIA_MINE: "Miscellania mine (cip fairy ring)",
+  JATIZSO_MINE: "Jatizso mine",
+  LUNAR_ISLE_MINE: "Lunar Isle mine",
+  FOSSIL_ISLAND_MINE: "Fossil Island mine",
+  // Kandarin
+  SOUTH_EAST_ARDOUGNE_MINE__MONASTERY: "Ardougne Monastery",
+  COAL_TRUCKS: "Coal trucks",
+  LEGENDS_GUILD_MINE: "South of Legends' Guild",
+  YANILLE_BANK: "Yanille bank",
+  PORT_KHAZARD_MINE: "Port Khazard mine",
   CATHERBY_BANK: "Catherby bank",
-  CANIFIS__BANK: "Canifis (bank)",
-  VARROCK__EAST_BANK: "Varrock (East bank)",
+  // Kourend & Kebos
+  HOSIDIUS_MINE: "Hosidius mine",
+  LOVAKITE_MINE: "Lovakite mine",
+  MOUNT_KARUULM_MINE: "Mount Karuulm bank",
+  ARCEUUS_DENSE_ESSENCE_MINE: "Arceuus dense essence mine",
+  SHAYZIEN_MINE: "Shayzien mine south of Kourend Castle",
+  MOUNT_QUIDAMORTEM__BANK: "Chambers of Xeric bank",
+  // Misthalin
+  AL_KHARID_MINE: "Al Kharid mine",
+  AL_KHARID__BANK: "Al Kharid bank",
+  DRAYNOR_VILLAGE: "Draynor Village",
+  EAST_LUMBRIDGE_SWAMP_MINE: "East Lumbridge Swamp mine",
+  WEST_LUMBRIDGE_SWAMP_MINE: "West Lumbridge Swamp mine",
+  SOUTH_EAST_VARROCK_MINE: "Varrock east bank",
+  VARROCK__EAST_BANK: "Varrock east bank",
+  // Morytania
+  CANIFIS__BANK: "Canifis bank",
+  VER_SINHAZA__BANK: "Haunted Mine",
+  ABANDONED_MINE: "Haunted Mine",
   BURGH_DE_ROTT__BANK: "Burgh de Rott (bank)",
+  // Tirannwn
+  ARANDAR_MINE: "Arandar mine",
+  LLETYA_MINE: "Lletya mine",
+  TRAHAEARN_MINE_ENTRANCE: "Prifddinas mine",
+  ISAFDAR_MINE: "Isafdar mine",
+  // Wilderness
   SOUTH_WILDERNESS_MINE__MAGE_OF_ZAMORAK: "South Wilderness mine (Mage of Zamorak)",
+  BANDIT_CAMP_MINE__HOBGOBLINS: "Wilderness Hobgoblin mine",
+  LAVA_MAZE_RUNITE_MINE: "Wilderness Runite mine",
+  RESOURCE_AREA: "Wilderness Resource Area",
+  // Desert
+  DESERT_QUARRY: "Desert Quarry",
+  NARDAH_MINE: "Nardah mine",
+  UZER_MINE: "Uzer mine",
+  // Varlamore
+  CIVITAS_ILLA_FORTIS__EAST_BANK: "Varlamore colosseum entrance bank",
+  MISTROCK_MINE: "Aldarin mine in Varlamore",
+  SALVAGER_OVERLOOK_MINE: "Salvager Overlook in Varlamore",
+  RALOS_RISE_MINING_SITE: "Mine north-west of hunter guild",
+  CUSTODIA_MINE: "Custodia Mountains mine",
+  // Other
+  TREE_GNOME_STRONGHOLD_BANK: "Tree Gnome Stronghold bank",
+  GRAND_TREE: "Tree Gnome Stronghold bank",
+  PISCATORIS_MINE: "Piscatoris mine",
+  CORSAIR_COVE: "Corsair Cove bank",
+  ISLE_OF_SOULS_MINE: "Isle of Souls mine",
+  FELDIP_HILLS_MINE: "Feldip Hills mine",
 };
 
 export interface RankedTeleport {
@@ -90,6 +153,46 @@ const STAR_SITE_ALIASES: Array<{ aliases: string[]; canonical: string }> = [
   {
     aliases: ["sandstorm mine", "sandstorm"],
     canonical: "Desert Quarry",
+  },
+  {
+    aliases: ["north dwarven mine entrance", "north dwarven mine"],
+    canonical: "Dwarven mine next to Edgeville",
+  },
+  {
+    aliases: ["southeast varrock mine", "south east varrock mine"],
+    canonical: "Varrock east bank",
+  },
+  {
+    aliases: ["fossil island rune rocks"],
+    canonical: "Fossil Island mine",
+  },
+  {
+    aliases: ["west of grand tree"],
+    canonical: "Tree Gnome Stronghold bank",
+  },
+  {
+    aliases: ["soul wars south mine", "isle of souls"],
+    canonical: "Isle of Souls mine",
+  },
+  {
+    aliases: ["abandoned mine west of burgh"],
+    canonical: "Haunted Mine",
+  },
+  {
+    aliases: ["theatre of blood bank"],
+    canonical: "Haunted Mine",
+  },
+  {
+    aliases: ["prifddinas zalcano entrance", "trahaearn mine"],
+    canonical: "Prifddinas mine",
+  },
+  {
+    aliases: ["varlamore colosseum entrance bank", "civitas illa fortis"],
+    canonical: "Varlamore colosseum entrance bank",
+  },
+  {
+    aliases: ["corsair cove bank"],
+    canonical: "Corsair Cove bank",
   },
 ];
 

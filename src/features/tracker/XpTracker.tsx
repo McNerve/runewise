@@ -272,14 +272,14 @@ export default function XpTracker({ rsn }: Props) {
 
   const header = (
     <div className="space-y-1 mb-5">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
           <h2 className="text-2xl font-semibold tracking-tight">XP Tracker</h2>
-          <p className="max-w-2xl text-sm text-text-secondary">
-            Track XP gains, boss kills, achievements, and records via Wise Old Man. Data refreshes every 5 minutes.
+          <p className="text-sm text-text-secondary">
+            Track XP gains, boss kills, achievements, and records via Wise Old Man.
           </p>
         </div>
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-3 shrink-0 pt-1.5">
           {lastUpdated && (
             <span className="text-xs text-text-secondary">
               Updated {timeAgo(Math.floor(lastUpdated.getTime() / 1000))}
