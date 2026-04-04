@@ -85,10 +85,13 @@ export default function Home({ hiscores }: HomeProps) {
         {!savedRsn && (
           <button
             type="button"
-            onClick={() => navigate("lookup")}
+            onClick={() => {
+              const input = document.querySelector<HTMLInputElement>('.topbar-shell input[type="text"]');
+              if (input) { input.focus(); input.select(); }
+            }}
             className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover transition-colors"
           >
-            Look Up a Player
+            Set Your RSN
           </button>
         )}
         {settings.ironmanMode && (
@@ -119,7 +122,10 @@ export default function Home({ hiscores }: HomeProps) {
                   <div className="flex gap-2 mt-3">
                     <button
                       type="button"
-                      onClick={() => navigate("lookup")}
+                      onClick={() => {
+                        const input = document.querySelector<HTMLInputElement>('.topbar-shell input[type="text"]');
+                        if (input) { input.focus(); input.select(); }
+                      }}
                       className="rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent-hover transition-colors"
                     >
                       Set Your RSN
