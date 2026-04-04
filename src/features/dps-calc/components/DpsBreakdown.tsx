@@ -1,3 +1,5 @@
+import { memo } from "react";
+
 interface DpsBreakdownProps {
   maxHit: number;
   accuracy: number;
@@ -22,7 +24,7 @@ function formatRoll(value: number): string {
   return String(value);
 }
 
-export default function DpsBreakdown({
+export default memo(function DpsBreakdown({
   maxHit,
   accuracy,
   dps,
@@ -104,4 +106,4 @@ export default function DpsBreakdown({
       )}
     </div>
   );
-}
+});

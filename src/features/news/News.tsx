@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import DOMPurify from "dompurify";
 import { apiFetch } from "../../lib/api/fetch";
 import { isTauri } from "../../lib/env";
@@ -255,6 +255,7 @@ export default function News() {
   const [articleHtml, setArticleHtml] = useState<string | null>(null);
   const [articleLoading, setArticleLoading] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const articleRequestId = useRef(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -272,13 +273,14 @@ export default function News() {
   }, [refreshKey]);
 
   function handlePostClick(post: NewsPost) {
+    const id = ++articleRequestId.current;
     setSelectedPost(post);
     setArticleHtml(null);
     setArticleLoading(true);
     fetchArticleContent(post.url)
-      .then((html) => setArticleHtml(html))
-      .catch(() => setArticleHtml("<p>Failed to load article.</p>"))
-      .finally(() => setArticleLoading(false));
+      .then((html) => { if (articleRequestId.current === id) setArticleHtml(html); })
+      .catch(() => { if (articleRequestId.current === id) setArticleHtml("<p>Failed to load article.</p>"); })
+      .finally(() => { if (articleRequestId.current === id) setArticleLoading(false); });
   }
 
   function handleBack() {

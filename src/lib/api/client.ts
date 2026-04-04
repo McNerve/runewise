@@ -14,9 +14,17 @@ export interface JsonRequestOptions<T> {
 
 const inflight = new Map<string, Promise<unknown>>();
 
+const RETRYABLE = new Set([429, 500, 502, 503, 504]);
+
 async function requestJson(url: string, headers?: HeadersInit): Promise<unknown> {
   const res = await apiFetch(url, { headers });
   if (!res.ok) {
+    if (RETRYABLE.has(res.status)) {
+      await new Promise((r) => setTimeout(r, 1_000));
+      const retry = await apiFetch(url, { headers });
+      if (!retry.ok) throw new Error(`Request failed: ${retry.status}`);
+      return retry.json();
+    }
     throw new Error(`Request failed: ${res.status}`);
   }
   return res.json();

@@ -83,10 +83,10 @@ function AppContent() {
   );
 }
 
-// Pre-populate the global item icon cache on module load
-initItemIconCache();
-
 function App() {
+  useEffect(() => {
+    initItemIconCache();
+  }, []);
   const settingsValue = useSettingsProvider();
 
   return (
