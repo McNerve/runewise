@@ -320,23 +320,15 @@ export default function ShopHelper() {
                           className="border-b border-border/20 even:bg-bg-primary/25 hover:bg-bg-secondary/40 transition-colors"
                         >
                           <td className="px-3 py-1.5">
-                            <img
+                            <WikiImage
                               src={(() => {
                                 const geIcon = iconMap.get(item.name.toLowerCase());
                                 if (geIcon) return `${WIKI_IMG}/${encodeIconFilename(geIcon)}`;
                                 return itemIcon(item.name);
                               })()}
-                              alt=""
-                              className="w-5 h-5 object-contain"
-                              onError={(e) => {
-                                const el = e.currentTarget;
-                                if (!el.dataset.retried) {
-                                  el.dataset.retried = "1";
-                                  el.src = itemIcon(item.name);
-                                } else {
-                                  el.style.display = "none";
-                                }
-                              }}
+                              alt={item.name}
+                              className="w-5 h-5"
+                              fallback={item.name[0]}
                             />
                           </td>
                           <td className="px-3 py-1.5">
