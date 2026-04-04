@@ -233,7 +233,7 @@ export default function ShopHelper() {
                   <img
                     src={shopImage}
                     alt={selectedShop.name}
-                    className="w-full h-40 object-cover border-b border-border/30"
+                    className="w-full h-44 object-contain bg-bg-tertiary/30 border-b border-border/30"
                   />
                 )}
                 <div className="p-4">

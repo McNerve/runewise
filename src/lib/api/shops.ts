@@ -152,8 +152,8 @@ export async function fetchShopImage(shopName: string): Promise<string | null> {
 
   const wikiPage = shopName.replace(/ /g, "_");
   const url = isTauri
-    ? `https://oldschool.runescape.wiki/api.php?action=query&titles=${encodeURIComponent(wikiPage)}&prop=pageimages&format=json&pithumbsize=400`
-    : `/api/wiki-content?action=query&titles=${encodeURIComponent(wikiPage)}&prop=pageimages&format=json&pithumbsize=400`;
+    ? `https://oldschool.runescape.wiki/api.php?action=query&titles=${encodeURIComponent(wikiPage)}&prop=pageimages&format=json&pithumbsize=600`
+    : `/api/wiki-content?action=query&titles=${encodeURIComponent(wikiPage)}&prop=pageimages&format=json&pithumbsize=600`;
 
   try {
     const res = await fetch(url);
