@@ -41,11 +41,15 @@ export default function Kingdom() {
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([fetchLatestPrices(), fetchMapping()]).then(([p]) => {
-      if (cancelled) return;
-      setPrices(p);
-      setLoading(false);
-    });
+    Promise.all([fetchLatestPrices(), fetchMapping()])
+      .then(([p]) => {
+        if (cancelled) return;
+        setPrices(p);
+        setLoading(false);
+      })
+      .catch(() => {
+        if (!cancelled) setLoading(false);
+      });
     return () => { cancelled = true; };
   }, []);
 
