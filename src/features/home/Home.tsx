@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "motion/react";
-import type { HiscoreData } from "../../lib/api/hiscores";
-import { NAV_ICONS } from "../../lib/sprites";
+import type { HiscoreData, IronmanType } from "../../lib/api/hiscores";
+import { NAV_ICONS, WIKI_IMG } from "../../lib/sprites";
 import { getFeatureAccent } from "../../lib/featureAccent";
 import { useNavigation } from "../../lib/NavigationContext";
 import WikiImage from "../../components/WikiImage";
@@ -15,7 +15,34 @@ interface HomeProps {
   hiscores?: {
     rsn: string;
     data: HiscoreData | null;
+    ironmanType?: IronmanType;
   };
+}
+
+const ACCOUNT_TYPE_ICONS: Record<string, { icon: string; label: string; color: string }> = {
+  hardcore: { icon: "Hardcore_ironman_chat_badge.png", label: "Hardcore", color: "text-danger" },
+  ultimate: { icon: "Ultimate_ironman_chat_badge.png", label: "Ultimate", color: "text-[#6b7280]" },
+  ironman: { icon: "Ironman_chat_badge.png", label: "Ironman", color: "text-[#94a3b8]" },
+};
+
+function getAccountType(data: HiscoreData | null, ironmanType?: IronmanType): { label: string; color: string; icon?: string } {
+  if (ironmanType && ironmanType !== "none") {
+    const info = ACCOUNT_TYPE_ICONS[ironmanType];
+    if (info) return info;
+  }
+  if (!data) return { label: "", color: "" };
+  // Detect skiller (combat level 3 = no combat training)
+  const getCb = (name: string) => data.skills.find((s) => s.name === name)?.level ?? 1;
+  const att = getCb("Attack"); const str = getCb("Strength"); const def = getCb("Defence");
+  const ran = getCb("Ranged"); const mag = getCb("Magic"); const pray = getCb("Prayer");
+  if (att <= 1 && str <= 1 && def <= 1 && ran <= 1 && mag <= 1 && pray <= 1) {
+    return { label: "Skiller", color: "text-success" };
+  }
+  // Detect 1 Defence pure
+  if (def === 1 && (att > 60 || str > 60 || ran > 60)) {
+    return { label: "Pure", color: "text-warning" };
+  }
+  return { label: "Main", color: "text-text-secondary" };
 }
 
 const TOOL_GRID = [
@@ -67,6 +94,7 @@ export default function Home({ hiscores }: HomeProps) {
     .reduce((sum, a) => sum + a.score, 0) ?? null;
   const maxedSkills = data?.skills.filter((s) => s.name !== "Overall" && s.level >= 99).length ?? null;
   const questPoints = data?.activities.find((a) => a.name === "Quest Points" || a.name === "Overall Quest Points")?.score ?? null;
+  const accountType = getAccountType(data, hiscores?.ironmanType);
 
   return (
     <div className="max-w-5xl">
@@ -159,7 +187,17 @@ export default function Home({ hiscores }: HomeProps) {
                   {savedRsn[0].toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-lg font-semibold">{savedRsn}</div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg font-semibold">{savedRsn}</span>
+                    {accountType.label && (
+                      <span className={`inline-flex items-center gap-1 text-[10px] border rounded-full px-2 py-0.5 ${accountType.color}`} style={{ borderColor: "currentColor", opacity: 0.7 }}>
+                        {accountType.icon && (
+                          <img src={`${WIKI_IMG}/${accountType.icon}`} alt="" className="w-3 h-3" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                        )}
+                        {accountType.label}
+                      </span>
+                    )}
+                  </div>
                   <div className="flex items-center gap-3 text-xs text-text-secondary">
                     <span>Combat {combatLevel}</span>
                     {questPoints != null && questPoints > 0 && <span>{questPoints} QP</span>}

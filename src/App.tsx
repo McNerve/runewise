@@ -63,6 +63,7 @@ function AppContent() {
                             hiscores: {
                               rsn: hiscores.rsn,
                               data: hiscores.data,
+                              ironmanType: hiscores.ironmanType,
                             },
                           })
                         : <div className="py-16 text-center text-text-secondary">View not found.</div>}

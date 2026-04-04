@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { lazy, type LazyExoticComponent, type ComponentType, type ReactNode } from "react";
-import type { HiscoreData } from "./api/hiscores";
+import type { HiscoreData, IronmanType } from "./api/hiscores";
 import type { View } from "./features";
 import ViewErrorBoundary from "../components/ViewErrorBoundary";
 
@@ -45,6 +45,7 @@ interface AppViewContext {
   hiscores: {
     rsn: string;
     data: HiscoreData | null;
+    ironmanType: IronmanType;
   };
 }
 
