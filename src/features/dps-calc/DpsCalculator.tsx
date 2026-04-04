@@ -143,21 +143,30 @@ export default function DpsCalculator({ hiscores }: Props) {
   const [openSlot, setOpenSlot] = useState<EquipmentSlot | "2h" | null>(null);
 
   const [allEquipment, setAllEquipment] = useState<WikiEquipment[]>([]);
+  const [monstersLoaded, setMonstersLoaded] = useState(false);
 
-  // Load wiki data
-  useEffect(() => {
+  // Lazy-load monsters on first interaction or cross-nav
+  const ensureMonsters = useCallback(() => {
+    if (monstersLoaded) return;
+    setMonstersLoaded(true);
     fetchAllMonsters().then(setWikiMonsters);
-    fetchAllEquipment().then(setAllEquipment);
-  }, []);
+  }, [monstersLoaded]);
 
-  const applyPreset = useCallback((preset: GearPreset) => {
+  // Load monsters if cross-nav param is present
+  useEffect(() => {
+    if (params.monster) ensureMonsters();
+  }, [params.monster, ensureMonsters]);
+
+  const applyPreset = useCallback(async (preset: GearPreset) => {
     setCombatStyle(preset.style);
     setBonusMode("equipment");
     setActiveLoadout(preset.name);
+    const equipment = allEquipment.length > 0 ? allEquipment : await fetchAllEquipment();
+    if (allEquipment.length === 0) setAllEquipment(equipment);
     const gear: EquippedGear = {};
     for (const [slot, itemName] of Object.entries(preset.slots)) {
       if (!itemName) continue;
-      const match = allEquipment.find(
+      const match = equipment.find(
         (e) => e.name.toLowerCase() === itemName.toLowerCase()
       );
       if (match) gear[slot as EquipmentSlot | "2h"] = match;
@@ -1058,6 +1067,7 @@ export default function DpsCalculator({ hiscores }: Props) {
             selected={selectedMonster}
             onSelect={setSelectedMonster}
             combatStyle={combatStyle}
+            onFocusLoad={ensureMonsters}
           />
 
           {phaseMonsters.length > 1 && (

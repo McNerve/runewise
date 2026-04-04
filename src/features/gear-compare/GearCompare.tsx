@@ -66,22 +66,7 @@ export default function GearCompare() {
   const [selected, setSelected] = useState<WikiEquipment[]>([]);
 
   const filtered = useMemo(() => {
-    const results = searchEquipment(allEquipment, query, selectedSlot, 500);
-    // Deduplicate: keep only one version per item name (best stats or base version)
-    const seen = new Map<string, WikiEquipment>();
-    for (const item of results) {
-      const key = item.name.toLowerCase();
-      const existing = seen.get(key);
-      if (!existing) {
-        seen.set(key, item);
-      } else {
-        // Keep the one with higher total offensive stats
-        const totalNew = item.attackStab + item.attackSlash + item.attackCrush + item.strengthBonus + item.attackRanged + item.rangedStrength + item.attackMagic + item.magicDamage;
-        const totalOld = existing.attackStab + existing.attackSlash + existing.attackCrush + existing.strengthBonus + existing.attackRanged + existing.rangedStrength + existing.attackMagic + existing.magicDamage;
-        if (totalNew > totalOld) seen.set(key, item);
-      }
-    }
-    return [...seen.values()]
+    return searchEquipment(allEquipment, query, selectedSlot, 500)
       .sort((a, b) => {
         const aVal = a[sortKey] as number;
         const bVal = b[sortKey] as number;
