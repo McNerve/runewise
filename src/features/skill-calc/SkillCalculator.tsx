@@ -347,7 +347,7 @@ export default function SkillCalculator({ hiscores }: Props) {
                     return (
                       <tr
                         key={method.name}
-                        className={`border-b border-border/50 hover:bg-bg-tertiary transition-colors ${!meetsLevel ? "opacity-40" : ""} ${settings.ironmanMode && method.ironmanViable === false ? "opacity-30" : ""}`}
+                        className={`border-b border-border/50 even:bg-bg-primary/25 hover:bg-bg-tertiary transition-colors ${!meetsLevel ? "opacity-40" : ""} ${settings.ironmanMode && method.ironmanViable === false ? "opacity-30" : ""}`}
                       >
                         <td className="px-4 py-1.5 font-medium">
                           <span className="flex items-center gap-2">
