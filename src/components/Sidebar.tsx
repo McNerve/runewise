@@ -114,7 +114,7 @@ export default function Sidebar({ currentView, onNavigate }: SidebarProps) {
                     {!collapsed && (
                       <span className="min-w-0 flex-1 truncate">{item.navLabel}</span>
                     )}
-                    {!collapsed && viewKeys[item.id] && (
+                    {!collapsed && settings.keybindsEnabled && viewKeys[item.id] && (
                       <span className="text-[10px] text-text-secondary/45 tabular-nums">{viewKeys[item.id]}</span>
                     )}
                   </button>
@@ -140,41 +140,41 @@ export default function Sidebar({ currentView, onNavigate }: SidebarProps) {
           </div>
         ))}
       </nav>
-      <div className={`${collapsed ? "p-2" : "p-2.5"} space-y-2 border-t border-border/80`}>
-        {!collapsed && (
+      <div className={`${collapsed ? "p-2" : "px-2.5 py-2"} border-t border-border/80`}>
+        {collapsed ? (
           <button
-            type="button"
-            onClick={openGlobalSearch}
-            className="flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-[11px] text-text-secondary/70 transition hover:bg-bg-secondary/40 hover:text-text-primary"
+            onClick={() => onNavigate("settings")}
+            title="Settings"
+            aria-current={currentView === "settings" ? "page" : undefined}
+            className="sidebar-nav-item mx-auto h-9 w-9 justify-center px-0 py-0 rounded-lg flex items-center transition-colors text-text-secondary hover:text-text-primary"
           >
-            <span>Search</span>
-            <span className="rounded-md border border-border/80 px-1.5 py-0.5 font-mono text-[10px] text-text-secondary/65">
-              {mod}K
-            </span>
+            <ShellIcon view="settings" className="h-4.5 w-4.5 shrink-0" />
           </button>
-        )}
-        <button
-          onClick={() => onNavigate("settings")}
-          title={collapsed ? "Settings" : undefined}
-          aria-current={currentView === "settings" ? "page" : undefined}
-          style={{ "--item-accent": getFeatureAccent("settings") } as React.CSSProperties}
-          className={`sidebar-nav-item w-full text-left ${collapsed ? "mx-auto h-9 w-9 justify-center px-0 py-0" : "px-2.5 py-[3px]"} rounded-lg text-[13px] flex items-center gap-2.5 transition-colors ${
-            currentView === "settings"
-              ? "font-medium"
-              : "text-text-secondary hover:text-text-primary"
-          }`}
-        >
-          <span
-            className={`inline-flex shrink-0 items-center justify-center ${collapsed ? "h-7 w-7" : "h-5 w-5"}`}
-            style={getIconStyle("settings", currentView === "settings")}
-          >
-            <ShellIcon view="settings" className={`${collapsed ? "h-4.5 w-4.5" : "h-[18px] w-[18px]"} shrink-0`} />
-          </span>
-          {!collapsed && <span className="flex-1">Settings</span>}
-        </button>
-        {!collapsed && (
-          <div className="text-[10px] text-text-secondary/30 text-center mt-1 tabular-nums">
-            v{__APP_VERSION__}
+        ) : (
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={openGlobalSearch}
+              className="flex-1 flex items-center justify-between rounded-lg px-2 py-1 text-[11px] text-text-secondary/60 transition hover:bg-bg-secondary/40 hover:text-text-primary"
+            >
+              <span>Search</span>
+              <span className="rounded border border-border/60 px-1 py-0.5 font-mono text-[9px] text-text-secondary/50">
+                {mod}K
+              </span>
+            </button>
+            <button
+              onClick={() => onNavigate("settings")}
+              aria-current={currentView === "settings" ? "page" : undefined}
+              title="Settings"
+              className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors ${
+                currentView === "settings"
+                  ? "text-accent"
+                  : "text-text-secondary/50 hover:text-text-primary"
+              }`}
+            >
+              <ShellIcon view="settings" className="h-4 w-4" />
+            </button>
+            <span className="text-[9px] text-text-secondary/25 tabular-nums shrink-0">v{__APP_VERSION__}</span>
           </div>
         )}
       </div>

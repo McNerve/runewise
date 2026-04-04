@@ -3,6 +3,7 @@ import type { HiscoreData } from "../../lib/api/hiscores";
 import { generatePlan, type TrainingPreference } from "../../lib/formulas/trainingPlan";
 import { formatGp } from "../../lib/format";
 import { SKILL_ICONS } from "../../lib/sprites";
+import { useSettings } from "../../hooks/useSettings";
 
 const SKILLS = [
   "Attack", "Strength", "Defence", "Ranged", "Prayer", "Magic",
@@ -42,6 +43,7 @@ const PREFERENCES: { id: TrainingPreference; label: string; desc: string }[] = [
 ];
 
 export default function TrainingPlan({ hiscores }: Props) {
+  const { settings } = useSettings();
   const [targets, setTargets] = useState<Record<string, number>>({});
   const [preference, setPreference] = useState<TrainingPreference>("fastest");
   const [activePreset, setActivePreset] = useState<string | null>(null);
@@ -57,8 +59,8 @@ export default function TrainingPlan({ hiscores }: Props) {
   }, [hiscores]);
 
   const plan = useMemo(
-    () => generatePlan(currentLevels, targets, preference),
-    [currentLevels, targets, preference]
+    () => generatePlan(currentLevels, targets, preference, settings.ironmanMode),
+    [currentLevels, targets, preference, settings.ironmanMode]
   );
 
   function setTarget(skill: string, level: number) {

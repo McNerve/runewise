@@ -17,6 +17,24 @@ export default defineConfig({
     hmr: host ? { protocol: "ws", host, port: 5174 } : undefined,
     watch: { ignored: ["**/src-tauri/**"] },
     proxy: {
+      "/api/hiscores-hardcore": {
+        target: "https://secure.runescape.com",
+        changeOrigin: true,
+        rewrite: (path) =>
+          path.replace(/^\/api\/hiscores-hardcore/, "/m=hiscore_oldschool_hardcore_ironman"),
+      },
+      "/api/hiscores-ultimate": {
+        target: "https://secure.runescape.com",
+        changeOrigin: true,
+        rewrite: (path) =>
+          path.replace(/^\/api\/hiscores-ultimate/, "/m=hiscore_oldschool_ultimate"),
+      },
+      "/api/hiscores-ironman": {
+        target: "https://secure.runescape.com",
+        changeOrigin: true,
+        rewrite: (path) =>
+          path.replace(/^\/api\/hiscores-ironman/, "/m=hiscore_oldschool_ironman"),
+      },
       "/api/hiscores": {
         target: "https://secure.runescape.com",
         changeOrigin: true,

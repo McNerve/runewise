@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useDebounce } from "../../hooks/useDebounce";
 import {
   classifyWikiPage,
@@ -11,18 +11,59 @@ import {
 import SourceAttribution from "../../components/SourceAttribution";
 import { Skeleton } from "../../components/Skeleton";
 import { useNavigation } from "../../lib/NavigationContext";
+import {
+  initWikiInteractive,
+  handleLightboxClick,
+} from "../../lib/wiki/interactive";
+
+const COLLAPSED_SECTIONS = [
+  "used in recommended equipment",
+  "item sources",
+  "products",
+  "gallery",
+  "drop sources",
+  "spawns",
+  "combat stats",
+  "changes",
+];
+
+function shouldCollapse(title: string): boolean {
+  const lower = title.toLowerCase();
+  return COLLAPSED_SECTIONS.some((s) => lower.includes(s));
+}
+
+function sectionExtraClasses(title: string): string {
+  const lower = title.toLowerCase();
+  if (
+    lower.includes("suggested skills") ||
+    lower.includes("recommended skills") ||
+    lower.includes("requirements")
+  ) {
+    return "article-content--structured article-content--requirements";
+  }
+  if (
+    lower.includes("equipment") ||
+    lower.includes("inventory") ||
+    lower.includes("gear")
+  ) {
+    return "article-content--structured article-content--loadout article-content--loadout-table";
+  }
+  return "";
+}
 
 export default function WikiLookup() {
   const { params, navigate } = useNavigation();
   const [query, setQuery] = useState(params.query ?? "");
   const debouncedQuery = useDebounce(query, 180);
   const [results, setResults] = useState<string[]>([]);
+  const [resultsQuery, setResultsQuery] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [selectedPage, setSelectedPage] = useState(params.page ?? "");
   const [document, setDocument] = useState<WikiLookupDocument | null>(null);
   const [loadingDocument, setLoadingDocument] = useState(Boolean(params.page));
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   const breadcrumbPages = useMemo(() => {
     const rawTrail = params.trail?.split("|").filter(Boolean) ?? [];
@@ -66,10 +107,16 @@ export default function WikiLookup() {
     let cancelled = false;
     searchWikiPages(debouncedQuery)
       .then((pages) => {
-        if (!cancelled) setResults(pages);
+        if (!cancelled) {
+          setResults(pages);
+          setResultsQuery(debouncedQuery);
+        }
       })
       .catch(() => {
-        if (!cancelled) setResults([]);
+        if (!cancelled) {
+          setResults([]);
+          setResultsQuery(debouncedQuery);
+        }
       });
 
     return () => {
@@ -131,7 +178,7 @@ export default function WikiLookup() {
     };
   }, [refreshKey, selectedPage]);
 
-  const loadingResults = debouncedQuery.trim().length >= 2 && results.length === 0;
+  const loadingResults = debouncedQuery.trim().length >= 2 && resultsQuery !== debouncedQuery;
   const visibleResults =
     debouncedQuery.trim().length < 2 ? [] : results;
   const showResultsPanel = dropdownOpen && (query.trim().length >= 2 || visibleResults.length > 0 || loadingResults);
@@ -151,6 +198,7 @@ export default function WikiLookup() {
     setQuery(page);
     setDropdownOpen(false);
     setResults([]);
+    setResultsQuery("");
     setLoadingDocument(true);
     setError(null);
     navigate("wiki", {
@@ -194,6 +242,11 @@ export default function WikiLookup() {
           : null;
     if (!elementTarget) return;
 
+    if (elementTarget instanceof HTMLImageElement) {
+      handleLightboxClick(event);
+      return;
+    }
+
     const link = elementTarget.closest("a");
     if (!(link instanceof HTMLAnchorElement)) return;
 
@@ -203,6 +256,12 @@ export default function WikiLookup() {
     event.preventDefault();
     void routeWikiPage(internalPage);
   }
+
+  useEffect(() => {
+    if (!loadingDocument && document && contentRef.current) {
+      initWikiInteractive(contentRef.current);
+    }
+  }, [loadingDocument, document]);
 
   const pageUrl = useMemo(
     () =>
@@ -320,7 +379,7 @@ export default function WikiLookup() {
       ) : null}
 
       {document ? (
-        <div className="rounded-xl border border-border/40 bg-bg-primary/25 p-5">
+        <div ref={contentRef} className="rounded-xl border border-border/40 bg-bg-primary/25 p-5">
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
           <section className="min-w-0 space-y-4">
             <div>
@@ -366,7 +425,7 @@ export default function WikiLookup() {
                     </p>
                     ) : null}
                   {document.relatedPages.length > 0 ? (
-                    <div className="flex flex-wrap gap-2 pt-1">
+                    <div className="flex flex-wrap items-center gap-2 pt-1">
                       {document.relatedPages.slice(0, 8).map((page) => (
                         <button
                           key={page.title}
@@ -380,6 +439,11 @@ export default function WikiLookup() {
                           {page.title}
                         </button>
                       ))}
+                      {document.totalRelatedPages > 8 ? (
+                        <span className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
+                          +{document.totalRelatedPages - 8} more
+                        </span>
+                      ) : null}
                     </div>
                   ) : null}
                   <SourceAttribution
@@ -422,18 +486,31 @@ export default function WikiLookup() {
               </section>
             ) : null}
 
-            {document.sections.map((section) => (
-              <section
-                key={section.id}
-              >
-                <h4 className="mb-4 text-lg font-semibold tracking-tight">{section.title}</h4>
-                <div
-                  className="article-content"
-                  onClick={handleContentClick}
-                  dangerouslySetInnerHTML={{ __html: section.html }}
-                />
-              </section>
-            ))}
+            {document.sections.map((section) => {
+              const extra = sectionExtraClasses(section.title);
+              const collapsed = shouldCollapse(section.title);
+              return collapsed ? (
+                <details key={section.id} className="article-content-collapse">
+                  <summary className="mb-4 text-lg font-semibold tracking-tight cursor-pointer text-text-primary hover:text-accent transition-colors">
+                    {section.title}
+                  </summary>
+                  <div
+                    className={`article-content${extra ? ` ${extra}` : ""}`}
+                    onClick={handleContentClick}
+                    dangerouslySetInnerHTML={{ __html: section.html }}
+                  />
+                </details>
+              ) : (
+                <section key={section.id}>
+                  <h4 className="mb-4 text-lg font-semibold tracking-tight">{section.title}</h4>
+                  <div
+                    className={`article-content${extra ? ` ${extra}` : ""}`}
+                    onClick={handleContentClick}
+                    dangerouslySetInnerHTML={{ __html: section.html }}
+                  />
+                </section>
+              );
+            })}
           </section>
 
           <aside className="space-y-4">
@@ -443,23 +520,27 @@ export default function WikiLookup() {
               </div>
               <div className="mt-3 space-y-4">
                 {document.infoboxImage ? (
-                  <img
-                    src={document.infoboxImage}
-                    alt={document.infoboxTitle ?? document.title}
-                    className="max-h-64 w-full rounded-xl border border-border object-contain bg-bg-tertiary/30"
-                    onError={(e) => {
-                      const el = e.currentTarget;
-                      el.style.display = "none";
-                      const fallback = el.nextElementSibling;
-                      if (fallback instanceof HTMLElement) fallback.style.display = "flex";
-                    }}
-                  />
-                ) : null}
-                <div
-                  className="hidden h-32 w-full rounded-xl border border-border bg-bg-tertiary/30 items-center justify-center text-2xl text-text-secondary/30"
-                >
-                  {(document.infoboxTitle ?? document.title)[0]}
-                </div>
+                  <>
+                    <img
+                      src={document.infoboxImage}
+                      alt={document.infoboxTitle ?? document.title}
+                      className="max-h-64 w-full rounded-xl border border-border object-contain bg-bg-tertiary/30"
+                      onError={(e) => {
+                        const el = e.currentTarget;
+                        el.style.display = "none";
+                        const fallback = el.nextElementSibling;
+                        if (fallback instanceof HTMLElement) fallback.style.display = "flex";
+                      }}
+                    />
+                    <div className="hidden h-32 w-full rounded-xl border border-border bg-bg-tertiary/30 items-center justify-center text-2xl text-text-secondary/30">
+                      {(document.infoboxTitle ?? document.title)[0]}
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex h-32 w-full rounded-xl border border-border bg-bg-tertiary/30 items-center justify-center text-2xl text-text-secondary/30">
+                    {(document.infoboxTitle ?? document.title)[0]}
+                  </div>
+                )}
                 <div>
                   <div className="text-sm font-semibold text-text-primary">
                     {document.infoboxTitle ?? document.title}
@@ -470,17 +551,24 @@ export default function WikiLookup() {
                 </div>
                 <div className="space-y-2">
                   {document.infoboxFields.length > 0 ? (
-                    document.infoboxFields.map((field) => (
-                      <div
-                        key={field.label}
-                        className="px-3 py-2"
-                      >
-                        <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
-                          {field.label}
+                    <>
+                      {document.infoboxFields.map((field) => (
+                        <div
+                          key={field.label}
+                          className="px-3 py-2"
+                        >
+                          <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
+                            {field.label}
+                          </div>
+                          <div className="mt-1 text-sm text-text-primary">{field.value}</div>
                         </div>
-                        <div className="mt-1 text-sm text-text-primary">{field.value}</div>
-                      </div>
-                    ))
+                      ))}
+                      {document.totalInfoboxFields > document.infoboxFields.length ? (
+                        <div className="px-3 py-1 text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
+                          +{document.totalInfoboxFields - document.infoboxFields.length} more fields on wiki
+                        </div>
+                      ) : null}
+                    </>
                   ) : (
                     <div className="px-3 py-3 text-sm text-text-secondary">
                       No structured infobox fields were found for this page.

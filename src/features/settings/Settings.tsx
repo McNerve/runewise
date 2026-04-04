@@ -249,7 +249,12 @@ export default function Settings() {
   };
 
   const resetKeybinds = () => {
-    update({ keybinds: { ...DEFAULT_KEYBINDS } });
+    // Fully replace — don't merge with old saved keys
+    const fresh: Record<string, string> = {};
+    for (const action of Object.keys(KEYBIND_LABELS)) {
+      fresh[action] = DEFAULT_KEYBINDS[action] ?? "";
+    }
+    update({ keybinds: fresh });
   };
 
   return (
@@ -342,6 +347,18 @@ export default function Settings() {
 
       {/* Keyboard Shortcuts */}
       <SettingsCard title="Keyboard Shortcuts">
+        <div className="flex items-center justify-between mb-4 pb-3 border-b border-border/40">
+          <div>
+            <div className="text-sm font-medium">Enable Shortcuts</div>
+            <div className="text-xs text-text-secondary">Ctrl/Cmd + key to navigate between views</div>
+          </div>
+          <button
+            onClick={() => update({ keybindsEnabled: !settings.keybindsEnabled })}
+            className={`w-10 h-5 rounded-full transition-colors ${settings.keybindsEnabled ? "bg-accent" : "bg-bg-tertiary"}`}
+          >
+            <div className={`w-4 h-4 rounded-full bg-white shadow transition-transform ${settings.keybindsEnabled ? "translate-x-5" : "translate-x-0.5"}`} />
+          </button>
+        </div>
         {(() => {
           const families = new Map<string, [string, { label: string; family: string }][]>();
           for (const [action, info] of Object.entries(KEYBIND_LABELS)) {
@@ -363,8 +380,8 @@ export default function Settings() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1">
                 {entries.map(([action, info]) => {
                   const key = (settings.keybinds[action] ?? DEFAULT_KEYBINDS[action] ?? "").toLowerCase();
-                  const conflict = Array.from(Object.entries(KEYBIND_LABELS)).some(
-                    ([a]) => a !== action && (settings.keybinds[a] ?? DEFAULT_KEYBINDS[a] ?? "").toLowerCase() === key && key
+                  const conflict = key.length > 0 && Array.from(Object.entries(KEYBIND_LABELS)).some(
+                    ([a]) => a !== action && (settings.keybinds[a] ?? DEFAULT_KEYBINDS[a] ?? "").toLowerCase() === key
                   );
                   return (
                     <div key={action} className="flex items-center justify-between gap-3 py-1">
@@ -389,9 +406,9 @@ export default function Settings() {
           </p>
           <button
             onClick={resetKeybinds}
-            className="text-xs text-text-secondary/70 hover:text-text-primary transition-colors"
+            className="rounded-lg border border-border bg-bg-secondary px-3 py-1 text-xs text-text-secondary hover:text-text-primary hover:border-accent/40 transition-colors"
           >
-            Reset all
+            Reset to Defaults
           </button>
         </div>
       </SettingsCard>
@@ -494,6 +511,8 @@ export default function Settings() {
           {[
             { label: "OSRS Wiki", href: "https://oldschool.runescape.wiki/", license: "CC BY-NC-SA 3.0" },
             { label: "Wise Old Man", href: "https://wiseoldman.net/", license: "MIT" },
+            { label: "Temple OSRS", href: "https://templeosrs.com/", license: "Temple OSRS" },
+            { label: "Star Miners", href: "https://starminers.site/", license: "Star Miners" },
             { label: "OSRS Hiscores", href: "https://secure.runescape.com/m=hiscore_oldschool/", license: "Jagex" },
           ].map(({ label, href, license }) => (
             <div key={label} className="flex justify-between gap-3 py-1">
