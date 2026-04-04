@@ -95,7 +95,6 @@ export async function bucketQueryAll<T extends Record<string, unknown>>(
         const obj = json as Record<string, unknown>;
         if (obj?.results && Array.isArray(obj.results)) return obj.results as T[];
         if (obj?.bucket && Array.isArray(obj.bucket)) {
-          console.log(`[RuneWise] bucketQueryAll: got ${(obj.bucket as T[]).length} items for ${bucket} offset=${offset}`);
           return obj.bucket as T[];
         }
         console.warn("[RuneWise] Unexpected bucketQueryAll response:", typeof json, json !== null && typeof json === "object" ? Object.keys(json as Record<string, unknown>).join(",") : "");
@@ -103,7 +102,6 @@ export async function bucketQueryAll<T extends Record<string, unknown>>(
       },
     });
 
-    console.log(`[RuneWise] bucketQueryAll batch: ${batch.length} items, offset=${offset}`);
     results.push(...batch);
 
     if (batch.length < MAX_PER_QUERY) break;

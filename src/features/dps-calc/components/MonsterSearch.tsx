@@ -120,6 +120,7 @@ export default function MonsterSearch({
           )}
           <button
             onClick={() => onSelect(null)}
+            aria-label="Clear monster selection"
             className="ml-auto text-text-secondary/40 hover:text-text-primary"
           >
             ✕

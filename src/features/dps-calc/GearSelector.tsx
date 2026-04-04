@@ -53,6 +53,7 @@ export default function GearSelector({ slot, onSelect, onClose }: Props) {
           </span>
           <button
             onClick={onClose}
+            aria-label="Close gear selector"
             className="text-text-secondary hover:text-text-primary transition-colors text-lg leading-none"
           >
             ×
