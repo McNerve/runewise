@@ -1,4 +1,5 @@
 import { fetchJson } from "./client";
+import { apiFetch } from "./fetch";
 import { isTauri } from "../env";
 import { parseHiscoreData } from "./validators";
 
@@ -54,18 +55,13 @@ const IRONMAN_URLS: Record<Exclude<IronmanType, "none">, string> = {
 };
 
 export async function detectIronmanType(rsn: string): Promise<IronmanType> {
-  // Check in order: hardcore → ultimate → regular ironman
+  // Only run in Tauri — dev mode proxy 404s are noisy and non-functional
+  if (!isTauri) return "none";
   for (const type of ["hardcore", "ultimate", "ironman"] as const) {
     try {
       const url = `${IRONMAN_URLS[type]}/index_lite.json?player=${encodeURIComponent(rsn)}`;
-      await fetchJson<HiscoreData>({
-        url,
-        cacheKey: `hiscores-${type}:${rsn.toLowerCase()}`,
-        ttlMs: HISCORES_TTL,
-        persist: true,
-        parser: parseHiscoreData,
-      });
-      return type;
+      const res = await apiFetch(url);
+      if (res.ok) return type;
     } catch {
       // Not on this hiscore = not this type
     }
