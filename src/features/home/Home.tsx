@@ -102,6 +102,44 @@ export default function Home({ hiscores }: HomeProps) {
         {/* Left column */}
         <div className="space-y-5">
 
+          {/* First-run welcome */}
+          {!savedRsn && !localStorage.getItem("runewise_welcome_dismissed") && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="rounded-xl border border-accent/30 bg-accent/5 p-5"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-accent">Welcome to RuneWise</h3>
+                  <p className="text-xs text-text-secondary mt-1 leading-relaxed">
+                    Enter your RSN in the top bar to unlock personalized stats, XP tracking, and boss KC.
+                    All tools work without an RSN too — just start exploring.
+                  </p>
+                  <div className="flex gap-2 mt-3">
+                    <button
+                      type="button"
+                      onClick={() => navigate("lookup")}
+                      className="rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent-hover transition-colors"
+                    >
+                      Set Your RSN
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        localStorage.setItem("runewise_welcome_dismissed", "1");
+                        (e.currentTarget.closest("[class*=rounded-xl]") as HTMLElement)?.remove();
+                      }}
+                      className="rounded-lg border border-border px-3 py-1.5 text-xs text-text-secondary hover:text-text-primary transition-colors"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
           {/* Player card */}
           {savedRsn && data && (
             <motion.div
