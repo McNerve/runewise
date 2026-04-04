@@ -22,7 +22,7 @@ export default function Sidebar({ currentView, onNavigate }: SidebarProps) {
   const collapsed = settings.sidebar.collapsed;
 
   const toggleCollapse = () => {
-    update({ sidebar: { collapsed: !collapsed } });
+    update({ sidebar: { ...settings.sidebar, collapsed: !collapsed } });
   };
 
   const openGlobalSearch = () => {

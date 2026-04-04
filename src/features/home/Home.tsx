@@ -3,7 +3,7 @@ import { motion } from "motion/react";
 import type { HiscoreData, IronmanType } from "../../lib/api/hiscores";
 import { NAV_ICONS, WIKI_IMG } from "../../lib/sprites";
 import { getFeatureAccent } from "../../lib/featureAccent";
-import { useNavigation } from "../../lib/NavigationContext";
+import { useNavigation, type View } from "../../lib/NavigationContext";
 import WikiImage from "../../components/WikiImage";
 import ShellIcon from "../../components/ShellIcon";
 import { useWatchlist } from "../../hooks/useWatchlist";
@@ -45,7 +45,7 @@ function getAccountType(data: HiscoreData | null, ironmanType?: IronmanType): { 
   return { label: "Main", color: "text-text-secondary" };
 }
 
-const TOOL_GRID = [
+const TOOL_GRID: Array<{ id: View; label: string }> = [
   { id: "skill-calc", label: "Skill Calc" },
   { id: "dps-calc", label: "DPS Calc" },
   { id: "bosses", label: "Boss Guides" },
@@ -58,7 +58,7 @@ const TOOL_GRID = [
   { id: "stars", label: "Stars" },
   { id: "news", label: "News" },
   { id: "clue-helper", label: "Clues" },
-] as const;
+];
 
 function getCombatLevel(data: HiscoreData): number {
   const get = (name: string) => data.skills.find((s) => s.name === name)?.level ?? 1;
@@ -304,14 +304,14 @@ export default function Home({ hiscores }: HomeProps) {
               </div>
               <div className="space-y-1">
                 {watchlistItems.slice(0, 5).map((item) => {
-                  const p = prices[String(item.id)];
+                  const p = prices[String(item.itemId)];
                   const price = p?.high ?? p?.low ?? null;
                   return (
                     <div
-                      key={item.id}
+                      key={item.itemId}
                       className="flex items-center justify-between gap-2 px-2 py-1 rounded text-xs"
                     >
-                      <span className="truncate text-text-primary">{item.name}</span>
+                      <span className="truncate text-text-primary">{item.itemName}</span>
                       {price != null && (
                         <span className="text-success tabular-nums shrink-0">{formatGp(price)}</span>
                       )}
@@ -326,12 +326,12 @@ export default function Home({ hiscores }: HomeProps) {
           <div className="rounded-xl border border-border/40 bg-bg-primary/20 p-3">
             <h3 className="text-[10px] font-medium uppercase tracking-[0.16em] text-text-secondary/50 mb-2">While Playing</h3>
             <div className="space-y-0.5">
-              {[
-                { id: "timers", label: "Farm Timers", desc: "Track growth cycles" },
-                { id: "stars", label: "Shooting Stars", desc: "Live star calls" },
-                { id: "slayer", label: "Slayer Helper", desc: "Task weights & blocks" },
-                { id: "dps-calc", label: "DPS Calculator", desc: "Gear & loadout DPS" },
-              ].map(({ id, label, desc }) => (
+              {([
+                { id: "timers" as View, label: "Farm Timers", desc: "Track growth cycles" },
+                { id: "stars" as View, label: "Shooting Stars", desc: "Live star calls" },
+                { id: "slayer" as View, label: "Slayer Helper", desc: "Task weights & blocks" },
+                { id: "dps-calc" as View, label: "DPS Calculator", desc: "Gear & loadout DPS" },
+              ]).map(({ id, label, desc }) => (
                 <button
                   key={id}
                   type="button"
