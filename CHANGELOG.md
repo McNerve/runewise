@@ -2,6 +2,45 @@
 
 All notable changes to RuneWise are documented here. Versions follow [Semantic Versioning](https://semver.org/).
 
+## [1.6.0] - 2026-04-17
+
+### Pet Calculator — full redesign
+
+- **Level-scaled skilling formula** — implements wiki's `1 / (B − 25 × Level)` per-action rate with L99 cap and 15× bonus at 200M XP. Previously used flat rate so L70 and L99 looked identical. Skill level auto-fills from hiscores.
+- **Boss scaling modifiers** — Olmlet (CoX points slider), Lil' zik (Normal/HM toggle), Tumeken's guardian (invocation/raid level), Little nightmare (team size + Phosani toggle), Dom (delve select), and Slayer-task boosts for Jal-nib-rek / Tzrek-jad / Yami.
+- **Variant toggles** for wilderness-lite and alt-boss variants: Artio, Calvar'ion, Spindel, Chaos Fanatic, normal Gauntlet. Header source updates live when toggled.
+- **Method comparison table** replaces the old dropdown — each row shows effective rate, actions-to-50%, and time estimate (when XP/hr entered). Sorted fastest-first with ★ marker and an explicit "Fastest at L{X} — click to use" callout.
+- **Hiscores auto-fill** — XP for skilling pets (derives actions via `xpPerAction`), KC for boss pets (bidirectional activity name match), token-match for action-only pets like Smolcano → Zalcano KC.
+- **Owned-pet tracking** — Temple OSRS collection log sync for synced accounts (auto-highlights owned pets green with ✓ badge), plus manual localStorage toggle for everyone else. "Owned: X / 68" counter in header.
+- **Search + hide-owned filter** for the 68-pet grid.
+- **Context-aware unit labels** per pet: Kill Count, Completions, Caskets Opened, Games Completed, Catches, Rumours Completed, Wave 10 Completions, Runs Completed, Subdues. Per-action unit override lets Hespori and Zalcano (bosses inside skill pets) show "Kill Count".
+- **"Not tracked on hiscores" hint** for pets whose source isn't in the hiscores API (Herbi, Quetzin, Chompy chick, BA, Soul Wars, GoTR, etc.).
+
+### Pet Calculator — data fixes
+
+- 45 → 52 boss pets, 10 → 12 skill pets after wiki audit. Added: Bran (Royal Titans), Beef (Brutus), Dom (Doom of Mokhaiotl), Gull (Shellbane Gryphon), Moxi (Amoxliatl, renamed from "Lil' Amoxliatl"), Yami (Yama), Quetzin (Hunter rumours), Soup (Sailing), Abyssal protector (GoTR), Chompy chick, Pet penance queen.
+- Rate corrections: Huberte 3000 → 400, Wisp 2500 → 2000, Butch 2500 → 3000, Muphin 2560 → 2500, Scorpia 2000 → 2016, Callisto/Vet'ion/Venenatis 2000 → 1500 (wilderness-lite variant rates noted).
+- Renames to wiki-canonical: "Pet chaos elemental", "Pet dark core", "Ikkle hydra", "Lil' zik", "Tumeken's guardian", "Tzrek-jad".
+- Removed fake entries: "Moons pet (Jal-MejJak)" (no such pet), "Parasitic egg" (metamorphosis item), duplicate Muphin entry under "Midnight".
+- SKILL_PETS B-constants audited across all 11 skilling pets. Notable fixes: Beaver Yew 72k → 145k, Teak 108k → 264k; Baby chinchompa Red 131k → 98k, Black 131k → 82k; Tangleroot Hespori 65 → 65 (was flat 65 not level-scaled); Rift guardian rune rates.
+- **Phoenix (Wintertodt) and Tangleroot (Hespori)** math bugs — both were using XP-per-action conversion for per-event rolls. Now action-only so hiscore activity match populates correctly.
+- **Tangleroot "Farm run (mixed)"** new entry replacing per-crop dropdown — nobody farms only Magic trees; aggregate rate (1/850 at L99) matches real mixed-run play. Hespori kept as separate method.
+- **Ikkle hydra icon fix** — data audit rename broke the wiki URL; restored to `Ikkle_Hydra_(serpentine).png`.
+
+### Dry Calculator — polish
+
+- Removed all pet entries (belong in Pet Calculator only).
+- Fixed Butch / Baron boss mappings (were swapped — now Duke Sucellus → Baron, Vardorvis → Butch).
+- Auto-pull KC from hiscores when a boss preset is selected (bidirectional activity name match).
+
+### Tests
+
+- 133 → 162 tests (+29). New coverage: `skillingPetRate` across L1/50/70/99/200M, pet modifier rate registry (Olmlet, ToA, Nightmare, Dom, slayer tasks).
+
+### Infrastructure
+
+- `.claude/settings.local.json` pre-approves `mcp__Claude_Preview__*` tools so team agents don't hang on permission dialogs.
+
 ## [1.4.1] - 2026-04-03
 
 ### Security
