@@ -87,3 +87,24 @@ jobs:
             NOTES="Initial release"
           fi
           gh release edit ${{ github.ref_name }} --notes "$NOTES"
+
+  prune-old-releases:
+    needs: release-notes
+    runs-on: ubuntu-latest
+    name: Prune Old Releases
+
+    steps:
+      - name: Delete all releases except the current tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CURRENT_TAG: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          # Keep only the just-published release. Git tags are preserved (--cleanup-tag=false)
+          # so history and commit-SHA lookups still work; only the release + binaries are removed.
+          gh release list --repo "$REPO" --limit 100 --json tagName --jq '.[].tagName' \
+            | grep -vxF "$CURRENT_TAG" \
+            | while IFS= read -r tag; do
+                echo "Deleting release $tag"
+                gh release delete "$tag" --yes --cleanup-tag=false --repo "$REPO" || true
+              done
