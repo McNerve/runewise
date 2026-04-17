@@ -104,6 +104,7 @@ export default function PetCalculator({ hiscores, rsn }: Props) {
 
   useEffect(() => {
     if (!rsn) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reset Temple state when RSN cleared
       setTempleOwned(new Set());
       setTempleStatus("idle");
       return;
@@ -164,6 +165,7 @@ export default function PetCalculator({ hiscores, rsn }: Props) {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- rehydrating from per-RSN localStorage
     setManualOwned(new Set(loadJSON<string[]>(ownedKey(rsn), [])));
   }, [rsn]);
 
@@ -213,12 +215,14 @@ export default function PetCalculator({ hiscores, rsn }: Props) {
   }, [isSkilling, selected, skillLevel, has200m]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync hiscores level → editable input, manual-override gated
     if (!levelTouched && hiscoreSkill?.level) setSkillLevel(hiscoreSkill.level);
   }, [hiscoreSkill, levelTouched]);
 
   useEffect(() => {
     if (countTouched || !selectedAction) return;
     if (selectedAction.xpPerAction > 0 && hiscoreSkill?.xp) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- sync hiscores xp → editable input, manual-override gated
       setXpInput(hiscoreSkill.xp);
       setActionCount(Math.floor(hiscoreSkill.xp / selectedAction.xpPerAction));
       return;
@@ -267,6 +271,7 @@ export default function PetCalculator({ hiscores, rsn }: Props) {
 
   useEffect(() => {
     if (countTouched || isSkilling) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync hiscores KC → editable input, manual-override gated
     if (hiscoreKc && hiscoreKc > 0) setKillCount(hiscoreKc);
   }, [hiscoreKc, countTouched, isSkilling]);
 
