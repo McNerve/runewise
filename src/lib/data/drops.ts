@@ -31,7 +31,6 @@ export const POPULAR_DROPS: DropEntry[] = [
   { item: "Abyssal whip", source: "Abyssal demons", rate: 512, category: "Slayer" },
   { item: "Kraken tentacle", source: "Kraken", rate: 400, category: "Slayer" },
   { item: "Primordial crystal", source: "Cerberus", rate: 512, category: "Slayer" },
-  { item: "Noon", source: "Grotesque Guardians", rate: 3000, category: "Pets" },
 
   // Wilderness
   { item: "Dragon pickaxe", source: "Chaos Elemental", rate: 256, category: "Wilderness" },
@@ -40,19 +39,10 @@ export const POPULAR_DROPS: DropEntry[] = [
 
   // Other bosses
   { item: "Jar of dirt", source: "Vorkath", rate: 3000, category: "Other" },
-  { item: "Vorki", source: "Vorkath", rate: 3000, category: "Other" },
   { item: "Uncut onyx", source: "Zulrah", rate: 512, category: "Other" },
   { item: "Tanzanite fang", source: "Zulrah", rate: 512, category: "Other" },
-  { item: "Nexling", source: "Nex", rate: 500, category: "Pets" },
   { item: "Inquisitor's mace", source: "Nightmare", rate: 600, category: "Other" },
   { item: "Sarachnis cudgel", source: "Sarachnis", rate: 384, category: "Other" },
-
-  // Skilling pets
-  { item: "Rift guardian chathead", source: "Runecraft", rate: 1795758, category: "Pets", note: "Rate varies by method. Shown for ZMI altar." },
-  { item: "Rock golem", source: "Mining", rate: 244725, category: "Pets", note: "Rate varies by ore type. Shown for iron." },
-  { item: "Heron", source: "Fishing", rate: 257770, category: "Pets", note: "Rate varies by fish type. Shown for barbarian fishing." },
-  { item: "Beaver", source: "Woodcutting", rate: 264367, category: "Pets", note: "Rate varies by tree type. Shown for teaks." },
-  { item: "Tangleroot", source: "Farming", rate: 7500, category: "Pets", note: "Rate varies by crop. Shown for Magic tree." },
 
   // DT2 bosses
   { item: "Ultor ring", source: "The Whisperer", rate: 1536, category: "Other" },
@@ -104,20 +94,11 @@ export const POPULAR_DROPS: DropEntry[] = [
   { item: "Treasonous ring", source: "Venenatis", rate: 512, category: "Wilderness" },
   { item: "Tyrannical ring", source: "Callisto", rate: 512, category: "Wilderness" },
 
-  // Fight caves / inferno pets
-  { item: "TzRek-Jad", source: "TzTok-Jad", rate: 200, category: "Pets" },
-  { item: "Jal-nib-rek", source: "TzKal-Zuk", rate: 100, category: "Pets" },
-
   // The Nightmare
   { item: "Nightmare staff", source: "The Nightmare", rate: 400, category: "Other" },
   { item: "Inquisitor's great helm", source: "The Nightmare", rate: 600, category: "Other" },
   { item: "Inquisitor's hauberk", source: "The Nightmare", rate: 600, category: "Other" },
   { item: "Inquisitor's plateskirt", source: "The Nightmare", rate: 600, category: "Other" },
-
-  // Boss pets
-  { item: "Baby mole", source: "Giant Mole", rate: 3000, category: "Pets" },
-  { item: "Prince black dragon", source: "King Black Dragon", rate: 3000, category: "Pets" },
-  { item: "Kalphite princess", source: "Kalphite Queen", rate: 3000, category: "Pets" },
 
   // Barrows
   { item: "Guthan's helm", source: "Barrows", rate: 353, category: "Other", note: "Rate is for any Barrows piece." },
@@ -142,18 +123,9 @@ export const POPULAR_DROPS: DropEntry[] = [
   { item: "Jar of darkness", source: "Skotizo", rate: 200, category: "Other" },
   { item: "Abyssal dagger", source: "Abyssal Sire", rate: 492, category: "Slayer" },
   { item: "Bludgeon claw", source: "Abyssal Sire", rate: 492, category: "Slayer" },
-  { item: "Pet smoke devil", source: "Thermonuclear smoke devil", rate: 3000, category: "Pets" },
-  { item: "Hellpuppy", source: "Cerberus", rate: 3000, category: "Pets" },
-  { item: "Ikkle hydra (serpentine)", source: "Alchemical Hydra", rate: 3000, category: "Pets" },
-  { item: "Skotos", source: "Skotizo", rate: 65, category: "Pets" },
-  { item: "Olmlet", source: "Chambers of Xeric", rate: 53, category: "Pets" },
-  { item: "Lil' Zik", source: "Theatre of Blood", rate: 650, category: "Pets" },
-  { item: "Tumeken's guardian", source: "Tombs of Amascut", rate: 350, category: "Pets" },
-  { item: "Nid", source: "Araxxor", rate: 2500, category: "Pets" },
 
   // Gauntlet
   { item: "Enhanced crystal weapon seed", source: "Corrupted Gauntlet", rate: 400, category: "Other" },
-  { item: "Youngllef", source: "Corrupted Gauntlet", rate: 800, category: "Pets" },
 
   // Phantom Muspah
   { item: "Ancient icon", source: "Phantom Muspah", rate: 75, category: "Other" },

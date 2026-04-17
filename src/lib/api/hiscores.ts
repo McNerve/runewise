@@ -83,3 +83,19 @@ export function getSkillXp(data: HiscoreData, skillName: string): number {
   );
   return skill?.xp ?? 0;
 }
+
+/** Fuzzy-match a boss/activity source against the hiscores activities list.
+ *  Prefers exact match, then substring (both directions) with a 4-char floor on the shorter side
+ *  to avoid false positives on short names like "Nex" matching "Nexus". */
+export function findActivityScore(data: HiscoreData, source: string): number | null {
+  if (!data.activities) return null;
+  const src = source.toLowerCase();
+  const exact = data.activities.find((a) => a.name.toLowerCase() === src);
+  if (exact) return exact.score > 0 ? exact.score : null;
+  const fuzzy = data.activities.find((a) => {
+    const name = a.name.toLowerCase();
+    const shorter = Math.min(name.length, src.length);
+    return shorter >= 4 && (name.includes(src) || src.includes(name));
+  });
+  return fuzzy && fuzzy.score > 0 ? fuzzy.score : null;
+}

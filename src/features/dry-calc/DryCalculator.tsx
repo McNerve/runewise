@@ -2,12 +2,18 @@ import { useState } from "react";
 import { dropChance, killsForConfidence } from "../../lib/formulas/dry";
 import { POPULAR_DROPS, DROP_CATEGORIES, type DropEntry } from "../../lib/data/drops";
 import { itemIcon } from "../../lib/sprites";
+import { findActivityScore, type HiscoreData } from "../../lib/api/hiscores";
 
-export default function DryCalculator() {
+interface Props {
+  hiscores: HiscoreData | null;
+}
+
+export default function DryCalculator({ hiscores }: Props) {
   const [kills, setKills] = useState(0);
   const [rate, setRate] = useState(512);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [selectedDrop, setSelectedDrop] = useState<DropEntry | null>(null);
+  const [kcAutoFilled, setKcAutoFilled] = useState(false);
 
   const chance = kills > 0 && rate > 0 ? dropChance(kills, rate) * 100 : 0;
   const kills95 = rate > 0 ? killsForConfidence(rate, 0.95) : 0;
@@ -21,7 +27,9 @@ export default function DryCalculator() {
   const selectDrop = (drop: DropEntry) => {
     setSelectedDrop(drop);
     setRate(Math.round(drop.rate));
-    setKills(0);
+    const kc = hiscores ? findActivityScore(hiscores, drop.source) ?? 0 : 0;
+    setKills(kc);
+    setKcAutoFilled(kc > 0);
   };
 
   return (
@@ -45,7 +53,7 @@ export default function DryCalculator() {
                 <div className="text-xs text-text-secondary">{selectedDrop.source} · 1/{Math.round(selectedDrop.rate).toLocaleString()}</div>
               </div>
               <button
-                onClick={() => { setSelectedDrop(null); setRate(512); setKills(0); }}
+                onClick={() => { setSelectedDrop(null); setRate(512); setKills(0); setKcAutoFilled(false); }}
                 className="text-xs text-text-secondary/50 hover:text-text-primary transition-colors cursor-pointer"
               >
                 ×
@@ -81,9 +89,15 @@ export default function DryCalculator() {
               type="number"
               min={0}
               value={kills || ""}
-              onChange={(e) => setKills(Number(e.target.value) || 0)}
+              onChange={(e) => {
+                setKills(Number(e.target.value) || 0);
+                setKcAutoFilled(false);
+              }}
               className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm"
             />
+            {kcAutoFilled && (
+              <p className="text-[10px] text-accent/80 mt-1">Auto-filled from hiscores</p>
+            )}
           </div>
 
           <div className="border-t border-border pt-4">
@@ -139,7 +153,7 @@ export default function DryCalculator() {
         {/* Presets */}
         <div className="bg-bg-secondary rounded-lg p-3 overflow-y-auto max-h-[500px]">
           <button
-            onClick={() => { setSelectedDrop(null); setRate(512); setKills(0); }}
+            onClick={() => { setSelectedDrop(null); setRate(512); setKills(0); setKcAutoFilled(false); }}
             className={`w-full mb-3 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
               !selectedDrop
                 ? "bg-accent text-white"
