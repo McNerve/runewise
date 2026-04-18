@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
-use std::sync::LazyLock;
+use std::sync::{LazyLock, Mutex};
 use std::time::Duration;
 use serde::Serialize;
 use serde_json::Value;
+use discord_rich_presence::{DiscordIpc, DiscordIpcClient, activity};
 
 static HTTP_CLIENT: LazyLock<reqwest::Client> = LazyLock::new(|| {
     reqwest::Client::builder()
@@ -49,6 +50,13 @@ struct LootEntry {
     kills: i64,
     drops: Vec<LootDrop>,
 }
+
+// Discord application ID — register your own at https://discord.com/developers/applications
+// Replace this placeholder before shipping to end users.
+const DISCORD_APP_ID: &str = "PLACEHOLDER_DISCORD_APP_ID";
+
+static DISCORD_CLIENT: LazyLock<Mutex<Option<DiscordIpcClient>>> =
+    LazyLock::new(|| Mutex::new(None));
 
 const ALLOWED_HOSTS: &[&str] = &[
     "secure.runescape.com",
@@ -325,8 +333,50 @@ fn runelite_read_loot_tracker(profile_id: String) -> Result<Vec<LootEntry>, Stri
     Ok(entries)
 }
 
+/// Initialize Discord Rich Presence. Must be called once before update_discord_presence.
+#[tauri::command]
+fn init_discord_presence() -> Result<(), String> {
+    let mut guard = DISCORD_CLIENT.lock().map_err(|e| e.to_string())?;
+    if guard.is_some() {
+        return Ok(());
+    }
+    let mut client = DiscordIpcClient::new(DISCORD_APP_ID).map_err(|e| e.to_string())?;
+    client.connect().map_err(|e| e.to_string())?;
+    *guard = Some(client);
+    Ok(())
+}
+
+/// Update Discord Rich Presence activity.
+#[tauri::command]
+fn update_discord_presence(activity_label: String, details: String) -> Result<(), String> {
+    let mut guard = DISCORD_CLIENT.lock().map_err(|e| e.to_string())?;
+    let Some(client) = guard.as_mut() else {
+        return Err("Discord client not initialized".to_string());
+    };
+    let payload = activity::Activity::new()
+        .state(&activity_label)
+        .details(&details);
+    client.set_activity(payload).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+/// Clear Discord Rich Presence activity.
+#[tauri::command]
+fn clear_discord_presence() -> Result<(), String> {
+    let mut guard = DISCORD_CLIENT.lock().map_err(|e| e.to_string())?;
+    let Some(client) = guard.as_mut() else {
+        return Ok(());
+    };
+    client.clear_activity().map_err(|e| e.to_string())?;
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    use tauri::{Emitter, Manager, WindowEvent};
+    use tauri::tray::{TrayIconBuilder, TrayIconEvent};
+    use tauri::menu::{Menu, MenuItem};
+
     tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
@@ -337,7 +387,10 @@ pub fn run() {
             proxy_fetch,
             runelite_status,
             runelite_read_profiles,
-            runelite_read_loot_tracker
+            runelite_read_loot_tracker,
+            init_discord_presence,
+            update_discord_presence,
+            clear_discord_presence,
         ])
         .setup(|app| {
             if cfg!(debug_assertions) {
@@ -347,7 +400,65 @@ pub fn run() {
                         .build(),
                 )?;
             }
+
+            // Build system tray
+            let show_item = MenuItem::with_id(app, "show", "Show RuneWise", true, None::<&str>)?;
+            let star_item = MenuItem::with_id(app, "stars", "Star Radar", true, None::<&str>)?;
+            let quit_item = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
+            let menu = Menu::with_items(app, &[&show_item, &star_item, &quit_item])?;
+
+            let _tray = TrayIconBuilder::new()
+                .icon(app.default_window_icon().cloned().unwrap())
+                .tooltip("RuneWise")
+                .menu(&menu)
+                .on_tray_icon_event(|tray, event| {
+                    if let TrayIconEvent::Click { .. } = event {
+                        let app = tray.app_handle();
+                        if let Some(window) = app.get_webview_window("main") {
+                            if window.is_visible().unwrap_or(false) {
+                                let _ = window.hide();
+                            } else {
+                                let _ = window.show();
+                                let _ = window.set_focus();
+                            }
+                        }
+                    }
+                })
+                .on_menu_event(|app, event| match event.id().as_ref() {
+                    "show" => {
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                        }
+                    }
+                    "stars" => {
+                        // Navigate main window to stars view via JS
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                            let _ = window.eval("window.location.hash = '#stars'");
+                        }
+                    }
+                    "quit" => {
+                        app.exit(0);
+                    }
+                    _ => {}
+                })
+                .build(app)?;
+
             Ok(())
+        })
+        .on_window_event(|window, event| {
+            if window.label() != "main" {
+                return;
+            }
+            // Read close-to-tray preference from localStorage via JS is complex from Rust;
+            // instead emit an event so the frontend can intercept and hide instead of close.
+            if let WindowEvent::CloseRequested { api, .. } = event {
+                // Prevent default close — frontend handles via "runewise:close-requested" event
+                api.prevent_close();
+                let _ = window.emit("runewise:close-requested", ());
+            }
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

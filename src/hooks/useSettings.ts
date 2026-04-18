@@ -36,6 +36,8 @@ export function useSettingsProvider() {
         sidebar: patch.sidebar
           ? { ...prev.sidebar, ...patch.sidebar }
           : prev.sidebar,
+        closeToTray: patch.closeToTray ?? prev.closeToTray,
+        discordRpc: patch.discordRpc ?? prev.discordRpc,
       };
       persistSettings(next);
       return next;
