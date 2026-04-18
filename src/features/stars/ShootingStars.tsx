@@ -14,6 +14,23 @@ import WikiImage from "../../components/WikiImage";
 import { fetchLiveStars, type LiveStar } from "../../lib/api/stars";
 import { fetchStarLandingSites } from "../../lib/api/stars-reference";
 import { useNavigation } from "../../lib/NavigationContext";
+import { sendNotification } from "../../lib/notify";
+import { useSettings } from "../../hooks/useSettings";
+import { loadJSON, saveJSON } from "../../lib/localStorage";
+
+const STAR_ALERTS_KEY = "runewise_star_alerts";
+
+interface StarAlertSettings {
+  enabled: boolean;
+  minTier: number;
+  regions: string[];
+}
+
+const DEFAULT_STAR_ALERTS: StarAlertSettings = {
+  enabled: false,
+  minTier: 7,
+  regions: [],
+};
 
 type Tab = "live" | "reference";
 
@@ -114,7 +131,102 @@ function StarLocationPreview({
   );
 }
 
+function StarAlertPanel({
+  alertSettings,
+  onUpdate,
+  availableRegions,
+}: {
+  alertSettings: StarAlertSettings;
+  onUpdate: (s: StarAlertSettings) => void;
+  availableRegions: string[];
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="mb-4 rounded-xl border border-border/60 bg-bg-primary/45">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between px-4 py-3 text-sm"
+      >
+        <div className="flex items-center gap-2">
+          <span className="font-medium text-text-primary">Star Alerts</span>
+          {alertSettings.enabled && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-success/20 text-success font-medium">
+              T{alertSettings.minTier}+{alertSettings.regions.length > 0 ? ` · ${alertSettings.regions.length} region${alertSettings.regions.length > 1 ? "s" : ""}` : " · any region"}
+            </span>
+          )}
+          {!alertSettings.enabled && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-bg-tertiary text-text-secondary">Off</span>
+          )}
+        </div>
+        <span className="text-text-secondary/50 text-xs">{open ? "▲" : "▼"}</span>
+      </button>
+
+      {open && (
+        <div className="px-4 pb-4 space-y-3 border-t border-border/40 pt-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-text-secondary">Enable star alerts</span>
+            <button
+              role="switch"
+              aria-checked={alertSettings.enabled}
+              onClick={() => onUpdate({ ...alertSettings, enabled: !alertSettings.enabled })}
+              className={`relative h-5 w-10 rounded-full transition-colors shrink-0 ${alertSettings.enabled ? "bg-accent" : "bg-bg-tertiary"}`}
+            >
+              <span className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white transition-transform ${alertSettings.enabled ? "translate-x-5" : ""}`} />
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-text-secondary">Minimum tier</span>
+            <select
+              value={alertSettings.minTier}
+              onChange={(e) => onUpdate({ ...alertSettings, minTier: Number(e.target.value) })}
+              className="bg-bg-tertiary border border-border rounded px-2 py-1 text-xs"
+            >
+              {[6, 7, 8, 9].map((t) => (
+                <option key={t} value={t}>T{t}+</option>
+              ))}
+            </select>
+          </div>
+
+          {availableRegions.length > 0 && (
+            <div>
+              <div className="text-sm text-text-secondary mb-2">Region filter <span className="text-text-secondary/50">(empty = any)</span></div>
+              <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
+                {availableRegions.filter((r) => r !== "All").map((region) => {
+                  const active = alertSettings.regions.includes(region);
+                  return (
+                    <button
+                      key={region}
+                      type="button"
+                      onClick={() => {
+                        const regions = active
+                          ? alertSettings.regions.filter((r) => r !== region)
+                          : [...alertSettings.regions, region];
+                        onUpdate({ ...alertSettings, regions });
+                      }}
+                      className={`px-2 py-0.5 rounded text-xs transition-colors ${active ? "bg-accent text-on-accent" : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"}`}
+                    >
+                      {region}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function starKey(star: LiveStar): string {
+  return `${star.world}-${star.calledAt}`;
+}
+
 export default function ShootingStars() {
+  const { settings } = useSettings();
   const { navigate } = useNavigation();
   const detailRef = useRef<HTMLDivElement | null>(null);
   const [tab, setTab] = useState<Tab>("live");
@@ -123,10 +235,17 @@ export default function ShootingStars() {
   const [selectedStar, setSelectedStar] = useState<LiveStar | null>(null);
   const userDismissedRef = useRef(false);
   const [referenceSites, setReferenceSites] = useState<StarSite[]>([]);
+  const [alertSettings, setAlertSettings] = useState<StarAlertSettings>(() =>
+    loadJSON(STAR_ALERTS_KEY, DEFAULT_STAR_ALERTS)
+  );
+  const seenStarKeys = useRef<Set<string>>(new Set());
 
   // Reference tab state
   const [regionFilter, setRegionFilter] = useState("All");
   const [siteQuery, setSiteQuery] = useState("");
+
+  // Persist alert settings
+  useEffect(() => { saveJSON(STAR_ALERTS_KEY, alertSettings); }, [alertSettings]);
 
   // Fetch live stars
   useEffect(() => {
@@ -159,6 +278,29 @@ export default function ShootingStars() {
       cancelled = true;
     };
   }, []);
+
+  // Fire notifications for newly-seen stars matching alert filters
+  useEffect(() => {
+    if (!settings.notifications.stars) return;
+    if (!alertSettings.enabled) return;
+    for (const star of stars) {
+      const key = starKey(star);
+      if (seenStarKeys.current.has(key)) continue;
+      seenStarKeys.current.add(key);
+      if (star.tier < alertSettings.minTier) continue;
+      if (alertSettings.regions.length > 0) {
+        const effectiveSites2 = referenceSites.length > 0 ? referenceSites : STAR_SITES;
+        const matchedSite2 = findStarSiteMatch(star.calledLocation, effectiveSites2, star.locationKey ?? undefined);
+        const region = matchedSite2?.region ?? "";
+        if (!alertSettings.regions.includes(region)) continue;
+      }
+      const est = estimateRemaining(star);
+      sendNotification(
+        `T${star.tier} star spawned`,
+        `${star.calledLocation} · W${star.world} · ${est.text}`
+      );
+    }
+  }, [stars, alertSettings, settings.notifications.stars, referenceSites]);
 
   // Sort stars by estimated time remaining (most time left first)
   const sortedStars = useMemo(() =>
@@ -260,6 +402,12 @@ export default function ShootingStars() {
       {/* Live Tracker Tab */}
       {tab === "live" && (
         <>
+          <StarAlertPanel
+            alertSettings={alertSettings}
+            onUpdate={setAlertSettings}
+            availableRegions={regions}
+          />
+
           {!loading && sortedStars.length > 0 && (
             <div className="mb-5 grid gap-3 md:grid-cols-4">
               <div className="px-4 py-3">

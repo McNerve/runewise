@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { sendNotification } from "../../lib/notify";
+import { useSettings } from "../../hooks/useSettings";
 import { useNavigation } from "../../lib/NavigationContext";
 import { WIKI_IMG, skillIcon, bossIconSmall } from "../../lib/sprites";
 import { TableSkeleton } from "../../components/Skeleton";
@@ -293,7 +295,21 @@ function XpOverTimeChart({
   return <div ref={containerRef} className="w-full" />;
 }
 
+// Achievements considered milestones for notification purposes
+function isMilestoneAchievement(a: WomAchievement): boolean {
+  // 99 in any skill
+  if (a.measure === "experience" && a.threshold === 13_034_431) return true;
+  // Max total level (2277)
+  if (a.name.toLowerCase().includes("maxed") || a.name.toLowerCase().includes("max total")) return true;
+  // 200m XP in any skill
+  if (a.measure === "experience" && a.threshold === 200_000_000) return true;
+  // First rank-100 (approximation: any rank achievement with threshold <= 100)
+  if (a.measure === "rank" && a.threshold <= 100) return true;
+  return false;
+}
+
 export default function XpTracker({ rsn }: Props) {
+  const { settings } = useSettings();
   const { navigate } = useNavigation();
   const [period, setPeriod] = useState<GainsPeriod>("week");
   const [gains, setGains] = useState<WomGains | null>(null);
@@ -309,6 +325,7 @@ export default function XpTracker({ rsn }: Props) {
   const [competitions, setCompetitions] = useState<WomPlayerCompetition[]>([]);
   const [competitionsLoaded, setCompetitionsLoaded] = useState(false);
   const [fetchKey, setFetchKey] = useState(0);
+  const notifiedAchievementKeys = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (!rsn) return;
@@ -360,6 +377,18 @@ export default function XpTracker({ rsn }: Props) {
       });
     return () => { cancelled = true; };
   }, [tab, rsn, competitionsLoaded]);
+
+  // Fire milestone notifications for newly-observed achievements
+  useEffect(() => {
+    if (!settings.notifications.milestones) return;
+    for (const a of achievements) {
+      if (!isMilestoneAchievement(a)) continue;
+      const key = `${a.metric}:${a.threshold}:${a.createdAt}`;
+      if (notifiedAchievementKeys.current.has(key)) continue;
+      notifiedAchievementKeys.current.add(key);
+      sendNotification("XP milestone", `${a.name} — ${rsn}`);
+    }
+  }, [achievements, settings.notifications.milestones, rsn]);
 
   const handleRefresh = useCallback(() => {
     setFetchKey((k) => k + 1);

@@ -3,6 +3,7 @@ import { useSettings } from "../../hooks/useSettings";
 import { DEFAULT_KEYBINDS, type KeybindMap } from "../../lib/settings";
 import { isTauri, isMac } from "../../lib/env";
 import { setUpdateMode, getUpdateMode, type UpdateMode } from "../../lib/updateBus";
+import { sendNotification, onNotificationDenied } from "../../lib/notify";
 
 declare const __APP_VERSION__: string;
 
@@ -279,6 +280,79 @@ function UpdateModeSelect() {
   );
 }
 
+function NotificationsCard() {
+  const { settings, update } = useSettings();
+  const [denied, setDenied] = useState(false);
+  const [testStatus, setTestStatus] = useState<"idle" | "sent" | "denied">("idle");
+
+  useEffect(() => {
+    return onNotificationDenied(() => setDenied(true));
+  }, []);
+
+  const fireTest = async () => {
+    await sendNotification("RuneWise test", "Notifications are working");
+    setTestStatus(denied ? "denied" : "sent");
+    setTimeout(() => setTestStatus("idle"), 3000);
+  };
+
+  const notifs = settings.notifications;
+
+  const rows: { key: keyof typeof notifs; label: string; description: string }[] = [
+    { key: "priceAlerts", label: "Watchlist price alerts", description: "Alert when a watched item crosses your buy/sell threshold." },
+    { key: "farming", label: "Farming timer alerts", description: "Alert when a farming patch or birdhouse run is ready to harvest." },
+    { key: "stars", label: "Shooting star alerts", description: "Alert on new stars matching your tier and region filters. Off by default — can be frequent." },
+    { key: "milestones", label: "XP milestone alerts", description: "Alert on level 99, 200M XP, and max total milestone achievements." },
+  ];
+
+  return (
+    <div className="bg-bg-tertiary rounded-lg p-5">
+      <h3 className="text-xs font-semibold uppercase tracking-wider text-text-secondary mb-3">
+        Notifications
+      </h3>
+
+      <p className="text-xs text-text-secondary/70 mb-4 leading-relaxed">
+        RuneWise sends native system notifications for these events. Desktop only — requires Tauri runtime.
+      </p>
+
+      {denied && (
+        <div className="mb-4 rounded-lg border border-warning/30 bg-warning/5 px-3 py-2 text-xs text-warning">
+          Notifications are disabled — enable them in System Settings to receive alerts.
+        </div>
+      )}
+
+      <div className="space-y-4">
+        {rows.map(({ key, label, description }) => (
+          <div key={key} className="flex items-center justify-between gap-4">
+            <div>
+              <span className="text-sm font-medium text-text-primary">{label}</span>
+              <p className="mt-0.5 text-xs text-text-secondary/70">{description}</p>
+            </div>
+            <ToggleSwitch
+              checked={notifs[key]}
+              onChange={() => update({ notifications: { ...notifs, [key]: !notifs[key] } })}
+              label={label}
+            />
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-5 pt-4 border-t border-border/30 flex items-center gap-3">
+        <button
+          onClick={fireTest}
+          className="rounded-lg border border-border bg-bg-tertiary px-3 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:border-accent/40 transition-colors"
+        >
+          {testStatus === "idle" && "Test notification"}
+          {testStatus === "sent" && "Sent ✓"}
+          {testStatus === "denied" && "Permission denied"}
+        </button>
+        {!isTauri && (
+          <span className="text-xs text-text-secondary/50">Browser mode — using web Notification API</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Settings() {
   const { settings, update, resetAll } = useSettings();
 
@@ -361,28 +435,7 @@ export default function Settings() {
       </SettingsCard>
 
       {/* Notifications */}
-      <SettingsCard title="Notifications">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <span className="text-sm font-medium text-text-primary">Price alerts</span>
-            <p className="mt-0.5 text-xs text-text-secondary/70">
-              Notify when watchlist items hit your target prices.
-            </p>
-          </div>
-          <ToggleSwitch
-            checked={settings.notifications.priceAlerts}
-            onChange={() =>
-              update({
-                notifications: {
-                  ...settings.notifications,
-                  priceAlerts: !settings.notifications.priceAlerts,
-                },
-              })
-            }
-            label="Price alerts"
-          />
-        </div>
-      </SettingsCard>
+      <NotificationsCard />
 
       {/* Keyboard Shortcuts */}
       <SettingsCard title="Keyboard Shortcuts">

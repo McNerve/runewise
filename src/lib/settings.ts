@@ -10,7 +10,7 @@ export interface AppSettings {
   theme: "dark" | "light" | "system";
   keybinds: KeybindMap;
   keybindsEnabled: boolean;
-  notifications: { priceAlerts: boolean };
+  notifications: { priceAlerts: boolean; farming: boolean; stars: boolean; milestones: boolean };
   sidebar: { collapsed: boolean; pinned: string[] };
   ironmanMode: boolean;
 }
@@ -48,7 +48,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   theme: "dark",
   keybinds: DEFAULT_KEYBINDS,
   keybindsEnabled: true,
-  notifications: { priceAlerts: true },
+  notifications: { priceAlerts: true, farming: true, stars: false, milestones: true },
   sidebar: { collapsed: false, pinned: [] },
   ironmanMode: false,
 };
