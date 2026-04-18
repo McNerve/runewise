@@ -14,6 +14,57 @@ import {
 
 const GUIDE_TTL = 60 * 60 * 1000;
 
+/** Prose prefixes that indicate a navigation/meta paragraph, not the boss description. */
+const NAVIGATION_PARAGRAPH_PREFIXES = [
+  "this article",
+  "this page",
+  "the following guide",
+  "for strategies",
+  "for information on",
+  "see also",
+  "this guide",
+  "this strategy",
+];
+
+function isNavigationParagraph(text: string): boolean {
+  const lower = text.trim().toLowerCase();
+  return NAVIGATION_PARAGRAPH_PREFIXES.some((prefix) => lower.startsWith(prefix));
+}
+
+/**
+ * Parse the wiki infobox from raw full-page HTML and extract the "Weakness"
+ * row value, if present.  Returns null when no infobox or weakness row exists.
+ */
+export function extractWeaknessFromInfobox(fullHtml: string): string | null {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(fullHtml, "text/html");
+
+  // Wiki infoboxes use .infobox or .rsw-infobox table elements.
+  const infoboxes = Array.from(
+    doc.querySelectorAll("table.infobox, table.rsw-infobox, .infobox table, .rsw-infobox table")
+  );
+
+  for (const table of infoboxes) {
+    const rows = Array.from(table.querySelectorAll("tr"));
+    for (const row of rows) {
+      const cells = Array.from(row.querySelectorAll("th, td"));
+      const labelCell = cells[0];
+      if (!labelCell) continue;
+      const label = (labelCell.textContent ?? "").trim().toLowerCase();
+      if (label === "weakness" || label === "weak to") {
+        // The value is in the second cell
+        const valueCell = cells[1] ?? cells[0];
+        const value = (valueCell.textContent ?? "").replace(/\s+/g, " ").trim();
+        if (value && value.toLowerCase() !== "weakness" && value.toLowerCase() !== "weak to") {
+          return value;
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
 interface WikiSection {
   number: string;
   line: string;
@@ -28,6 +79,7 @@ export interface BossGuideSection {
 export interface BossGuideDocument {
   template: WikiGuideTemplate;
   summary: string | null;
+  weakness: string | null;
   sections: BossGuideSection[];
   blocks: WikiGuideBlock[];
   fetchedAt: number;
@@ -142,18 +194,28 @@ function cleanSectionHtml(
     div.replaceWith(wrapper);
   });
 
+  // Remove first paragraph when it exactly matches the section title (wiki boilerplate)
+  // or when it's a navigation/meta paragraph (e.g. "This article covers strategies for...")
   const firstParagraph = content.querySelector("p");
-  if (
-    firstParagraph &&
-    (firstParagraph.textContent ?? "").trim().toLowerCase() ===
-      sectionTitle.trim().toLowerCase()
-  ) {
-    firstParagraph.remove();
+  if (firstParagraph) {
+    const text = (firstParagraph.textContent ?? "").trim();
+    if (
+      text.toLowerCase() === sectionTitle.trim().toLowerCase() ||
+      isNavigationParagraph(text)
+    ) {
+      firstParagraph.remove();
+    }
   }
 
   normalizeImages(content);
 
-  const summary = extractSummary(content);
+  // Extract summary from the first substantial paragraph that isn't a navigation note
+  const summaryParagraphs = Array.from(content.querySelectorAll("p"));
+  const summaryPara = summaryParagraphs.find((p) => {
+    const text = (p.textContent ?? "").trim();
+    return text.length >= 60 && !isNavigationParagraph(text);
+  });
+  const summary = summaryPara?.textContent?.trim() ?? extractSummary(content);
   const sanitized = sanitizeHtmlStrict(content);
 
   return { html: sanitized, summary };
@@ -271,7 +333,7 @@ async function fetchSectionsWithFallback(wikiPage: string) {
 export async function fetchBossGuideDocument(
   wikiPage: string
 ): Promise<BossGuideDocument> {
-  const cacheKey = `boss-guide:v4:${wikiPage}`;
+  const cacheKey = `boss-guide:v5:${wikiPage}`;
   const cached = getCached<BossGuideDocument>(cacheKey, GUIDE_TTL);
   if (cached) return cached;
 
@@ -309,6 +371,7 @@ export async function fetchBossGuideDocument(
     template: classification.template,
     summary:
       normalizedSections.find((section) => section.summary)?.summary ?? null,
+    weakness: extractWeaknessFromInfobox(fullHtml),
     sections: normalizedSections.map((section) => ({
       id: section.id,
       title: section.title,

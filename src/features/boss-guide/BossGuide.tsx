@@ -716,7 +716,7 @@ export default function BossGuide({ hiscores }: Props) {
                   combatLevel={selectedBoss.combatLevel}
                   hitpoints={selectedBoss.hitpoints}
                   maxHit={selectedBoss.maxHit}
-                  weakness={selectedBoss.weakness}
+                  weakness={guide.weakness ?? selectedBoss.weakness}
                   hiscores={hiscores}
                 />
               )}
