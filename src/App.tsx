@@ -17,6 +17,8 @@ import { SettingsContext, useSettings } from "./hooks/useSettings";
 import { useSettingsProvider } from "./hooks/useSettings";
 import { VIEW_RENDERERS } from "./lib/viewRegistry";
 import { getFeatureAccent } from "./lib/featureAccent";
+import { isTauri } from "./lib/env";
+import { initDiscordRpc, updateDiscordRpc } from "./lib/discord-rpc";
 
 function AppContent() {
   const { view, navigate } = useNavigation();
@@ -33,10 +35,42 @@ function AppContent() {
     }
   }, [hiscores.ironmanType]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Close-to-tray: listen for Rust close-requested event and hide instead of closing
+  useEffect(() => {
+    if (!isTauri) return;
+    let unlisten: (() => void) | null = null;
+    import("@tauri-apps/api/event").then(({ listen }) => {
+      listen("runewise:close-requested", async () => {
+        const { settings: currentSettings } = await import("./lib/settings").then((m) => ({
+          settings: m.loadSettings(),
+        }));
+        if (currentSettings.closeToTray) {
+          const { getCurrentWindow } = await import("@tauri-apps/api/window");
+          await getCurrentWindow().hide();
+        } else {
+          const { exit } = await import("@tauri-apps/plugin-process");
+          await exit(0);
+        }
+      }).then((fn) => { unlisten = fn; });
+    });
+    return () => { unlisten?.(); };
+  }, []); // intentionally runs once — listener references stable Tauri API
+
+  // Discord Rich Presence: init when enabled, update on view change
+  useEffect(() => {
+    if (!isTauri || !settings.discordRpc) return;
+    initDiscordRpc();
+  }, [settings.discordRpc]);
+
+  useEffect(() => {
+    if (!isTauri || !settings.discordRpc) return;
+    updateDiscordRpc(view, hiscores.rsn);
+  }, [view, hiscores.rsn, settings.discordRpc]);
+
   return (
     <>
       <div className="flex h-screen">
-        <Sidebar currentView={view} onNavigate={navigate} />
+        <Sidebar currentView={view} onNavigate={navigate} rsn={hiscores.rsn} />
         <div className="flex-1 flex flex-col overflow-hidden">
           <PlayerBar
             rsn={hiscores.rsn}

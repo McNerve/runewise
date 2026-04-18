@@ -506,6 +506,41 @@ export default function Settings() {
         </div>
       </SettingsCard>
 
+      {/* App */}
+      {isTauri && (
+        <SettingsCard title="App">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <span className="text-sm font-medium text-text-primary">Close to tray</span>
+                <p className="mt-0.5 text-xs text-text-secondary/70">
+                  Clicking the close button hides RuneWise to the system tray instead of quitting.
+                </p>
+              </div>
+              <ToggleSwitch
+                checked={settings.closeToTray}
+                onChange={() => update({ closeToTray: !settings.closeToTray })}
+                label="Close to tray"
+              />
+            </div>
+
+            <div className="flex items-center justify-between gap-4 pt-3 border-t border-border/30">
+              <div>
+                <span className="text-sm font-medium text-text-primary">Discord Rich Presence</span>
+                <p className="mt-0.5 text-xs text-text-secondary/70">
+                  Show what you&apos;re doing in RuneWise on your Discord profile. Off by default.
+                </p>
+              </div>
+              <ToggleSwitch
+                checked={settings.discordRpc}
+                onChange={() => update({ discordRpc: !settings.discordRpc })}
+                label="Discord Rich Presence"
+              />
+            </div>
+          </div>
+        </SettingsCard>
+      )}
+
       {/* System */}
       <SettingsCard title="System">
         <div className="space-y-4">

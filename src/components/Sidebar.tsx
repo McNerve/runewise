@@ -9,16 +9,18 @@ import { FEATURE_FAMILIES, SIDEBAR_FEATURES } from "../lib/features";
 import { getFeatureAccent } from "../lib/featureAccent";
 import ShellIcon from "./ShellIcon";
 import { onUpdateAvailable, emitOpenUpdate, getUpdateMode } from "../lib/updateBus";
+import SessionWidget from "../features/session-intelligence/SessionWidget";
 
 const mod = isMac ? "⌘" : "Ctrl+";
 const OPEN_SEARCH_EVENT = "runewise:open-search";
 
 interface SidebarProps {
   currentView: View;
-  onNavigate: (view: View) => void;
+  onNavigate: (view: View, params?: Record<string, string>) => void;
+  rsn?: string;
 }
 
-const Sidebar = memo(function Sidebar({ currentView, onNavigate }: SidebarProps) {
+const Sidebar = memo(function Sidebar({ currentView, onNavigate, rsn = "" }: SidebarProps) {
   const { settings, update } = useSettings();
   const collapsed = settings.sidebar.collapsed;
   const [pillVersion, setPillVersion] = useState<string | null>(null);
@@ -190,6 +192,9 @@ const Sidebar = memo(function Sidebar({ currentView, onNavigate }: SidebarProps)
           </div>
         ))}
       </nav>
+      {!collapsed && (
+        <SessionWidget rsn={rsn} onNavigate={onNavigate} />
+      )}
       <div className={`${collapsed ? "p-2" : "px-2.5 py-2"} border-t border-border/80`}>
         {collapsed ? (
           <button
