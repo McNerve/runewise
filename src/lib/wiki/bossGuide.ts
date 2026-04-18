@@ -81,6 +81,9 @@ export interface BossGuideDocument {
   template: WikiGuideTemplate;
   summary: string | null;
   weakness: string | null;
+  recommendedApproach: string | null;
+  teamSize: string | null;
+  combatLevel: string | null;
   sections: BossGuideSection[];
   blocks: WikiGuideBlock[];
   fetchedAt: number;
@@ -178,6 +181,47 @@ const SECTION_LABELS = [
   "acid phase",
   "ice phase",
 ] as const;
+
+// -----------------------------------------------------------------------
+// Infobox field extractors (approach / team / combat / weakness)
+// -----------------------------------------------------------------------
+
+function extractInfoboxField(fullHtml: string, labels: string[]): string | null {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(fullHtml, "text/html");
+  const rows = doc.querySelectorAll("table.infobox tr, table.rsw-infobox tr, .infobox tr");
+  for (const row of rows) {
+    const header = row.querySelector("th");
+    const data = row.querySelector("td");
+    if (!header || !data) continue;
+    const headerText = (header.textContent ?? "").trim().toLowerCase();
+    if (labels.some((label) => headerText.includes(label.toLowerCase()))) {
+      const text = (data.textContent ?? "").trim();
+      if (text) return text;
+    }
+  }
+  return null;
+}
+
+export function extractRecommendedApproach(fullHtml: string): string | null {
+  return extractInfoboxField(fullHtml, [
+    "recommended approach",
+    "combat approach",
+    "attack style",
+  ]);
+}
+
+export function extractTeamSize(fullHtml: string): string | null {
+  return extractInfoboxField(fullHtml, [
+    "recommended team size",
+    "team size",
+    "group size",
+  ]);
+}
+
+export function extractCombatLevel(fullHtml: string): string | null {
+  return extractInfoboxField(fullHtml, ["combat level", "combat lvl"]);
+}
 
 // -----------------------------------------------------------------------
 // HTML cleaning
@@ -444,7 +488,7 @@ function disambiguateTitle(
 export async function fetchBossGuideDocument(
   wikiPage: string
 ): Promise<BossGuideDocument> {
-  const cacheKey = `boss-guide:v5:${wikiPage}`;
+  const cacheKey = `boss-guide:v6:${wikiPage}`;
   const cached = getCached<BossGuideDocument>(cacheKey, GUIDE_TTL);
   if (cached) return cached;
 
@@ -544,6 +588,9 @@ export async function fetchBossGuideDocument(
     summary:
       normalizedSections.find((section) => section.summary)?.summary ?? null,
     weakness: extractWeaknessFromInfobox(fullHtml),
+    recommendedApproach: extractRecommendedApproach(fullHtml),
+    teamSize: extractTeamSize(fullHtml),
+    combatLevel: extractCombatLevel(fullHtml),
     sections: normalizedSections.map((section) => ({
       id: section.id,
       title: section.title,
