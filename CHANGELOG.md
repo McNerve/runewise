@@ -69,6 +69,41 @@ Post-v1.6 sweep across all 40 views in 9 families. See `.claude/v16-audit.md`.
 - **Empty-state warmth**: Home now always renders the "Recent" section with a hint when empty. Hiscores Lookup shows recent player chips. Wiki shows recent article chips. Recipe Calculator surfaces 10 popular recipes (Shark, Saradomin brew, Super combat potion, Rune platebody, Ranarr, Magic logs, Yew longbow, Dragonstone, Prayer potion, Anglerfish) before search.
 - **Collection Log drill-in** — category clicks now scroll the items panel into view on narrow viewports.
 
+### Profile + XP Tracker
+
+- **Profile stat hierarchy flattened** — the middle activity row (Collection Log / Boss Kills / Clue Scrolls / Colosseum Glory) and bottom WOM row (Overall Rank / EHP / EHB) now use `<StatGrid>` + `<StatCard>` at equal visual weight to the top row. Three stacked tiers of different sizes collapsed into three tiers at one consistent size.
+- **Profile Boss KC now shows top-12 by default** with "Show all N bosses" toggle. The unbounded 50+ row list is gone.
+- **Diary copy** when tasks are complete — "N/N Complete" replaces the confusing "0/N tasks" counter; hides entirely when no tasks tracked.
+- **XP-over-time chart** on XP Tracker using `lightweight-charts`. Renders the selected period's start→end XP anchors with gold-tinted line, gridlines, and tooltip. Shows Start / Gained / Now figures below.
+- **XP Tracker tab count badges** — Gains (n) / Achievements (n) / Records (n) / Competitions (n loaded). Users know if there's data before clicking.
+
+### Calc + gear polish
+
+- **DPS Calc modifier tooltips** — all 19 modifier pills (Void, Obsidian, Inquisitor's, Slayer helm (i), Salve amulets, Arclight, DHL, Berserker, Keris partisan, Leaf-bladed battleaxe) now surface hover tooltips with concise descriptions of when they apply.
+- **Gear Compare em-dash** — zero-bonus cells render as muted `—` instead of `0`, reducing visual noise on long tables.
+- **Training Plan** — skill tile names no longer truncate at 1440px; tiles flex to the full skill name.
+- **Kingdom Calculator** coffer upkeep line now has a "Daily coffer cost at 10 workers" subtitle clarifying the -75K default.
+- **Farm Timers Overview** empty state now differentiates from Timers tab — shows a "Go to Timers" CTA plus recent-run summary when available.
+
+### Visual QA refinements
+
+- **Market gold/yellow collision** fixed — P2P membership pills and the alch value column no longer use `text-warning` (OSRS yellow), which was muddy against the new rune-gold accent. P2P pills now render on a neutral `bg-tertiary` surface with a border; alch values use `text-text-primary`.
+- **Light theme contrast** — `--color-bg-tertiary` darkened from `#f4f5f8` to `#eef0f4` to prevent cards and tooltips from merging visually against the white `--color-bg-secondary`.
+- **Sidebar active-bar per-feature accent** — the active nav item's left border now uses the feature's individual `--item-accent` CSS variable (falling back to gold) so the sidebar retains feature identity while the primary accent stays consistent.
+
+### Shop Helper + Spells + Slayer + Money Making
+
+- **Shop Helper alphabetical sort** strips decorative characters — "~ Uglug's stuffsies ~" no longer floats to the top of the list.
+- **Spells cost column** — every spell now shows its runes-to-GP cost in a new Cost column between Rune Cost and Type, using live GE prices and `formatGp()`.
+- **Slayer master stats quad** migrated to `<StatGrid>` + `<StatCard>`. Points/Task gets the gold accent; Blocked tints danger when any are set.
+- **Money Making risk pills** now fill every method card (not just ToA variants). Missing risk classifications filled in the underlying `money-methods` data.
+- **Money Making guide link** relabelled "Open guide" — clearer that it navigates internally to Boss Guides.
+
+### Loaders + tests
+
+- **Branded skeleton shimmer** — `Skeleton` component now renders a subtle gold-tinted diagonal shimmer via `.skeleton-shimmer` in `index.css`. Respects `prefers-reduced-motion`.
+- **Edge-case tests** added for `toWikiRecipe` (materials/output as objects) and `toWikiSpell` (Arceuus/Ancient/Lunar hard-gated to P2P regardless of wiki flag). Full suite at 179/179.
+
 ## [1.6.0] - 2026-04-17
 
 ### Pet Calculator — full redesign
