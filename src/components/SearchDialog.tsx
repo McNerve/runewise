@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigation } from "../lib/NavigationContext";
 import { isMac } from "../lib/env";
-import { buildSearchIndex, type SearchResult } from "../lib/search";
+import { buildSearchIndex, recordSearchClick, sortByFrequency, type SearchResult } from "../lib/search";
 import { loadRecentEntities } from "../lib/recentEntities";
 
 const MAX_PER_CATEGORY = 5;
@@ -87,7 +87,7 @@ export default function SearchDialog({ onClose }: SearchDialogProps) {
       return haystack.includes(q);
     });
 
-    const deduped = [...shortcuts, ...matchingRecent, ...flat].filter(
+    const deduped = [...shortcuts, ...matchingRecent, ...sortByFrequency(flat)].filter(
       (item, index, items) =>
         items.findIndex((candidate) => candidate.view === item.view && JSON.stringify(candidate.params) === JSON.stringify(item.params) && candidate.name === item.name) === index
     );
@@ -97,6 +97,7 @@ export default function SearchDialog({ onClose }: SearchDialogProps) {
 
   const select = useCallback(
     (result: SearchResult) => {
+      recordSearchClick(result.name, result.view);
       onClose();
       setQuery("");
       navigate(result.view, result.params);

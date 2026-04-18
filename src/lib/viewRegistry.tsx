@@ -39,6 +39,7 @@ const Raids = lazy(() => import("../features/raids/Raids"));
 const ProductionCalc = lazy(() => import("../features/production/ProductionCalc"));
 const ShopHelper = lazy(() => import("../features/shop-helper/ShopHelper"));
 const Kingdom = lazy(() => import("../features/kingdom/Kingdom"));
+const FlipJournal = lazy(() => import("../features/flip-journal/FlipJournal"));
 
 interface AppViewContext {
   hiscores: {
@@ -101,6 +102,7 @@ export const VIEW_RENDERERS: Record<View, ViewRenderer> = {
   "production-calc": renderComponent(ProductionCalc),
   "shop-helper": renderComponent(ShopHelper),
   kingdom: renderComponent(Kingdom),
+  "flip-journal": renderComponent(FlipJournal, "Flip Journal"),
   about: renderComponent(About),
   settings: renderComponent(Settings),
 };

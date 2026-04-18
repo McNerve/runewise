@@ -42,6 +42,8 @@ export const DEFAULT_KEYBINDS: KeybindMap = {
   "world-map": "e",
   news: "9",
   wiki: "0",
+  // Market
+  "flip-journal": "l",
 };
 
 export const DEFAULT_SETTINGS: AppSettings = {
