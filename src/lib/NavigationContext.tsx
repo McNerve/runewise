@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect } from "react";
 import { FEATURE_REGISTRY, type View } from "./features";
 import { saveRecentEntity } from "./recentEntities";
+import { recordToolHit } from "./toolUsage";
 
 export type { View } from "./features";
 
@@ -121,6 +122,7 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
 
   useEffect(() => {
     saveRecentEntity(state.view, state.params);
+    recordToolHit(state.view);
   }, [state]);
 
   useEffect(() => {
