@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { StatGrid, StatCard } from "../../../components/primitives";
 
 interface DpsBreakdownProps {
   maxHit: number;
@@ -43,33 +44,13 @@ export default memo(function DpsBreakdown({
 
   return (
     <div className="space-y-4">
-      {/* Primary results */}
-      <div className="grid grid-cols-4 gap-3">
-        <div className="text-center">
-          <div className="text-2xl font-bold text-accent tabular-nums">
-            {maxHit}
-          </div>
-          <div className="text-xs text-text-secondary mt-1">Max Hit</div>
-        </div>
-        <div className="text-center">
-          <div className={`text-2xl font-bold tabular-nums ${accColor}`}>
-            {accPct}%
-          </div>
-          <div className="text-xs text-text-secondary mt-1">Accuracy</div>
-        </div>
-        <div className="text-center">
-          <div className="text-2xl font-bold text-accent tabular-nums">
-            {dps.toFixed(2)}
-          </div>
-          <div className="text-xs text-text-secondary mt-1">DPS</div>
-        </div>
-        <div className="text-center">
-          <div className="text-2xl font-bold text-text-primary tabular-nums">
-            {formatTtk(ttk)}
-          </div>
-          <div className="text-xs text-text-secondary mt-1">Time to Kill</div>
-        </div>
-      </div>
+      {/* Primary results — DPS is the one accent; accuracy uses traffic-light. */}
+      <StatGrid columns={4}>
+        <StatCard label="Max Hit" value={maxHit} />
+        <StatCard label="Accuracy" value={`${accPct}%`} accent={accColor} />
+        <StatCard label="DPS" value={dps.toFixed(2)} accent="text-accent" />
+        <StatCard label="Time to Kill" value={formatTtk(ttk)} />
+      </StatGrid>
 
       {/* Accuracy bar */}
       <div>

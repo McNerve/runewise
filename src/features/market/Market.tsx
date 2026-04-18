@@ -20,6 +20,7 @@ import { Skeleton, TableSkeleton } from "../../components/Skeleton";
 import EmptyState from "../../components/EmptyState";
 import ItemTooltip from "../../components/ItemTooltip";
 import { useSettings } from "../../hooks/useSettings";
+import { Tabs, FilterPills, StatGrid, StatCard } from "../../components/primitives";
 import {
   PERIODS,
   PERIOD_TIMESTEP,
@@ -525,21 +526,16 @@ export default function Market({
               </div>
             </div>
 
-            <div className="grid gap-3 md:grid-cols-4">
+            <StatGrid columns={4}>
               {selectedSummary.map((stat) => (
-                <div
+                <StatCard
                   key={stat.label}
-                  className="rounded-xl border border-border/60 bg-bg-primary/45 px-4 py-3"
-                >
-                  <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
-                    {stat.label}
-                  </div>
-                  <div className={`mt-1 text-lg font-semibold ${stat.tone}`}>
-                    {stat.value}
-                  </div>
-                </div>
+                  label={stat.label}
+                  value={stat.value}
+                  accent={stat.tone}
+                />
               ))}
-            </div>
+            </StatGrid>
           </div>
         ) : (
           <div className="mb-4 grid gap-3 md:grid-cols-3">
@@ -572,48 +568,31 @@ export default function Market({
 
         {/* Tab bar — always visible */}
         <div className="flex items-center gap-3 mb-4 flex-wrap">
-          <div className="flex flex-wrap gap-2">
-            {([
+          <Tabs
+            variant="default"
+            ariaLabel="Market sections"
+            activeId={tab}
+            onChange={(id) => { setTab(id); setSelectedItem(null); }}
+            items={[
               { id: "search" as Tab, label: "Search", description: "Find items by name" },
               { id: "browse" as Tab, label: allItems.length > 0 ? `Browse All (${allItems.length.toLocaleString()})` : "Browse All", description: "Full item catalogue" },
               { id: "watchlist" as Tab, label: "Watchlist", description: "Tracked items" },
               { id: "alch" as Tab, label: "Alch Profits", description: "Alchemy calculator" },
               { id: "bulk" as Tab, label: "Bulk Lookup", description: "Batch price check" },
-            ]).map((t) => (
-              <button
-                key={t.id}
-                onClick={() => { setTab(t.id); setSelectedItem(null); }}
-                aria-pressed={tab === t.id}
-                className={`relative rounded-xl border px-3.5 py-2 text-left transition ${
-                  tab === t.id
-                    ? "border-accent/50 bg-accent/10"
-                    : "border-border bg-bg-primary/50 text-text-secondary hover:bg-bg-primary/70"
-                }`}
-              >
-                {tab === t.id && <div className="absolute -bottom-px left-3 right-3 h-0.5 rounded-full bg-accent" />}
-                <div className={`text-xs font-semibold ${tab === t.id ? "text-accent" : ""}`}>{t.label}</div>
-                <div className={`hidden sm:block text-[11px] ${tab === t.id ? "text-accent/60" : "text-text-secondary/60"}`}>{t.description}</div>
-              </button>
-            ))}
-          </div>
+            ]}
+          />
 
           {tab === "browse" && (
-            <div className="flex gap-1">
-              {(["all", "f2p", "p2p"] as const).map((f) => (
-                <button
-                  key={f}
-                  onClick={() => setMembersFilter(f)}
-                  aria-pressed={membersFilter === f}
-                  className={`px-3 py-1.5 rounded text-xs uppercase transition-colors ${
-                    membersFilter === f
-                      ? "bg-accent text-white"
-                      : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
-                  }`}
-                >
-                  {f}
-                </button>
-              ))}
-            </div>
+            <FilterPills
+              ariaLabel="Members filter"
+              activeKey={membersFilter}
+              onChange={setMembersFilter}
+              items={[
+                { id: "all" as const, label: "All" },
+                { id: "f2p" as const, label: "F2P" },
+                { id: "p2p" as const, label: "P2P" },
+              ]}
+            />
           )}
         </div>
 

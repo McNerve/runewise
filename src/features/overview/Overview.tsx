@@ -7,6 +7,7 @@ import { WIKI_IMG, SKILL_ICONS, NAV_ICONS, bossIconSmall, bossIcon, itemIcon } f
 import { useNavigation } from "../../lib/NavigationContext";
 import WikiImage from "../../components/WikiImage";
 import { TRAINING_METHODS } from "../../lib/data/training-methods";
+import { StatGrid, StatCard } from "../../components/primitives";
 
 function ProgressRing({ obtained, total, size = 22 }: { obtained: number; total: number; size?: number }) {
   const pct = total > 0 ? obtained / total : 0;
@@ -123,40 +124,33 @@ export default function Overview({ hiscores, rsn }: Props) {
       <h2 className="text-xl font-semibold mb-4">{rsn}</h2>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-4 gap-3 mb-6">
-        <div className="flex flex-col items-center gap-1">
-          <img src={`${WIKI_IMG}/Attack_style_icon.png`} alt="" className="w-5 h-5 opacity-50" onError={(e) => { e.currentTarget.style.display = "none"; }} />
-          <div className="text-2xl font-bold text-accent">
-            {cmb.toFixed(0)}
-          </div>
-          <div className="text-xs text-text-secondary">Combat</div>
-        </div>
-        <div className="flex flex-col items-center gap-1">
-          <img src={`${WIKI_IMG}/Stats_icon.png`} alt="" className="w-5 h-5 opacity-50" onError={(e) => { e.currentTarget.style.display = "none"; }} />
-          <div className="text-2xl font-bold">{totalLevel.toLocaleString()}</div>
-          <div className="text-xs text-text-secondary">Total Level</div>
-        </div>
-        <div className="flex flex-col items-center gap-1">
-          <img src={`${WIKI_IMG}/Antique_lamp.png`} alt="" className="w-5 h-5 opacity-50" onError={(e) => { e.currentTarget.style.display = "none"; }} />
-          <div className="text-2xl font-bold">
-            {totalXp >= 1_000_000_000
-              ? `${(totalXp / 1_000_000_000).toFixed(1)}B`
-              : `${(totalXp / 1_000_000).toFixed(0)}M`}
-          </div>
-          <div className="text-xs text-text-secondary">Total XP</div>
-        </div>
-        <div className="flex flex-col items-center gap-1">
-          {maxedSkills >= 24 ? (
-            <img src={`${WIKI_IMG}/Max_cape.png`} alt="" className="w-5 h-5 opacity-50" onError={(e) => { e.currentTarget.style.display = "none"; }} />
-          ) : (
-            <ProgressRing obtained={maxedSkills} total={24} size={22} />
-          )}
-          <div className={`text-2xl font-bold ${maxedSkills >= 24 ? "text-success" : ""}`}>
-            {maxedSkills}/24
-          </div>
-          <div className="text-xs text-text-secondary">Maxed Skills</div>
-        </div>
-      </div>
+      <StatGrid columns={4} className="mb-6">
+        <StatCard
+          label="Combat"
+          value={cmb.toFixed(0)}
+          icon={`${WIKI_IMG}/Attack_style_icon.png`}
+          accent="text-accent"
+        />
+        <StatCard
+          label="Total Level"
+          value={totalLevel.toLocaleString()}
+          icon={`${WIKI_IMG}/Stats_icon.png`}
+        />
+        <StatCard
+          label="Total XP"
+          value={totalXp >= 1_000_000_000
+            ? `${(totalXp / 1_000_000_000).toFixed(1)}B`
+            : `${(totalXp / 1_000_000).toFixed(0)}M`}
+          icon={`${WIKI_IMG}/Antique_lamp.png`}
+        />
+        <StatCard
+          label="Maxed Skills"
+          value={`${maxedSkills}/24`}
+          icon={maxedSkills >= 24
+            ? `${WIKI_IMG}/Max_cape.png`
+            : <ProgressRing obtained={maxedSkills} total={24} size={16} />}
+        />
+      </StatGrid>
 
       {/* Activity stats — sourced from hiscores activities */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">

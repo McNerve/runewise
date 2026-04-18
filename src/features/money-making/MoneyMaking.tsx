@@ -6,6 +6,7 @@ import { formatGp } from "../../lib/format";
 import { WIKI_IMG, SKILL_ICONS, NAV_ICONS } from "../../lib/sprites";
 import { useNavigation } from "../../lib/NavigationContext";
 import EmptyState from "../../components/EmptyState";
+import { Tabs, FilterPills } from "../../components/primitives";
 
 const ProfitRankings = lazy(() => import("./ProfitRankings"));
 
@@ -125,26 +126,16 @@ export default function MoneyMaking({ hiscores }: Props) {
       </p>
 
       {/* Main tabs */}
-      <div className="flex gap-1 mb-4">
-        {([
-          { id: "methods" as const, label: "Methods", icon: `${WIKI_IMG}/Coins_detail.png` },
-          { id: "rankings" as const, label: "Profit Rankings", icon: `${WIKI_IMG}/Coins_10000.png` },
-        ]).map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setMainTab(tab.id)}
-            aria-pressed={mainTab === tab.id}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-              mainTab === tab.id
-                ? "bg-accent text-white"
-                : "text-text-secondary hover:bg-bg-secondary/50"
-            }`}
-          >
-            <img src={tab.icon} alt="" className="w-4 h-4" onError={(e) => { e.currentTarget.style.display = "none"; }} />
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <Tabs
+        className="mb-4"
+        activeId={mainTab}
+        onChange={setMainTab}
+        ariaLabel="Money making sections"
+        items={[
+          { id: "methods" as MainTab, label: "Methods", icon: `${WIKI_IMG}/Coins_detail.png` },
+          { id: "rankings" as MainTab, label: "Profit Rankings", icon: `${WIKI_IMG}/Coins_10000.png` },
+        ]}
+      />
 
       {/* Alch Profits CTA — moved to Market (Items & Watchlist) */}
       {mainTab === "methods" && (
@@ -176,22 +167,12 @@ export default function MoneyMaking({ hiscores }: Props) {
           className="flex-1 min-w-[200px] bg-bg-secondary border border-border rounded px-3 py-1.5 text-sm"
         />
 
-        <div className="flex gap-1">
-          {CATEGORIES.map((c) => (
-            <button
-              key={c}
-              onClick={() => setCategory(c)}
-              aria-pressed={category === c}
-              className={`px-2.5 py-1.5 rounded text-xs transition-colors ${
-                category === c
-                  ? "bg-accent text-white"
-                  : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
-              }`}
-            >
-              {c}
-            </button>
-          ))}
-        </div>
+        <FilterPills
+          ariaLabel="Method category"
+          activeKey={category}
+          onChange={setCategory}
+          items={CATEGORIES.map((c) => ({ id: c, label: c }))}
+        />
       </div>
 
       <div className="flex gap-3 mb-4">

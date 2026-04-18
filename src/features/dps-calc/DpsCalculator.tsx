@@ -3,6 +3,7 @@ import { useDpsState } from "./hooks/useDpsState";
 import LoadoutManager from "./components/LoadoutManager";
 import StatsPanel from "./components/StatsPanel";
 import ResultsPanel from "./components/ResultsPanel";
+import { FilterPills } from "../../components/primitives";
 
 interface Props {
   hiscores: HiscoreData | null;
@@ -15,22 +16,16 @@ export default function DpsCalculator({ hiscores }: Props) {
     <div className="max-w-5xl">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-semibold">DPS Calculator</h2>
-        <div className="flex gap-1.5">
-          {(["melee", "ranged", "magic"] as const).map((style) => (
-            <button
-              key={style}
-              onClick={() => state.setCombatStyle(style)}
-              aria-pressed={state.combatStyle === style}
-              className={`px-4 py-1.5 rounded-lg text-xs font-medium capitalize transition-colors ${
-                state.combatStyle === style
-                  ? "bg-accent text-white"
-                  : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
-              }`}
-            >
-              {style}
-            </button>
-          ))}
-        </div>
+        <FilterPills
+          ariaLabel="Combat style"
+          activeKey={state.combatStyle}
+          onChange={state.setCombatStyle}
+          items={[
+            { id: "melee" as const, label: "Melee" },
+            { id: "ranged" as const, label: "Ranged" },
+            { id: "magic" as const, label: "Magic" },
+          ]}
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-6 items-start">

@@ -169,7 +169,7 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
           <div className="mt-2 rounded-lg border border-border/40 bg-bg-tertiary/30 p-3">
             <div className="grid grid-cols-3 gap-2 text-center">
               <div>
-                <div className="text-lg font-bold text-accent tabular-nums">{specResult.specMaxHit}</div>
+                <div className="text-lg font-bold text-text-primary tabular-nums">{specResult.specMaxHit}</div>
                 <div className="text-[10px] text-text-secondary">Spec Max</div>
               </div>
               <div>

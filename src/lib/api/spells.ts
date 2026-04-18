@@ -75,7 +75,7 @@ function toWikiSpell(raw: RawBucketSpell): WikiSpell | null {
   const spellbook = normalizeSpellbook(raw.spellbook || json?.spellbook);
   // Arceuus, Ancient, and Lunar spellbooks are P2P-only; wiki data occasionally
   // flags individual entries as F2P. Hard-gate by spellbook.
-  const members = spellbook !== "standard" || raw.is_members_only === "Yes";
+  const members = spellbook !== "normal" || raw.is_members_only === "Yes";
 
   return {
     name: raw.page_name,
