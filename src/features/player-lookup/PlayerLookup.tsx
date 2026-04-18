@@ -25,7 +25,7 @@ function StatCompare({
   return (
     <div>
       <div className="section-kicker mb-3">Skill Comparison</div>
-      <div className="bg-bg-secondary rounded-lg overflow-hidden">
+      <div className="bg-bg-tertiary rounded-lg overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border text-xs text-text-secondary">
@@ -43,7 +43,7 @@ function StatCompare({
               return (
                 <tr
                   key={skill.name}
-                  className="border-b border-border/30 hover:bg-bg-tertiary transition-colors"
+                  className="border-b border-border/30 hover:bg-bg-secondary transition-colors"
                 >
                   <td className="px-4 py-1.5">
                     <div className="flex items-center gap-2">
@@ -101,7 +101,7 @@ function StatCompare({
           return (
             <div
               key={rsn}
-              className="bg-bg-secondary rounded-lg px-4 py-3"
+              className="bg-bg-tertiary rounded-lg px-4 py-3"
             >
               <div className="text-xs font-medium text-text-primary mb-1">
                 {rsn}
@@ -250,7 +250,7 @@ export default function PlayerLookup() {
                 className={`px-4 py-1.5 rounded text-sm font-medium transition-colors ${
                   mode === m.id
                     ? "bg-accent text-white"
-                    : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+                    : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
                 }`}
               >
                 {m.label}

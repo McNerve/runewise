@@ -64,7 +64,7 @@ export default function ConstructionPlanner({
         return (
           <div key={cat} className="mb-4">
             <div className="section-kicker mb-2">{cat}</div>
-            <div className="bg-bg-secondary rounded-lg overflow-hidden">
+            <div className="bg-bg-tertiary rounded-lg overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border text-text-secondary text-xs">
@@ -80,7 +80,7 @@ export default function ConstructionPlanner({
                   {catItems.map((item) => (
                     <tr
                       key={item.name}
-                      className={`border-b border-border/50 hover:bg-bg-tertiary transition-colors ${
+                      className={`border-b border-border/50 hover:bg-bg-secondary transition-colors ${
                         !item.meetsLevel ? "opacity-40" : ""
                       }`}
                       title={item.materialCosts.join("\n")}

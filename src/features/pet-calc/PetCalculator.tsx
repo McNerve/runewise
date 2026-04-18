@@ -309,7 +309,7 @@ export default function PetCalculator({ hiscores, rsn }: Props) {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search pets or sources…"
-            className="w-full bg-bg-secondary border border-border rounded-lg pl-8 pr-8 py-2 text-sm placeholder:text-text-secondary/40 focus:outline-none focus:border-accent/50 transition-colors"
+            className="w-full bg-bg-tertiary border border-border rounded-lg pl-8 pr-8 py-2 text-sm placeholder:text-text-secondary/40 focus:outline-none focus:border-accent/50 transition-colors"
           />
           <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-secondary/40 text-sm pointer-events-none">⌕</span>
           {search && (
@@ -325,7 +325,7 @@ export default function PetCalculator({ hiscores, rsn }: Props) {
         <label className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-medium cursor-pointer transition-colors ${
           hideOwned
             ? "bg-accent/15 border-accent/40 text-accent"
-            : "bg-bg-secondary border-border text-text-secondary hover:border-border/70"
+            : "bg-bg-tertiary border-border text-text-secondary hover:border-border/70"
         }`}>
           <input
             type="checkbox"
@@ -425,7 +425,7 @@ export default function PetCalculator({ hiscores, rsn }: Props) {
         </div>
 
         {/* Calculator panel */}
-        <div className="bg-bg-secondary rounded-lg p-4 space-y-4 h-fit xl:sticky xl:top-4">
+        <div className="bg-bg-tertiary rounded-lg p-4 space-y-4 h-fit xl:sticky xl:top-4">
           {/* Selected pet header */}
           <div className="flex items-center gap-3">
             <img
@@ -501,7 +501,7 @@ export default function PetCalculator({ hiscores, rsn }: Props) {
                         className={`w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded text-xs transition-colors text-left ${
                           isSelected
                             ? "bg-accent/15 ring-1 ring-accent/50 text-text-primary"
-                            : "bg-bg-tertiary/40 hover:bg-bg-tertiary text-text-secondary"
+                            : "bg-bg-tertiary/40 hover:bg-bg-secondary text-text-secondary"
                         }`}
                       >
                         <span className="truncate flex items-center gap-1">

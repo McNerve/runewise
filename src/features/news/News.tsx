@@ -327,7 +327,7 @@ export default function News() {
       className={`block w-full text-left rounded-lg px-4 py-3 transition-colors ${
         selectedPost?.url === post.url
           ? "bg-accent/10 border border-accent/30"
-          : "bg-bg-secondary hover:bg-bg-tertiary"
+          : "bg-bg-tertiary hover:bg-bg-secondary"
       }`}
     >
       <div className="text-sm font-medium">{post.title}</div>

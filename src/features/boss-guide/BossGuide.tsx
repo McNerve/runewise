@@ -420,7 +420,7 @@ export default function BossGuide({ hiscores }: Props) {
       <div>
         <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
           <div className="space-y-1">
-            <h2 className="text-2xl font-semibold tracking-tight">Boss Guides</h2>
+            <h2 className="text-hero font-semibold tracking-tight">Boss Guides</h2>
             <p className="max-w-2xl text-sm text-text-secondary">
               Curated OSRS Wiki boss strategies with app-native layout, your kill count,
               and quick jumps into loot, combat tasks, and DPS workflows.
@@ -534,7 +534,7 @@ export default function BossGuide({ hiscores }: Props) {
                       <div className="text-[11px] uppercase tracking-[0.18em] text-accent/70 font-medium">
                         {selectedBoss.category}
                       </div>
-                      <h3 className="text-2xl font-semibold tracking-tight">{selectedBoss.name}</h3>
+                      <h3 className="text-hero font-semibold tracking-tight">{selectedBoss.name}</h3>
                     </div>
                     <div className="flex flex-wrap gap-2 text-xs">
                       {selectedBoss.combatLevel ? (
@@ -834,7 +834,7 @@ export default function BossGuide({ hiscores }: Props) {
                             min={1}
                             value={lootKillsPerHour}
                             onChange={(e) => setLootKillsPerHour(Math.max(1, Number(e.target.value) || 1))}
-                            className="w-28 rounded-xl border border-border bg-bg-secondary px-3 py-2 text-sm text-text-primary"
+                            className="w-28 rounded-xl border border-border bg-bg-tertiary px-3 py-2 text-sm text-text-primary"
                           />
                         </label>
                       </div>
@@ -1107,14 +1107,14 @@ export default function BossGuide({ hiscores }: Props) {
                                 <button
                                   type="button"
                                   onClick={() => navigate("dps-calc", { monster: selectedBoss.name })}
-                                  className="rounded-lg border border-border bg-bg-secondary px-2.5 py-1.5 text-[11px] text-text-secondary transition hover:border-accent/35 hover:text-text-primary"
+                                  className="rounded-lg border border-border bg-bg-tertiary px-2.5 py-1.5 text-[11px] text-text-secondary transition hover:border-accent/35 hover:text-text-primary"
                                 >
                                   DPS
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => setActiveTab("drops")}
-                                  className="rounded-lg border border-border bg-bg-secondary px-2.5 py-1.5 text-[11px] text-text-secondary transition hover:border-accent/35 hover:text-text-primary"
+                                  className="rounded-lg border border-border bg-bg-tertiary px-2.5 py-1.5 text-[11px] text-text-secondary transition hover:border-accent/35 hover:text-text-primary"
                                 >
                                   Drops
                                 </button>

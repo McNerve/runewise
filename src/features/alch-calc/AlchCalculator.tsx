@@ -172,7 +172,7 @@ export default function AlchCalculator() {
             value={minProfit || ""}
             onChange={(e) => setMinProfit(Number(e.target.value) || 0)}
             placeholder="0"
-            className="w-28 bg-bg-secondary border border-border rounded-lg px-3 py-2 text-sm"
+            className="w-28 bg-bg-tertiary border border-border rounded-lg px-3 py-2 text-sm"
           />
         </div>
         <div>
@@ -184,7 +184,7 @@ export default function AlchCalculator() {
             value={minBuyLimit || ""}
             onChange={(e) => setMinBuyLimit(Number(e.target.value) || 0)}
             placeholder="0"
-            className="w-28 bg-bg-secondary border border-border rounded-lg px-3 py-2 text-sm"
+            className="w-28 bg-bg-tertiary border border-border rounded-lg px-3 py-2 text-sm"
           />
         </div>
         <div className="flex gap-1">
@@ -196,7 +196,7 @@ export default function AlchCalculator() {
               className={`px-3 py-2 rounded text-xs uppercase ${
                 membersFilter === f
                   ? "bg-accent text-white"
-                  : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+                  : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
               }`}
             >
               {f}
@@ -227,7 +227,7 @@ export default function AlchCalculator() {
       </p>
 
       {filtered.length > 0 && (
-        <div className="bg-bg-secondary rounded-lg overflow-hidden">
+        <div className="bg-bg-tertiary rounded-lg overflow-hidden">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border text-text-secondary text-xs">
@@ -279,7 +279,7 @@ export default function AlchCalculator() {
               {paginated.map((row) => (
                 <tr
                   key={row.item.id}
-                  className="border-b border-border/50 even:bg-bg-primary/30 hover:bg-bg-tertiary transition-colors"
+                  className="border-b border-border/50 even:bg-bg-primary/30 hover:bg-bg-secondary transition-colors"
                 >
                   <td className="px-4 py-2">
                     <div className="flex items-center gap-2 font-medium">

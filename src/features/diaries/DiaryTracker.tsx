@@ -115,7 +115,7 @@ export default function DiaryTracker({ hiscores }: Props) {
                 className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
                   selectedRegion.name === region.name
                     ? "bg-accent/15 text-accent"
-                    : "bg-bg-secondary hover:bg-bg-tertiary text-text-secondary"
+                    : "bg-bg-tertiary hover:bg-bg-secondary text-text-secondary"
                 }`}
               >
                 <div className="flex items-center justify-between">
@@ -164,12 +164,12 @@ export default function DiaryTracker({ hiscores }: Props) {
             const allTasksDone = tasksDone === tier.tasks.length && tier.tasks.length > 0;
 
             return (
-              <div key={tier.tier} className="bg-bg-secondary rounded-lg overflow-hidden">
+              <div key={tier.tier} className="bg-bg-tertiary rounded-lg overflow-hidden">
                 <button
                   onClick={() =>
                     setExpandedTier(isExpanded ? null : tier.tier)
                   }
-                  className="w-full text-left px-4 py-3 flex items-center justify-between hover:bg-bg-tertiary transition-colors"
+                  className="w-full text-left px-4 py-3 flex items-center justify-between hover:bg-bg-secondary transition-colors"
                 >
                   <div className="flex items-center gap-3">
                     <span
@@ -271,7 +271,7 @@ export default function DiaryTracker({ hiscores }: Props) {
                                     e.stopPropagation();
                                     toggleTask(key);
                                   }}
-                                  className={`flex items-start gap-2 w-full text-left rounded px-1 py-0.5 transition-colors hover:bg-bg-tertiary ${
+                                  className={`flex items-start gap-2 w-full text-left rounded px-1 py-0.5 transition-colors hover:bg-bg-secondary ${
                                     isDone
                                       ? "text-success/60"
                                       : "text-text-secondary"

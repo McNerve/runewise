@@ -371,17 +371,6 @@ export default function AppIcon({ view, className = "h-4 w-4" }: AppIconProps) {
         </Glyph>
       );
 
-    // Profit hub — wallet with coin.
-    case "profit-hub":
-      return (
-        <Glyph className={className}>
-          <path d="M4 7h13a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z" />
-          <path d="M4 7V5h11v2z" opacity="0.7" />
-          <circle cx="16" cy="13.5" r="1.5" fill="var(--app-bg, #0b0f17)" opacity="0.7" />
-          <circle cx="16" cy="13.5" r="0.6" fill="currentColor" />
-        </Glyph>
-      );
-
     // About — info circle.
     case "about":
       return (

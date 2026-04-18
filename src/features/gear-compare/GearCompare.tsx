@@ -114,7 +114,7 @@ export default function GearCompare() {
             className={`px-2.5 py-1 rounded text-xs transition-colors ${
               selectedSlot === slot
                 ? "bg-accent/20 text-accent border border-accent/30"
-                : "bg-bg-secondary text-text-secondary border border-transparent hover:border-border"
+                : "bg-bg-tertiary text-text-secondary border border-transparent hover:border-border"
             }`}
           >
             {SLOT_LABELS[slot]}
@@ -140,7 +140,7 @@ export default function GearCompare() {
           </div>
           <div className="grid grid-cols-3 gap-3">
             {selected.map((item, i) => (
-              <div key={`${item.name}-${i}`} className="bg-bg-secondary rounded-lg p-3 relative">
+              <div key={`${item.name}-${i}`} className="bg-bg-tertiary rounded-lg p-3 relative">
                 <button
                   onClick={() => setSelected((prev) => prev.filter((_, j) => j !== i))}
                   className="absolute top-1.5 right-1.5 text-text-secondary/40 hover:text-text-primary text-xs"

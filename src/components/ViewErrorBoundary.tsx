@@ -46,7 +46,7 @@ export default class ViewErrorBoundary extends Component<Props, State> {
             <button
               type="button"
               onClick={() => window.location.reload()}
-              className="rounded-lg border border-border bg-bg-secondary px-4 py-1.5 text-xs text-text-secondary hover:text-text-primary transition-colors"
+              className="rounded-lg border border-border bg-bg-tertiary px-4 py-1.5 text-xs text-text-secondary hover:text-text-primary transition-colors"
             >
               Reload App
             </button>

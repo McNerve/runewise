@@ -123,10 +123,10 @@ export default function Home({ hiscores }: HomeProps) {
       {/* Header */}
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between mb-6">
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight">
+          <h2 className="text-hero font-semibold tracking-tight">
             {savedRsn ? `Welcome back, ${savedRsn}` : "RuneWise"}
           </h2>
-          <p className="text-sm text-text-secondary">
+          <p className="text-ui text-text-secondary">
             {savedRsn
               ? "Your dashboard, tools, and recent activity."
               : "Your OSRS companion. Set a RSN to get started."}
@@ -202,7 +202,7 @@ export default function Home({ hiscores }: HomeProps) {
                   />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <span className="text-lg font-semibold">{savedRsn}</span>
+                  <span className="text-h4 font-semibold">{savedRsn}</span>
                   <div className="flex items-center gap-3 text-xs text-text-secondary">
                     <span>Combat {combatLevel}</span>
                     {questPoints != null && questPoints > 0 && <span>{questPoints} QP</span>}
@@ -228,7 +228,7 @@ export default function Home({ hiscores }: HomeProps) {
 
           {/* Tool grid */}
           <section>
-            <h3 className="text-[10px] font-medium uppercase tracking-[0.16em] text-text-secondary/50 mb-2">Tools</h3>
+            <h3 className="text-kicker font-semibold uppercase tracking-[0.16em] text-text-secondary/70 mb-2">Tools</h3>
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
               {TOOL_GRID.map((tool, i) => {
                 const accent = getFeatureAccent(tool.id);
@@ -257,7 +257,7 @@ export default function Home({ hiscores }: HomeProps) {
 
           {/* Recent */}
           <section>
-            <h3 className="text-[10px] font-medium uppercase tracking-[0.16em] text-text-secondary/50 mb-2">Recent</h3>
+            <h3 className="text-kicker font-semibold uppercase tracking-[0.16em] text-text-secondary/70 mb-2">Recent</h3>
             {recentEntities.length > 0 ? (
               <div className="grid grid-cols-2 gap-1.5">
                 {recentEntities.map((entity) => (
@@ -291,7 +291,7 @@ export default function Home({ hiscores }: HomeProps) {
           {watchlistItems.length > 0 && (
             <div className="rounded-xl border border-border/40 bg-bg-primary/20 p-3">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-[10px] font-medium uppercase tracking-[0.16em] text-text-secondary/50">Watchlist</h3>
+                <h3 className="text-kicker font-semibold uppercase tracking-[0.16em] text-text-secondary/70">Watchlist</h3>
                 <button
                   type="button"
                   onClick={() => navigate("watchlist")}
@@ -322,7 +322,7 @@ export default function Home({ hiscores }: HomeProps) {
 
           {/* Quick actions */}
           <div className="rounded-xl border border-border/40 bg-bg-primary/20 p-3">
-            <h3 className="text-[10px] font-medium uppercase tracking-[0.16em] text-text-secondary/50 mb-2">While Playing</h3>
+            <h3 className="text-kicker font-semibold uppercase tracking-[0.16em] text-text-secondary/70 mb-2">While Playing</h3>
             <div className="space-y-0.5">
               {([
                 { id: "timers" as View, label: "Farm Timers", desc: "Track growth cycles" },
@@ -349,7 +349,7 @@ export default function Home({ hiscores }: HomeProps) {
           {/* Keyboard shortcuts hint */}
           {settings.keybindsEnabled && (
             <div className="rounded-xl border border-border/40 bg-bg-primary/20 p-3">
-              <h3 className="text-[10px] font-medium uppercase tracking-[0.16em] text-text-secondary/50 mb-2">Shortcuts</h3>
+              <h3 className="text-kicker font-semibold uppercase tracking-[0.16em] text-text-secondary/70 mb-2">Shortcuts</h3>
               <div className="grid grid-cols-2 gap-1 text-[10px]">
                 {[
                   { key: "K", label: "Search" },

@@ -1,41 +1,56 @@
 import type { View } from "./features";
 
+/**
+ * Feature accent — one accent family (rune/magic gold) with three strengths.
+ * Collapsed in v1.6 from ~38 distinct hues to unify visual language.
+ *
+ * The ONE localized exception is TIER_COLORS (Clue Helper) — don't collapse that.
+ */
+const STRONG = "#d4a574"; // primary rune gold — headline features
+const MID = "#b8895f"; // 70% saturation — calculators, utilities
+const SOFT = "#8a6a4a"; // 50% saturation — meta / settings / secondary tools
+
 const FEATURE_ACCENTS: Record<View, string> = {
-  home: "#d6b36a",
-  overview: "#60a5fa",
-  "collection-log": "#f59e0b",
-  lookup: "#93c5fd",
-  tracker: "#34d399",
-  "skill-calc": "#c084fc",
-  "dps-calc": "#a78bfa",
-  "training-plan": "#8b5cf6",
-  "gear-compare": "#818cf8",
-  "dry-calc": "#f59e0b",
-  "pet-calc": "#f472b6",
-  bosses: "#f97316",
-  raids: "#e879f9",
-  loot: "#facc15",
-  "combat-tasks": "#fb7185",
-  market: "#22c55e",
-  "production-calc": "#10b981",
-  "shop-helper": "#10b981",
-  kingdom: "#d97706",
-  watchlist: "#22c55e",
-  progress: "#2dd4bf",
-  slayer: "#ef4444",
-  "clue-helper": "#a78bfa",
-  "money-making": "#fbbf24",
-  spells: "#7c3aed",
-  "world-map": "#06b6d4",
-  stars: "#fbbf24",
-  news: "#38bdf8",
-  wiki: "#2dd4bf",
-  timers: "#4ade80",
-  "xp-table": "#c084fc",
-  settings: "#94a3b8",
-  about: "#94a3b8",
+  // Headline / primary destinations
+  home: STRONG,
+  overview: STRONG,
+  "dps-calc": STRONG,
+  bosses: STRONG,
+  market: STRONG,
+  "money-making": STRONG,
+
+  // Mid-tier tools
+  "collection-log": MID,
+  lookup: MID,
+  tracker: MID,
+  "skill-calc": MID,
+  "training-plan": MID,
+  "gear-compare": MID,
+  "dry-calc": MID,
+  "pet-calc": MID,
+  raids: MID,
+  loot: MID,
+  "combat-tasks": MID,
+  "production-calc": MID,
+  "shop-helper": MID,
+  kingdom: MID,
+  watchlist: MID,
+  progress: MID,
+  slayer: MID,
+  "clue-helper": MID,
+  spells: MID,
+  "world-map": MID,
+  stars: MID,
+  news: MID,
+  wiki: MID,
+  timers: MID,
+  "xp-table": MID,
+
+  // Meta / soft
+  settings: SOFT,
+  about: SOFT,
 };
 
 export function getFeatureAccent(view: View): string {
-  return FEATURE_ACCENTS[view] ?? "#94a3b8";
+  return FEATURE_ACCENTS[view] ?? SOFT;
 }

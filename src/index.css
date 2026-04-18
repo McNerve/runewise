@@ -1,28 +1,42 @@
 @import "tailwindcss";
 
 @theme {
+  /* Surfaces — layered from shell (darkest) → card → elevated (lightest).
+     Cards use bg-tertiary; bg-secondary is the ELEVATED state (hover,
+     tooltip, dropdown, active nav). */
   --color-bg-primary: #0f1117;
-  --color-bg-secondary: #1a1d27;
-  --color-bg-tertiary: #242836;
+  --color-bg-tertiary: #181b25;
+  --color-bg-secondary: #242836;
   --color-text-primary: #e4e4e7;
   --color-text-secondary: #a1a1aa;
-  --color-accent: #3b82f6;
-  --color-accent-hover: #2563eb;
+  /* Signature accent — rune/magic gold. Was Tailwind blue-500. */
+  --color-accent: #d4a574;
+  --color-accent-hover: #e0b585;
+  --color-info: #3b82f6;
   --color-border: #2e3345;
   --color-success: #22c55e;
   --color-warning: #eab308;
   --color-danger: #ef4444;
+  /* Type scale (v1.6). Apply via text-kicker … text-hero utilities. */
+  --text-kicker: 11px;
+  --text-label: 13px;
+  --text-ui: 14px;
+  --text-base: 16px;
+  --text-h4: 18px;
+  --text-h3: 20px;
+  --text-hero: 28px;
 }
 
 /* Light mode (opt-in via .light-theme class on <html>) */
 .light-theme {
   --color-bg-primary: #eceef2;
+  --color-bg-tertiary: #f4f5f8;
   --color-bg-secondary: #ffffff;
-  --color-bg-tertiary: #dfe3ea;
   --color-text-primary: #11131a;
   --color-text-secondary: #424754;
-  --color-accent: #2563eb;
-  --color-accent-hover: #1d4ed8;
+  --color-accent: #b08552;
+  --color-accent-hover: #986c3c;
+  --color-info: #2563eb;
   --color-border: #bcc4d1;
   --color-success: #15803d;
   --color-warning: #92400e;
@@ -48,8 +62,8 @@
   background:
     radial-gradient(
       ellipse at top,
-      color-mix(in srgb, var(--feature-accent, #3b82f6) 8%, transparent),
-      transparent 50%
+      color-mix(in srgb, var(--feature-accent, var(--color-accent)) 5%, transparent),
+      transparent 55%
     ),
     transparent;
   transition: background 0.3s ease;
@@ -58,8 +72,8 @@
 body {
   margin: 0;
   background:
-    radial-gradient(circle at top, rgba(59, 130, 246, 0.12), transparent 30%),
-    linear-gradient(180deg, var(--color-bg-secondary), var(--color-bg-primary) 22%);
+    radial-gradient(circle at top, color-mix(in srgb, var(--color-accent) 7%, transparent), transparent 30%),
+    linear-gradient(180deg, var(--color-bg-primary), var(--color-bg-primary) 22%);
   color: var(--color-text-primary);
   font-family: "Inter", system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -68,13 +82,13 @@ body {
 
 .sidebar-shell {
   background:
-    radial-gradient(circle at top, rgba(59, 130, 246, 0.12), transparent 32%),
-    linear-gradient(180deg, color-mix(in srgb, var(--color-bg-secondary) 96%, transparent), color-mix(in srgb, var(--color-bg-primary) 98%, transparent));
+    radial-gradient(circle at top, color-mix(in srgb, var(--color-accent) 6%, transparent), transparent 32%),
+    linear-gradient(180deg, color-mix(in srgb, var(--color-bg-primary) 96%, transparent), color-mix(in srgb, var(--color-bg-primary) 98%, transparent));
 }
 
 .topbar-shell {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--color-bg-secondary) 96%, transparent), color-mix(in srgb, var(--color-bg-primary) 98%, transparent));
+    linear-gradient(180deg, color-mix(in srgb, var(--color-bg-primary) 96%, transparent), color-mix(in srgb, var(--color-bg-primary) 98%, transparent));
 }
 
 .panel-hero {
@@ -176,7 +190,7 @@ body {
 
 .light-theme .sidebar-shell {
   background:
-    radial-gradient(circle at top, rgba(37, 99, 235, 0.1), transparent 34%),
+    radial-gradient(circle at top, color-mix(in srgb, var(--color-accent) 8%, transparent), transparent 34%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.995), rgba(236, 238, 242, 0.99));
 }
 
@@ -1045,8 +1059,8 @@ body {
   background:
     radial-gradient(
       ellipse at top,
-      color-mix(in srgb, var(--feature-accent, #2563eb) 6%, transparent),
-      transparent 50%
+      color-mix(in srgb, var(--feature-accent, var(--color-accent)) 4%, transparent),
+      transparent 55%
     ),
     transparent;
 }

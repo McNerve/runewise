@@ -121,7 +121,7 @@ export default function Overview({ hiscores, rsn }: Props) {
 
   return (
     <div className="max-w-3xl">
-      <h2 className="text-xl font-semibold mb-4">{rsn}</h2>
+      <h2 className="text-h3 font-semibold mb-4">{rsn}</h2>
 
       {/* Summary cards */}
       <StatGrid columns={4} className="mb-6">
@@ -158,9 +158,9 @@ export default function Overview({ hiscores, rsn }: Props) {
           <div className="p-3 text-center">
             <div className="flex items-center justify-center gap-1.5 mb-1">
               <WikiImage src={NAV_ICONS["collection-log"]} alt="" className="w-4 h-4" fallback="C" />
-              <div className="text-lg font-bold">{collectionLog}<span className="text-xs text-text-secondary font-normal">/1,699</span></div>
+              <div className="text-h3 font-semibold">{collectionLog}<span className="text-xs text-text-secondary font-normal">/1,699</span></div>
             </div>
-            <div className="text-xs text-text-secondary">Collection Log</div>
+            <div className="text-label text-text-secondary">Collection Log</div>
           </div>
         )}
         {totalBossKills > 0 && (
@@ -170,9 +170,9 @@ export default function Overview({ hiscores, rsn }: Props) {
           >
             <div className="flex items-center justify-center gap-1.5 mb-1">
               <WikiImage src={NAV_ICONS.bosses} alt="" className="w-4 h-4" fallback="B" />
-              <div className="text-lg font-bold">{totalBossKills.toLocaleString()}</div>
+              <div className="text-h3 font-semibold">{totalBossKills.toLocaleString()}</div>
             </div>
-            <div className="text-xs text-text-secondary">Boss Kills</div>
+            <div className="text-label text-text-secondary">Boss Kills</div>
           </button>
         )}
         {clueScrollsAll != null && clueScrollsAll > 0 && (
@@ -182,18 +182,18 @@ export default function Overview({ hiscores, rsn }: Props) {
           >
             <div className="flex items-center justify-center gap-1.5 mb-1">
               <WikiImage src={NAV_ICONS["clue-helper"]} alt="" className="w-4 h-4" fallback="C" />
-              <div className="text-lg font-bold">{clueScrollsAll}</div>
+              <div className="text-h3 font-semibold">{clueScrollsAll}</div>
             </div>
-            <div className="text-xs text-text-secondary">Clue Scrolls</div>
+            <div className="text-label text-text-secondary">Clue Scrolls</div>
           </button>
         )}
         {colosseumGlory != null && (
           <div className="p-3 text-center">
             <div className="flex items-center justify-center gap-1.5 mb-1">
               <WikiImage src={itemIcon("Dizana's quiver (uncharged)")} alt="" className="w-4 h-4" fallback="Q" />
-              <div className="text-lg font-bold">{colosseumGlory.toLocaleString()}</div>
+              <div className="text-h3 font-semibold">{colosseumGlory.toLocaleString()}</div>
             </div>
-            <div className="text-xs text-text-secondary">Colosseum Glory</div>
+            <div className="text-label text-text-secondary">Colosseum Glory</div>
           </div>
         )}
       </div>
@@ -203,25 +203,25 @@ export default function Overview({ hiscores, rsn }: Props) {
         {overallRank > 0 && (
           <div className="text-center px-3 py-1.5">
             <div className="text-sm font-bold tabular-nums">#{overallRank.toLocaleString()}</div>
-            <div className="text-[10px] text-text-secondary">Overall Rank</div>
+            <div className="text-kicker text-text-secondary/70">Overall Rank</div>
           </div>
         )}
         {womPlayer?.ehp != null && womPlayer.ehp > 0 && (
           <div className="text-center px-3 py-1.5" title="Efficient Hours Played">
             <div className="text-sm font-bold tabular-nums">{womPlayer.ehp.toFixed(0)}</div>
-            <div className="text-[10px] text-text-secondary">EHP</div>
+            <div className="text-kicker text-text-secondary/70">EHP</div>
           </div>
         )}
         {womPlayer?.ehb != null && womPlayer.ehb > 0 && (
           <div className="text-center px-3 py-1.5" title="Efficient Hours Bossed">
             <div className="text-sm font-bold tabular-nums">{womPlayer.ehb.toFixed(0)}</div>
-            <div className="text-[10px] text-text-secondary">EHB</div>
+            <div className="text-kicker text-text-secondary/70">EHB</div>
           </div>
         )}
         {womPlayer?.type && womPlayer.type !== "regular" && (
           <div className="text-center px-3 py-1.5">
             <div className="text-sm font-bold text-accent capitalize">{womPlayer.type.replace("_", " ")}</div>
-            <div className="text-[10px] text-text-secondary">Account Type</div>
+            <div className="text-kicker text-text-secondary/70">Account Type</div>
           </div>
         )}
       </div>
@@ -260,7 +260,7 @@ export default function Overview({ hiscores, rsn }: Props) {
             <button
               key={skillName}
               onClick={() => navigate("skill-calc", { skill: skillName })}
-              className="group bg-bg-secondary rounded px-3 py-2 flex items-center justify-between hover:bg-bg-tertiary hover:border-accent/20 border border-transparent transition-all cursor-pointer text-left"
+              className="group bg-bg-tertiary rounded px-3 py-2 flex items-center justify-between hover:bg-bg-secondary hover:border-accent/20 border border-transparent transition-all cursor-pointer text-left"
             >
               <div className="flex items-center gap-2">
                 <WikiImage src={SKILL_ICONS[skillName]} alt="" className="w-4 h-4" fallback={skillName[0]} />
@@ -328,7 +328,7 @@ export default function Overview({ hiscores, rsn }: Props) {
                 <img src={`${WIKI_IMG}/Wintertodt_icon.png`} alt="" className="w-5 h-5" onError={(e) => { e.currentTarget.style.display = "none"; }} />
                 <div>
                   <div className="text-sm font-bold">{wintertodt.toLocaleString()}</div>
-                  <div className="text-[10px] text-text-secondary">Wintertodt</div>
+                  <div className="text-kicker text-text-secondary/70">Wintertodt</div>
                 </div>
               </div>
             )}
@@ -337,7 +337,7 @@ export default function Overview({ hiscores, rsn }: Props) {
                 <img src={`${WIKI_IMG}/Tempoross.png`} alt="" className="w-5 h-5" onError={(e) => { e.currentTarget.style.display = "none"; }} />
                 <div>
                   <div className="text-sm font-bold">{tempoross.toLocaleString()}</div>
-                  <div className="text-[10px] text-text-secondary">Tempoross</div>
+                  <div className="text-kicker text-text-secondary/70">Tempoross</div>
                 </div>
               </div>
             )}
@@ -346,7 +346,7 @@ export default function Overview({ hiscores, rsn }: Props) {
                 <img src={`${WIKI_IMG}/Guardians_of_the_Rift_logo.png`} alt="" className="w-5 h-5" onError={(e) => { e.currentTarget.style.display = "none"; }} />
                 <div>
                   <div className="text-sm font-bold">{rifts.toLocaleString()}</div>
-                  <div className="text-[10px] text-text-secondary">GOTR Rifts</div>
+                  <div className="text-kicker text-text-secondary/70">GOTR Rifts</div>
                 </div>
               </div>
             )}
@@ -355,7 +355,7 @@ export default function Overview({ hiscores, rsn }: Props) {
                 <img src={`${WIKI_IMG}/Crystalline_Hunllef_icon.png`} alt="" className="w-5 h-5" onError={(e) => { e.currentTarget.style.display = "none"; }} />
                 <div>
                   <div className="text-sm font-bold">{gauntlet.toLocaleString()}</div>
-                  <div className="text-[10px] text-text-secondary">Corrupted Gauntlet</div>
+                  <div className="text-kicker text-text-secondary/70">Corrupted Gauntlet</div>
                 </div>
               </div>
             )}
@@ -374,7 +374,7 @@ export default function Overview({ hiscores, rsn }: Props) {
               <button
                 key={boss.name}
                 onClick={() => navigate("bosses", { boss: boss.name })}
-                className="bg-bg-secondary rounded px-2 py-2 hover:bg-bg-tertiary transition-colors flex items-center gap-2"
+                className="bg-bg-tertiary rounded px-2 py-2 hover:bg-bg-secondary transition-colors flex items-center gap-2"
               >
                 <div className="w-6 h-6 shrink-0 relative">
                   <img

@@ -5,7 +5,7 @@ export default function About() {
     <div className="max-w-lg">
       <h2 className="text-2xl font-semibold tracking-tight mb-4">About RuneWise</h2>
 
-      <div className="bg-bg-secondary rounded-lg p-4 mb-4">
+      <div className="bg-bg-tertiary rounded-lg p-4 mb-4">
         <div className="text-2xl font-bold mb-1">RuneWise</div>
         <div className="text-sm text-text-secondary mb-3">
           v{__APP_VERSION__} — OSRS Desktop Companion
@@ -16,7 +16,7 @@ export default function About() {
         </p>
       </div>
 
-      <div className="bg-bg-secondary rounded-lg p-4 mb-4">
+      <div className="bg-bg-tertiary rounded-lg p-4 mb-4">
         <h3 className="text-sm font-medium text-text-secondary uppercase tracking-wider mb-3">
           Data Sources
         </h3>
@@ -54,7 +54,7 @@ export default function About() {
         </div>
       </div>
 
-      <div className="bg-bg-secondary rounded-lg p-4 mb-4">
+      <div className="bg-bg-tertiary rounded-lg p-4 mb-4">
         <h3 className="text-sm font-medium text-text-secondary uppercase tracking-wider mb-3">
           Links
         </h3>

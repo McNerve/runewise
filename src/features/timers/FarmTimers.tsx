@@ -123,7 +123,7 @@ function FarmOverview({ timers, now }: { timers: Timer[]; now: number }) {
                       ? "bg-success/8 border-success/30"
                       : someReady
                         ? "bg-warning/6 border-warning/20"
-                        : "bg-bg-secondary border-border"
+                        : "bg-bg-tertiary border-border"
                   }`}
                 >
                   <img
@@ -337,7 +337,7 @@ export default function FarmTimers() {
             className={`px-4 py-1.5 rounded text-sm font-medium transition-colors ${
               tab === t.id
                 ? "bg-accent text-white"
-                : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+                : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
             }`}
           >
             {t.label}
@@ -377,7 +377,7 @@ export default function FarmTimers() {
                     addPreset(preset.patches);
                   }
                 }}
-                className="px-3 py-1.5 text-xs font-medium bg-bg-secondary border border-border rounded-lg hover:bg-bg-tertiary transition-colors"
+                className="px-3 py-1.5 text-xs font-medium bg-bg-tertiary border border-border rounded-lg hover:bg-bg-secondary transition-colors"
               >
                 {preset.name}
               </button>
@@ -385,7 +385,7 @@ export default function FarmTimers() {
           </div>
 
           {configuringPreset && (
-            <div className="mb-4 rounded-xl border border-border bg-bg-secondary p-4 space-y-3">
+            <div className="mb-4 rounded-xl border border-border bg-bg-tertiary p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">{configuringPreset.name} — Configure Patches</span>
                 <button
@@ -441,7 +441,7 @@ export default function FarmTimers() {
             <select
               value={selectedPatch}
               onChange={(e) => setSelectedPatch(e.target.value)}
-              className="flex-1 bg-bg-secondary border border-border rounded-lg px-3 py-2 text-sm"
+              className="flex-1 bg-bg-tertiary border border-border rounded-lg px-3 py-2 text-sm"
             >
               {PATCH_TYPES.map((p) => (
                 <option key={p.name} value={p.name}>
@@ -488,7 +488,7 @@ export default function FarmTimers() {
                 return (
                   <div
                     key={timer.id}
-                    className={`relative bg-bg-secondary border border-border rounded-lg p-3 flex flex-col items-center gap-2 transition-all ${ready ? "border-success/40 shadow-[0_0_8px_rgba(34,197,94,0.15)]" : ""}`}
+                    className={`relative bg-bg-tertiary border border-border rounded-lg p-3 flex flex-col items-center gap-2 transition-all ${ready ? "border-success/40 shadow-[0_0_8px_rgba(34,197,94,0.15)]" : ""}`}
                   >
                     <button
                       onClick={() => toggleRepeat(timer.id)}
@@ -510,7 +510,7 @@ export default function FarmTimers() {
                         background: `conic-gradient(${color} ${progress * 360}deg, var(--color-bg-tertiary) ${progress * 360}deg)`,
                       }}
                     >
-                      <div className="absolute inset-1 rounded-full bg-bg-secondary flex items-center justify-center">
+                      <div className="absolute inset-1 rounded-full bg-bg-tertiary flex items-center justify-center">
                         <img
                           src={`${WIKI_IMG}/${timer.icon}`}
                           alt=""

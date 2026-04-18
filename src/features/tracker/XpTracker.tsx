@@ -149,7 +149,7 @@ function CompetitionsView({ competitions }: { competitions: WomPlayerCompetition
             href={`https://wiseoldman.net/competitions/${comp.id}`}
             target="_blank"
             rel="noopener noreferrer"
-            className={`block bg-bg-secondary rounded-lg px-4 py-3 border-l-2 transition-colors hover:bg-bg-tertiary ${
+            className={`block bg-bg-tertiary rounded-lg px-4 py-3 border-l-2 transition-colors hover:bg-bg-secondary ${
               isActive ? "border-success" : "border-border/30 opacity-50"
             }`}
           >
@@ -397,7 +397,7 @@ export default function XpTracker({ rsn }: Props) {
                     {skillGains.map(([key, data]) => (
                       <tr
                         key={key}
-                        className="border-b border-border/50 even:bg-bg-primary/30 hover:bg-bg-tertiary"
+                        className="border-b border-border/50 even:bg-bg-primary/30 hover:bg-bg-secondary"
                       >
                         <td className="px-4 py-1.5 font-medium">
                           <button
@@ -445,7 +445,7 @@ export default function XpTracker({ rsn }: Props) {
                     {bossGains.map(([key, data]) => (
                       <tr
                         key={key}
-                        className="border-b border-border/50 even:bg-bg-primary/30 hover:bg-bg-tertiary"
+                        className="border-b border-border/50 even:bg-bg-primary/30 hover:bg-bg-secondary"
                       >
                         <td className="px-4 py-1.5 font-medium">
                           <button
@@ -479,7 +479,7 @@ export default function XpTracker({ rsn }: Props) {
       {tab === "achievements" && !loading && achievements.length > 0 && (
         <div className="rounded-xl border border-border/60 overflow-hidden max-h-[500px] overflow-y-auto">
           <table className="w-full text-sm">
-            <thead className="sticky top-0 bg-bg-secondary">
+            <thead className="sticky top-0 bg-bg-tertiary">
               <tr className="border-b border-border text-text-secondary text-xs">
                 <th scope="col" className="text-left px-4 py-2">Achievement</th>
                 <th scope="col" className="text-left px-4 py-2">Skill</th>
@@ -490,7 +490,7 @@ export default function XpTracker({ rsn }: Props) {
               {achievements.map((a, i) => (
                 <tr
                   key={i}
-                  className="border-b border-border/50 even:bg-bg-primary/30 hover:bg-bg-tertiary"
+                  className="border-b border-border/50 even:bg-bg-primary/30 hover:bg-bg-secondary"
                 >
                   <td className="px-4 py-1.5 font-medium">{a.name}</td>
                   <td className="px-4 py-1.5 text-text-secondary">

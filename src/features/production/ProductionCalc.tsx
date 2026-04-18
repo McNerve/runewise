@@ -193,18 +193,18 @@ export default function ProductionCalc() {
         }}
         placeholder="Search recipes (e.g. Rune platebody, Shark, Prayer potion)..."
         aria-label="Search recipes"
-        className="w-full bg-bg-secondary border border-border rounded px-3 py-2 text-sm mb-1"
+        className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm mb-1"
         autoFocus
       />
 
       {/* Results dropdown */}
       {!selected && results.length > 0 && (
-        <div className="border border-border rounded bg-bg-secondary max-h-72 overflow-y-auto mb-4">
+        <div className="border border-border rounded bg-bg-tertiary max-h-72 overflow-y-auto mb-4">
           {results.map((r) => (
             <button
               key={`${r.name}-${r.skill}-${r.levelReq}`}
               onClick={() => handleSelect(r)}
-              className="w-full text-left px-3 py-2 hover:bg-bg-tertiary transition-colors flex items-center gap-2 border-b border-border/30 last:border-0"
+              className="w-full text-left px-3 py-2 hover:bg-bg-secondary transition-colors flex items-center gap-2 border-b border-border/30 last:border-0"
             >
               <img
                 src={itemIcon(r.name)}
@@ -296,7 +296,7 @@ export default function ProductionCalc() {
                 return (
                   <div
                     key={mat.name}
-                    className="flex items-center gap-2 py-1 px-2 rounded hover:bg-bg-tertiary transition-colors"
+                    className="flex items-center gap-2 py-1 px-2 rounded hover:bg-bg-secondary transition-colors"
                   >
                     <img
                       src={itemIcon(mat.name)}
@@ -403,7 +403,7 @@ export default function ProductionCalc() {
                 min={1}
                 value={quantity}
                 onChange={(e) => setQuantity(Math.max(1, Number(e.target.value) || 1))}
-                className="w-28 bg-bg-secondary border border-border rounded px-2 py-1 text-sm tabular-nums"
+                className="w-28 bg-bg-tertiary border border-border rounded px-2 py-1 text-sm tabular-nums"
               />
               <div className="flex gap-1">
                 {[10, 100, 1000, 10000].map((q) => (
@@ -414,7 +414,7 @@ export default function ProductionCalc() {
                     className={`px-2 py-1 rounded text-xs transition-colors ${
                       quantity === q
                         ? "bg-accent text-white"
-                        : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+                        : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
                     }`}
                   >
                     {q.toLocaleString()}
@@ -424,7 +424,7 @@ export default function ProductionCalc() {
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="bg-bg-secondary rounded-lg px-3 py-2">
+              <div className="bg-bg-tertiary rounded-lg px-3 py-2">
                 <div className="text-[10px] text-text-secondary uppercase tracking-wider">
                   Total XP
                 </div>
@@ -432,7 +432,7 @@ export default function ProductionCalc() {
                   {totalXp.toLocaleString()}
                 </div>
               </div>
-              <div className="bg-bg-secondary rounded-lg px-3 py-2">
+              <div className="bg-bg-tertiary rounded-lg px-3 py-2">
                 <div className="text-[10px] text-text-secondary uppercase tracking-wider">
                   Material Cost
                 </div>
@@ -440,7 +440,7 @@ export default function ProductionCalc() {
                   {totalMaterialCost != null ? formatGp(Math.round(totalMaterialCost)) : "—"}
                 </div>
               </div>
-              <div className="bg-bg-secondary rounded-lg px-3 py-2">
+              <div className="bg-bg-tertiary rounded-lg px-3 py-2">
                 <div className="text-[10px] text-text-secondary uppercase tracking-wider">
                   Output Value
                 </div>
@@ -448,7 +448,7 @@ export default function ProductionCalc() {
                   {totalOutputValue != null ? formatGp(Math.round(totalOutputValue)) : "—"}
                 </div>
               </div>
-              <div className="bg-bg-secondary rounded-lg px-3 py-2">
+              <div className="bg-bg-tertiary rounded-lg px-3 py-2">
                 <div className="text-[10px] text-text-secondary uppercase tracking-wider">
                   {profit != null && profit >= 0 ? "Profit" : "Loss"}
                 </div>

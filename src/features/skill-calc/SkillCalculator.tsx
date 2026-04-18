@@ -169,7 +169,7 @@ export default function SkillCalculator({ hiscores }: Props) {
               className={`px-2 py-1.5 rounded text-xs transition-colors relative flex items-center gap-1.5 ${
                 selectedSkill === skill
                   ? "bg-accent text-white"
-                  : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+                  : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
               }`}
             >
               <img src={SKILL_ICONS[skill]} alt="" className="w-4 h-4" />
@@ -192,7 +192,7 @@ export default function SkillCalculator({ hiscores }: Props) {
         })}
       </div>
 
-      <div className="bg-bg-secondary rounded-lg p-4 space-y-4">
+      <div className="bg-bg-tertiary rounded-lg p-4 space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-xs text-text-secondary mb-1">
@@ -303,7 +303,7 @@ export default function SkillCalculator({ hiscores }: Props) {
                   className={`px-2.5 py-1 rounded-full text-xs transition-colors ${
                     intensityFilter === f
                       ? "bg-accent text-white"
-                      : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+                      : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
                   }`}
                 >
                   {f}
@@ -324,7 +324,7 @@ export default function SkillCalculator({ hiscores }: Props) {
               No {intensityFilter.toLowerCase()} intensity methods for {selectedSkill}.
             </p>
           ) : (
-          <div className="bg-bg-secondary rounded-lg overflow-x-auto">
+          <div className="bg-bg-tertiary rounded-lg overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-text-secondary text-xs">
@@ -351,7 +351,7 @@ export default function SkillCalculator({ hiscores }: Props) {
                     return (
                       <tr
                         key={method.name}
-                        className={`border-b border-border/50 even:bg-bg-primary/25 hover:bg-bg-tertiary transition-colors ${!meetsLevel ? "opacity-40" : ""} ${settings.ironmanMode && method.ironmanViable === false ? "opacity-30" : ""}`}
+                        className={`border-b border-border/50 even:bg-bg-primary/25 hover:bg-bg-secondary transition-colors ${!meetsLevel ? "opacity-40" : ""} ${settings.ironmanMode && method.ironmanViable === false ? "opacity-30" : ""}`}
                       >
                         <td className="px-4 py-1.5 font-medium">
                           <span className="flex items-center gap-2">
