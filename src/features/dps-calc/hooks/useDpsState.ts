@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect -- hook syncs state from external URL params + hiscores; effects are the correct integration point */
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import {
   calculateDps,
@@ -203,7 +204,8 @@ export function useDpsState({ hiscores }: Props) {
     }
   }, [hiscores]);
 
-  // Handle monster param from cross-nav
+  // Handle monster param from cross-nav. Syncing state from an external URL
+  // param is a legitimate effect use.
   useEffect(() => {
     if (!params.monster || wikiMonsters.length === 0) return;
     const match = wikiMonsters.find(
@@ -247,7 +249,7 @@ export function useDpsState({ hiscores }: Props) {
     }
   }, [params.monster, wikiMonsters]);
 
-  // Handle onTask param from Slayer cross-nav — activate slayer_helm modifier
+  // Handle onTask param from Slayer cross-nav — activate slayer_helm modifier.
   useEffect(() => {
     if (params.onTask !== "1") return;
     setActiveModifiers((prev) => {
