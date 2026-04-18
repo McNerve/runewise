@@ -402,7 +402,7 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
                   return (
                     <div
                       key={item.id}
-                      onClick={() => navigate("wiki", { query: name })}
+                      onClick={() => navigate("market", { query: name, select: "1" })}
                       className={`group flex flex-col items-center gap-1 p-2 rounded-lg transition-all cursor-pointer ${
                         isObtained
                           ? "bg-success/6 hover:bg-success/12 hover:scale-105"
