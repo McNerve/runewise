@@ -118,7 +118,7 @@ export default function QuestTracker({ hiscores }: Props) {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search quests..."
-          className="flex-1 bg-bg-secondary border border-border rounded px-3 py-1.5 text-sm"
+          className="flex-1 bg-bg-tertiary border border-border rounded px-3 py-1.5 text-sm"
         />
         <div className="flex gap-1">
           {(["all", "available", "locked"] as const).map((f) => (
@@ -132,7 +132,7 @@ export default function QuestTracker({ hiscores }: Props) {
                     : f === "locked"
                       ? "bg-danger/20 text-danger"
                       : "bg-accent text-white"
-                  : "bg-bg-secondary text-text-secondary"
+                  : "bg-bg-tertiary text-text-secondary"
               }`}
             >
               {f}
@@ -147,7 +147,7 @@ export default function QuestTracker({ hiscores }: Props) {
           className={`px-2 py-0.5 rounded text-xs ${
             diffFilter === "all"
               ? "bg-accent text-white"
-              : "bg-bg-secondary text-text-secondary"
+              : "bg-bg-tertiary text-text-secondary"
           }`}
         >
           All
@@ -159,7 +159,7 @@ export default function QuestTracker({ hiscores }: Props) {
             className={`px-2 py-0.5 rounded text-xs ${
               diffFilter === d
                 ? "bg-accent text-white"
-                : "bg-bg-secondary text-text-secondary"
+                : "bg-bg-tertiary text-text-secondary"
             }`}
           >
             {d}
@@ -172,7 +172,7 @@ export default function QuestTracker({ hiscores }: Props) {
           <div key={quest.name} className="relative group">
           <ExternalLink
             href={`https://oldschool.runescape.wiki/w/${encodeURIComponent(quest.name.replace(/ /g, "_"))}`}
-            className="block bg-bg-secondary rounded-lg px-4 py-3 hover:bg-bg-tertiary transition-colors cursor-pointer"
+            className="block bg-bg-tertiary rounded-lg px-4 py-3 hover:bg-bg-secondary transition-colors cursor-pointer"
           >
             <div className="flex items-center justify-between">
               <div>

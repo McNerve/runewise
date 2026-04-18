@@ -84,7 +84,7 @@ export default function TrainingPlan({ hiscores }: Props) {
           onClick={() => { setAllTo(99); setActivePreset("all99"); }}
           aria-pressed={activePreset === "all99"}
           className={`px-3 py-1.5 rounded text-xs transition-colors ${
-            activePreset === "all99" ? "bg-accent text-white" : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+            activePreset === "all99" ? "bg-accent text-white" : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
           }`}
         >
           All 99
@@ -102,14 +102,14 @@ export default function TrainingPlan({ hiscores }: Props) {
           }}
           aria-pressed={activePreset === "combat"}
           className={`px-3 py-1.5 rounded text-xs transition-colors ${
-            activePreset === "combat" ? "bg-accent text-white" : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+            activePreset === "combat" ? "bg-accent text-white" : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
           }`}
         >
           Max Combat
         </button>
         <button
           onClick={() => { setTargets({}); setActivePreset(null); }}
-          className="px-3 py-1.5 rounded text-xs bg-bg-secondary text-text-secondary hover:bg-bg-tertiary transition-colors"
+          className="px-3 py-1.5 rounded text-xs bg-bg-tertiary text-text-secondary hover:bg-bg-secondary transition-colors"
         >
           Clear
         </button>
@@ -127,7 +127,7 @@ export default function TrainingPlan({ hiscores }: Props) {
             className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
               preference === p.id
                 ? "bg-accent text-white"
-                : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+                : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
             }`}
           >
             {p.label}
@@ -254,7 +254,7 @@ export default function TrainingPlan({ hiscores }: Props) {
                           className={`block w-full text-left px-3 py-1.5 rounded text-xs transition-colors ${
                             activeMethodName === alt.name
                               ? "bg-accent/20 text-accent"
-                              : "hover:bg-bg-tertiary text-text-secondary"
+                              : "hover:bg-bg-secondary text-text-secondary"
                           }`}
                         >
                           <span className="font-medium">{alt.name}</span>

@@ -234,7 +234,7 @@ export default function UpdateDialog() {
               </a>
               <button
                 onClick={() => setStage("hidden")}
-                className="px-4 py-2 rounded-lg bg-bg-secondary border border-border text-text-secondary hover:text-text-primary text-sm transition-colors"
+                className="px-4 py-2 rounded-lg bg-bg-tertiary border border-border text-text-secondary hover:text-text-primary text-sm transition-colors"
               >
                 Dismiss
               </button>

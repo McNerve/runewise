@@ -147,7 +147,7 @@ export default function ShopHelper() {
                 className={`px-2.5 py-1 rounded-lg text-xs transition-colors ${
                   currencyFilter === f
                     ? "bg-accent/15 text-accent ring-1 ring-accent/40"
-                    : "bg-bg-tertiary/50 text-text-secondary hover:bg-bg-tertiary"
+                    : "bg-bg-tertiary/50 text-text-secondary hover:bg-bg-secondary"
                 }`}
               >
                 {f === "all" ? "All" : f === "Coins" ? "Coins" : "Special"}
@@ -161,7 +161,7 @@ export default function ShopHelper() {
                 className={`px-2.5 py-1 rounded-lg text-xs transition-colors ${
                   membersFilter === f
                     ? "bg-accent/15 text-accent ring-1 ring-accent/40"
-                    : "bg-bg-tertiary/50 text-text-secondary hover:bg-bg-tertiary"
+                    : "bg-bg-tertiary/50 text-text-secondary hover:bg-bg-secondary"
                 }`}
               >
                 {f === "all" ? "Both" : f === "f2p" ? "F2P" : "P2P"}

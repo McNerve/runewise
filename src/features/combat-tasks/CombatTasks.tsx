@@ -38,7 +38,7 @@ const TIER_COLORS: Record<CombatTier, { tab: string; badge: string }> = {
 };
 
 const TIER_INACTIVE =
-  "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary";
+  "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary";
 
 const COMPLETED_KEY = "runewise_completed_combat_tasks";
 
@@ -143,7 +143,7 @@ export default function CombatTasks() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search tasks, bosses..."
-          className="flex-1 bg-bg-secondary border border-border rounded px-3 py-1.5 text-sm"
+          className="flex-1 bg-bg-tertiary border border-border rounded px-3 py-1.5 text-sm"
         />
         <label className="flex items-center gap-1.5 text-xs text-text-secondary cursor-pointer shrink-0">
           <input
@@ -209,7 +209,7 @@ export default function CombatTasks() {
               {tasks.map((task) => (
                 <div
                   key={task.name}
-                  className={`bg-bg-secondary rounded-lg px-4 py-2.5 hover:bg-bg-tertiary transition-colors ${
+                  className={`bg-bg-tertiary rounded-lg px-4 py-2.5 hover:bg-bg-secondary transition-colors ${
                     completedTasks.has(task.name) ? "opacity-60" : ""
                   }`}
                 >

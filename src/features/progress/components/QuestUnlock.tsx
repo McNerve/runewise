@@ -92,7 +92,7 @@ export default function QuestUnlock({ hiscores }: Props) {
               className={`px-3 py-1.5 rounded text-xs transition-colors ${
                 filter === s
                   ? "bg-accent/20 text-accent border border-accent/30"
-                  : "bg-bg-secondary text-text-secondary border border-transparent hover:border-border"
+                  : "bg-bg-tertiary text-text-secondary border border-transparent hover:border-border"
               }`}
             >
               {s === "all" ? "All" : config?.label} ({count})

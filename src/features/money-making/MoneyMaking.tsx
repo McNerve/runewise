@@ -115,7 +115,7 @@ export default function MoneyMaking({ hiscores }: Props) {
 
   return (
     <div className="max-w-4xl">
-      <h2 className="text-2xl font-semibold tracking-tight">Money Making</h2>
+      <h2 className="text-hero font-semibold tracking-tight">Money Making</h2>
       <p className="text-sm text-text-secondary mb-4">
         {totalMethods} curated methods
         {availableCount !== null && ` — ${availableCount} available for your stats`}
@@ -154,7 +154,7 @@ export default function MoneyMaking({ hiscores }: Props) {
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search methods..."
           aria-label="Search money making methods"
-          className="flex-1 min-w-[200px] bg-bg-secondary border border-border rounded px-3 py-1.5 text-sm"
+          className="flex-1 min-w-[200px] bg-bg-tertiary border border-border rounded px-3 py-1.5 text-sm"
         />
 
         <div className="flex gap-1">
@@ -166,7 +166,7 @@ export default function MoneyMaking({ hiscores }: Props) {
               className={`px-2.5 py-1.5 rounded text-xs transition-colors ${
                 category === c
                   ? "bg-accent text-white"
-                  : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+                  : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
               }`}
             >
               {c}
@@ -211,7 +211,7 @@ export default function MoneyMaking({ hiscores }: Props) {
           return (
             <div
               key={method.name}
-              className={`bg-bg-secondary rounded-lg px-4 py-3 transition-colors ${
+              className={`bg-bg-tertiary rounded-lg px-4 py-3 transition-colors ${
                 canDo ? "" : "opacity-50"
               }`}
             >

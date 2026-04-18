@@ -187,7 +187,7 @@ function KeybindRecorder({
   ) : (
     <button
       onClick={() => setRecording(true)}
-      className="text-xs border border-border bg-bg-tertiary/80 text-text-primary px-2 py-1 rounded hover:bg-bg-tertiary transition-colors min-w-[80px]"
+      className="text-xs border border-border bg-bg-tertiary/80 text-text-primary px-2 py-1 rounded hover:bg-bg-secondary transition-colors min-w-[80px]"
     >
       {mod}
       {(value ?? "").toUpperCase()}
@@ -231,7 +231,7 @@ function SettingsCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-bg-secondary rounded-lg p-5">
+    <div className="bg-bg-tertiary rounded-lg p-5">
       <h3 className="text-xs font-semibold uppercase tracking-wider text-text-secondary mb-3">
         {title}
       </h3>
@@ -406,7 +406,7 @@ export default function Settings() {
           </p>
           <button
             onClick={resetKeybinds}
-            className="rounded-lg border border-border bg-bg-secondary px-3 py-1 text-xs text-text-secondary hover:text-text-primary hover:border-accent/40 transition-colors"
+            className="rounded-lg border border-border bg-bg-tertiary px-3 py-1 text-xs text-text-secondary hover:text-text-primary hover:border-accent/40 transition-colors"
           >
             Reset to Defaults
           </button>

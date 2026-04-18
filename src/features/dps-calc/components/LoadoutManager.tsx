@@ -91,7 +91,7 @@ export default function LoadoutManager({ state }: LoadoutManagerProps) {
               onKeyDown={(e) => e.key === "Enter" && saveLoadout()}
               placeholder="Save as..."
               aria-label="Loadout name"
-              className="flex-1 bg-bg-secondary border border-border rounded-lg px-3 py-1.5 text-sm"
+              className="flex-1 bg-bg-tertiary border border-border rounded-lg px-3 py-1.5 text-sm"
             />
             <button
               onClick={saveLoadout}

@@ -14,7 +14,7 @@ export default function DpsCalculator({ hiscores }: Props) {
   return (
     <div className="max-w-5xl">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold">DPS Calculator</h2>
+        <h2 className="text-h3 font-semibold">DPS Calculator</h2>
         <div className="flex gap-1.5">
           {(["melee", "ranged", "magic"] as const).map((style) => (
             <button
@@ -24,7 +24,7 @@ export default function DpsCalculator({ hiscores }: Props) {
               className={`px-4 py-1.5 rounded-lg text-xs font-medium capitalize transition-colors ${
                 state.combatStyle === style
                   ? "bg-accent text-white"
-                  : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+                  : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
               }`}
             >
               {style}

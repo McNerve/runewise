@@ -42,7 +42,7 @@ export default function Progress({ hiscores }: Props) {
             className={`px-4 py-1.5 rounded text-sm font-medium transition-colors ${
               activeTab === tab.id
                 ? "bg-accent text-white"
-                : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+                : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
             }`}
           >
             {tab.label}

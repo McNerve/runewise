@@ -133,7 +133,7 @@ export default function ProfitHub() {
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search methods..."
           aria-label="Search profit methods"
-          className="flex-1 min-w-[180px] bg-bg-secondary border border-border rounded-lg px-3 py-1.5 text-sm"
+          className="flex-1 min-w-[180px] bg-bg-tertiary border border-border rounded-lg px-3 py-1.5 text-sm"
         />
         <div className="flex gap-1">
           {(
@@ -150,7 +150,7 @@ export default function ProfitHub() {
               className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
                 sourceFilter === f.id
                   ? "bg-accent text-white"
-                  : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+                  : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
               }`}
             >
               {f.label}

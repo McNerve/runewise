@@ -130,7 +130,7 @@ function MarketDetail({
   );
 
   return (
-    <div className="bg-bg-secondary rounded-lg p-4 sticky top-0 overflow-y-auto max-h-[calc(100vh-6rem)]">
+    <div className="bg-bg-tertiary rounded-lg p-4 sticky top-0 overflow-y-auto max-h-[calc(100vh-6rem)]">
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
@@ -450,7 +450,7 @@ export default function Market({
       {/* Left: search + table */}
       <div className="min-w-0">
         <div className="mb-4">
-          <h2 className="text-2xl font-semibold tracking-tight">{title}</h2>
+          <h2 className="text-hero font-semibold tracking-tight">{title}</h2>
           <p className="max-w-2xl text-sm text-text-secondary">{subtitle}</p>
           {settings.ironmanMode && (
             <div className="mt-2 rounded-lg border border-warning/30 bg-warning/5 px-3 py-1.5 text-xs text-warning">
@@ -600,7 +600,7 @@ export default function Market({
                   className={`px-3 py-1.5 rounded text-xs uppercase transition-colors ${
                     membersFilter === f
                       ? "bg-accent text-white"
-                      : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+                      : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
                   }`}
                 >
                   {f}
@@ -632,7 +632,7 @@ export default function Market({
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search items..."
           aria-label="Search items"
-          className="w-full bg-bg-secondary border border-border rounded-lg px-4 py-2.5 text-sm mb-3"
+          className="w-full bg-bg-tertiary border border-border rounded-lg px-4 py-2.5 text-sm mb-3"
         />
 
         {/* Status messages */}
@@ -695,7 +695,7 @@ export default function Market({
                     <tr
                       key={item.id}
                       onClick={() => setSelectedItem(item)}
-                      className={`border-b border-border/50 hover:bg-bg-tertiary transition-colors cursor-pointer ${
+                      className={`border-b border-border/50 hover:bg-bg-secondary transition-colors cursor-pointer ${
                         selectedItem?.id === item.id
                           ? "bg-bg-tertiary"
                           : "even:bg-bg-primary/30"

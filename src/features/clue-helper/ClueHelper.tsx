@@ -170,7 +170,7 @@ export default function ClueHelper() {
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Paste your clue text here to find the solution..."
-        className="w-full bg-bg-secondary border border-border rounded-xl px-4 py-3 text-sm mb-5 placeholder:text-text-secondary/50"
+        className="w-full bg-bg-tertiary border border-border rounded-xl px-4 py-3 text-sm mb-5 placeholder:text-text-secondary/50"
       />
 
       {/* Tier Filter Tabs */}

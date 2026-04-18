@@ -145,18 +145,18 @@ export default function PriceChart() {
 
   const current = currentPrice?.high ?? currentPrice?.low ?? null;
   const chartBody = loading ? (
-    <div className="h-[400px] bg-bg-secondary rounded-lg border border-border flex items-center justify-center">
+    <div className="h-[400px] bg-bg-tertiary rounded-lg border border-border flex items-center justify-center">
       <p className="text-sm text-text-secondary">Loading chart...</p>
     </div>
   ) : chartData.length > 0 ? (
     <Suspense
       fallback={
-        <div className="h-[400px] bg-bg-secondary rounded-lg border border-border flex items-center justify-center">
+        <div className="h-[400px] bg-bg-tertiary rounded-lg border border-border flex items-center justify-center">
           <p className="text-sm text-text-secondary">Preparing chart...</p>
         </div>
       }
     >
-      <div className="bg-bg-secondary rounded-lg border border-border p-2">
+      <div className="bg-bg-tertiary rounded-lg border border-border p-2">
         <Chart
           data={chartData}
           volumeData={volumeData}
@@ -166,7 +166,7 @@ export default function PriceChart() {
       </div>
     </Suspense>
   ) : (
-    <div className="h-[400px] bg-bg-secondary rounded-lg border border-border flex items-center justify-center">
+    <div className="h-[400px] bg-bg-tertiary rounded-lg border border-border flex items-center justify-center">
       <p className="text-sm text-text-secondary">
         No data available for this period.
       </p>
@@ -190,15 +190,15 @@ export default function PriceChart() {
             if (suggestions.length > 0) setShowSuggestions(true);
           }}
           placeholder="Search items..."
-          className="w-full bg-bg-secondary border border-border rounded-lg px-4 py-2.5 text-sm"
+          className="w-full bg-bg-tertiary border border-border rounded-lg px-4 py-2.5 text-sm"
         />
         {showSuggestions && suggestions.length > 0 && (
-          <div className="absolute z-20 w-full mt-1 bg-bg-secondary border border-border rounded-lg shadow-lg max-h-64 overflow-y-auto">
+          <div className="absolute z-20 w-full mt-1 bg-bg-tertiary border border-border rounded-lg shadow-lg max-h-64 overflow-y-auto">
             {suggestions.map((item) => (
               <button
                 key={item.id}
                 onClick={() => selectItem(item)}
-                className="w-full text-left px-4 py-2 text-sm hover:bg-bg-tertiary transition-colors"
+                className="w-full text-left px-4 py-2 text-sm hover:bg-bg-secondary transition-colors"
               >
                 {item.name}
               </button>
@@ -212,7 +212,7 @@ export default function PriceChart() {
           {/* Controls row */}
           <div className="flex items-center gap-3 mb-4 flex-wrap">
             {/* Period pills */}
-            <div className="flex bg-bg-secondary rounded-lg p-0.5 border border-border">
+            <div className="flex bg-bg-tertiary rounded-lg p-0.5 border border-border">
               {PERIODS.map((p) => (
                 <button
                   key={p}
@@ -229,7 +229,7 @@ export default function PriceChart() {
             </div>
 
             {/* Chart type toggle */}
-            <div className="flex bg-bg-secondary rounded-lg p-0.5 border border-border">
+            <div className="flex bg-bg-tertiary rounded-lg p-0.5 border border-border">
               <button
                 onClick={() => setChartMode("line")}
                 className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
@@ -255,7 +255,7 @@ export default function PriceChart() {
 
           {/* Stats row */}
           <div className="grid grid-cols-4 gap-3 mb-4">
-            <div className="bg-bg-secondary rounded-lg px-3 py-2 border border-border">
+            <div className="bg-bg-tertiary rounded-lg px-3 py-2 border border-border">
               <div className="text-[10px] uppercase tracking-wider text-text-secondary mb-0.5">
                 Current
               </div>
@@ -263,7 +263,7 @@ export default function PriceChart() {
                 {formatGp(current)}
               </div>
             </div>
-            <div className="bg-bg-secondary rounded-lg px-3 py-2 border border-border">
+            <div className="bg-bg-tertiary rounded-lg px-3 py-2 border border-border">
               <div className="text-[10px] uppercase tracking-wider text-text-secondary mb-0.5">
                 High
               </div>
@@ -271,7 +271,7 @@ export default function PriceChart() {
                 {formatGp(stats.high)}
               </div>
             </div>
-            <div className="bg-bg-secondary rounded-lg px-3 py-2 border border-border">
+            <div className="bg-bg-tertiary rounded-lg px-3 py-2 border border-border">
               <div className="text-[10px] uppercase tracking-wider text-text-secondary mb-0.5">
                 Low
               </div>
@@ -279,7 +279,7 @@ export default function PriceChart() {
                 {formatGp(stats.low)}
               </div>
             </div>
-            <div className="bg-bg-secondary rounded-lg px-3 py-2 border border-border">
+            <div className="bg-bg-tertiary rounded-lg px-3 py-2 border border-border">
               <div className="text-[10px] uppercase tracking-wider text-text-secondary mb-0.5">
                 Avg Vol
               </div>

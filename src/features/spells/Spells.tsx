@@ -197,7 +197,7 @@ export default function Spells() {
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Search spells..."
         aria-label="Search spells"
-        className="w-full bg-bg-secondary border border-border rounded-xl px-4 py-2.5 text-sm"
+        className="w-full bg-bg-tertiary border border-border rounded-xl px-4 py-2.5 text-sm"
       />
 
       {/* Content */}

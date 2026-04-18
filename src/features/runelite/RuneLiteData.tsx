@@ -194,7 +194,7 @@ export default function RuneLiteData() {
               <select
                 value={selectedProfile}
                 onChange={(e) => setSelectedProfile(e.target.value)}
-                className="bg-bg-secondary border border-border rounded px-3 py-1.5 text-sm"
+                className="bg-bg-tertiary border border-border rounded px-3 py-1.5 text-sm"
               >
                 {profiles.map((p) => (
                   <option key={p.id} value={p.id}>
@@ -240,7 +240,7 @@ export default function RuneLiteData() {
               className={`px-3 py-1.5 rounded text-xs transition-colors ${
                 tab === "loot"
                   ? "bg-accent text-white"
-                  : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+                  : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
               }`}
             >
               Loot Tracker
@@ -250,7 +250,7 @@ export default function RuneLiteData() {
               className={`px-3 py-1.5 rounded text-xs transition-colors ${
                 tab === "info"
                   ? "bg-accent text-white"
-                  : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+                  : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
               }`}
             >
               Info
@@ -290,7 +290,7 @@ export default function RuneLiteData() {
                         {aggregated.map((boss) => (
                           <tr
                             key={boss.name}
-                            className="border-b border-border/50 hover:bg-bg-tertiary transition-colors"
+                            className="border-b border-border/50 hover:bg-bg-secondary transition-colors"
                           >
                             <td className="px-4 py-1.5 font-medium">
                               {boss.name}
