@@ -1,10 +1,11 @@
-import { Suspense, lazy, useEffect } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import Sidebar from "./components/Sidebar";
 import PlayerBar from "./components/PlayerBar";
 import GlobalSearch from "./components/GlobalSearch";
 const UpdateDialog = lazy(() => import("./components/UpdateDialog"));
+const Welcome = lazy(() => import("./features/onboarding/Welcome"));
 import ErrorBoundary from "./components/ErrorBoundary";
 import { initItemIconCache } from "./lib/itemIcons";
 import { migrateFromLocalStorage } from "./lib/storage";
@@ -18,12 +19,19 @@ import { useSettingsProvider } from "./hooks/useSettings";
 import { VIEW_RENDERERS } from "./lib/viewRegistry";
 import { getFeatureAccent } from "./lib/featureAccent";
 import { isTauri } from "./lib/env";
+import { ONBOARDING_KEY, RSN_KEY } from "./features/onboarding/constants";
 
 function AppContent() {
   const { view, navigate } = useNavigation();
   const hiscores = useHiscores();
   const { settings, update: updateSettings } = useSettings();
   useKeyboardNav(navigate);
+
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    const completed = localStorage.getItem(ONBOARDING_KEY);
+    const hasRsn = Boolean(localStorage.getItem(RSN_KEY));
+    return !completed && !hasRsn;
+  });
   const renderView = VIEW_RENDERERS[view];
 
   // Auto-toggle ironman mode when an ironman account is detected
@@ -106,6 +114,11 @@ function AppContent() {
       <Suspense fallback={null}>
         <UpdateDialog />
       </Suspense>
+      {showOnboarding && (
+        <Suspense fallback={null}>
+          <Welcome onDismiss={() => setShowOnboarding(false)} />
+        </Suspense>
+      )}
     </>
   );
 }
