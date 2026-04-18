@@ -60,7 +60,11 @@ export default function CombatTasks() {
     fetchAllCombatTasks()
       .then((tasks) => {
         if (cancelled) return;
-        setWikiTasks(mergeTasks(tasks, COMBAT_TASKS));
+        if (tasks.length === 0) {
+          setWikiFailed(true);
+        } else {
+          setWikiTasks(mergeTasks(tasks, COMBAT_TASKS));
+        }
         setWikiLoading(false);
       })
       .catch(() => {
