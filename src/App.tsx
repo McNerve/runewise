@@ -116,7 +116,15 @@ function AppContent() {
       </Suspense>
       {showOnboarding && (
         <Suspense fallback={null}>
-          <Welcome onDismiss={() => setShowOnboarding(false)} />
+          <Welcome
+            onDismiss={() => {
+              setShowOnboarding(false);
+              const savedRsn = localStorage.getItem(RSN_KEY)?.trim();
+              if (savedRsn && savedRsn !== hiscores.rsn) {
+                void hiscores.lookup(savedRsn);
+              }
+            }}
+          />
         </Suspense>
       )}
     </>
