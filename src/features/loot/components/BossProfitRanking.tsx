@@ -97,7 +97,7 @@ export default function BossProfitRanking({
 
       <div className="rounded-xl border border-border/60 overflow-hidden">
         <table className="w-full text-left">
-          <thead>
+          <thead className="sticky-thead">
             <tr className="border-b border-border text-text-secondary text-xs">
               <th className="px-2 py-2 w-8 text-center">#</th>
               <th className="px-2 py-2 w-6" />

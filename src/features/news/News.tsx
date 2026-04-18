@@ -344,7 +344,7 @@ export default function News() {
   );
 
   const filterButtons = (
-    <div className="grid grid-cols-2 gap-1.5 mb-4">
+    <div className="flex flex-wrap gap-1 mb-4">
       {(["all", "shipped", "proposed", "upcoming"] as const).map((f) => {
         const active = filter === f;
         const label =
@@ -357,16 +357,13 @@ export default function News() {
             key={f}
             onClick={() => setFilter(f)}
             aria-pressed={active}
-            className={`relative px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
               active
-                ? "border-accent/40 text-accent bg-accent/5"
-                : "border-border/60 text-text-secondary hover:border-border hover:text-text-primary"
+                ? "bg-accent text-white"
+                : "text-text-secondary hover:bg-bg-secondary/50"
             }`}
           >
             {label}
-            {active && (
-              <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-2/3 h-0.5 rounded-full bg-accent" />
-            )}
           </button>
         );
       })}

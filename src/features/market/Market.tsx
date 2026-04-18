@@ -381,8 +381,15 @@ export default function Market({
   }, [query]);
 
   // Browse filtered results
+  // GE cap: items with buy price >= 2.147B gp hit the GE integer cap and
+  // produce useless displays (e.g., Alch Profit wrapping to -2.147B). Drop
+  // them from the catalogue — they're never tradeable in that state.
+  const GE_PRICE_CAP = 2_147_000_000;
   const browseFiltered = useMemo(() => {
-    let result = allItems;
+    let result = allItems.filter((item) => {
+      const price = prices[String(item.id)];
+      return price?.high == null || price.high < GE_PRICE_CAP;
+    });
     if (query.length >= 2) {
       const q = query.toLowerCase();
       result = result.filter((item) => item.name.toLowerCase().includes(q));
@@ -390,7 +397,7 @@ export default function Market({
     if (membersFilter === "f2p") result = result.filter((i) => !i.members);
     if (membersFilter === "p2p") result = result.filter((i) => i.members);
     return result.slice(0, 100);
-  }, [allItems, query, membersFilter]);
+  }, [allItems, prices, query, membersFilter]);
 
   // The items to show in the table
   const displayItems = tab === "search" ? searchResults : browseFiltered;
@@ -668,7 +675,7 @@ export default function Market({
         {showTable && displayItems.length > 0 && (
           <div className="rounded-xl border border-border/60 overflow-hidden">
             <table className="w-full text-sm">
-              <thead>
+              <thead className="sticky-thead">
                 <tr className="border-b border-border text-text-secondary text-xs">
                   <th scope="col" className="text-left px-4 py-2">Item</th>
                   <th scope="col" className="text-right px-4 py-2">Buy</th>

@@ -31,6 +31,9 @@ export default function AlchCalculator() {
 
   const natureRuneCost = prices["561"]?.high ?? 250;
 
+  // GE price cap — items at/above this wrap or produce useless alch math.
+  const GE_PRICE_CAP = 2_147_000_000;
+
   const rows = useMemo(() => {
     const result: AlchRow[] = [];
     for (const item of items) {
@@ -38,6 +41,7 @@ export default function AlchCalculator() {
       const price = prices[String(item.id)];
       const buyPrice = price?.high;
       if (buyPrice == null || buyPrice <= 0) continue;
+      if (buyPrice >= GE_PRICE_CAP) continue;
 
       const profit = item.highalch - buyPrice - natureRuneCost;
       const roi = (profit / buyPrice) * 100;
