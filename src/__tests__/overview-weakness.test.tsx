@@ -72,24 +72,24 @@ describe("profile boss KC weakness chip", () => {
     expect(chips.length).toBe(0);
   });
 
-  it("shows weakness chip for General Graardor (Melee)", () => {
+  it("shows weakness chip for General Graardor (Ranged)", () => {
     const hiscores = makeHiscores([
       { name: "General Graardor", score: 350, id: 21 },
     ]);
     const { container } = render(wrap(<Overview hiscores={hiscores} rsn="testplayer" />));
     const chips = container.querySelectorAll(".bg-amber-500\\/15");
     expect(chips.length).toBeGreaterThan(0);
-    expect(chips[0].textContent).toBe("Melee");
+    expect(chips[0].textContent).toBe("Ranged");
   });
 
-  it("renders boss name and kill count alongside weakness chip", () => {
+  it("renders boss name and kill count alongside row", () => {
     const hiscores = makeHiscores([
-      { name: "Zulrah", score: 1234, id: 22 },
+      { name: "Vorkath", score: 1234, id: 22 },
     ]);
     const { container, getAllByText } = render(wrap(<Overview hiscores={hiscores} rsn="testplayer" />));
-    expect(getAllByText("Zulrah").length).toBeGreaterThan(0);
+    expect(getAllByText("Vorkath").length).toBeGreaterThan(0);
     const chips = container.querySelectorAll(".bg-amber-500\\/15");
     expect(chips.length).toBeGreaterThan(0);
-    expect(chips[0].textContent).toBe("Magic/Ranged");
+    expect(chips[0].textContent).toBe("Ranged");
   });
 });
