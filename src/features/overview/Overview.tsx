@@ -6,8 +6,8 @@ import { combatLevel } from "../../lib/formulas/combat";
 import { WIKI_IMG, SKILL_ICONS, NAV_ICONS, bossIconSmall, bossIcon, itemIcon } from "../../lib/sprites";
 import { useNavigation } from "../../lib/NavigationContext";
 import WikiImage from "../../components/WikiImage";
-import { TRAINING_METHODS } from "../../lib/data/training-methods";
 import { StatGrid, StatCard } from "../../components/primitives";
+import { TRAINING_METHODS } from "../../lib/data/training-methods";
 
 function ProgressRing({ obtained, total, size = 22 }: { obtained: number; total: number; size?: number }) {
   const pct = total > 0 ? obtained / total : 0;
@@ -57,6 +57,7 @@ const SKILL_ORDER = [
 export default function Overview({ hiscores, rsn }: Props) {
   const { navigate } = useNavigation();
   const [womPlayer, setWomPlayer] = useState<WomPlayer | null>(null);
+  const [showAllBosses, setShowAllBosses] = useState<boolean>(false);
 
   useEffect(() => {
     if (!rsn) return;
@@ -101,6 +102,7 @@ export default function Overview({ hiscores, rsn }: Props) {
     (a) => a.name === "Quest Points"
   )?.score ?? null;
 
+
   const clueTiers = ["beginner", "easy", "medium", "hard", "elite", "master"].map((tier) => ({
     tier,
     count: hiscores.activities?.find((a) => a.name.toLowerCase() === `clue scrolls (${tier})`)?.score ?? 0,
@@ -121,110 +123,115 @@ export default function Overview({ hiscores, rsn }: Props) {
 
   return (
     <div className="max-w-3xl">
-      <h2 className="text-h3 font-semibold mb-4">{rsn}</h2>
+      <h2 className="text-xl font-semibold mb-4">{rsn}</h2>
 
       {/* Summary cards */}
-      <StatGrid columns={4} className="mb-6">
-        <StatCard
-          label="Combat"
-          value={cmb.toFixed(0)}
-          icon={`${WIKI_IMG}/Attack_style_icon.png`}
-          accent="text-accent"
-        />
-        <StatCard
-          label="Total Level"
-          value={totalLevel.toLocaleString()}
-          icon={`${WIKI_IMG}/Stats_icon.png`}
-        />
-        <StatCard
-          label="Total XP"
-          value={totalXp >= 1_000_000_000
-            ? `${(totalXp / 1_000_000_000).toFixed(1)}B`
-            : `${(totalXp / 1_000_000).toFixed(0)}M`}
-          icon={`${WIKI_IMG}/Antique_lamp.png`}
-        />
-        <StatCard
-          label="Maxed Skills"
-          value={`${maxedSkills}/24`}
-          icon={maxedSkills >= 24
-            ? `${WIKI_IMG}/Max_cape.png`
-            : <ProgressRing obtained={maxedSkills} total={24} size={16} />}
-        />
-      </StatGrid>
+      <div className="grid grid-cols-4 gap-3 mb-6">
+        <div className="flex flex-col items-center gap-1">
+          <img src={`${WIKI_IMG}/Attack_style_icon.png`} alt="" className="w-5 h-5 opacity-50" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+          <div className="text-2xl font-bold text-accent">
+            {cmb.toFixed(0)}
+          </div>
+          <div className="text-xs text-text-secondary">Combat</div>
+        </div>
+        <div className="flex flex-col items-center gap-1">
+          <img src={`${WIKI_IMG}/Stats_icon.png`} alt="" className="w-5 h-5 opacity-50" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+          <div className="text-2xl font-bold">{totalLevel.toLocaleString()}</div>
+          <div className="text-xs text-text-secondary">Total Level</div>
+        </div>
+        <div className="flex flex-col items-center gap-1">
+          <img src={`${WIKI_IMG}/Antique_lamp.png`} alt="" className="w-5 h-5 opacity-50" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+          <div className="text-2xl font-bold">
+            {totalXp >= 1_000_000_000
+              ? `${(totalXp / 1_000_000_000).toFixed(1)}B`
+              : `${(totalXp / 1_000_000).toFixed(0)}M`}
+          </div>
+          <div className="text-xs text-text-secondary">Total XP</div>
+        </div>
+        <div className="flex flex-col items-center gap-1">
+          {maxedSkills >= 24 ? (
+            <img src={`${WIKI_IMG}/Max_cape.png`} alt="" className="w-5 h-5 opacity-50" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+          ) : (
+            <ProgressRing obtained={maxedSkills} total={24} size={22} />
+          )}
+          <div className={`text-2xl font-bold ${maxedSkills >= 24 ? "text-success" : ""}`}>
+            {maxedSkills}/24
+          </div>
+          <div className="text-xs text-text-secondary">Maxed Skills</div>
+        </div>
+      </div>
 
       {/* Activity stats — sourced from hiscores activities */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+      <StatGrid columns={4} className="mb-4">
         {collectionLog != null && collectionLog > 0 && (
-          <div className="p-3 text-center">
-            <div className="flex items-center justify-center gap-1.5 mb-1">
-              <WikiImage src={NAV_ICONS["collection-log"]} alt="" className="w-4 h-4" fallback="C" />
-              <div className="text-h3 font-semibold">{collectionLog}<span className="text-xs text-text-secondary font-normal">/1,699</span></div>
-            </div>
-            <div className="text-label text-text-secondary">Collection Log</div>
-          </div>
+          <StatCard
+            label="Collection Log"
+            icon={<WikiImage src={NAV_ICONS["collection-log"]} alt="" className="w-5 h-5 opacity-50" fallback="C" />}
+            value={
+              <>
+                {collectionLog}
+                <span className="text-sm text-text-secondary font-normal">/1,699</span>
+              </>
+            }
+          />
         )}
         {totalBossKills > 0 && (
-          <button
+          <StatCard
+            label="Boss Kills"
+            icon={<WikiImage src={NAV_ICONS.bosses} alt="" className="w-5 h-5 opacity-50" fallback="B" />}
+            value={totalBossKills.toLocaleString()}
             onClick={() => navigate("loot", { tab: "profit" })}
-            className="p-3 text-center rounded-lg transition-colors hover:bg-bg-secondary/50"
-          >
-            <div className="flex items-center justify-center gap-1.5 mb-1">
-              <WikiImage src={NAV_ICONS.bosses} alt="" className="w-4 h-4" fallback="B" />
-              <div className="text-h3 font-semibold">{totalBossKills.toLocaleString()}</div>
-            </div>
-            <div className="text-label text-text-secondary">Boss Kills</div>
-          </button>
+          />
         )}
         {clueScrollsAll != null && clueScrollsAll > 0 && (
-          <button
+          <StatCard
+            label="Clue Scrolls"
+            icon={<WikiImage src={NAV_ICONS["clue-helper"]} alt="" className="w-5 h-5 opacity-50" fallback="C" />}
+            value={clueScrollsAll.toLocaleString()}
             onClick={() => navigate("clue-helper")}
-            className="p-3 text-center rounded-lg transition-colors hover:bg-bg-secondary/50"
-          >
-            <div className="flex items-center justify-center gap-1.5 mb-1">
-              <WikiImage src={NAV_ICONS["clue-helper"]} alt="" className="w-4 h-4" fallback="C" />
-              <div className="text-h3 font-semibold">{clueScrollsAll}</div>
-            </div>
-            <div className="text-label text-text-secondary">Clue Scrolls</div>
-          </button>
+          />
         )}
         {colosseumGlory != null && (
-          <div className="p-3 text-center">
-            <div className="flex items-center justify-center gap-1.5 mb-1">
-              <WikiImage src={itemIcon("Dizana's quiver (uncharged)")} alt="" className="w-4 h-4" fallback="Q" />
-              <div className="text-h3 font-semibold">{colosseumGlory.toLocaleString()}</div>
-            </div>
-            <div className="text-label text-text-secondary">Colosseum Glory</div>
-          </div>
+          <StatCard
+            label="Colosseum Glory"
+            icon={<WikiImage src={itemIcon("Dizana's quiver (uncharged)")} alt="" className="w-5 h-5 opacity-50" fallback="Q" />}
+            value={colosseumGlory.toLocaleString()}
+          />
         )}
-      </div>
+      </StatGrid>
 
-      {/* WOM data: Rank, EHP, EHB, account type */}
-      <div className="flex flex-wrap justify-center gap-3 mb-4">
-        {overallRank > 0 && (
-          <div className="text-center px-3 py-1.5">
-            <div className="text-sm font-bold tabular-nums">#{overallRank.toLocaleString()}</div>
-            <div className="text-kicker text-text-secondary/70">Overall Rank</div>
-          </div>
-        )}
-        {womPlayer?.ehp != null && womPlayer.ehp > 0 && (
-          <div className="text-center px-3 py-1.5" title="Efficient Hours Played">
-            <div className="text-sm font-bold tabular-nums">{womPlayer.ehp.toFixed(0)}</div>
-            <div className="text-kicker text-text-secondary/70">EHP</div>
-          </div>
-        )}
-        {womPlayer?.ehb != null && womPlayer.ehb > 0 && (
-          <div className="text-center px-3 py-1.5" title="Efficient Hours Bossed">
-            <div className="text-sm font-bold tabular-nums">{womPlayer.ehb.toFixed(0)}</div>
-            <div className="text-kicker text-text-secondary/70">EHB</div>
-          </div>
-        )}
-        {womPlayer?.type && womPlayer.type !== "regular" && (
-          <div className="text-center px-3 py-1.5">
-            <div className="text-sm font-bold text-accent capitalize">{womPlayer.type.replace("_", " ")}</div>
-            <div className="text-kicker text-text-secondary/70">Account Type</div>
-          </div>
-        )}
-      </div>
+      {/* WOM stats: Rank, EHP, EHB */}
+      {(overallRank > 0 || (womPlayer?.ehp ?? 0) > 0 || (womPlayer?.ehb ?? 0) > 0) && (
+        <StatGrid columns={3} className="mb-6">
+          {overallRank > 0 && (
+            <StatCard
+              label="Overall Rank"
+              value={`#${overallRank.toLocaleString()}`}
+            />
+          )}
+          {womPlayer?.ehp != null && womPlayer.ehp > 0 && (
+            <StatCard
+              label="EHP"
+              value={womPlayer.ehp.toFixed(0)}
+              title="Efficient Hours Played"
+            />
+          )}
+          {womPlayer?.ehb != null && womPlayer.ehb > 0 && (
+            <StatCard
+              label="EHB"
+              value={womPlayer.ehb.toFixed(0)}
+              title="Efficient Hours Bossed"
+            />
+          )}
+        </StatGrid>
+      )}
+
+      {womPlayer?.type && womPlayer.type !== "regular" && (
+        <div className="mb-4 text-center">
+          <span className="text-xs text-text-secondary">Account Type: </span>
+          <span className="text-xs font-semibold text-accent capitalize">{womPlayer.type.replace("_", " ")}</span>
+        </div>
+      )}
 
       {/* CTA: deep-link to Progress page */}
       <button
@@ -243,7 +250,6 @@ export default function Overview({ hiscores, rsn }: Props) {
         </div>
         <span className="text-accent group-hover:translate-x-0.5 transition-transform">→</span>
       </button>
-
       {/* Skill grid — 3 columns, OSRS layout */}
       <div className="grid grid-cols-3 gap-1.5">
         {SKILL_ORDER.map((skillName) => {
@@ -260,7 +266,7 @@ export default function Overview({ hiscores, rsn }: Props) {
             <button
               key={skillName}
               onClick={() => navigate("skill-calc", { skill: skillName })}
-              className="group bg-bg-tertiary rounded px-3 py-2 flex items-center justify-between hover:bg-bg-secondary hover:border-accent/20 border border-transparent transition-all cursor-pointer text-left"
+              className="group bg-bg-secondary rounded px-3 py-2 flex items-center justify-between hover:bg-bg-tertiary hover:border-accent/20 border border-transparent transition-all cursor-pointer text-left"
             >
               <div className="flex items-center gap-2">
                 <WikiImage src={SKILL_ICONS[skillName]} alt="" className="w-4 h-4" fallback={skillName[0]} />
@@ -328,7 +334,7 @@ export default function Overview({ hiscores, rsn }: Props) {
                 <img src={`${WIKI_IMG}/Wintertodt_icon.png`} alt="" className="w-5 h-5" onError={(e) => { e.currentTarget.style.display = "none"; }} />
                 <div>
                   <div className="text-sm font-bold">{wintertodt.toLocaleString()}</div>
-                  <div className="text-kicker text-text-secondary/70">Wintertodt</div>
+                  <div className="text-[10px] text-text-secondary">Wintertodt</div>
                 </div>
               </div>
             )}
@@ -337,7 +343,7 @@ export default function Overview({ hiscores, rsn }: Props) {
                 <img src={`${WIKI_IMG}/Tempoross.png`} alt="" className="w-5 h-5" onError={(e) => { e.currentTarget.style.display = "none"; }} />
                 <div>
                   <div className="text-sm font-bold">{tempoross.toLocaleString()}</div>
-                  <div className="text-kicker text-text-secondary/70">Tempoross</div>
+                  <div className="text-[10px] text-text-secondary">Tempoross</div>
                 </div>
               </div>
             )}
@@ -346,7 +352,7 @@ export default function Overview({ hiscores, rsn }: Props) {
                 <img src={`${WIKI_IMG}/Guardians_of_the_Rift_logo.png`} alt="" className="w-5 h-5" onError={(e) => { e.currentTarget.style.display = "none"; }} />
                 <div>
                   <div className="text-sm font-bold">{rifts.toLocaleString()}</div>
-                  <div className="text-kicker text-text-secondary/70">GOTR Rifts</div>
+                  <div className="text-[10px] text-text-secondary">GOTR Rifts</div>
                 </div>
               </div>
             )}
@@ -355,7 +361,7 @@ export default function Overview({ hiscores, rsn }: Props) {
                 <img src={`${WIKI_IMG}/Crystalline_Hunllef_icon.png`} alt="" className="w-5 h-5" onError={(e) => { e.currentTarget.style.display = "none"; }} />
                 <div>
                   <div className="text-sm font-bold">{gauntlet.toLocaleString()}</div>
-                  <div className="text-kicker text-text-secondary/70">Corrupted Gauntlet</div>
+                  <div className="text-[10px] text-text-secondary">Corrupted Gauntlet</div>
                 </div>
               </div>
             )}
@@ -364,50 +370,64 @@ export default function Overview({ hiscores, rsn }: Props) {
       )}
 
       {/* Boss Kill Counts */}
-      {bossActivities.length > 0 && (
-        <div className="mt-6">
-          <h3 className="text-xs uppercase tracking-wider text-text-secondary/60 mb-2">
-            Boss Kill Counts
-          </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
-            {[...bossActivities].sort((a, b) => b.score - a.score).map((boss) => (
-              <button
-                key={boss.name}
-                onClick={() => navigate("bosses", { boss: boss.name })}
-                className="bg-bg-tertiary rounded px-2 py-2 hover:bg-bg-secondary transition-colors flex items-center gap-2"
-              >
-                <div className="w-6 h-6 shrink-0 relative">
-                  <img
-                    src={bossIconSmall(boss.name)}
-                    alt=""
-                    className="w-6 h-6 rounded"
-                    onError={(e) => {
-                      // Try the large icon as fallback
-                      const fallback = bossIcon(boss.name);
-                      if (e.currentTarget.src !== fallback) {
-                        e.currentTarget.src = fallback;
-                      } else {
-                        e.currentTarget.style.display = "none";
-                        const sib = e.currentTarget.nextElementSibling as HTMLElement;
-                        if (sib) sib.style.display = "flex";
-                      }
-                    }}
-                  />
-                  <div
-                    className="w-6 h-6 rounded bg-bg-tertiary text-[10px] font-bold text-text-secondary items-center justify-center hidden"
-                  >
-                    {boss.name[0]}
+      {bossActivities.length > 0 && (() => {
+        const sortedBosses = [...bossActivities].sort((a, b) => b.score - a.score);
+        const visibleBosses = showAllBosses ? sortedBosses : sortedBosses.slice(0, 12);
+        const hasMore = sortedBosses.length > 12;
+        return (
+          <div className="mt-6">
+            <h3 className="text-xs uppercase tracking-wider text-text-secondary/60 mb-2">
+              Boss Kill Counts
+            </h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+              {visibleBosses.map((boss) => (
+                <button
+                  key={boss.name}
+                  onClick={() => navigate("bosses", { boss: boss.name })}
+                  className="bg-bg-secondary rounded px-2 py-2 hover:bg-bg-tertiary transition-colors flex items-center gap-2"
+                >
+                  <div className="w-6 h-6 shrink-0 relative">
+                    <img
+                      src={bossIconSmall(boss.name)}
+                      alt=""
+                      className="w-6 h-6 rounded"
+                      onError={(e) => {
+                        // Try the large icon as fallback
+                        const fallback = bossIcon(boss.name);
+                        if (e.currentTarget.src !== fallback) {
+                          e.currentTarget.src = fallback;
+                        } else {
+                          e.currentTarget.style.display = "none";
+                          const sib = e.currentTarget.nextElementSibling as HTMLElement;
+                          if (sib) sib.style.display = "flex";
+                        }
+                      }}
+                    />
+                    <div
+                      className="w-6 h-6 rounded bg-bg-tertiary text-[10px] font-bold text-text-secondary items-center justify-center hidden"
+                    >
+                      {boss.name[0]}
+                    </div>
                   </div>
-                </div>
-                <div className="min-w-0 text-left">
-                  <div className="text-sm font-bold">{boss.score.toLocaleString()}</div>
-                  <div className="text-[10px] text-text-secondary truncate" title={boss.name}>{boss.name}</div>
-                </div>
+                  <div className="min-w-0 text-left">
+                    <div className="text-sm font-bold">{boss.score.toLocaleString()}</div>
+                    <div className="text-[10px] text-text-secondary truncate" title={boss.name}>{boss.name}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+            {hasMore && (
+              <button
+                onClick={() => setShowAllBosses((v) => !v)}
+                className="mt-3 w-full text-center text-xs text-accent hover:underline py-2"
+              >
+                {showAllBosses ? "Show less" : `Show all ${sortedBosses.length} bosses`}
               </button>
-            ))}
+            )}
           </div>
-        </div>
-      )}
+        );
+      })()}
+
     </div>
   );
 }

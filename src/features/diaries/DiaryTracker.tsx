@@ -187,17 +187,15 @@ export default function DiaryTracker({ hiscores }: Props) {
                     )}
                   </div>
                   <div className="flex items-center gap-3">
-                    {tier.tasks.length > 0 && (
+                    {tier.tasks.length > 0 && tasksDone > 0 && (
                       <span
                         className={`text-[10px] tabular-nums ${
-                          allTasksDone
-                            ? "text-success"
-                            : tasksDone > 0
-                              ? "text-accent"
-                              : "text-text-secondary/40"
+                          allTasksDone ? "text-success" : "text-accent"
                         }`}
                       >
-                        {tasksDone}/{tier.tasks.length} tasks
+                        {allTasksDone
+                          ? `${tier.tasks.length}/${tier.tasks.length} Complete`
+                          : `${tasksDone}/${tier.tasks.length} tasks`}
                       </span>
                     )}
                     <span className="text-text-secondary text-xs">
