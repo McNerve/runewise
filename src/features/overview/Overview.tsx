@@ -7,6 +7,7 @@ import { WIKI_IMG, SKILL_ICONS, NAV_ICONS, bossIconSmall, bossIcon, itemIcon } f
 import { useNavigation } from "../../lib/NavigationContext";
 import WikiImage from "../../components/WikiImage";
 import { TRAINING_METHODS } from "../../lib/data/training-methods";
+import { Tabs, StatGrid, StatCard } from "../../components/primitives";
 import QuestTracker from "../quests/QuestTracker";
 import DiaryTracker from "../diaries/DiaryTracker";
 const CombatTasks = lazy(() => import("../combat-tasks/CombatTasks"));
@@ -136,40 +137,33 @@ export default function Overview({ hiscores, rsn }: Props) {
       <h2 className="text-xl font-semibold mb-4">{rsn}</h2>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-4 gap-3 mb-6">
-        <div className="flex flex-col items-center gap-1">
-          <img src={`${WIKI_IMG}/Attack_style_icon.png`} alt="" className="w-5 h-5 opacity-50" onError={(e) => { e.currentTarget.style.display = "none"; }} />
-          <div className="text-2xl font-bold text-accent">
-            {cmb.toFixed(0)}
-          </div>
-          <div className="text-xs text-text-secondary">Combat</div>
-        </div>
-        <div className="flex flex-col items-center gap-1">
-          <img src={`${WIKI_IMG}/Stats_icon.png`} alt="" className="w-5 h-5 opacity-50" onError={(e) => { e.currentTarget.style.display = "none"; }} />
-          <div className="text-2xl font-bold">{totalLevel.toLocaleString()}</div>
-          <div className="text-xs text-text-secondary">Total Level</div>
-        </div>
-        <div className="flex flex-col items-center gap-1">
-          <img src={`${WIKI_IMG}/Antique_lamp.png`} alt="" className="w-5 h-5 opacity-50" onError={(e) => { e.currentTarget.style.display = "none"; }} />
-          <div className="text-2xl font-bold">
-            {totalXp >= 1_000_000_000
-              ? `${(totalXp / 1_000_000_000).toFixed(1)}B`
-              : `${(totalXp / 1_000_000).toFixed(0)}M`}
-          </div>
-          <div className="text-xs text-text-secondary">Total XP</div>
-        </div>
-        <div className="flex flex-col items-center gap-1">
-          {maxedSkills >= 24 ? (
-            <img src={`${WIKI_IMG}/Max_cape.png`} alt="" className="w-5 h-5 opacity-50" onError={(e) => { e.currentTarget.style.display = "none"; }} />
-          ) : (
-            <ProgressRing obtained={maxedSkills} total={24} size={22} />
-          )}
-          <div className={`text-2xl font-bold ${maxedSkills >= 24 ? "text-success" : ""}`}>
-            {maxedSkills}/24
-          </div>
-          <div className="text-xs text-text-secondary">Maxed Skills</div>
-        </div>
-      </div>
+      <StatGrid columns={4} className="mb-6">
+        <StatCard
+          label="Combat"
+          value={cmb.toFixed(0)}
+          icon={`${WIKI_IMG}/Attack_style_icon.png`}
+          accent="text-accent"
+        />
+        <StatCard
+          label="Total Level"
+          value={totalLevel.toLocaleString()}
+          icon={`${WIKI_IMG}/Stats_icon.png`}
+        />
+        <StatCard
+          label="Total XP"
+          value={totalXp >= 1_000_000_000
+            ? `${(totalXp / 1_000_000_000).toFixed(1)}B`
+            : `${(totalXp / 1_000_000).toFixed(0)}M`}
+          icon={`${WIKI_IMG}/Antique_lamp.png`}
+        />
+        <StatCard
+          label="Maxed Skills"
+          value={`${maxedSkills}/24`}
+          icon={maxedSkills >= 24
+            ? `${WIKI_IMG}/Max_cape.png`
+            : <ProgressRing obtained={maxedSkills} total={24} size={16} />}
+        />
+      </StatGrid>
 
       {/* Activity stats — sourced from hiscores activities */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
@@ -246,28 +240,18 @@ export default function Overview({ hiscores, rsn }: Props) {
       </div>
 
       {/* Profile sub-tabs */}
-      <div className="flex gap-1 mb-5 overflow-x-auto justify-center">
-        {([
-          { id: "overview" as const, label: "Overview", icon: `${WIKI_IMG}/Stats_icon.png` },
-          { id: "quests" as const, label: `Quests${questPoints ? ` (${questPoints} QP)` : ""}`, icon: `${WIKI_IMG}/Quest_point_icon.png` },
-          { id: "diaries" as const, label: "Diaries", icon: `${WIKI_IMG}/Achievement_Diaries_icon.png` },
-          { id: "combat" as const, label: "Combat Tasks", icon: `${WIKI_IMG}/Combat_Achievements_icon.png` },
-        ]).map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setProfileTab(tab.id)}
-            aria-pressed={profileTab === tab.id}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
-              profileTab === tab.id
-                ? "bg-accent text-white"
-                : "text-text-secondary hover:bg-bg-secondary/50"
-            }`}
-          >
-            <img src={tab.icon} alt="" className="w-4 h-4" onError={(e) => { e.currentTarget.style.display = "none"; }} />
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <Tabs
+        className="mb-5 justify-center"
+        ariaLabel="Profile sections"
+        activeId={profileTab}
+        onChange={setProfileTab}
+        items={[
+          { id: "overview" as ProfileTab, label: "Overview", icon: `${WIKI_IMG}/Stats_icon.png` },
+          { id: "quests" as ProfileTab, label: "Quests", icon: `${WIKI_IMG}/Quest_point_icon.png`, count: questPoints ? `${questPoints} QP` : undefined },
+          { id: "diaries" as ProfileTab, label: "Diaries", icon: `${WIKI_IMG}/Achievement_Diaries_icon.png` },
+          { id: "combat" as ProfileTab, label: "Combat Tasks", icon: `${WIKI_IMG}/Combat_Achievements_icon.png` },
+        ]}
+      />
 
       {/* ── Sub-tab: Quests ── */}
       {profileTab === "quests" && <QuestTracker hiscores={hiscores} />}

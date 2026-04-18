@@ -7,6 +7,7 @@ import { getFeatureAccent } from "../../lib/featureAccent";
 import { useNavigation, type View } from "../../lib/NavigationContext";
 import WikiImage from "../../components/WikiImage";
 import ShellIcon from "../../components/ShellIcon";
+import { StatGrid, StatCard } from "../../components/primitives";
 import { useSettings } from "../../hooks/useSettings";
 import { loadRecentEntities } from "../../lib/recentEntities";
 import { formatGp } from "../../lib/format";
@@ -216,24 +217,12 @@ export default function Home({ hiscores }: HomeProps) {
                 </button>
               </div>
 
-              <div className="grid grid-cols-4 gap-3">
-                <div className="rounded-lg border border-border/40 bg-bg-tertiary/20 px-3 py-2 text-center">
-                  <div className="text-lg font-bold tabular-nums text-success">{totalLevel?.toLocaleString()}</div>
-                  <div className="text-[10px] text-text-secondary/50">Total</div>
-                </div>
-                <div className="rounded-lg border border-border/40 bg-bg-tertiary/20 px-3 py-2 text-center">
-                  <div className="text-lg font-bold tabular-nums text-accent">{totalXp ? `${(totalXp / 1_000_000).toFixed(0)}M` : "—"}</div>
-                  <div className="text-[10px] text-text-secondary/50">XP</div>
-                </div>
-                <div className="rounded-lg border border-border/40 bg-bg-tertiary/20 px-3 py-2 text-center">
-                  <div className="text-lg font-bold tabular-nums text-danger">{totalBossKills?.toLocaleString() ?? "—"}</div>
-                  <div className="text-[10px] text-text-secondary/50">Boss KC</div>
-                </div>
-                <div className="rounded-lg border border-border/40 bg-bg-tertiary/20 px-3 py-2 text-center">
-                  <div className="text-lg font-bold tabular-nums text-[#a78bfa]">{maxedSkills ?? 0}<span className="text-text-secondary/30 text-sm">/24</span></div>
-                  <div className="text-[10px] text-text-secondary/50">Maxed</div>
-                </div>
-              </div>
+              <StatGrid columns={4}>
+                <StatCard label="Total" value={totalLevel?.toLocaleString() ?? "—"} />
+                <StatCard label="XP" value={totalXp ? `${(totalXp / 1_000_000).toFixed(0)}M` : "—"} accent="text-accent" />
+                <StatCard label="Boss KC" value={totalBossKills?.toLocaleString() ?? "—"} />
+                <StatCard label="Maxed" value={maxedSkills ?? 0} suffix="/24" />
+              </StatGrid>
             </motion.div>
           )}
 

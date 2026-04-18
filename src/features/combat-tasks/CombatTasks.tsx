@@ -9,33 +9,7 @@ import { useNavigation } from "../../lib/NavigationContext";
 import { findBossByName } from "../../lib/data/bosses";
 import EmptyState from "../../components/EmptyState";
 import { loadJSON, saveJSON } from "../../lib/localStorage";
-
-const TIER_COLORS: Record<CombatTier, { tab: string; badge: string }> = {
-  Easy: {
-    tab: "bg-success/20 text-success",
-    badge: "bg-success/15 text-success",
-  },
-  Medium: {
-    tab: "bg-blue-500/20 text-blue-400",
-    badge: "bg-blue-500/15 text-blue-400",
-  },
-  Hard: {
-    tab: "bg-danger/20 text-danger",
-    badge: "bg-danger/15 text-danger",
-  },
-  Elite: {
-    tab: "bg-purple-500/20 text-purple-400",
-    badge: "bg-purple-500/15 text-purple-400",
-  },
-  Master: {
-    tab: "bg-orange-500/20 text-orange-400",
-    badge: "bg-orange-500/15 text-orange-400",
-  },
-  Grandmaster: {
-    tab: "bg-yellow-500/20 text-yellow-300",
-    badge: "bg-yellow-500/15 text-yellow-300",
-  },
-};
+import { TIER_COLORS, type Tier } from "../../components/primitives";
 
 const TIER_INACTIVE =
   "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary";
@@ -118,13 +92,13 @@ export default function CombatTasks() {
       <div className="flex gap-1.5 mb-4 flex-wrap">
         {COMBAT_TIERS.map((tier) => {
           const isActive = selectedTier === tier;
-          const colors = TIER_COLORS[tier];
+          const colors = TIER_COLORS[tier as Tier];
           return (
             <button
               key={tier}
               onClick={() => setSelectedTier(tier)}
               className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
-                isActive ? colors.tab : TIER_INACTIVE
+                isActive ? colors.badge : TIER_INACTIVE
               }`}
             >
               {tier}
@@ -178,7 +152,7 @@ export default function CombatTasks() {
           <div key={boss}>
             <div className="mb-2 flex flex-wrap items-center gap-2">
               <span
-                className={`text-[10px] px-1.5 py-0.5 rounded ${TIER_COLORS[selectedTier].badge}`}
+                className={`text-[10px] px-1.5 py-0.5 rounded ${TIER_COLORS[selectedTier as Tier].badge}`}
               >
                 {boss}
               </span>
