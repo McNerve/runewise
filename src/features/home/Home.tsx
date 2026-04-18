@@ -95,6 +95,7 @@ const TOOL_POOL: Array<{ id: View; label: string }> = [
   { id: "overview", label: "Profile" },
   { id: "lookup", label: "Hiscores" },
   { id: "collection-log", label: "Collection Log" },
+  { id: "flip-journal", label: "Flip Journal" },
 ];
 
 const QUICK_ACCESS_TILES: Array<{ id: View; label: string; desc: string }> = [

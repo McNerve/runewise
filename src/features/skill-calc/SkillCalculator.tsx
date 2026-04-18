@@ -98,7 +98,7 @@ export default function SkillCalculator({ hiscores }: Props) {
   }, [selectedSkill]);
 
   const handleTargetChange = (value: number) => {
-    const clamped = Math.max(2, Math.min(126, value));
+    const clamped = Math.max(2, Math.min(99, value));
     setTargetLevel(clamped);
     customTargets.current.set(selectedSkill, clamped);
   };
@@ -220,7 +220,7 @@ export default function SkillCalculator({ hiscores }: Props) {
               className="w-full px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
             />
             <p className="text-xs text-text-secondary mt-1">
-              Level {levelForXp(currentXp)}
+              Level {Math.min(99, levelForXp(currentXp))}
             </p>
           </div>
           <div>
@@ -240,7 +240,7 @@ export default function SkillCalculator({ hiscores }: Props) {
               <input
                 type="number"
                 min={2}
-                max={126}
+                max={99}
                 value={targetLevel}
                 onChange={(e) => handleTargetChange(Number(e.target.value))}
                 className="flex-1 px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
