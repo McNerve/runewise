@@ -102,6 +102,7 @@ Post-v1.6 sweep across all 40 views in 9 families. See `.claude/v16-audit.md`.
 ### Loaders + tests
 
 - **Branded skeleton shimmer** — `Skeleton` component now renders a subtle gold-tinted diagonal shimmer via `.skeleton-shimmer` in `index.css`. Respects `prefers-reduced-motion`.
+- **Active-state text readability** — added `--color-on-accent` token (dark navy in dark mode, white in light mode) and swapped every `text-white` on gold backgrounds to `text-on-accent` across 30 files. Fixes the ~1.9:1 WCAG failure where white text sat on rune-gold pills and buttons.
 - **Edge-case tests** added for `toWikiRecipe` (materials/output as objects) and `toWikiSpell` (Arceuus/Ancient/Lunar hard-gated to P2P regardless of wiki flag). Full suite at 179/179.
 
 ## [1.6.0] - 2026-04-17
