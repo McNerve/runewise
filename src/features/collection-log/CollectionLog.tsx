@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { itemIcon, NAV_ICONS } from "../../lib/sprites";
 import {
   fetchTempleCollectionLog,
@@ -92,6 +92,7 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
   const [activeTab, setActiveTab] = useState<string>("bosses");
   const [itemNames, setItemNames] = useState<Map<number, string>>(new Map());
   const [schema, setSchema] = useState<TempleClogSchema | null>(null);
+  const itemsRef = useRef<HTMLDivElement>(null);
 
   // Build a set of obtained item IDs with counts from player data
   const obtainedMap = useMemo(() => {
@@ -316,7 +317,16 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
               return (
                 <button
                   key={cat.slug}
-                  onClick={() => { setSelectedCategory(cat.slug); setItemFilter("all"); }}
+                  onClick={() => {
+                    setSelectedCategory(cat.slug);
+                    setItemFilter("all");
+                    if (window.innerWidth < 1280) {
+                      setTimeout(
+                        () => itemsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
+                        80
+                      );
+                    }
+                  }}
                   className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-colors ${
                     isActive
                       ? "bg-accent/10 border border-accent/25"
@@ -344,7 +354,7 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
         </div>
 
         {/* Items panel */}
-        <div>
+        <div ref={itemsRef}>
           {!selectedCategory || !activeSchemaCat ? (
             <div className="py-12 text-center text-sm text-text-secondary">
               Select a category to view items

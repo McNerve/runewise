@@ -58,16 +58,20 @@ const SKILL_ORDER = [
   "Construction", "Hunter", "Sailing",
 ];
 
+function resolveProfileTab(raw: string | undefined): ProfileTab {
+  if (raw === "quests" || raw === "diaries" || raw === "combat" || raw === "unlock") return raw;
+  return "overview";
+}
+
 export default function Overview({ hiscores, rsn }: Props) {
   const { navigate, params } = useNavigation();
   const [womPlayer, setWomPlayer] = useState<WomPlayer | null>(null);
-  const initialTab: ProfileTab =
-    params.tab === "quests" ? "quests" :
-    params.tab === "diaries" ? "diaries" :
-    params.tab === "combat" ? "combat" :
-    params.tab === "unlock" ? "unlock" :
-    "overview";
-  const [profileTab, setProfileTab] = useState<ProfileTab>(initialTab);
+  const [profileTab, setProfileTab] = useState<ProfileTab>(() => resolveProfileTab(params.tab));
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync tab from nav params
+    setProfileTab(resolveProfileTab(params.tab));
+  }, [params.tab]);
 
   useEffect(() => {
     if (!rsn) return;

@@ -11,6 +11,7 @@ import {
 import SourceAttribution from "../../components/SourceAttribution";
 import { Skeleton } from "../../components/Skeleton";
 import { useNavigation } from "../../lib/NavigationContext";
+import { loadRecentEntities } from "../../lib/recentEntities";
 import {
   initWikiInteractive,
   handleLightboxClick,
@@ -69,6 +70,13 @@ export default function WikiLookup() {
     const rawTrail = params.trail?.split("|").filter(Boolean) ?? [];
     return rawTrail.slice(-5);
   }, [params.trail]);
+
+  const recentWikiPages = useMemo(
+    () => loadRecentEntities().filter((e) => e.category === "Wiki").slice(0, 5),
+    // Refresh whenever a page opens so recents stay in sync.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [selectedPage]
+  );
 
   function navigateToTypedPage(page: string, kind: WikiEntityKind) {
     if (kind === "item") {
@@ -371,10 +379,29 @@ export default function WikiLookup() {
       ) : null}
 
       {!loadingDocument && !document ? (
-        <div className="py-10 text-center text-sm text-text-secondary">
-          Search for something like <span className="text-text-primary">Dusuri&apos;s Star Shop</span>,
-          <span className="text-text-primary"> Dragon defender</span>, or
-          <span className="text-text-primary"> Guardians of the Rift</span> to open a structured wiki view.
+        <div className="py-10 text-center text-sm text-text-secondary space-y-4">
+          <p>
+            Search for something like <span className="text-text-primary">Dusuri&apos;s Star Shop</span>,
+            <span className="text-text-primary"> Dragon defender</span>, or
+            <span className="text-text-primary"> Guardians of the Rift</span> to open a structured wiki view.
+          </p>
+          {recentWikiPages.length > 0 && (
+            <div className="flex flex-wrap items-center justify-center gap-1.5">
+              <span className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
+                Recent
+              </span>
+              {recentWikiPages.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => openPage(p.name)}
+                  className="rounded-full border border-border/60 bg-bg-secondary/50 px-3 py-1 text-xs text-text-secondary transition hover:border-accent/40 hover:text-text-primary"
+                >
+                  {p.name}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       ) : null}
 

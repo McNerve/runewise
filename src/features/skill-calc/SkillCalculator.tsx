@@ -35,9 +35,18 @@ export default function SkillCalculator({ hiscores }: Props) {
   const { settings } = useSettings();
   const { params, navigate } = useNavigation();
   const { mapping, prices, fetchIfNeeded } = useGEData();
-  const initialSkillTab: SkillTab = params.tab === "plan" ? "plan" : "calculator";
-  const [skillTab, setSkillTab] = useState<SkillTab>(initialSkillTab);
+  const [skillTab, setSkillTab] = useState<SkillTab>(() => params.tab === "plan" ? "plan" : "calculator");
   const [selectedSkill, setSelectedSkill] = useState<string>(params.skill ?? "Attack");
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync tab from nav params
+    setSkillTab(params.tab === "plan" ? "plan" : "calculator");
+  }, [params.tab]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync skill from nav params
+    if (params.skill) setSelectedSkill(params.skill);
+  }, [params.skill]);
   const [currentXp, setCurrentXp] = useState(0);
   const [targetLevel, setTargetLevel] = useState(99);
   const [wikiRecipes, setWikiRecipes] = useState<WikiRecipe[]>([]);

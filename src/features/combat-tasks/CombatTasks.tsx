@@ -10,14 +10,16 @@ import { findBossByName } from "../../lib/data/bosses";
 import EmptyState from "../../components/EmptyState";
 import { loadJSON, saveJSON } from "../../lib/localStorage";
 
+// Canonical OSRS tier palette — shared with Clue Helper, Diaries, Quests
+// Easy=green, Medium=yellow, Hard=red, Elite=purple, Master=orange, Grandmaster=amber
 const TIER_COLORS: Record<CombatTier, { tab: string; badge: string }> = {
   Easy: {
     tab: "bg-success/20 text-success",
     badge: "bg-success/15 text-success",
   },
   Medium: {
-    tab: "bg-blue-500/20 text-blue-400",
-    badge: "bg-blue-500/15 text-blue-400",
+    tab: "bg-yellow-500/20 text-yellow-300",
+    badge: "bg-yellow-500/15 text-yellow-300",
   },
   Hard: {
     tab: "bg-danger/20 text-danger",
@@ -32,8 +34,8 @@ const TIER_COLORS: Record<CombatTier, { tab: string; badge: string }> = {
     badge: "bg-orange-500/15 text-orange-400",
   },
   Grandmaster: {
-    tab: "bg-yellow-500/20 text-yellow-300",
-    badge: "bg-yellow-500/15 text-yellow-300",
+    tab: "bg-amber-500/20 text-amber-300",
+    badge: "bg-amber-500/15 text-amber-300",
   },
 };
 

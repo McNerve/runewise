@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Overview from "../overview/Overview";
 import { fetchHiscores, type HiscoreData, type HiscoreSkill } from "../../lib/api/hiscores";
 import { useNavigation } from "../../lib/NavigationContext";
 import EmptyState from "../../components/EmptyState";
 import { NAV_ICONS, SKILL_ICONS } from "../../lib/sprites";
+import { loadRecentEntities } from "../../lib/recentEntities";
 
 type Mode = "lookup" | "compare";
 
@@ -133,6 +134,13 @@ export default function PlayerLookup() {
   const [data, setData] = useState<HiscoreData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const recentPlayers = useMemo(
+    () => loadRecentEntities().filter((e) => e.category === "Player").slice(0, 5),
+    // Re-read when a lookup lands so the list stays fresh across clicks.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [lookupRsn]
+  );
 
   // Compare state
   const [leftQuery, setLeftQuery] = useState("");
@@ -277,6 +285,27 @@ export default function PlayerLookup() {
                 {loading ? "Looking up..." : "Lookup player"}
               </button>
             </form>
+
+            {recentPlayers.length > 0 && !lookupRsn && !loading && !error ? (
+              <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                <span className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45 mr-1">
+                  Recent
+                </span>
+                {recentPlayers.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => {
+                      setQuery(p.name);
+                      void handleLookup(p.name);
+                    }}
+                    className="rounded-full border border-border/60 bg-bg-secondary/50 px-3 py-1 text-xs text-text-secondary transition hover:border-accent/40 hover:text-text-primary"
+                  >
+                    {p.name}
+                  </button>
+                ))}
+              </div>
+            ) : null}
 
             {error ? (
               <div className="mt-3">

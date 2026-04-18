@@ -20,6 +20,17 @@ function wikiToQuest(w: WikiQuest): Quest {
   };
 }
 
+// Canonical OSRS tier palette mapping for quest difficulties.
+// Novice=gray, Intermediate=green, Experienced=yellow, Master=purple, Grandmaster=orange.
+const DIFFICULTY_COLORS: Record<string, string> = {
+  Novice: "text-text-secondary",
+  Intermediate: "text-success",
+  Experienced: "text-yellow-300",
+  Master: "text-purple-400",
+  Grandmaster: "text-orange-400",
+  Special: "text-accent",
+};
+
 interface Props {
   hiscores: HiscoreData | null;
 }
@@ -152,19 +163,23 @@ export default function QuestTracker({ hiscores }: Props) {
         >
           All
         </button>
-        {QUEST_DIFFICULTIES.map((d) => (
-          <button
-            key={d}
-            onClick={() => setDiffFilter(d)}
-            className={`px-2 py-0.5 rounded text-xs ${
-              diffFilter === d
-                ? "bg-accent text-white"
-                : "bg-bg-secondary text-text-secondary"
-            }`}
-          >
-            {d}
-          </button>
-        ))}
+        {QUEST_DIFFICULTIES.map((d) => {
+          const tone = DIFFICULTY_COLORS[d] ?? "text-text-secondary";
+          return (
+            <button
+              key={d}
+              onClick={() => setDiffFilter(d)}
+              aria-pressed={diffFilter === d}
+              className={`px-2 py-0.5 rounded text-xs transition-colors ${
+                diffFilter === d
+                  ? `bg-bg-secondary ${tone} ring-1 ring-border`
+                  : "bg-bg-secondary/60 text-text-secondary/70 hover:text-text-primary"
+              }`}
+            >
+              {d}
+            </button>
+          );
+        })}
       </div>
 
       <div className="space-y-1.5">
@@ -190,7 +205,7 @@ export default function QuestTracker({ hiscores }: Props) {
                   )}
                 </div>
                 <div className="flex items-center gap-2 mt-1 ml-4">
-                  <span className="text-xs text-text-secondary">
+                  <span className={`text-xs font-medium ${DIFFICULTY_COLORS[quest.difficulty] ?? "text-text-secondary"}`}>
                     {quest.difficulty}
                   </span>
                   <span className="text-xs text-text-secondary">·</span>
