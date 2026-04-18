@@ -748,8 +748,8 @@ export default function Market({
                         {formatGp(item.highalch)}
                       </td>
                       <td className="px-4 py-2 text-right">
-                        {alchProfit == null ? (
-                          "\u2014"
+                        {alchProfit == null || alchProfit < 0 ? (
+                          <span className="text-text-secondary/40">{"\u2014"}</span>
                         ) : (
                           <span className={alchProfit >= 0 ? "text-success" : "text-danger"}>
                             {alchProfit > 0 ? "+" : ""}{formatGp(alchProfit)}
