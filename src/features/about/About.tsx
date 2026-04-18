@@ -34,6 +34,18 @@ export default function About() {
             <span className="text-text-secondary">MIT</span>
           </div>
           <div className="flex justify-between">
+            <a href="https://templeosrs.com/" target="_blank" rel="noopener noreferrer" className="text-accent hover:text-accent-hover">
+              Temple OSRS
+            </a>
+            <span className="text-text-secondary">Temple OSRS</span>
+          </div>
+          <div className="flex justify-between">
+            <a href="https://starminers.site/" target="_blank" rel="noopener noreferrer" className="text-accent hover:text-accent-hover">
+              Star Miners
+            </a>
+            <span className="text-text-secondary">Star Miners</span>
+          </div>
+          <div className="flex justify-between">
             <a href="https://secure.runescape.com/m=hiscore_oldschool/" target="_blank" rel="noopener noreferrer" className="text-accent hover:text-accent-hover">
               OSRS Hiscores
             </a>

@@ -5,7 +5,10 @@ import { isTauri, isMac } from "../../lib/env";
 
 declare const __APP_VERSION__: string;
 
-const KEYBIND_LABELS: Record<string, { label: string; family: string }> = {
+// Labels for every possible keybind action. Only entries present in
+// DEFAULT_KEYBINDS are actually rendered — the default set is intentionally
+// curated to avoid stomping on system shortcuts.
+const KEYBIND_LABELS_ALL: Record<string, { label: string; family: string }> = {
   overview: { label: "Profile", family: "Player" },
   tracker: { label: "XP Tracker", family: "Player" },
   "collection-log": { label: "Collection Log", family: "Player" },
@@ -32,6 +35,11 @@ const KEYBIND_LABELS: Record<string, { label: string; family: string }> = {
   news: { label: "OSRS News", family: "Live" },
   wiki: { label: "OSRS Wiki", family: "Live" },
 };
+
+const KEYBIND_LABELS: Record<string, { label: string; family: string }> =
+  Object.fromEntries(
+    Object.entries(KEYBIND_LABELS_ALL).filter(([action]) => action in DEFAULT_KEYBINDS)
+  );
 
 function ThemeGlyph({ theme }: { theme: "dark" | "light" | "system" }) {
   if (theme === "dark") {
