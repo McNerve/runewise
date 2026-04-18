@@ -2,7 +2,7 @@
 
 All notable changes to RuneWise are documented here. Versions follow [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.6.1] - 2026-04-18
 
 ### Page-by-page audit follow-ups
 
