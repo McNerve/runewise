@@ -260,6 +260,7 @@ export default function StatsPanel({ state }: StatsPanelProps) {
       {openSlot !== null && (
         <GearSelector
           slot={openSlot}
+          combatStyle={combatStyle}
           onSelect={(item: WikiEquipment | null) => {
             if (item === null) {
               setEquippedGear((prev: EquippedGear) => {

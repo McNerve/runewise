@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo, lazy, Suspense } from "react";
-import { xpForLevel } from "../../lib/formulas/xp";
+import { xpForLevel, levelForXp } from "../../lib/formulas/xp";
 import { getSkillXp, type HiscoreData } from "../../lib/api/hiscores";
 import { useGEData } from "../../hooks/useGEData";
 import { formatGp } from "../../lib/format";
@@ -205,11 +205,9 @@ export default function SkillCalculator({ hiscores }: Props) {
               onChange={(e) => setCurrentXp(Number(e.target.value))}
               className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm"
             />
-            {currentLevel !== null && (
-              <p className="text-xs text-text-secondary mt-1">
-                Level {currentLevel}
-              </p>
-            )}
+            <p className="text-xs text-text-secondary mt-1">
+              Level {levelForXp(currentXp)}
+            </p>
           </div>
           <div>
             <div className="flex items-center justify-between mb-1">
