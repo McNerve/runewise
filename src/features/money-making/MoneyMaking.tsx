@@ -7,10 +7,9 @@ import { WIKI_IMG, SKILL_ICONS, NAV_ICONS } from "../../lib/sprites";
 import { useNavigation } from "../../lib/NavigationContext";
 import EmptyState from "../../components/EmptyState";
 
-const ProfitHub = lazy(() => import("../profit-hub/ProfitHub"));
-const AlchCalculator = lazy(() => import("../alch-calc/AlchCalculator"));
+const ProfitRankings = lazy(() => import("./ProfitRankings"));
 
-type MainTab = "methods" | "rankings" | "alch" | "wiki";
+type MainTab = "methods" | "rankings" | "wiki";
 
 interface Props {
   hiscores: HiscoreData | null;
@@ -54,13 +53,17 @@ function getMissingSkills(
 }
 
 export default function MoneyMaking({ hiscores }: Props) {
-  const { navigate } = useNavigation();
+  const { navigate, params } = useNavigation();
   const [category, setCategory] = useState<Category>("All");
   const [search, setSearch] = useState("");
   const [membersOnly, setMembersOnly] = useState(true);
   const [bestForMe, setBestForMe] = useState(false);
   const [wikiMethods, setWikiMethods] = useState<WikiMoneyMethod[]>([]);
-  const [mainTab, setMainTab] = useState<MainTab>("methods");
+  const initialTab: MainTab =
+    params.tab === "rankings" ? "rankings" :
+    params.tab === "wiki" ? "wiki" :
+    "methods";
+  const [mainTab, setMainTab] = useState<MainTab>(initialTab);
 
   useEffect(() => {
     fetchAllMoneyMethods().then((methods) => {
@@ -126,7 +129,6 @@ export default function MoneyMaking({ hiscores }: Props) {
         {([
           { id: "methods" as const, label: "Methods", icon: `${WIKI_IMG}/Coins_detail.png` },
           { id: "rankings" as const, label: "Profit Rankings", icon: `${WIKI_IMG}/Coins_10000.png` },
-          { id: "alch" as const, label: "Alch Profits", icon: `${WIKI_IMG}/High_Level_Alchemy.png` },
         ]).map((tab) => (
           <button
             key={tab.id}
@@ -143,6 +145,23 @@ export default function MoneyMaking({ hiscores }: Props) {
           </button>
         ))}
       </div>
+
+      {/* Alch Profits CTA — moved to Market (Items & Watchlist) */}
+      {mainTab === "methods" && (
+        <button
+          onClick={() => navigate("market", { tab: "alch" })}
+          className="w-full mb-4 flex items-center justify-between gap-3 px-4 py-2.5 rounded-lg bg-bg-secondary/60 hover:bg-bg-secondary border border-border/60 hover:border-accent/40 transition-colors text-left group"
+        >
+          <div className="flex items-center gap-3">
+            <img src={`${WIKI_IMG}/High_Level_Alchemy.png`} alt="" className="w-4 h-4" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+            <div>
+              <div className="text-sm font-medium">See alch profits in Items</div>
+              <div className="text-[11px] text-text-secondary">Live alchemy calculator lives in Items &amp; Watchlist</div>
+            </div>
+          </div>
+          <span className="text-accent group-hover:translate-x-0.5 transition-transform">→</span>
+        </button>
+      )}
 
       {/* Filters — only for Methods tab */}
       {mainTab === "methods" && (
@@ -326,13 +345,7 @@ export default function MoneyMaking({ hiscores }: Props) {
 
       {mainTab === "rankings" && (
         <Suspense fallback={<div className="py-8"><div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4 mx-auto" /></div>}>
-          <ProfitHub />
-        </Suspense>
-      )}
-
-      {mainTab === "alch" && (
-        <Suspense fallback={<div className="py-8"><div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4 mx-auto" /></div>}>
-          <AlchCalculator />
+          <ProfitRankings />
         </Suspense>
       )}
 
