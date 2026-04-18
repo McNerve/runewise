@@ -292,6 +292,7 @@ export const NAV_ICONS: Record<string, string> = {
   "pet-calc": `${WIKI_IMG}/Heron.png`,
   settings: `${WIKI_IMG}/Options_icon.png`,
   market: `${WIKI_IMG}/Grand_Exchange_icon.png`,
+  "flip-journal": `${WIKI_IMG}/Coins_detail.png`,
 };
 
 export const SKILL_ICONS: Record<string, string> = {

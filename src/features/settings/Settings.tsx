@@ -27,6 +27,7 @@ const KEYBIND_LABELS_ALL: Record<string, { label: string; family: string }> = {
   market: { label: "Items", family: "Market" },
   loot: { label: "Loot & Drops", family: "Market" },
   spells: { label: "Spells", family: "Market" },
+  "flip-journal": { label: "Flip Journal", family: "Market" },
   progress: { label: "Progress", family: "Guides" },
   slayer: { label: "Slayer Helper", family: "Guides" },
   "clue-helper": { label: "Clue Helper", family: "Guides" },
