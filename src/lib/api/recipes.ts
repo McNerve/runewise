@@ -16,7 +16,7 @@ const RECIPE_FIELDS = [
   "production_json",
 ] as const;
 
-interface RawBucketRecipe {
+export interface RawBucketRecipe {
   [key: string]: unknown;
   page_name: string;
   uses_material?: string;
@@ -51,7 +51,7 @@ export interface WikiRecipe {
   boostable: boolean;
 }
 
-function toWikiRecipe(raw: RawBucketRecipe): WikiRecipe | null {
+export function toWikiRecipe(raw: RawBucketRecipe): WikiRecipe | null {
   let json: ProductionJson | null = null;
   if (raw.production_json) {
     try {
