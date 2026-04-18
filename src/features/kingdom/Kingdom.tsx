@@ -206,7 +206,7 @@ export default function Kingdom() {
               max={MAX_WORKERS - (totalWorkers - row.workers)}
               value={row.workers}
               onChange={(e) => setWorkers(i, Number(e.target.value) || 0)}
-              className="w-12 bg-bg-tertiary border border-border rounded px-1.5 py-0.5 text-xs text-center tabular-nums"
+              className="w-12 px-1.5 py-1 rounded-lg bg-bg-tertiary border border-border text-xs text-center tabular-nums focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
             />
 
             <span className="text-xs text-text-secondary tabular-nums w-14 text-right">

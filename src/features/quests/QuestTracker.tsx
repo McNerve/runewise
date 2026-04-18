@@ -129,7 +129,7 @@ export default function QuestTracker({ hiscores }: Props) {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search quests..."
-          className="flex-1 bg-bg-tertiary border border-border rounded px-3 py-1.5 text-sm"
+          className="flex-1 px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
         />
         <div className="flex gap-1">
           {(["all", "available", "locked"] as const).map((f) => (
@@ -180,6 +180,18 @@ export default function QuestTracker({ hiscores }: Props) {
             </button>
           );
         })}
+      </div>
+
+      {/* Dot color legend */}
+      <div className="flex items-center gap-4 mb-3 px-1 text-xs text-text-secondary/70">
+        <span className="flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full bg-success" aria-hidden />
+          Requirements met
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full bg-danger" aria-hidden />
+          Requirements missing
+        </span>
       </div>
 
       <div className="space-y-1.5">

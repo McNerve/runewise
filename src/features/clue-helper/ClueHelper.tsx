@@ -117,7 +117,7 @@ export default function ClueHelper() {
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Paste your clue text here to find the solution..."
-        className="w-full bg-bg-tertiary border border-border rounded-xl px-4 py-3 text-sm mb-5 placeholder:text-text-secondary/50"
+        className="w-full px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors mb-5"
       />
 
       {/* Tier Filter Tabs */}
@@ -169,7 +169,9 @@ export default function ClueHelper() {
       {/* Results Count */}
       <div className="mb-4">
         <span className="text-xs text-text-secondary">
-          {filtered.length} / {clues.length} clues
+          {typeFilter === "All" && tierFilter === "All" && debouncedQuery.length < 2
+            ? `${clues.length} clues`
+            : `${filtered.length} / ${clues.length} clues`}
         </span>
       </div>
 

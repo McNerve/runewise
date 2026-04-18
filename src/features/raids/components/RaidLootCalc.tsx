@@ -64,7 +64,7 @@ export default function RaidLootCalc({
           max={10000}
           value={inputValue}
           onChange={(e) => setInputValue(Math.max(1, Number(e.target.value)))}
-          className="w-24 bg-bg-tertiary border border-border rounded px-2 py-1 text-sm tabular-nums"
+          className="w-24 px-2 py-1.5 rounded-lg bg-bg-tertiary border border-border text-sm tabular-nums focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
         />
         <span className="text-[10px] text-text-secondary/50">{inputDescription}</span>
       </div>

@@ -10,6 +10,56 @@ import {
   type WorldMapPoi,
 } from "../../lib/data/world-map-pois";
 
+/** Small category-themed SVG icon paths for POI markers */
+function PoiIcon({ category, size }: { category: PoiCategory; size: number }) {
+  const s = size * 0.55;
+  switch (category) {
+    case "farming":
+      // Seedling / leaf
+      return (
+        <svg width={s} height={s} viewBox="0 0 12 12" fill="none" style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)" }}>
+          <path d="M6 11 C6 11 6 6 6 6 M6 6 C6 6 2 5 2 2 C2 2 5 1 7 4 M6 6 C6 6 10 5 10 2 C10 2 7 1 5 4" stroke="white" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+        </svg>
+      );
+    case "fairy-ring":
+      // Circle with 4 cardinal dots
+      return (
+        <svg width={s} height={s} viewBox="0 0 12 12" fill="none" style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)" }}>
+          <circle cx="6" cy="6" r="3.5" stroke="white" strokeWidth="1.2" fill="none"/>
+          <circle cx="6" cy="1.5" r="1" fill="white"/>
+          <circle cx="6" cy="10.5" r="1" fill="white"/>
+          <circle cx="1.5" cy="6" r="1" fill="white"/>
+          <circle cx="10.5" cy="6" r="1" fill="white"/>
+        </svg>
+      );
+    case "slayer":
+      // Skull
+      return (
+        <svg width={s} height={s} viewBox="0 0 12 12" fill="none" style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)" }}>
+          <path d="M6 1.5 C3.5 1.5 2 3 2 5 C2 6.5 2.8 7.5 4 8 L4 10 L8 10 L8 8 C9.2 7.5 10 6.5 10 5 C10 3 8.5 1.5 6 1.5Z" fill="white" opacity="0.9"/>
+          <circle cx="4.5" cy="5" r="1" fill="#222"/>
+          <circle cx="7.5" cy="5" r="1" fill="#222"/>
+          <rect x="5" y="9" width="2" height="1" fill="#444"/>
+        </svg>
+      );
+    case "altar":
+      // Cross/plus
+      return (
+        <svg width={s} height={s} viewBox="0 0 12 12" fill="none" style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)" }}>
+          <rect x="5" y="1.5" width="2" height="9" rx="0.8" fill="white" opacity="0.9"/>
+          <rect x="1.5" y="4" width="9" height="2" rx="0.8" fill="white" opacity="0.9"/>
+        </svg>
+      );
+    case "teleport":
+      // Swirl / spiral
+      return (
+        <svg width={s} height={s} viewBox="0 0 12 12" fill="none" style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)" }}>
+          <path d="M6 10 C3 10 1.5 8.5 1.5 6 C1.5 3.5 3.5 2 6 2 C8 2 9.5 3.5 9.5 5.5 C9.5 7 8.5 8 7 8 C5.8 8 5 7.2 5 6.2 C5 5.4 5.6 5 6 5" stroke="white" strokeWidth="1.4" strokeLinecap="round" fill="none"/>
+        </svg>
+      );
+  }
+}
+
 const MAP_IMAGE = isTauri
   ? "https://cdn.runescape.com/assets/img/external/oldschool/world-map/2025-11-18/osrs_world_map.jpg"
   : "/api/cdn/assets/img/external/oldschool/world-map/2025-11-18/osrs_world_map.jpg";
@@ -205,8 +255,11 @@ export default function WorldMap() {
                     : "0 1px 2px rgba(0,0,0,0.4)",
                   cursor: "pointer",
                   padding: 0,
+                  position: "absolute",
+                  overflow: "hidden",
                 }}
               >
+                <PoiIcon category={poi.category} size={markerPx} />
                 <span
                   className="pointer-events-none absolute left-1/2 top-full mt-1 -translate-x-1/2 whitespace-nowrap rounded bg-black/80 px-1.5 py-0.5 text-[10px] font-medium text-white opacity-0 transition-opacity group-hover:opacity-100"
                   style={{

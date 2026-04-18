@@ -163,7 +163,7 @@ export default memo(function DropTable({
             max={200}
             value={killsPerHour ?? 20}
             onChange={(e) => onKillsPerHourChange(Math.max(1, Number(e.target.value)))}
-            className="w-20 bg-bg-tertiary border border-border rounded px-2 py-1 text-sm tabular-nums"
+            className="w-20 px-2 py-1.5 rounded-lg bg-bg-tertiary border border-border text-sm tabular-nums focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
           />
         </div>
       )}

@@ -295,6 +295,9 @@ export default function LoadoutManager({ state }: LoadoutManagerProps) {
     toastTimer.current = setTimeout(() => setToast(null), 2500);
   };
 
+  const selectClass = "w-full px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors";
+  const selectFlexClass = "flex-1 px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors";
+
   return (
     <>
       {toast && (
@@ -310,7 +313,7 @@ export default function LoadoutManager({ state }: LoadoutManagerProps) {
                 const preset = GEAR_PRESETS.find((p) => p.name === e.target.value);
                 if (preset) applyPreset(preset);
               }}
-              className="w-full bg-bg-tertiary border border-border rounded-lg px-3 py-1.5 text-sm"
+              className={selectClass}
             >
               <option value="">Load a preset...</option>
               <optgroup label="Melee">
@@ -360,7 +363,7 @@ export default function LoadoutManager({ state }: LoadoutManagerProps) {
                     const l = loadouts.find((lo) => lo.name === e.target.value);
                     if (l) { applyLoadout(l); setActiveLoadout(l.name); }
                   }}
-                  className="flex-1 bg-bg-tertiary border border-border rounded-lg px-3 py-1.5 text-sm"
+                  className={selectFlexClass}
                 >
                   <option value="">Select loadout...</option>
                   {loadouts.map((l) => (
@@ -372,6 +375,7 @@ export default function LoadoutManager({ state }: LoadoutManagerProps) {
                     onClick={() => { deleteLoadout(activeLoadout); setActiveLoadout(null); }}
                     className="px-2 py-1.5 text-xs text-text-secondary/40 hover:text-danger transition-colors"
                     title="Delete"
+                    aria-label="Delete active loadout"
                   >
                     &times;
                   </button>

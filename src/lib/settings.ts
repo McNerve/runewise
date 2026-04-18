@@ -15,6 +15,7 @@ export interface AppSettings {
   ironmanMode: boolean;
   closeToTray: boolean;
   discordRpc: boolean;
+  showLeagueSpells: boolean;
 }
 
 // Safe Cmd/Ctrl keybinds — avoids system shortcuts (C/X/V/Z/A/S/Q/W/F/R/N/P/O/H/L)
@@ -57,6 +58,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   ironmanMode: false,
   closeToTray: false,
   discordRpc: false,
+  showLeagueSpells: false,
 };
 
 export function loadSettings(): AppSettings {
@@ -71,6 +73,7 @@ export function loadSettings(): AppSettings {
     ironmanMode: saved.ironmanMode ?? false,
     closeToTray: saved.closeToTray ?? false,
     discordRpc: saved.discordRpc ?? false,
+    showLeagueSpells: saved.showLeagueSpells ?? false,
   };
 }
 

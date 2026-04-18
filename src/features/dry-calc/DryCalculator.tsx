@@ -67,6 +67,7 @@ export default function DryCalculator({ hiscores }: Props) {
               </div>
               <button
                 onClick={() => { setSelectedDrop(null); setRate(512); setKills(0); setKcAutoFilled(false); }}
+                aria-label="Clear selected drop"
                 className="text-xs text-text-secondary/50 hover:text-text-primary transition-colors cursor-pointer"
               >
                 ×
@@ -91,7 +92,7 @@ export default function DryCalculator({ hiscores }: Props) {
                 setRate(Number(e.target.value) || 0);
                 setSelectedDrop(null);
               }}
-              className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm"
+              className="w-full px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
             />
           </div>
           <div>
@@ -106,11 +107,26 @@ export default function DryCalculator({ hiscores }: Props) {
                 setKills(Number(e.target.value) || 0);
                 setKcAutoFilled(false);
               }}
-              className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm"
+              className="w-full px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
             />
             {kcAutoFilled && (
               <p className="text-[10px] text-accent/80 mt-1">Auto-filled from hiscores</p>
             )}
+            {selectedDrop && hiscores && !kcAutoFilled && (() => {
+              const hiscoreKc = findActivityScore(hiscores, selectedDrop.source) ?? 0;
+              if (hiscoreKc > 0 && hiscoreKc !== kills) {
+                return (
+                  <button
+                    type="button"
+                    onClick={() => { setKills(hiscoreKc); setKcAutoFilled(true); }}
+                    className="mt-1.5 text-[10px] text-accent hover:text-accent-hover transition-colors"
+                  >
+                    Use my KC ({hiscoreKc.toLocaleString()}) ↑
+                  </button>
+                );
+              }
+              return null;
+            })()}
           </div>
 
           <div className="border-t border-border pt-4">

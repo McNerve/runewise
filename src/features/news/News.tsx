@@ -329,21 +329,22 @@ export default function News() {
     );
   };
 
-  const categoryColor = (cat: string) => {
-    switch (cat) {
-      case "Game Updates":
-        return "bg-success/10 text-success/70";
-      case "Community":
-        return "bg-accent/10 text-accent/70";
-      case "Dev Blogs":
-        return "bg-purple-500/10 text-purple-400/70";
-      case "Future Updates":
-        return "bg-warning/10 text-warning/70";
-      case "Events":
-        return "bg-pink-500/10 text-pink-400/70";
-      default:
-        return "bg-bg-tertiary text-text-secondary";
-    }
+  const CATEGORY_DOT: Record<string, string> = {
+    "Game Updates": "bg-info",
+    "Community": "bg-[#d4a017]",
+    "Dev Blogs": "bg-purple-400",
+    "Future Updates": "bg-purple-400",
+    "Events": "bg-purple-400",
+  };
+
+  const categoryChip = (cat: string) => {
+    const dotColor = CATEGORY_DOT[cat] ?? "bg-text-secondary/40";
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full border border-border/50 bg-bg-secondary/60 px-1.5 py-0.5 text-xs text-text-secondary">
+        <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${dotColor}`} aria-hidden />
+        {cat}
+      </span>
+    );
   };
 
   const postRow = (post: NewsPost, i: number) => (
@@ -359,11 +360,7 @@ export default function News() {
       <div className="text-sm font-medium">{post.title}</div>
       <div className="flex items-center gap-2 mt-1.5">
         <span className="text-xs text-text-secondary">{post.date}</span>
-        <span
-          className={`text-xs px-1.5 py-0.5 rounded ${categoryColor(post.category)}`}
-        >
-          {post.category}
-        </span>
+        {categoryChip(post.category)}
         {statusBadge(post.status)}
       </div>
     </button>
@@ -469,11 +466,7 @@ export default function News() {
                   <span className="text-xs text-text-secondary">
                     {selectedPost.date}
                   </span>
-                  <span
-                    className={`text-xs px-1.5 py-0.5 rounded ${categoryColor(selectedPost.category)}`}
-                  >
-                    {selectedPost.category}
-                  </span>
+                  {categoryChip(selectedPost.category)}
                   {statusBadge(selectedPost.status)}
                 </div>
               </div>

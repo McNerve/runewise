@@ -193,7 +193,7 @@ export default function ProductionCalc() {
         }}
         placeholder="Search recipes (e.g. Rune platebody, Shark, Prayer potion)..."
         aria-label="Search recipes"
-        className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm mb-1"
+        className="w-full px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors mb-1"
         autoFocus
       />
 
@@ -403,7 +403,7 @@ export default function ProductionCalc() {
                 min={1}
                 value={quantity}
                 onChange={(e) => setQuantity(Math.max(1, Number(e.target.value) || 1))}
-                className="w-28 bg-bg-tertiary border border-border rounded px-2 py-1 text-sm tabular-nums"
+                className="w-28 px-2 py-1.5 rounded-lg bg-bg-tertiary border border-border text-sm tabular-nums focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
               />
               <div className="flex gap-1">
                 {[10, 100, 1000, 10000].map((q) => (

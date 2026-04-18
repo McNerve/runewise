@@ -208,30 +208,29 @@ export default function Overview({ hiscores, rsn, lastFetched = null, onRefresh 
         )}
       </StatGrid>
 
-      {/* WOM stats: Rank, EHP, EHB */}
+      {/* Efficiency card — Rank + EHP + EHB in one row */}
       {(overallRank > 0 || (womPlayer?.ehp ?? 0) > 0 || (womPlayer?.ehb ?? 0) > 0) && (
-        <StatGrid columns={3} className="mb-6">
+        <div className="rounded-lg border border-border/60 bg-bg-primary/30 px-4 py-3 mb-6 flex flex-wrap items-center gap-4">
+          <span className="text-[10px] uppercase tracking-wider text-text-secondary/50">Efficiency</span>
           {overallRank > 0 && (
-            <StatCard
-              label="Overall Rank"
-              value={`#${overallRank.toLocaleString()}`}
-            />
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-sm font-semibold tabular-nums">#{overallRank.toLocaleString()}</span>
+              <span className="text-[10px] text-text-secondary/60">Overall Rank</span>
+            </div>
           )}
           {womPlayer?.ehp != null && womPlayer.ehp > 0 && (
-            <StatCard
-              label="EHP"
-              value={womPlayer.ehp.toFixed(0)}
-              title="Efficient Hours Played"
-            />
+            <div className="flex items-baseline gap-1.5" title="Efficient Hours Played">
+              <span className="text-sm font-semibold tabular-nums">{womPlayer.ehp.toFixed(0)}</span>
+              <span className="text-[10px] text-text-secondary/60">EHP</span>
+            </div>
           )}
           {womPlayer?.ehb != null && womPlayer.ehb > 0 && (
-            <StatCard
-              label="EHB"
-              value={womPlayer.ehb.toFixed(0)}
-              title="Efficient Hours Bossed"
-            />
+            <div className="flex items-baseline gap-1.5" title="Efficient Hours Bossed">
+              <span className="text-sm font-semibold tabular-nums">{womPlayer.ehb.toFixed(0)}</span>
+              <span className="text-[10px] text-text-secondary/60">EHB</span>
+            </div>
           )}
-        </StatGrid>
+        </div>
       )}
 
       {womPlayer?.type && womPlayer.type !== "regular" && (
@@ -259,6 +258,12 @@ export default function Overview({ hiscores, rsn, lastFetched = null, onRefresh 
         <span className="text-accent group-hover:translate-x-0.5 transition-transform">→</span>
       </button>
       {/* Skill grid — 3 columns, OSRS layout */}
+      {maxedSkills >= 24 && (
+        <div className="mb-3 rounded-lg border border-[#d4a017]/40 bg-[#d4a017]/8 px-4 py-2.5 flex items-center gap-2">
+          <img src={`${WIKI_IMG}/Max_cape.png`} alt="" className="w-5 h-5" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+          <span className="text-sm font-semibold text-[#d4a017]">All skills 99</span>
+        </div>
+      )}
       <div className="grid grid-cols-3 gap-1.5">
         {SKILL_ORDER.map((skillName) => {
           const skill = get(skillName);
@@ -269,6 +274,7 @@ export default function Overview({ hiscores, rsn, lastFetched = null, onRefresh 
                   (xpForLevel(skill.level + 1) - xpForLevel(skill.level))) *
                 100
               : 100;
+          const isMax = skill.level >= 99;
 
           return (
             <button
@@ -280,7 +286,7 @@ export default function Overview({ hiscores, rsn, lastFetched = null, onRefresh 
                 <WikiImage src={SKILL_ICONS[skillName]} alt="" className="w-4 h-4" fallback={skillName[0]} />
                 <span
                   className={`text-sm font-medium ${
-                    skill.level >= 99 ? "text-success" : ""
+                    isMax ? "text-success" : ""
                   }`}
                 >
                   {skill.level}
@@ -288,7 +294,7 @@ export default function Overview({ hiscores, rsn, lastFetched = null, onRefresh 
                 <span className="text-xs text-text-secondary group-hover:text-accent transition-colors">{skillName}</span>
               </div>
               <div className="flex items-center gap-2">
-                {skill.level < 99 ? (
+                {!isMax ? (
                   <>
                     {(() => {
                       const h = hoursTo99(skillName, skill.xp);
@@ -303,9 +309,9 @@ export default function Overview({ hiscores, rsn, lastFetched = null, onRefresh 
                       />
                     </div>
                   </>
-                ) : (
+                ) : maxedSkills < 24 ? (
                   <span className="text-[10px] text-success">MAX</span>
-                )}
+                ) : null}
               </div>
             </button>
           );

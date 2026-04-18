@@ -58,6 +58,53 @@ function StatCell({ value }: { value: number }) {
   );
 }
 
+/** Collapse crystal weapon colour variants — detect by name suffix matching known clans */
+const CRYSTAL_VARIANT_RE = /\s*\((Iorwerth|Trahaearn|Cadarn|Crwys|Meilyr|Amlodd|Ithell)\)$/i;
+
+function statKey(item: WikiEquipment): string {
+  return STAT_COLUMNS.map((c) => item[c.key]).join(",");
+}
+
+interface CollapsedRow {
+  primary: WikiEquipment;
+  variants: WikiEquipment[];
+}
+
+function collapseVariants(items: WikiEquipment[]): CollapsedRow[] {
+  const rows: CollapsedRow[] = [];
+  const consumed = new Set<string>();
+
+  for (const item of items) {
+    const key = `${item.name}:${item.version ?? ""}`;
+    if (consumed.has(key)) continue;
+
+    // Is this a crystal variant?
+    const variantMatch = item.name.match(CRYSTAL_VARIANT_RE);
+    if (variantMatch) {
+      // Find the canonical name (no clan suffix)
+      const baseName = item.name.replace(CRYSTAL_VARIANT_RE, "").trim();
+      const baseKey = statKey(item);
+      // Group all matching variants (same stat vector)
+      const siblings = items.filter((other) => {
+        const otherBase = other.name.replace(CRYSTAL_VARIANT_RE, "").trim();
+        return otherBase === baseName && statKey(other) === baseKey;
+      });
+      if (siblings.length > 1) {
+        siblings.forEach((s) => consumed.add(`${s.name}:${s.version ?? ""}`));
+        // Use the Iorwerth (first alphabetically) as primary, or the base name item
+        const primary = siblings[0];
+        const rest = siblings.slice(1);
+        rows.push({ primary: { ...primary, name: baseName }, variants: rest });
+        continue;
+      }
+    }
+
+    consumed.add(key);
+    rows.push({ primary: item, variants: [] });
+  }
+  return rows;
+}
+
 export default function GearCompare() {
   const { navigate } = useNavigation();
   const { data, loading, error, retry } = useAsyncData(fetchAllEquipment, []);
@@ -67,6 +114,7 @@ export default function GearCompare() {
   const [sortKey, setSortKey] = useState<SortKey>("strengthBonus");
   const [sortAsc, setSortAsc] = useState(false);
   const [selected, setSelected] = useState<WikiEquipment[]>([]);
+  const [expandedVariant, setExpandedVariant] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     return searchEquipment(allEquipment, query, selectedSlot, 500)
@@ -80,6 +128,8 @@ export default function GearCompare() {
       })
       .slice(0, 100);
   }, [allEquipment, query, selectedSlot, sortKey, sortAsc]);
+
+  const collapsedRows = useMemo(() => collapseVariants(filtered), [filtered]);
 
   function handleSort(key: SortKey) {
     if (sortKey === key) {
@@ -132,7 +182,7 @@ export default function GearCompare() {
         onChange={(e) => setQuery(e.target.value)}
         placeholder={`Search ${SLOT_LABELS[selectedSlot].toLowerCase()} items...`}
         aria-label={`Search ${SLOT_LABELS[selectedSlot].toLowerCase()} items`}
-        className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm mb-4"
+        className="w-full px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors mb-4"
       />
 
       {/* Comparison strip */}
@@ -146,6 +196,7 @@ export default function GearCompare() {
               <div key={`${item.name}-${i}`} className="bg-bg-tertiary rounded-lg p-3 relative">
                 <button
                   onClick={() => setSelected((prev) => prev.filter((_, j) => j !== i))}
+                  aria-label={`Remove ${item.name} from comparison`}
                   className="absolute top-1.5 right-1.5 text-text-secondary/40 hover:text-text-primary text-xs"
                 >
                   ✕
@@ -225,14 +276,18 @@ export default function GearCompare() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((item) => {
+              {collapsedRows.map(({ primary, variants }) => {
                 const isSelected = selected.some(
-                  (s) => s.name === item.name && s.version === item.version
+                  (s) => s.name === primary.name && s.version === primary.version
                 );
+                const hasVariants = variants.length > 0;
+                const variantKey = primary.name;
+                const isExpanded = expandedVariant === variantKey;
                 return (
+                  <>
                   <tr
-                    key={`${item.name}:${item.version ?? ""}`}
-                    onClick={() => toggleSelected(item)}
+                    key={`${primary.name}:${primary.version ?? ""}`}
+                    onClick={() => toggleSelected(primary)}
                     className={`border-b border-border/30 cursor-pointer transition-colors ${
                       isSelected
                         ? "bg-accent/8"
@@ -241,30 +296,60 @@ export default function GearCompare() {
                   >
                     <td className="px-2 py-1.5">
                       <img
-                        src={itemIcon(item.name)}
+                        src={itemIcon(primary.name)}
                         alt=""
                         className="w-5 h-5"
                         onError={(e) => {
                           const el = e.currentTarget;
-                          const detail = itemIcon(`${item.name} detail`);
+                          const detail = itemIcon(`${primary.name} detail`);
                           if (el.src !== detail) el.src = detail;
                           else el.style.display = "none";
                         }}
                       />
                     </td>
                     <td className="px-2 py-1.5 text-sm font-medium">
-                      <ItemTooltip itemName={item.name}><span className="cursor-default">{item.name}</span></ItemTooltip>
+                      <div className="flex items-center gap-2">
+                        <ItemTooltip itemName={primary.name}><span className="cursor-default">{primary.name}</span></ItemTooltip>
+                        {hasVariants && (
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); setExpandedVariant(isExpanded ? null : variantKey); }}
+                            className="text-[10px] text-accent/70 hover:text-accent border border-accent/20 rounded px-1 py-0.5 transition-colors"
+                            title={isExpanded ? "Hide variants" : `+${variants.length} colour variant${variants.length > 1 ? "s" : ""}`}
+                          >
+                            {isExpanded ? "▲" : `+${variants.length} variants`}
+                          </button>
+                        )}
+                      </div>
                     </td>
                     {STAT_COLUMNS.map((col) => (
-                      <StatCell key={col.key} value={item[col.key] as number} />
+                      <StatCell key={col.key} value={primary[col.key] as number} />
                     ))}
                   </tr>
+                  {hasVariants && isExpanded && variants.map((v) => (
+                    <tr
+                      key={`variant:${v.name}:${v.version ?? ""}`}
+                      onClick={() => toggleSelected(v)}
+                      className="border-b border-border/20 cursor-pointer bg-bg-primary/10 hover:bg-bg-secondary/40 transition-colors"
+                    >
+                      <td className="px-2 py-1 pl-4">
+                        <img src={itemIcon(v.name)} alt="" className="w-4 h-4" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                      </td>
+                      <td className="px-2 py-1 text-xs text-text-secondary pl-4">
+                        <ItemTooltip itemName={v.name}><span className="cursor-default">{v.name}</span></ItemTooltip>
+                      </td>
+                      {STAT_COLUMNS.map((col) => (
+                        <StatCell key={col.key} value={v[col.key] as number} />
+                      ))}
+                    </tr>
+                  ))}
+                  </>
                 );
               })}
             </tbody>
           </table>
           <div className="text-xs text-text-secondary/40 mt-2 text-right">
-            {filtered.length} items · Click rows to compare (max 3)
+            {collapsedRows.length} item{collapsedRows.length !== filtered.length ? ` (${filtered.length} total, variants collapsed)` : ""} · Click rows to compare (max 3)
           </div>
         </div>
       )}

@@ -133,7 +133,7 @@ export default function ProfitRankings() {
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search methods..."
           aria-label="Search profit methods"
-          className="flex-1 min-w-[180px] bg-bg-tertiary border border-border rounded-lg px-3 py-1.5 text-sm"
+          className="flex-1 min-w-[180px] px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
         />
         <div className="flex gap-1">
           {(

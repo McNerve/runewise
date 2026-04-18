@@ -155,6 +155,7 @@ function MarketDetail({
         </div>
         <button
           onClick={onClose}
+          aria-label="Close item details"
           className="text-text-secondary hover:text-text-primary text-lg leading-none"
         >
           ✕
