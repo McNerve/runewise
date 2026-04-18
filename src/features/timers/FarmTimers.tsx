@@ -422,7 +422,7 @@ export default function FarmTimers() {
                           return { ...prev, slots: updated };
                         });
                       }}
-                      className="flex-1 bg-bg-tertiary border border-border rounded px-2 py-1 text-xs"
+                      className="flex-1 px-2 py-1.5 rounded-lg bg-bg-tertiary border border-border text-xs focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
                     >
                       {slot.alternatives.map((alt) => (
                         <option key={alt.name} value={alt.name}>

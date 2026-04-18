@@ -203,7 +203,7 @@ export default function SkillCalculator({ hiscores }: Props) {
               min={0}
               value={currentXp}
               onChange={(e) => setCurrentXp(Number(e.target.value))}
-              className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm"
+              className="w-full px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
             />
             {currentLevel !== null && (
               <p className="text-xs text-text-secondary mt-1">
@@ -231,7 +231,7 @@ export default function SkillCalculator({ hiscores }: Props) {
                 max={126}
                 value={targetLevel}
                 onChange={(e) => handleTargetChange(Number(e.target.value))}
-                className="flex-1 bg-bg-tertiary border border-border rounded px-3 py-2 text-sm"
+                className="flex-1 px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
               />
               {currentLevel !== null && currentLevel < 99 && (
                 <button

@@ -29,7 +29,7 @@ export default function LoadoutManager({ state }: LoadoutManagerProps) {
             const preset = GEAR_PRESETS.find((p) => p.name === e.target.value);
             if (preset) applyPreset(preset);
           }}
-          className="w-full bg-bg-tertiary border border-border rounded-lg px-3 py-1.5 text-sm"
+          className="w-full px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
         >
           <option value="">Load a preset...</option>
           <optgroup label="Melee">
@@ -67,7 +67,7 @@ export default function LoadoutManager({ state }: LoadoutManagerProps) {
                 const l = loadouts.find((lo) => lo.name === e.target.value);
                 if (l) { applyLoadout(l); setActiveLoadout(l.name); }
               }}
-              className="flex-1 bg-bg-tertiary border border-border rounded-lg px-3 py-1.5 text-sm"
+              className="flex-1 px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
             >
               <option value="">Select loadout...</option>
               {loadouts.map((l) => (
@@ -91,7 +91,7 @@ export default function LoadoutManager({ state }: LoadoutManagerProps) {
               onKeyDown={(e) => e.key === "Enter" && saveLoadout()}
               placeholder="Save as..."
               aria-label="Loadout name"
-              className="flex-1 bg-bg-tertiary border border-border rounded-lg px-3 py-1.5 text-sm"
+              className="flex-1 px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
             />
             <button
               onClick={saveLoadout}

@@ -629,7 +629,7 @@ function ProfitCalculatorTab({
             <select
               value={selectedBoss?.bossName ?? ""}
               onChange={(e) => handleBossChange(e.target.value)}
-              className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm"
+              className="w-full px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
             >
               {wikiFallbackBoss ? (
                 <option value="" disabled>
@@ -651,7 +651,7 @@ function ProfitCalculatorTab({
               value={killsPerHour}
               onChange={(e) => setKillsPerHour(Math.max(1, Number(e.target.value)))}
               disabled={!selectedBoss}
-              className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm"
+              className="w-full px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
             />
           </div>
         </div>
