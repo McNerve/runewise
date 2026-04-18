@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo } from "react";
 import type { HiscoreData } from "../../lib/api/hiscores";
 import { generatePlan, type TrainingPreference } from "../../lib/formulas/trainingPlan";
 import { formatGp } from "../../lib/format";
@@ -46,21 +46,19 @@ interface LevelInputProps {
 
 function LevelInput({ value, min, max, hasGap, onCommit }: LevelInputProps) {
   const [draft, setDraft] = useState(String(value));
-  const lastSyncedValue = useRef(value);
+  const [syncedValue, setSyncedValue] = useState(value);
 
-  useEffect(() => {
-    if (value !== lastSyncedValue.current) {
-      setDraft(String(value));
-      lastSyncedValue.current = value;
-    }
-  }, [value]);
+  // Sync draft when parent pushes a new value (e.g. a preset button).
+  if (value !== syncedValue) {
+    setSyncedValue(value);
+    setDraft(String(value));
+  }
 
   const commit = (raw: string) => {
     const parsed = Number(raw);
     const next = Number.isFinite(parsed)
       ? Math.min(max, Math.max(min, Math.round(parsed)))
       : min;
-    lastSyncedValue.current = next;
     setDraft(String(next));
     if (next !== value) onCommit(next);
   };
@@ -69,7 +67,6 @@ function LevelInput({ value, min, max, hasGap, onCommit }: LevelInputProps) {
     const base = Number(draft);
     const from = Number.isFinite(base) ? base : value;
     const next = Math.min(max, Math.max(min, Math.round(from) + delta));
-    lastSyncedValue.current = next;
     setDraft(String(next));
     if (next !== value) onCommit(next);
   };
