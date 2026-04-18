@@ -1,10 +1,12 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   COMBAT_TASKS,
   COMBAT_TIERS,
   COMBAT_TIER_COUNTS,
+  type CombatTask,
   type CombatTier,
 } from "../../lib/data/combat-achievements";
+import { fetchAllCombatTasks, type WikiCombatTask } from "../../lib/api/combatTasks";
 import { useNavigation } from "../../lib/NavigationContext";
 import { findBossByName } from "../../lib/data/bosses";
 import EmptyState from "../../components/EmptyState";
@@ -42,6 +44,31 @@ const TIER_INACTIVE =
 
 const COMPLETED_KEY = "runewise_completed_combat_tasks";
 
+/**
+ * Merge wiki data with hardcoded tasks: wiki covers all 637 tasks, hardcoded
+ * entries hold boss-workspace link targets. We key by case-insensitive name.
+ */
+function mergeTasks(
+  wiki: WikiCombatTask[],
+  hardcoded: CombatTask[]
+): CombatTask[] {
+  const hardcodedByName = new Map<string, CombatTask>();
+  for (const task of hardcoded) {
+    hardcodedByName.set(task.name.toLowerCase(), task);
+  }
+
+  return wiki.map((w) => {
+    const hc = hardcodedByName.get(w.name.toLowerCase());
+    // Prefer hardcoded boss mapping (which aligns with BOSSES registry) when available
+    return {
+      name: w.name,
+      tier: w.tier,
+      boss: hc?.boss ?? w.boss,
+      description: w.description || hc?.description || "",
+    };
+  });
+}
+
 export default function CombatTasks() {
   const { params, navigate } = useNavigation();
   const [selectedTier, setSelectedTier] = useState<CombatTier>("Easy");
@@ -50,6 +77,27 @@ export default function CombatTasks() {
     () => new Set(loadJSON<string[]>(COMPLETED_KEY, []))
   );
   const [hideCompleted, setHideCompleted] = useState(false);
+  const [wikiTasks, setWikiTasks] = useState<CombatTask[] | null>(null);
+  const [wikiLoading, setWikiLoading] = useState(true);
+  const [wikiFailed, setWikiFailed] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchAllCombatTasks()
+      .then((tasks) => {
+        if (cancelled) return;
+        setWikiTasks(mergeTasks(tasks, COMBAT_TASKS));
+        setWikiLoading(false);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setWikiFailed(true);
+        setWikiLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   function toggleTask(taskName: string) {
     setCompletedTasks((prev) => {
@@ -61,13 +109,28 @@ export default function CombatTasks() {
     });
   }
 
-  const totalTasks = Object.values(COMBAT_TIER_COUNTS).reduce(
-    (sum, n) => sum + n,
-    0
-  );
+  const activeTasks: CombatTask[] = wikiTasks ?? COMBAT_TASKS;
+  const usingWiki = wikiTasks !== null;
+
+  const tierCountsActual = useMemo(() => {
+    const counts: Record<CombatTier, number> = {
+      Easy: 0,
+      Medium: 0,
+      Hard: 0,
+      Elite: 0,
+      Master: 0,
+      Grandmaster: 0,
+    };
+    for (const t of activeTasks) counts[t.tier]++;
+    return counts;
+  }, [activeTasks]);
+
+  const totalTasks = usingWiki
+    ? activeTasks.length
+    : Object.values(COMBAT_TIER_COUNTS).reduce((sum, n) => sum + n, 0);
 
   const tierTasks = useMemo(() => {
-    let tasks = COMBAT_TASKS.filter((t) => t.tier === selectedTier);
+    let tasks = activeTasks.filter((t) => t.tier === selectedTier);
 
     if (search.length >= 2) {
       const s = search.toLowerCase();
@@ -82,12 +145,12 @@ export default function CombatTasks() {
     if (hideCompleted) tasks = tasks.filter((t) => !completedTasks.has(t.name));
 
     return tasks;
-  }, [selectedTier, search, hideCompleted, completedTasks]);
+  }, [activeTasks, selectedTier, search, hideCompleted, completedTasks]);
 
   const tierCompletedCount = useMemo(() => {
-    const all = COMBAT_TASKS.filter((t) => t.tier === selectedTier);
+    const all = activeTasks.filter((t) => t.tier === selectedTier);
     return all.filter((t) => completedTasks.has(t.name)).length;
-  }, [selectedTier, completedTasks]);
+  }, [activeTasks, selectedTier, completedTasks]);
 
   const groupedByBoss = useMemo(() => {
     const groups: Record<string, typeof tierTasks> = {};
@@ -97,6 +160,10 @@ export default function CombatTasks() {
     }
     return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
   }, [tierTasks]);
+
+  const tierTotalForSelected = usingWiki
+    ? tierCountsActual[selectedTier]
+    : COMBAT_TIER_COUNTS[selectedTier];
 
   return (
     <div className="max-w-4xl">
@@ -110,8 +177,17 @@ export default function CombatTasks() {
           official API.
         </p>
         <p className="mt-2 text-xs text-text-secondary">
-          {totalTasks} total official tasks across 6 tiers. The list below is a curated in-app reference sample, not a synced completion tracker.
+          {wikiLoading
+            ? "Loading full task list from the OSRS Wiki…"
+            : usingWiki
+              ? `${totalTasks} tasks loaded from the OSRS Wiki across 6 tiers.`
+              : `Showing ${totalTasks} curated tasks — wiki unavailable.`}
         </p>
+        {wikiFailed && !usingWiki && (
+          <p className="mt-1 text-xs text-warning">
+            Could not reach the OSRS Wiki. Falling back to the curated sample.
+          </p>
+        )}
       </div>
 
       {/* Tier tabs */}
@@ -119,6 +195,9 @@ export default function CombatTasks() {
         {COMBAT_TIERS.map((tier) => {
           const isActive = selectedTier === tier;
           const colors = TIER_COLORS[tier];
+          const count = usingWiki
+            ? tierCountsActual[tier]
+            : COMBAT_TIER_COUNTS[tier];
           return (
             <button
               key={tier}
@@ -128,9 +207,7 @@ export default function CombatTasks() {
               }`}
             >
               {tier}
-              <span className="ml-1.5 opacity-60">
-                {COMBAT_TIER_COUNTS[tier]}
-              </span>
+              <span className="ml-1.5 opacity-60">{count}</span>
             </button>
           );
         })}
@@ -159,15 +236,12 @@ export default function CombatTasks() {
       {/* Task count for current tier */}
       <div className="section-kicker mb-3 flex items-center gap-2">
         <span>
-          Showing {tierTasks.length} of {COMBAT_TIER_COUNTS[selectedTier]}{" "}
+          Showing {tierTasks.length} of {tierTotalForSelected}{" "}
           {selectedTier} tasks
-          {tierTasks.length < COMBAT_TIER_COUNTS[selectedTier] && !search && !hideCompleted && (
-            <span className="opacity-50"> (representative sample)</span>
-          )}
         </span>
         {tierCompletedCount > 0 && (
           <span className="text-success opacity-70">
-            · {tierCompletedCount}/{COMBAT_TIER_COUNTS[selectedTier]} completed
+            · {tierCompletedCount}/{tierTotalForSelected} completed
           </span>
         )}
       </div>
@@ -222,13 +296,15 @@ export default function CombatTasks() {
                           : "border-border hover:border-accent"
                       }`}
                     >
-                      {completedTasks.has(task.name) && "✓"}
+                      {completedTasks.has(task.name) && "\u2713"}
                     </button>
                     <div className="flex-1">
                       <span className="text-sm font-medium">{task.name}</span>
-                      <p className="text-xs text-text-secondary mt-0.5">
-                        {task.description}
-                      </p>
+                      {task.description && (
+                        <p className="text-xs text-text-secondary mt-0.5">
+                          {task.description}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -238,7 +314,7 @@ export default function CombatTasks() {
         ))}
       </div>
 
-      {groupedByBoss.length === 0 && (
+      {groupedByBoss.length === 0 && !wikiLoading && (
         <EmptyState
           title="No tasks found"
           description={search ? `No tasks match "${search}"` : `No ${selectedTier} tasks available`}

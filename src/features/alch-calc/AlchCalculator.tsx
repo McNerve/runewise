@@ -17,15 +17,28 @@ interface AlchRow {
   roi: number;
 }
 
+const PAGE_SIZE = 50;
+
 export default function AlchCalculator() {
   const { mapping: items, prices, loading, fetchIfNeeded } = useGEData();
   const [error] = useState<string | null>(null);
 
-  const [minProfit, setMinProfit] = useState(0);
-  const [membersFilter, setMembersFilter] = useState<MembersFilter>("all");
-  const [minBuyLimit, setMinBuyLimit] = useState(0);
-  const [sortKey, setSortKey] = useState<SortKey>("profit");
-  const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [minProfit, setMinProfitRaw] = useState(0);
+  const [membersFilter, setMembersFilterRaw] = useState<MembersFilter>("all");
+  const [minBuyLimit, setMinBuyLimitRaw] = useState(0);
+  const [sortKey, setSortKeyRaw] = useState<SortKey>("profit");
+  const [sortDir, setSortDirRaw] = useState<SortDir>("desc");
+  const [page, setPage] = useState(0);
+
+  // Reset pagination when filters/sort change
+  const setMinProfit = (v: number) => { setMinProfitRaw(v); setPage(0); };
+  const setMembersFilter = (v: MembersFilter) => { setMembersFilterRaw(v); setPage(0); };
+  const setMinBuyLimit = (v: number) => { setMinBuyLimitRaw(v); setPage(0); };
+  const setSortKey = (v: SortKey) => { setSortKeyRaw(v); setPage(0); };
+  const setSortDir = (v: SortDir | ((prev: SortDir) => SortDir)) => {
+    setSortDirRaw(v);
+    setPage(0);
+  };
 
   useEffect(() => { fetchIfNeeded(); }, [fetchIfNeeded]);
 
@@ -89,8 +102,14 @@ export default function AlchCalculator() {
       return sortDir === "desc" ? -cmp : cmp;
     });
 
-    return result.slice(0, 200);
+    return result;
   }, [rows, minProfit, membersFilter, minBuyLimit, sortKey, sortDir]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const clampedPage = Math.min(page, totalPages - 1);
+  const pageStart = clampedPage * PAGE_SIZE;
+  const pageEnd = Math.min(pageStart + PAGE_SIZE, filtered.length);
+  const paginated = filtered.slice(pageStart, pageEnd);
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -196,7 +215,11 @@ export default function AlchCalculator() {
 
       <p className="text-xs text-text-secondary mb-2">
         {filtered.length} items
-        {filtered.length >= 200 && " (capped at 200)"}
+        {filtered.length > 0 && (
+          <>
+            {" "}— showing {pageStart + 1}-{pageEnd}
+          </>
+        )}
       </p>
 
       {filtered.length > 0 && (
@@ -249,7 +272,7 @@ export default function AlchCalculator() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((row) => (
+              {paginated.map((row) => (
                 <tr
                   key={row.item.id}
                   className="border-b border-border/50 even:bg-bg-primary/30 hover:bg-bg-tertiary transition-colors"
@@ -292,10 +315,30 @@ export default function AlchCalculator() {
               ))}
             </tbody>
           </table>
-          {filtered.length >= 200 && (
-            <p className="text-xs text-text-secondary text-center py-2">
-              Showing first 200 results. Use filters to narrow down.
-            </p>
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between gap-3 px-4 py-2 text-xs text-text-secondary border-t border-border">
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={clampedPage === 0}
+                className="px-2 py-1 rounded bg-bg-tertiary disabled:opacity-40 hover:bg-bg-primary transition-colors"
+              >
+                {"\u2190 Prev"}
+              </button>
+              <span>
+                Page {clampedPage + 1} of {totalPages}
+              </span>
+              <button
+                type="button"
+                onClick={() =>
+                  setPage((p) => Math.min(totalPages - 1, p + 1))
+                }
+                disabled={clampedPage >= totalPages - 1}
+                className="px-2 py-1 rounded bg-bg-tertiary disabled:opacity-40 hover:bg-bg-primary transition-colors"
+              >
+                {"Next \u2192"}
+              </button>
+            </div>
           )}
         </div>
       )}
