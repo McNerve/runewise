@@ -1,8 +1,10 @@
+import { useState, useEffect } from "react";
 import WikiImage from "../../components/WikiImage";
 
 interface StructuredSectionProps {
   title: string;
   html: string;
+  bossSlug?: string;
 }
 
 interface IconTextItem {
@@ -13,6 +15,46 @@ interface IconTextItem {
 interface LoadoutRow {
   slot: IconTextItem;
   options: IconTextItem[];
+}
+
+const GEAR_OWNED_KEY = "runewise_boss_gear_owned";
+
+function loadGearOwned(): Record<string, Record<string, boolean>> {
+  try {
+    return JSON.parse(localStorage.getItem(GEAR_OWNED_KEY) ?? "{}") as Record<string, Record<string, boolean>>;
+  } catch {
+    return {};
+  }
+}
+
+function saveGearOwned(data: Record<string, Record<string, boolean>>) {
+  try {
+    localStorage.setItem(GEAR_OWNED_KEY, JSON.stringify(data));
+  } catch {
+    // ignore
+  }
+}
+
+// Normalize a slot label to Title Case
+function titleCaseSlot(raw: string): string {
+  if (!raw) return "Slot";
+  const cleaned = raw
+    .replace(/\bweapon\b/gi, "weapon")
+    .replace(/\battack\b/gi, "attack")
+    .replace(/\bone[\s-]handed\b/gi, "One-handed weapon")
+    .replace(/\btwo[\s-]handed\b/gi, "Two-handed weapon");
+  return cleaned
+    .split(" ")
+    .map((word) => {
+      if (!word) return "";
+      // preserve hyphenated words like "One-handed"
+      if (word.includes("-")) {
+        return word.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join("-");
+      }
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    })
+    .join(" ")
+    .trim();
 }
 
 const INVALID_LOADOUT_LABELS = [
@@ -192,7 +234,7 @@ function RawHtmlFallback({ html, kind }: { html: string; kind: string | null }) 
   );
 }
 
-export default function StructuredSection({ title, html }: StructuredSectionProps) {
+export default function StructuredSection({ title, html, bossSlug }: StructuredSectionProps) {
   const kind = sectionKind(title);
   if (!kind) return null;
 
@@ -202,8 +244,13 @@ export default function StructuredSection({ title, html }: StructuredSectionProp
     const items = parseListItems(doc, title);
     if (items.length === 0) return <RawHtmlFallback html={html} kind={kind} />;
 
+    // Inline chips when <=2 items, grid otherwise
+    const layoutClass = items.length <= 2
+      ? "flex flex-wrap gap-2"
+      : "grid gap-2 sm:grid-cols-2 xl:grid-cols-3";
+
     return (
-      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+      <div className={layoutClass}>
         {items.map((item, index) => (
           <div
             key={`${title}-${index}`}
@@ -217,42 +264,89 @@ export default function StructuredSection({ title, html }: StructuredSectionProp
     );
   }
 
+  return <LoadoutTable title={title} html={html} doc={doc} bossSlug={bossSlug} />;
+}
+
+function LoadoutTable({ title, html, doc, bossSlug }: { title: string; html: string; doc: Document; bossSlug?: string }) {
   const rows = parseLoadoutRows(doc);
+
+  const [owned, setOwned] = useState<Record<string, boolean>>(() => {
+    if (!bossSlug) return {};
+    return loadGearOwned()[bossSlug] ?? {};
+  });
+
+  // Persist on change
+  useEffect(() => {
+    if (!bossSlug) return;
+    const all = loadGearOwned();
+    all[bossSlug] = owned;
+    saveGearOwned(all);
+  }, [owned, bossSlug]);
+
   if (rows.length === 0) return <RawHtmlFallback html={html} kind="loadout" />;
+
+  const toggleOwned = (slotKey: string) => {
+    setOwned((prev) => ({ ...prev, [slotKey]: !prev[slotKey] }));
+  };
 
   return (
     <div className="space-y-1">
-      {rows.map((row, index) => (
-        <div
-          key={`${title}-row-${index}`}
-          className="flex items-start gap-3 rounded-lg border border-border/40 bg-bg-primary/30 px-3 py-2.5"
-        >
-          {/* Slot label */}
-          <div className="flex shrink-0 items-center gap-2 w-28">
-            {renderIcon(row.slot.icon, row.slot.text, "sm")}
-            <span className="text-xs font-medium text-text-secondary truncate">{row.slot.text}</span>
-          </div>
-          {/* Item options */}
-          <div className="flex flex-wrap gap-1.5 min-w-0">
-            {row.options.map((option, optionIndex) => (
-              <div
-                key={`${title}-row-${index}-option-${optionIndex}`}
-                className={`flex items-center gap-1.5 rounded-lg border px-2 py-1 ${
-                  optionIndex === 0
-                    ? "border-accent/25 bg-accent/8"
-                    : "border-border/40 bg-bg-secondary/40"
-                }`}
-              >
-                {renderIcon(option.icon, option.text, "sm")}
-                <span className="text-xs text-text-primary truncate max-w-[160px]">{option.text}</span>
-                {optionIndex === 0 && (
-                  <span className="text-[9px] uppercase tracking-wide text-accent/70 font-semibold">Best</span>
-                )}
-              </div>
-            ))}
-          </div>
+      {/* Column header row */}
+      <div className="flex items-center gap-3 px-3 pb-1">
+        <div className="w-32 shrink-0" />
+        <div className="flex-1 text-[10px] uppercase tracking-[0.16em] text-text-secondary/40">
+          Recommended items
         </div>
-      ))}
+        <div className="w-8 shrink-0 text-center text-[10px] uppercase tracking-[0.16em] text-text-secondary/40">
+          Own
+        </div>
+      </div>
+      {rows.map((row, index) => {
+        const slotLabel = titleCaseSlot(row.slot.text);
+        const slotKey = slotLabel.toLowerCase().replace(/\s+/g, "-");
+        return (
+          <div
+            key={`${title}-row-${index}`}
+            className="flex items-start gap-3 rounded-lg border border-border/40 bg-bg-primary/30 px-3 py-2.5"
+          >
+            {/* Slot label — allow 2-line wrap, min-width to avoid truncation */}
+            <div className="flex shrink-0 items-start gap-2 w-32">
+              {renderIcon(row.slot.icon, row.slot.text, "sm")}
+              <span className="text-xs font-medium text-text-secondary leading-tight break-words whitespace-normal">{slotLabel}</span>
+            </div>
+            {/* Item options */}
+            <div className="flex flex-wrap gap-1.5 min-w-0 flex-1">
+              {row.options.map((option, optionIndex) => (
+                <div
+                  key={`${title}-row-${index}-option-${optionIndex}`}
+                  className={`flex items-center gap-1.5 rounded-lg border px-2 py-1 ${
+                    optionIndex === 0
+                      ? "border-accent/25 bg-accent/8"
+                      : "border-border/40 bg-bg-secondary/40"
+                  }`}
+                >
+                  {renderIcon(option.icon, option.text, "sm")}
+                  <span className="text-xs text-text-primary truncate max-w-[160px]">{option.text}</span>
+                  {optionIndex === 0 && (
+                    <span className="text-[9px] uppercase tracking-wide text-accent/70 font-semibold">Best</span>
+                  )}
+                </div>
+              ))}
+            </div>
+            {/* Ownership checkbox */}
+            <div className="flex w-8 shrink-0 items-center justify-center pt-0.5">
+              <input
+                type="checkbox"
+                checked={owned[slotKey] ?? false}
+                onChange={() => toggleOwned(slotKey)}
+                aria-label={`Mark ${slotLabel} item as owned`}
+                title="Track items you own"
+                className="h-4 w-4 cursor-pointer accent-accent"
+              />
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
