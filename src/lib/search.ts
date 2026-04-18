@@ -43,6 +43,38 @@ export function sortByFrequency(results: SearchResult[]): SearchResult[] {
   return [...results].sort((a, b) => (freq[freqKey(b)] ?? 0) - (freq[freqKey(a)] ?? 0));
 }
 
+// Static weakness tokens for bosses — searchable facets without async wiki fetches.
+const BOSS_WEAKNESS: Record<string, string> = {
+  "Zulrah": "magic ranged",
+  "Vorkath": "ranged",
+  "General Graardor": "magic ranged",
+  "Kree'arra": "ranged",
+  "Commander Zilyana": "melee ranged",
+  "K'ril Tsutsaroth": "melee",
+  "Dagannoth Rex": "magic",
+  "Dagannoth Prime": "ranged",
+  "Dagannoth Supreme": "melee",
+  "Corporeal Beast": "melee spear",
+  "Cerberus": "melee",
+  "Alchemical Hydra": "ranged magic",
+  "Grotesque Guardians": "melee",
+  "Kraken": "magic",
+  "Thermonuclear Smoke Devil": "ranged",
+  "Abyssal Sire": "magic ranged",
+  "Kalphite Queen": "melee magic ranged",
+  "The Gauntlet": "magic ranged melee",
+  "Corrupted Gauntlet": "magic ranged melee",
+  "Sarachnis": "melee ranged",
+  "Phantom Muspah": "magic ranged",
+  "Duke Sucellus": "ranged crush",
+  "The Leviathan": "ranged melee",
+  "Vardorvis": "melee",
+  "The Whisperer": "magic",
+  "Araxxor": "melee ranged magic",
+  "Amoxliatl": "melee ranged",
+  "Hueycoatl": "ranged magic",
+};
+
 // ── Index builder ─────────────────────────────────────────────────────────────
 
 export async function buildSearchIndex(): Promise<SearchResult[]> {
@@ -67,6 +99,34 @@ export async function buildSearchIndex(): Promise<SearchResult[]> {
     }))
   );
 
+  // Progress sub-tabs
+  results.push(
+    {
+      name: "Quest Tracker",
+      category: "Guides",
+      kind: "Sub-tab",
+      searchText: "quest tracker progress quests completion",
+      view: "progress",
+      params: { tab: "quests" },
+    },
+    {
+      name: "Diary Tracker",
+      category: "Guides",
+      kind: "Sub-tab",
+      searchText: "diary tracker achievement diaries progress",
+      view: "progress",
+      params: { tab: "diaries" },
+    },
+    {
+      name: "What Can I Do?",
+      category: "Guides",
+      kind: "Sub-tab",
+      searchText: "what can i do unlock eligible quests progress",
+      view: "progress",
+      params: { tab: "unlock" },
+    }
+  );
+
   results.push({
     name: "Search items in Market",
     category: "Shortcut",
@@ -89,13 +149,15 @@ export async function buildSearchIndex(): Promise<SearchResult[]> {
     });
   }
 
-  // ── Bosses ─────────────────────────────────────────────────────────────────
+  // ── Bosses (with weakness facet) ───────────────────────────────────────────
   for (const boss of BOSSES) {
+    const weakness = BOSS_WEAKNESS[boss.name] ?? boss.weakness ?? "";
+    const weaknessText = weakness ? `weak to ${weakness} weakness ${weakness}` : "";
     results.push({
       name: boss.name,
       category: "Boss",
       kind: "Workspace",
-      searchText: `${boss.name} boss guide drops tasks combat`,
+      searchText: `${boss.name} boss guide drops tasks combat ${weaknessText}`,
       view: "bosses",
       params: { boss: boss.name },
       icon: bossIcon(boss.name),
