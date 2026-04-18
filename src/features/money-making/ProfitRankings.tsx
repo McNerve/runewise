@@ -45,7 +45,7 @@ function methodToEntry(m: MoneyMethod): ProfitEntry {
   };
 }
 
-export default function ProfitHub() {
+export default function ProfitRankings() {
   const { navigate } = useNavigation();
   const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
   const [pricesLoaded, setPricesLoaded] = useState(false);

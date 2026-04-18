@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from "react";
+import { useState, useEffect } from "react";
 import { type HiscoreData } from "../../lib/api/hiscores";
 import { fetchWomPlayer, type WomPlayer } from "../../lib/api/wom";
 import { xpForLevel } from "../../lib/formulas/xp";
@@ -7,11 +7,6 @@ import { WIKI_IMG, SKILL_ICONS, NAV_ICONS, bossIconSmall, bossIcon, itemIcon } f
 import { useNavigation } from "../../lib/NavigationContext";
 import WikiImage from "../../components/WikiImage";
 import { TRAINING_METHODS } from "../../lib/data/training-methods";
-import QuestTracker from "../quests/QuestTracker";
-import DiaryTracker from "../diaries/DiaryTracker";
-const CombatTasks = lazy(() => import("../combat-tasks/CombatTasks"));
-
-type ProfileTab = "overview" | "quests" | "diaries" | "combat" | "unlock";
 
 function ProgressRing({ obtained, total, size = 22 }: { obtained: number; total: number; size?: number }) {
   const pct = total > 0 ? obtained / total : 0;
@@ -59,15 +54,8 @@ const SKILL_ORDER = [
 ];
 
 export default function Overview({ hiscores, rsn }: Props) {
-  const { navigate, params } = useNavigation();
+  const { navigate } = useNavigation();
   const [womPlayer, setWomPlayer] = useState<WomPlayer | null>(null);
-  const initialTab: ProfileTab =
-    params.tab === "quests" ? "quests" :
-    params.tab === "diaries" ? "diaries" :
-    params.tab === "combat" ? "combat" :
-    params.tab === "unlock" ? "unlock" :
-    "overview";
-  const [profileTab, setProfileTab] = useState<ProfileTab>(initialTab);
 
   useEffect(() => {
     if (!rsn) return;
@@ -111,7 +99,6 @@ export default function Overview({ hiscores, rsn }: Props) {
   const questPoints = hiscores.activities?.find(
     (a) => a.name === "Quest Points"
   )?.score ?? null;
-
 
   const clueTiers = ["beginner", "easy", "medium", "hard", "elite", "master"].map((tier) => ({
     tier,
@@ -245,47 +232,24 @@ export default function Overview({ hiscores, rsn }: Props) {
         )}
       </div>
 
-      {/* Profile sub-tabs */}
-      <div className="flex gap-1 mb-5 overflow-x-auto justify-center">
-        {([
-          { id: "overview" as const, label: "Overview", icon: `${WIKI_IMG}/Stats_icon.png` },
-          { id: "quests" as const, label: `Quests${questPoints ? ` (${questPoints} QP)` : ""}`, icon: `${WIKI_IMG}/Quest_point_icon.png` },
-          { id: "diaries" as const, label: "Diaries", icon: `${WIKI_IMG}/Achievement_Diaries_icon.png` },
-          { id: "combat" as const, label: "Combat Tasks", icon: `${WIKI_IMG}/Combat_Achievements_icon.png` },
-        ]).map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setProfileTab(tab.id)}
-            aria-pressed={profileTab === tab.id}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
-              profileTab === tab.id
-                ? "bg-accent text-white"
-                : "text-text-secondary hover:bg-bg-secondary/50"
-            }`}
-          >
-            <img src={tab.icon} alt="" className="w-4 h-4" onError={(e) => { e.currentTarget.style.display = "none"; }} />
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      {/* CTA: deep-link to Progress page */}
+      <button
+        onClick={() => navigate("progress")}
+        className="w-full mb-5 flex items-center justify-between gap-3 px-4 py-3 rounded-lg bg-bg-secondary/60 hover:bg-bg-secondary border border-border/60 hover:border-accent/40 transition-colors text-left group"
+      >
+        <div className="flex items-center gap-3">
+          <img src={`${WIKI_IMG}/Quest_point_icon.png`} alt="" className="w-5 h-5" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+          <div>
+            <div className="text-sm font-medium">
+              View quests, diaries, and combat tasks
+              {questPoints ? <span className="text-text-secondary font-normal"> · {questPoints} QP</span> : null}
+            </div>
+            <div className="text-xs text-text-secondary">Track progress in one place</div>
+          </div>
+        </div>
+        <span className="text-accent group-hover:translate-x-0.5 transition-transform">→</span>
+      </button>
 
-      {/* ── Sub-tab: Quests ── */}
-      {profileTab === "quests" && <QuestTracker hiscores={hiscores} />}
-
-      {/* ── Sub-tab: Diaries ── */}
-      {profileTab === "diaries" && <DiaryTracker hiscores={hiscores} />}
-
-      {/* ── Sub-tab: Combat Tasks ── */}
-      {profileTab === "combat" && (
-        <Suspense fallback={<div className="py-8 text-center"><div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4 mx-auto" /></div>}>
-          <CombatTasks />
-        </Suspense>
-      )}
-
-
-      {/* ── Sub-tab: Overview (skills, bosses, etc.) ── */}
-      {profileTab === "overview" && (
-      <>
       {/* Skill grid — 3 columns, OSRS layout */}
       <div className="grid grid-cols-3 gap-1.5">
         {SKILL_ORDER.map((skillName) => {
@@ -449,9 +413,6 @@ export default function Overview({ hiscores, rsn }: Props) {
             ))}
           </div>
         </div>
-      )}
-
-      </>
       )}
     </div>
   );
