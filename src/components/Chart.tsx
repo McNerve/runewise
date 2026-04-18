@@ -10,7 +10,7 @@ import {
   type HistogramData,
   type Time,
   CandlestickSeries,
-  LineSeries,
+  AreaSeries,
   HistogramSeries,
 } from "lightweight-charts";
 
@@ -19,6 +19,19 @@ interface ChartProps {
   volumeData?: HistogramData<Time>[];
   type?: "line" | "candlestick";
   height?: number;
+}
+
+const GOLD = "#d4a574";
+const GOLD_UP = "#d4a574";
+const GOLD_DOWN = "#b94d3a";
+
+function resolveAccent(): string {
+  if (typeof document === "undefined") return GOLD;
+  return (
+    getComputedStyle(document.documentElement)
+      .getPropertyValue("--color-accent")
+      .trim() || GOLD
+  );
 }
 
 export default function Chart({
@@ -35,19 +48,22 @@ export default function Chart({
   useEffect(() => {
     if (!containerRef.current) return;
 
+    const accent = resolveAccent();
+
     const chart = createChart(containerRef.current, {
       height,
       layout: {
         background: { type: ColorType.Solid, color: "transparent" },
         textColor: "#a1a1aa",
+        attributionLogo: false,
       },
       grid: {
         vertLines: { color: "#2e334520" },
         horzLines: { color: "#2e334520" },
       },
       crosshair: {
-        vertLine: { color: "#3b82f680", width: 1, labelBackgroundColor: "#3b82f6" },
-        horzLine: { color: "#3b82f680", width: 1, labelBackgroundColor: "#3b82f6" },
+        vertLine: { color: `${accent}80`, width: 1, labelBackgroundColor: accent },
+        horzLine: { color: `${accent}80`, width: 1, labelBackgroundColor: accent },
       },
       timeScale: {
         borderColor: "#2e3345",
@@ -70,17 +86,19 @@ export default function Chart({
     let series: ISeriesApi<SeriesType>;
     if (type === "candlestick") {
       series = chart.addSeries(CandlestickSeries, {
-        upColor: "#22c55e",
-        downColor: "#ef4444",
-        borderUpColor: "#22c55e",
-        borderDownColor: "#ef4444",
-        wickUpColor: "#22c55e",
-        wickDownColor: "#ef4444",
+        upColor: GOLD_UP,
+        downColor: GOLD_DOWN,
+        borderUpColor: GOLD_UP,
+        borderDownColor: GOLD_DOWN,
+        wickUpColor: GOLD_UP,
+        wickDownColor: GOLD_DOWN,
       });
     } else {
-      series = chart.addSeries(LineSeries, {
-        color: "#3b82f6",
+      series = chart.addSeries(AreaSeries, {
+        lineColor: accent,
         lineWidth: 2,
+        topColor: "rgba(212, 165, 116, 0.28)",
+        bottomColor: "rgba(212, 165, 116, 0)",
       });
     }
     series.setData(data);
@@ -88,7 +106,7 @@ export default function Chart({
 
     if (volumeData && volumeData.length > 0) {
       const vol = chart.addSeries(HistogramSeries, {
-        color: "#3b82f630",
+        color: `${GOLD_UP}30`,
         priceFormat: { type: "volume" },
         priceScaleId: "volume",
       });
