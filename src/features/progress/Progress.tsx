@@ -8,14 +8,16 @@ import { NAV_ICONS } from "../../lib/sprites";
 
 const CombatTasks = lazy(() => import("../combat-tasks/CombatTasks"));
 const QuestUnlock = lazy(() => import("./components/QuestUnlock"));
+const QuestMap = lazy(() => import("../quest-map/QuestMap"));
 
-type Tab = "quests" | "diaries" | "combat-tasks" | "unlock";
+type Tab = "quests" | "diaries" | "combat-tasks" | "unlock" | "quest-map";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "quests", label: "Quests" },
   { id: "diaries", label: "Diaries" },
   { id: "combat-tasks", label: "Combat Tasks" },
   { id: "unlock", label: "What Can I Do?" },
+  { id: "quest-map", label: "Quest Map" },
 ];
 
 interface Props {
@@ -23,7 +25,7 @@ interface Props {
 }
 
 function resolveTab(raw: string | undefined): Tab {
-  if (raw === "diaries" || raw === "combat-tasks" || raw === "unlock") return raw;
+  if (raw === "diaries" || raw === "combat-tasks" || raw === "unlock" || raw === "quest-map") return raw;
   return "quests";
 }
 
@@ -73,6 +75,11 @@ export default function Progress({ hiscores }: Props) {
           title="No hiscores loaded"
           description="Look up your RSN above to see which quests you can tackle."
         />
+      )}
+      {activeTab === "quest-map" && (
+        <Suspense fallback={<div className="py-8 text-center"><div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4 mx-auto" /></div>}>
+          <QuestMap />
+        </Suspense>
       )}
     </div>
   );
