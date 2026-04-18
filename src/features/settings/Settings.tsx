@@ -326,6 +326,20 @@ export default function Settings() {
               label="Ironman mode"
             />
           </div>
+
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <span className="text-sm font-medium text-text-primary">Show Leagues Spells</span>
+              <p className="mt-0.5 text-xs text-text-secondary/70">
+                Include Leagues-exclusive spells (e.g. Leagues Home Teleport) in the Spells tool.
+              </p>
+            </div>
+            <ToggleSwitch
+              checked={settings.showLeagueSpells}
+              onChange={() => update({ showLeagueSpells: !settings.showLeagueSpells })}
+              label="Show leagues spells"
+            />
+          </div>
         </div>
       </SettingsCard>
 

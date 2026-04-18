@@ -14,6 +14,7 @@ import { useGEData } from "../../hooks/useGEData";
 import { useNavigation } from "../../lib/NavigationContext";
 import { formatGp } from "../../lib/format";
 import { WIKI_IMG } from "../../lib/sprites";
+import { useSettings } from "../../hooks/useSettings";
 
 const BOOKS: { id: Spellbook; label: string; description: string }[] = [
   { id: "normal", label: "Standard", description: "Core combat & utility" },
@@ -132,6 +133,7 @@ export default function Spells() {
   const { navigate } = useNavigation();
   const { data, loading, error, retry } = useAsyncData(fetchAllSpells, []);
   const { mapping, prices, fetchIfNeeded } = useGEData();
+  const { settings } = useSettings();
   const allSpells = useMemo(() => data ?? [], [data]);
   const [activeBook, setActiveBook] = useState<Spellbook>("normal");
   const [query, setQuery] = useState("");
@@ -169,12 +171,15 @@ export default function Spells() {
 
   const spells = useMemo(() => {
     let filtered = getSpellsByBook(allSpells, activeBook);
+    if (!settings.showLeagueSpells) {
+      filtered = filtered.filter((s) => !s.name.toLowerCase().includes("leagues"));
+    }
     if (query.trim()) {
       const lower = query.toLowerCase();
       filtered = filtered.filter((s) => s.name.toLowerCase().includes(lower));
     }
     return filtered;
-  }, [allSpells, activeBook, query]);
+  }, [allSpells, activeBook, query, settings.showLeagueSpells]);
 
   const bookCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -230,7 +235,7 @@ export default function Spells() {
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Search spells..."
         aria-label="Search spells"
-        className="w-full bg-bg-tertiary border border-border rounded-xl px-4 py-2.5 text-sm"
+        className="w-full px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
       />
 
       {/* Content */}
@@ -303,7 +308,7 @@ export default function Spells() {
                       )}
                     </td>
                     <td className="px-4 py-2 text-right text-xs tabular-nums text-text-secondary align-top">
-                      {spell.level}
+                      {spell.level > 0 ? spell.level : <span className="text-text-secondary/40">—</span>}
                     </td>
                     <td className="px-4 py-2 text-right text-xs tabular-nums text-text-secondary align-top">
                       {spell.xp > 0 ? spell.xp : "—"}

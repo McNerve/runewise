@@ -13,6 +13,7 @@ export interface AppSettings {
   notifications: { priceAlerts: boolean };
   sidebar: { collapsed: boolean; pinned: string[] };
   ironmanMode: boolean;
+  showLeagueSpells: boolean;
 }
 
 // Safe Cmd/Ctrl keybinds — avoids system shortcuts (C/X/V/Z/A/S/Q/W/F/R/N/P/O/H/L)
@@ -51,6 +52,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   notifications: { priceAlerts: true },
   sidebar: { collapsed: false, pinned: [] },
   ironmanMode: false,
+  showLeagueSpells: false,
 };
 
 export function loadSettings(): AppSettings {
@@ -63,6 +65,7 @@ export function loadSettings(): AppSettings {
     sidebar: { ...DEFAULT_SETTINGS.sidebar, ...saved.sidebar },
     keybindsEnabled: saved.keybindsEnabled ?? true,
     ironmanMode: saved.ironmanMode ?? false,
+    showLeagueSpells: saved.showLeagueSpells ?? false,
   };
 }
 
