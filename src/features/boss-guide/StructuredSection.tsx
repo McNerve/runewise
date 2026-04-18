@@ -29,7 +29,8 @@ const INVALID_LOADOUT_LABELS = [
   "mage",
 ] as const;
 
-// Threshold: items with text longer than this are likely descriptions, not requirements
+// Threshold: items with text longer than this are likely prose descriptions.
+// Items with an icon are kept regardless of length (scraper could resolve them).
 const MAX_REQUIREMENT_LENGTH = 80;
 
 function normalizeText(value: string) {
@@ -44,6 +45,11 @@ function parseDocument(html: string) {
   return parser.parseFromString(html, "text/html");
 }
 
+/** True when the item text looks like a scraper-fallback "Unknown N+" sentinel. */
+function isUnknownSentinel(text: string): boolean {
+  return /^unknown\s+\d+\+?$/i.test(text.trim());
+}
+
 function parseListItems(doc: Document, title: string): IconTextItem[] {
   const items = Array.from(doc.querySelectorAll("li, p"))
     .map((node) => ({
@@ -52,7 +58,10 @@ function parseListItems(doc: Document, title: string): IconTextItem[] {
     }))
     .filter((item) => item.text.length > 0)
     .filter((item) => item.text.toLowerCase() !== title.trim().toLowerCase())
-    // Filter out long description paragraphs — keep only actual requirements/skills
+    // Drop "Unknown N+" sentinels — they come from failed skill extraction
+    .filter((item) => !isUnknownSentinel(item.text))
+    // Keep items that have an icon or are short enough to be actual requirements/skills.
+    // Long prose without an icon is treated as a fallback description — rendered differently.
     .filter((item) => item.text.length <= MAX_REQUIREMENT_LENGTH || item.icon !== null);
 
   return items;
