@@ -292,8 +292,12 @@ function NotificationsCard() {
   }, []);
 
   const fireTest = async () => {
-    await sendNotification("RuneWise test", "Notifications are working");
-    setTestStatus(denied ? "denied" : "sent");
+    try {
+      const sent = await sendNotification("RuneWise test", "Notifications are working");
+      setTestStatus(sent ? "sent" : "denied");
+    } catch {
+      setTestStatus("denied");
+    }
     setTimeout(() => setTestStatus("idle"), 3000);
   };
 

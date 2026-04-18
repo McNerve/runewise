@@ -64,9 +64,9 @@ async function resolvePermission(): Promise<boolean> {
   return permissionState === "granted";
 }
 
-export async function sendNotification(title: string, body: string): Promise<void> {
+export async function sendNotification(title: string, body: string): Promise<boolean> {
   const granted = await resolvePermission();
-  if (!granted) return;
+  if (!granted) return false;
 
   if (isTauri) {
     try {
@@ -74,7 +74,7 @@ export async function sendNotification(title: string, body: string): Promise<voi
         "@tauri-apps/plugin-notification"
       );
       await tauriNotify({ title, body });
-      return;
+      return true;
     } catch {
       // Fallback to browser API
     }
@@ -82,5 +82,8 @@ export async function sendNotification(title: string, body: string): Promise<voi
 
   if ("Notification" in window && Notification.permission === "granted") {
     new Notification(title, { body });
+    return true;
   }
+
+  return false;
 }
