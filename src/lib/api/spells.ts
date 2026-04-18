@@ -13,7 +13,7 @@ const SPELL_FIELDS = [
   "json",
 ] as const;
 
-interface RawBucketSpell {
+export interface RawBucketSpell {
   [key: string]: unknown;
   page_name: string;
   image?: string;
@@ -57,7 +57,7 @@ function normalizeSpellbook(raw: string | undefined): Spellbook {
   return "normal";
 }
 
-function toWikiSpell(raw: RawBucketSpell): WikiSpell | null {
+export function toWikiSpell(raw: RawBucketSpell): WikiSpell | null {
   let json: SpellJson | null = null;
   if (raw.json) {
     try {
