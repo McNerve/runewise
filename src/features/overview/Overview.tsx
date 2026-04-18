@@ -9,6 +9,7 @@ import WikiImage from "../../components/WikiImage";
 import { StatGrid, StatCard } from "../../components/primitives";
 import { TRAINING_METHODS } from "../../lib/data/training-methods";
 import FreshnessStrip from "../../components/FreshnessStrip";
+import { BOSSES } from "../../lib/data/bosses";
 
 function ProgressRing({ obtained, total, size = 22 }: { obtained: number; total: number; size?: number }) {
   const pct = total > 0 ? obtained / total : 0;
@@ -110,6 +111,14 @@ export default function Overview({ hiscores, rsn, lastFetched = null, onRefresh 
     tier,
     count: hiscores.activities?.find((a) => a.name.toLowerCase() === `clue scrolls (${tier})`)?.score ?? 0,
   })).filter((c) => c.count > 0);
+
+  const BOSS_WEAKNESS: Record<string, string> = Object.fromEntries(
+    BOSSES.filter((b) => b.weakness).flatMap((b) => {
+      const entries: [string, string][] = [[b.name.toLowerCase(), b.weakness as string]];
+      if (b.hiscoresName) entries.push([b.hiscoresName.toLowerCase(), b.weakness as string]);
+      return entries;
+    })
+  );
 
   const NON_BOSS = ["Clue", "Points", "Rank", "Zeal", "Rifts", "Glory", "Collections", "Grid", "League", "Deadman", "Bounty", "LMS"];
   const bossActivities = hiscores.activities?.filter((a) =>
@@ -394,45 +403,54 @@ export default function Overview({ hiscores, rsn, lastFetched = null, onRefresh 
               Boss Kill Counts
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
-              {visibleBosses.map((boss) => (
-                <button
-                  key={boss.name}
-                  onClick={() => {
-                    // Store KC in sessionStorage for Dry Calc prefill
-                    sessionStorage.setItem("runewise_pending_kc", JSON.stringify({ boss: boss.name, kc: boss.score }));
-                    navigate("bosses", { boss: boss.name });
-                  }}
-                  className="bg-bg-secondary rounded px-2 py-2 hover:bg-bg-tertiary transition-colors flex items-center gap-2"
-                >
-                  <div className="w-6 h-6 shrink-0 relative">
-                    <img
-                      src={bossIconSmall(boss.name)}
-                      alt=""
-                      className="w-6 h-6 rounded"
-                      onError={(e) => {
-                        // Try the large icon as fallback
-                        const fallback = bossIcon(boss.name);
-                        if (e.currentTarget.src !== fallback) {
-                          e.currentTarget.src = fallback;
-                        } else {
-                          e.currentTarget.style.display = "none";
-                          const sib = e.currentTarget.nextElementSibling as HTMLElement;
-                          if (sib) sib.style.display = "flex";
-                        }
-                      }}
-                    />
-                    <div
-                      className="w-6 h-6 rounded bg-bg-tertiary text-[10px] font-bold text-text-secondary items-center justify-center hidden"
-                    >
-                      {boss.name[0]}
+              {visibleBosses.map((boss) => {
+                const weakness = BOSS_WEAKNESS[boss.name.toLowerCase()];
+                return (
+                  <button
+                    key={boss.name}
+                    onClick={() => {
+                      // Store KC in sessionStorage for Dry Calc prefill when user jumps into Boss Guide
+                      sessionStorage.setItem("runewise_pending_kc", JSON.stringify({ boss: boss.name, kc: boss.score }));
+                      navigate("bosses", { boss: boss.name });
+                    }}
+                    className="bg-bg-secondary rounded px-2 py-2 hover:bg-bg-tertiary transition-colors flex items-center gap-2"
+                  >
+                    <div className="w-6 h-6 shrink-0 relative">
+                      <img
+                        src={bossIconSmall(boss.name)}
+                        alt=""
+                        className="w-6 h-6 rounded"
+                        onError={(e) => {
+                          const fallback = bossIcon(boss.name);
+                          if (e.currentTarget.src !== fallback) {
+                            e.currentTarget.src = fallback;
+                          } else {
+                            e.currentTarget.style.display = "none";
+                            const sib = e.currentTarget.nextElementSibling as HTMLElement;
+                            if (sib) sib.style.display = "flex";
+                          }
+                        }}
+                      />
+                      <div
+                        className="w-6 h-6 rounded bg-bg-tertiary text-[10px] font-bold text-text-secondary items-center justify-center hidden"
+                      >
+                        {boss.name[0]}
+                      </div>
                     </div>
-                  </div>
-                  <div className="min-w-0 text-left">
-                    <div className="text-sm font-bold">{boss.score.toLocaleString()}</div>
-                    <div className="text-[10px] text-text-secondary truncate" title={boss.name}>{boss.name}</div>
-                  </div>
-                </button>
-              ))}
+                    <div className="min-w-0 text-left flex-1">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-sm font-bold">{boss.score.toLocaleString()}</span>
+                        {weakness && (
+                          <span className="px-1.5 py-0.5 rounded-full text-[9px] font-medium bg-amber-500/15 text-amber-400 border border-amber-500/20 leading-none">
+                            {weakness}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[10px] text-text-secondary truncate" title={boss.name}>{boss.name}</div>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
             {hasMore && (
               <button
