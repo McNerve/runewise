@@ -57,7 +57,6 @@ function extractWeaknessFromSummary(summary: string | undefined): string | null 
 function normalizeBossSlug(name: string): string {
   return name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
 }
->>>>>>> worktree-agent-a764fb95
 import { openExternal } from "../../lib/openExternal";
 import { formatGp } from "../../lib/format";
 import FreshnessStrip from "../../components/FreshnessStrip";

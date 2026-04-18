@@ -67,23 +67,6 @@ function titleCaseSlot(raw: string): string {
     .trim();
 }
 
-const INVALID_LOADOUT_LABELS = [
-  "n/a",
-  "see ranged",
-  "see melee",
-  "see magic",
-  "see mage",
-  "see inventory",
-  "see equipment",
-  "ranged",
-  "melee",
-  "magic",
-  "mage",
-] as const;
-
-// Threshold: items with text longer than this are likely descriptions, not requirements
-const MAX_REQUIREMENT_LENGTH = 80;
-
 function normalizeText(value: string) {
   return value
     .replace(/\s+/g, " ")
