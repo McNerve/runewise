@@ -204,6 +204,15 @@ export function useDpsState({ hiscores }: Props) {
     }
   }, [hiscores]);
 
+  // Handle style param from cross-nav (e.g. from boss guide weakness chip)
+  useEffect(() => {
+    const s = params.style;
+    if (!s) return;
+    if (s === "melee" || s === "ranged" || s === "magic") {
+      setCombatStyle(s);
+    }
+  }, [params.style]);
+
   // Handle monster param from cross-nav. Syncing state from an external URL
   // param is a legitimate effect use.
   useEffect(() => {

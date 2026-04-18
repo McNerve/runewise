@@ -9,6 +9,13 @@ interface BossMetaCardProps {
   maxHit?: number;
   weakness?: string | null;
   hiscores?: HiscoreData | null;
+  /** Structured infobox fields exposed by the scraper, if available */
+  infobox?: {
+    weakness?: string;
+    recommendedApproach?: string;
+    teamSize?: string;
+    notableItems?: string[];
+  } | null;
 }
 
 const TEAM_LABELS: Record<string, string> = {
@@ -44,7 +51,12 @@ export default function BossMetaCard({
   maxHit,
   weakness,
   hiscores,
+  infobox,
 }: BossMetaCardProps) {
+  // combatLevel, hitpoints, weakness retained in type for forward-compat — shown in hero row above
+  void combatLevel;
+  void hitpoints;
+  void weakness;
   const playerSlayer = hiscores ? getSkillLevel(hiscores, "Slayer") : null;
   const playerCombat = hiscores
     ? calcCombatLevel({
@@ -81,28 +93,13 @@ export default function BossMetaCard({
         <span className="px-2.5 py-0.5 rounded-lg text-xs font-medium bg-bg-tertiary text-text-secondary">
           {TEAM_LABELS[meta.teamSize] ?? meta.teamSize}
         </span>
-        {combatLevel != null && combatLevel > 0 && (
+        {maxHit != null && maxHit > 0 && (
           <>
             <Divider />
             <span className="text-xs text-text-secondary">
-              Lv <span className="text-text-primary font-medium">{combatLevel}</span>
+              Max <span className="text-danger font-medium">{maxHit}</span>
             </span>
           </>
-        )}
-        {hitpoints != null && hitpoints > 0 && (
-          <span className="text-xs text-text-secondary">
-            HP <span className="text-text-primary font-medium">{hitpoints.toLocaleString()}</span>
-          </span>
-        )}
-        {maxHit != null && maxHit > 0 && (
-          <span className="text-xs text-text-secondary">
-            Max <span className="text-danger font-medium">{maxHit}</span>
-          </span>
-        )}
-        {weakness && (
-          <span className="text-xs text-text-secondary">
-            Weak to <span className="text-success font-medium">{weakness}</span>
-          </span>
         )}
       </div>
 
@@ -153,6 +150,32 @@ export default function BossMetaCard({
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Structured infobox chips — only shown when scraper provides them */}
+      {infobox && (infobox.weakness || infobox.recommendedApproach || (infobox.notableItems && infobox.notableItems.length > 0)) && (
+        <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-border/40">
+          {infobox.weakness && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-success/20 bg-success/10 px-2.5 py-0.5 text-xs text-success">
+              Weak to {infobox.weakness}
+            </span>
+          )}
+          {infobox.recommendedApproach && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-accent/20 bg-accent/10 px-2.5 py-0.5 text-xs text-accent">
+              Best DPS {infobox.recommendedApproach}
+            </span>
+          )}
+          {infobox.teamSize && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-border/50 bg-bg-tertiary px-2.5 py-0.5 text-xs text-text-secondary">
+              Team {infobox.teamSize}
+            </span>
+          )}
+          {infobox.notableItems?.map((item) => (
+            <span key={item} className="inline-flex items-center gap-1 rounded-full border border-border/50 bg-bg-tertiary px-2.5 py-0.5 text-xs text-text-secondary">
+              {item}
+            </span>
+          ))}
         </div>
       )}
 
