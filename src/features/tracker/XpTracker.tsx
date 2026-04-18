@@ -132,6 +132,18 @@ function metricDisplayName(rawMetric: string): string {
   return METRIC_FIXUPS[rawMetric] ?? SKILL_NAMES[rawMetric] ?? formatBossName(rawMetric);
 }
 
+function relativeTime(date: Date, now: Date): string {
+  const diffMs = date.getTime() - now.getTime();
+  const diffDays = Math.round(Math.abs(diffMs) / 86400000);
+  if (diffDays === 0) return "today";
+  const past = diffMs < 0;
+  if (diffDays < 7) return past ? `${diffDays}d ago` : `in ${diffDays}d`;
+  const weeks = Math.round(diffDays / 7);
+  if (weeks < 5) return past ? `${weeks}w ago` : `in ${weeks}w`;
+  const months = Math.round(diffDays / 30);
+  return past ? `${months}mo ago` : `in ${months}mo`;
+}
+
 function CompetitionsView({ competitions }: { competitions: WomPlayerCompetition[] }) {
   const now = new Date();
   const sorted = [...competitions].sort(
@@ -147,8 +159,12 @@ function CompetitionsView({ competitions }: { competitions: WomPlayerCompetition
         const rawMetric = comp.metric ?? "";
         const metric = rawMetric.replace(/_/g, " ");
         const compIcon = metricIconUrl(rawMetric);
-        const start = comp.startsAt ? new Date(comp.startsAt).toLocaleDateString() : "\u2014";
-        const end = comp.endsAt ? new Date(comp.endsAt).toLocaleDateString() : "\u2014";
+        const startDate = comp.startsAt ? new Date(comp.startsAt) : null;
+        const endDate = comp.endsAt ? new Date(comp.endsAt) : null;
+        const start = startDate ? startDate.toLocaleDateString() : "\u2014";
+        const end = endDate ? endDate.toLocaleDateString() : "\u2014";
+        const startRel = startDate ? relativeTime(startDate, now) : null;
+        const endRel = endDate ? relativeTime(endDate, now) : null;
         const gained = pc.progress?.gained ?? 0;
         const rank = pc.rank ?? 0;
         return (
@@ -175,7 +191,13 @@ function CompetitionsView({ competitions }: { competitions: WomPlayerCompetition
                 </div>
                 <div className="flex gap-3 mt-1 text-xs text-text-secondary">
                   <span className="capitalize">{metric}</span>
-                  <span>{start} \u2013 {end}</span>
+                  <span title={`${start} – ${end}`}>
+                    {isActive
+                      ? `ends ${endRel ?? end}`
+                      : startDate && startDate > now
+                        ? `starts ${startRel ?? start}`
+                        : `ended ${endRel ?? end}`}
+                  </span>
                   {comp.group && <span className="text-accent">{comp.group.name}</span>}
                 </div>
                 {pc.teamName && (
