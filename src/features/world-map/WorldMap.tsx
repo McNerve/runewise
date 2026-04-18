@@ -81,8 +81,14 @@ export default function WorldMap() {
   const { params } = useNavigation();
   const focusLocation = params.location ?? null;
   const containerRef = useRef<HTMLDivElement>(null);
-  const [zoom, setZoom] = useState(0.5);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
+  // Single view state so zoom + pan update atomically during cursor-anchored
+  // zoom — separate setState calls inside one handler batch, but the math
+  // requires reading the current pan with the current zoom, not stale values.
+  const [view, setView] = useState<{ zoom: number; pan: { x: number; y: number } }>(
+    { zoom: 0.5, pan: { x: 0, y: 0 } }
+  );
+  const zoom = view.zoom;
+  const pan = view.pan;
   const [dragging, setDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
@@ -101,16 +107,17 @@ export default function WorldMap() {
     const dx = e.clientX - (rect.left + rect.width / 2);
     const dy = e.clientY - (rect.top + rect.height / 2);
     const scaleFactor = Math.exp(-e.deltaY * 0.002);
-    setZoom((currentZoom) => {
-      const newZoom = Math.max(0.05, Math.min(1.5, currentZoom * scaleFactor));
-      const actualFactor = newZoom / currentZoom;
-      if (actualFactor !== 1) {
-        setPan((currentPan) => ({
-          x: dx - (dx - currentPan.x) * actualFactor,
-          y: dy - (dy - currentPan.y) * actualFactor,
-        }));
-      }
-      return newZoom;
+    setView((prev) => {
+      const newZoom = Math.max(0.05, Math.min(1.5, prev.zoom * scaleFactor));
+      const r = newZoom / prev.zoom;
+      if (r === 1) return prev;
+      return {
+        zoom: newZoom,
+        pan: {
+          x: dx - (dx - prev.pan.x) * r,
+          y: dy - (dy - prev.pan.y) * r,
+        },
+      };
     });
   }, []);
 
@@ -131,17 +138,19 @@ export default function WorldMap() {
 
   const onMouseMove = (e: React.MouseEvent) => {
     if (!dragging) return;
-    setPan({
-      x: panStart.x + (e.clientX - dragStart.x),
-      y: panStart.y + (e.clientY - dragStart.y),
-    });
+    setView((prev) => ({
+      ...prev,
+      pan: {
+        x: panStart.x + (e.clientX - dragStart.x),
+        y: panStart.y + (e.clientY - dragStart.y),
+      },
+    }));
   };
 
   const onMouseUp = () => setDragging(false);
 
   const resetView = () => {
-    setZoom(0.15);
-    setPan({ x: 0, y: 0 });
+    setView({ zoom: 0.15, pan: { x: 0, y: 0 } });
   };
 
   const pois = useMemo(
@@ -168,13 +177,13 @@ export default function WorldMap() {
         <div className="flex gap-2 items-center">
           <span className="text-xs text-text-secondary tabular-nums">{Math.round(zoom * 100)}%</span>
           <button
-            onClick={() => setZoom((z) => Math.min(1.5, z + 0.05))}
+            onClick={() => setView((v) => ({ ...v, zoom: Math.min(1.5, v.zoom + 0.05) }))}
             className="rounded-lg border border-border bg-bg-primary/60 px-2.5 py-1.5 text-xs font-medium text-text-secondary transition hover:border-accent/40 hover:text-text-primary"
           >
             +
           </button>
           <button
-            onClick={() => setZoom((z) => Math.max(0.05, z - 0.05))}
+            onClick={() => setView((v) => ({ ...v, zoom: Math.max(0.05, v.zoom - 0.05) }))}
             className="rounded-lg border border-border bg-bg-primary/60 px-2.5 py-1.5 text-xs font-medium text-text-secondary transition hover:border-accent/40 hover:text-text-primary"
           >
             −
@@ -240,7 +249,7 @@ export default function WorldMap() {
             src={MAP_IMAGE}
             alt="OSRS World Map"
             draggable={false}
-            onLoad={() => { setLoading(false); setZoom(0.5); }}
+            onLoad={() => { setLoading(false); setView((v) => ({ ...v, zoom: 0.5 })); }}
             onError={() => setLoading(false)}
             className="block"
             style={{ maxWidth: "none" }}
