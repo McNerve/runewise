@@ -146,7 +146,7 @@ function MarketDetail({
               {item.name}
             </h3>
             {item.members && (
-              <span className="text-xs bg-warning/20 text-warning px-1.5 py-0.5 rounded">
+              <span className="text-xs bg-bg-tertiary text-text-secondary/80 px-1.5 py-0.5 rounded border border-border/50">
                 P2P
               </span>
             )}
@@ -704,7 +704,7 @@ export default function Market({
                           <div>
                             <ItemTooltip itemName={item.name}><div className="font-medium cursor-default">{item.name}</div></ItemTooltip>
                             {item.members && (
-                              <span className="text-[10px] text-warning">P2P</span>
+                              <span className="text-[10px] text-text-secondary/60">P2P</span>
                             )}
                           </div>
                         </div>
@@ -744,7 +744,7 @@ export default function Market({
                           ? formatGp(volumes[String(item.id)])
                           : "\u2014"}
                       </td>
-                      <td className="px-4 py-2 text-right text-warning">
+                      <td className="px-4 py-2 text-right text-text-primary">
                         {formatGp(item.highalch)}
                       </td>
                       <td className="px-4 py-2 text-right">

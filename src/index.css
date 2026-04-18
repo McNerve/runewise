@@ -131,7 +131,9 @@ body {
 }
 
 .sidebar-nav-item[aria-current="page"]::after {
-  background: color-mix(in srgb, var(--color-accent) 88%, white 12%);
+  /* Use per-feature accent (set via --item-accent on each nav button) so sidebar
+     retains feature identity while the primary accent stays rune gold. */
+  background: var(--item-accent, color-mix(in srgb, var(--color-accent) 88%, white 12%));
 }
 
 .compact-sidebar-scroll {
