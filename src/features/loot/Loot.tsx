@@ -728,12 +728,19 @@ function ProfitCalculatorTab({
 
 // --- Main Loot component ---
 
+function resolveLootTab(raw: string | undefined): LootTab {
+  return raw === "profit" || raw === "ranking" ? raw : "drops";
+}
+
 export default function Loot() {
   const { params, navigate } = useNavigation();
   const { mapping, prices, loading, fetchIfNeeded } = useGEData();
-  const [tab, setTab] = useState<LootTab>(
-    params.tab === "profit" ? "profit" : params.tab === "ranking" ? "ranking" : "drops"
-  );
+  const [tab, setTab] = useState<LootTab>(() => resolveLootTab(params.tab));
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync tab from nav params
+    setTab(resolveLootTab(params.tab));
+  }, [params.tab]);
 
   useEffect(() => { fetchIfNeeded(); }, [fetchIfNeeded]);
 

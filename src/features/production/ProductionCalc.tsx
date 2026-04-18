@@ -74,6 +74,20 @@ function calcRecipe(
   return { recipe: r, materialCost, outputValue, netCost, costPerXp };
 }
 
+// Curated jump-off points when the user lands cold on a 5k-recipe search.
+const POPULAR_RECIPES = [
+  "Shark",
+  "Saradomin brew",
+  "Super combat potion",
+  "Rune platebody",
+  "Ranarr",
+  "Magic logs",
+  "Yew longbow",
+  "Dragonstone",
+  "Prayer potion",
+  "Anglerfish",
+];
+
 export default function ProductionCalc() {
   const { navigate } = useNavigation();
   const { mapping, prices, loading: geLoading, fetchIfNeeded } = useGEData();
@@ -460,9 +474,29 @@ export default function ProductionCalc() {
       )}
 
       {!selected && search.length < 2 && (
-        <p className="text-xs text-text-secondary/50 mt-2">
-          Type at least 2 characters to search
-        </p>
+        <div className="mt-3 space-y-3">
+          <p className="text-xs text-text-secondary/50">
+            Type at least 2 characters to search — or jump into one of these:
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {POPULAR_RECIPES.map((name) => (
+              <button
+                key={name}
+                type="button"
+                onClick={() => setSearch(name)}
+                className="flex items-center gap-1.5 rounded-full border border-border/60 bg-bg-secondary/50 px-3 py-1 text-xs text-text-secondary transition hover:border-accent/40 hover:text-text-primary"
+              >
+                <img
+                  src={itemIcon(name)}
+                  alt=""
+                  className="h-3.5 w-3.5"
+                  onError={(e) => { e.currentTarget.style.display = "none"; }}
+                />
+                {name}
+              </button>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );

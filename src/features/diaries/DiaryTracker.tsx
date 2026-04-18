@@ -38,9 +38,11 @@ function taskKey(region: string, tier: string, taskIdx: number): string {
   return `${region}:${tier}:${taskIdx}`;
 }
 
+// Canonical OSRS tier palette — matches Clue Helper and Combat Tasks
+// Easy=green, Medium=yellow, Hard=red, Elite=purple
 const TIER_COLORS = {
   Easy: "text-success",
-  Medium: "text-warning",
+  Medium: "text-yellow-300",
   Hard: "text-danger",
   Elite: "text-purple-400",
 };

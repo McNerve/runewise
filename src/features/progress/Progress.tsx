@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { useNavigation } from "../../lib/NavigationContext";
 import type { HiscoreData } from "../../lib/api/hiscores";
 import QuestTracker from "../quests/QuestTracker";
@@ -22,14 +22,19 @@ interface Props {
   hiscores?: HiscoreData | null;
 }
 
+function resolveTab(raw: string | undefined): Tab {
+  if (raw === "diaries" || raw === "combat-tasks" || raw === "unlock") return raw;
+  return "quests";
+}
+
 export default function Progress({ hiscores }: Props) {
   const { params } = useNavigation();
-  const initialTab: Tab =
-    params.tab === "diaries" ? "diaries" :
-    params.tab === "combat-tasks" ? "combat-tasks" :
-    params.tab === "unlock" ? "unlock" :
-    "quests";
-  const [activeTab, setActiveTab] = useState<Tab>(initialTab);
+  const [activeTab, setActiveTab] = useState<Tab>(() => resolveTab(params.tab));
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync tab from nav params
+    setActiveTab(resolveTab(params.tab));
+  }, [params.tab]);
 
   return (
     <div>

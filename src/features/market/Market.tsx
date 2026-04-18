@@ -326,6 +326,12 @@ export default function Market({
   }, [initialTab]);
 
   useEffect(() => {
+    if (paramTab === "watchlist" || paramTab === "alch" || paramTab === "browse" || paramTab === "bulk") {
+      setTab(paramTab);
+    }
+  }, [paramTab]);
+
+  useEffect(() => {
     if (params.query) {
       setQuery(params.query);
     }

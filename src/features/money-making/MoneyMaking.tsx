@@ -53,6 +53,10 @@ function getMissingSkills(
   return missing;
 }
 
+function resolveMainTab(raw: string | undefined): MainTab {
+  return raw === "rankings" || raw === "wiki" ? raw : "methods";
+}
+
 export default function MoneyMaking({ hiscores }: Props) {
   const { navigate, params } = useNavigation();
   const [category, setCategory] = useState<Category>("All");
@@ -60,11 +64,12 @@ export default function MoneyMaking({ hiscores }: Props) {
   const [membersOnly, setMembersOnly] = useState(true);
   const [bestForMe, setBestForMe] = useState(false);
   const [wikiMethods, setWikiMethods] = useState<WikiMoneyMethod[]>([]);
-  const initialTab: MainTab =
-    params.tab === "rankings" ? "rankings" :
-    params.tab === "wiki" ? "wiki" :
-    "methods";
-  const [mainTab, setMainTab] = useState<MainTab>(initialTab);
+  const [mainTab, setMainTab] = useState<MainTab>(() => resolveMainTab(params.tab));
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync tab from nav params
+    setMainTab(resolveMainTab(params.tab));
+  }, [params.tab]);
 
   useEffect(() => {
     fetchAllMoneyMethods().then((methods) => {

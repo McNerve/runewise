@@ -256,9 +256,9 @@ export default function Home({ hiscores }: HomeProps) {
           </section>
 
           {/* Recent */}
-          {recentEntities.length > 0 && (
-            <section>
-              <h3 className="text-[10px] font-medium uppercase tracking-[0.16em] text-text-secondary/50 mb-2">Recent</h3>
+          <section>
+            <h3 className="text-[10px] font-medium uppercase tracking-[0.16em] text-text-secondary/50 mb-2">Recent</h3>
+            {recentEntities.length > 0 ? (
               <div className="grid grid-cols-2 gap-1.5">
                 {recentEntities.map((entity) => (
                   <button
@@ -275,8 +275,13 @@ export default function Home({ hiscores }: HomeProps) {
                   </button>
                 ))}
               </div>
-            </section>
-          )}
+            ) : (
+              <p className="text-xs text-text-secondary/50">
+                Items, bosses, quests, and wiki pages you visit will land here.
+              </p>
+            )}
+          </section>
+
         </div>
 
         {/* Right column — widgets */}

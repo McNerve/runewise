@@ -324,9 +324,12 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
                     setSelectedCategory(cat.slug);
                     setItemFilter("all");
                     // Scroll the items panel into view on narrow layouts where it stacks below.
-                    requestAnimationFrame(() => {
-                      itemsPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-                    });
+                    if (window.innerWidth < 1280) {
+                      setTimeout(
+                        () => itemsPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
+                        80
+                      );
+                    }
                   }}
                   className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-colors ${
                     isActive
