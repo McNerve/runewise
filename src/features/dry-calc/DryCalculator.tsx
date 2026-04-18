@@ -115,7 +115,7 @@ export default function DryCalculator({ hiscores }: Props) {
                 {chance.toFixed(1)}%
               </span>
               <p className="text-xs text-text-secondary mt-1">
-                chance of receiving 1+ drops in {kills.toLocaleString()} kills
+                chance of receiving 1+ drops in {kills.toLocaleString()} {kills === 1 ? "kill" : "kills"}
               </p>
             </div>
 
