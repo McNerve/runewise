@@ -29,9 +29,10 @@ import {
   BOSS_DROP_TABLES,
   type BossDropTable,
 } from "../../lib/data/boss-drops";
+import { getRaidLoot, type RaidDropEntry } from "../../lib/data/raid-loot";
 import { openExternal } from "../../lib/openExternal";
 import { formatGp } from "../../lib/format";
-import SourceAttribution from "../../components/SourceAttribution";
+import FreshnessStrip from "../../components/FreshnessStrip";
 import { useNavigation } from "../../lib/NavigationContext";
 import WikiImage from "../../components/WikiImage";
 import StructuredSection from "./StructuredSection";
@@ -256,6 +257,14 @@ export default function BossGuide({ hiscores }: Props) {
     );
   }, [selectedBoss]);
 
+  // Raid loot fallback: used when wiki drops are empty and boss is a raid
+  const raidLootFallback = useMemo(() => {
+    if (!selectedBoss) return null;
+    const hasLootData = dropCategories.length > 0 || wikiDrops.length > 0 || bossLootTable !== null;
+    if (hasLootData) return null;
+    return getRaidLoot(selectedBoss.name);
+  }, [selectedBoss, dropCategories, wikiDrops, bossLootTable]);
+
   const topDrops = useMemo(() => {
     if (dropCategories.length > 0) {
       return dropCategories
@@ -290,6 +299,12 @@ export default function BossGuide({ hiscores }: Props) {
       .sort((a, b) => (b.gePrice ?? 0) - (a.gePrice ?? 0))
       .slice(0, 3);
   }, [bossLootTable, dropCategories, itemMap, prices]);
+
+  // Top drop from raid fallback (for summary card)
+  const raidTopDrop = useMemo((): string | null => {
+    if (!raidLootFallback) return null;
+    return raidLootFallback.uniques[0]?.name ?? null;
+  }, [raidLootFallback]);
 
   const lootRows = useMemo(() => {
     if (!bossLootTable) return [];
@@ -568,9 +583,11 @@ export default function BossGuide({ hiscores }: Props) {
                         {guide.summary}
                       </p>
                     ) : null}
-                    <SourceAttribution
-                      source="OSRS Wiki"
-                      fetchedAt={guide?.fetchedAt ?? null}
+                    <FreshnessStrip
+                      updatedAt={guide?.fetchedAt ? new Date(guide.fetchedAt) : null}
+                      onRefresh={() => {
+                        if (selectedBoss) void selectBoss(selectedBoss);
+                      }}
                       cacheLabel="1 hour"
                     />
                   </div>
@@ -684,7 +701,7 @@ export default function BossGuide({ hiscores }: Props) {
                     {topDrops[0]?.gePrice != null ? formatGp(topDrops[0].gePrice) : "\u2014"}
                   </div>
                   <div className="mt-1 truncate text-xs text-text-secondary">
-                    {topDrops[0]?.drop.name ?? "Waiting on loot data"}
+                    {topDrops[0]?.drop.name ?? raidTopDrop ?? "Waiting on loot data"}
                   </div>
                 </div>
               </div>
@@ -1044,6 +1061,57 @@ export default function BossGuide({ hiscores }: Props) {
                     </tbody>
                   </table>
                   </div>
+                </div>
+              ) : raidLootFallback ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-xs text-text-secondary/60">
+                    <span className="rounded-full border border-border bg-bg-primary/60 px-2 py-1">Source: curated</span>
+                    <span>Drop rates from OSRS Wiki (approximate, party-size-variable)</span>
+                  </div>
+                  {raidLootFallback.uniques.length > 0 && (
+                    <div>
+                      <h4 className="text-xs uppercase tracking-wider text-text-secondary/60 mb-2">Unique Drops</h4>
+                      <div className="rounded-xl border border-border/60 overflow-hidden">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b border-border text-text-secondary text-xs">
+                              <th scope="col" className="text-left px-4 py-2">Item</th>
+                              <th scope="col" className="text-right px-4 py-2">Rate</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {raidLootFallback.uniques.map((drop: RaidDropEntry) => (
+                              <tr key={drop.name} className="border-b border-border/50 even:bg-bg-primary/25 hover:bg-bg-secondary">
+                                <td className="px-4 py-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => navigate("market", { query: drop.name })}
+                                    className="flex items-center gap-2 text-left text-text-primary transition hover:text-accent"
+                                  >
+                                    <WikiImage src={itemIcon(drop.name)} alt="" className="h-5 w-5 shrink-0" fallback={drop.name[0]} />
+                                    <span>{drop.name}</span>
+                                  </button>
+                                </td>
+                                <td className="px-4 py-2 text-right text-text-secondary tabular-nums">{drop.rate}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                  {raidLootFallback.common.length > 0 && (
+                    <div>
+                      <h4 className="text-xs uppercase tracking-wider text-text-secondary/60 mb-2">Common Drops</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {raidLootFallback.common.map((drop: RaidDropEntry) => (
+                          <span key={drop.name} className="rounded-full border border-border bg-bg-primary/60 px-3 py-1 text-xs text-text-secondary">
+                            {drop.name}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <EmptyState

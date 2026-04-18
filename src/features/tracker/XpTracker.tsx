@@ -6,6 +6,7 @@ import { WIKI_IMG, skillIcon, bossIconSmall } from "../../lib/sprites";
 import { TableSkeleton } from "../../components/Skeleton";
 import EmptyState from "../../components/EmptyState";
 import Tabs from "../../components/primitives/Tabs";
+import FreshnessStrip from "../../components/FreshnessStrip";
 import {
   createChart,
   ColorType,
@@ -14,7 +15,6 @@ import {
   type Time,
 } from "lightweight-charts";
 import { warn } from "../../lib/logger";
-import { timeAgo } from "../../lib/format";
 
 function skillIconUrl(name: string): string {
   if (name === "Overall") return `${WIKI_IMG}/Stats_icon.png`;
@@ -404,13 +404,8 @@ export default function XpTracker({ rsn }: Props) {
             Track XP gains, boss kills, achievements, and records via Wise Old Man.
           </p>
         </div>
-        <div className="flex items-center gap-3 shrink-0 pt-1.5">
-          {lastUpdated && (
-            <span className="text-xs text-text-secondary">
-              Updated {timeAgo(Math.floor(lastUpdated.getTime() / 1000))}
-            </span>
-          )}
-          <button onClick={handleRefresh} className="text-xs text-accent hover:underline">Refresh</button>
+        <div className="shrink-0 pt-1.5">
+          <FreshnessStrip updatedAt={lastUpdated} onRefresh={handleRefresh} />
         </div>
       </div>
       {nameChanges.length > 0 && (

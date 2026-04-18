@@ -9,6 +9,7 @@ export function useHiscores() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ironmanType, setIronmanType] = useState<IronmanType>("none");
+  const [lastFetched, setLastFetched] = useState<Date | null>(null);
 
   const lookup = useCallback(async (name: string) => {
     if (!name.trim()) return;
@@ -17,6 +18,7 @@ export function useHiscores() {
     try {
       const result = await fetchHiscores(name.trim());
       setData(result);
+      setLastFetched(new Date());
       setRsn(name.trim());
       localStorage.setItem(STORAGE_KEY, name.trim());
       // Detect ironman status in background (non-blocking)
@@ -34,6 +36,7 @@ export function useHiscores() {
     setData(null);
     setError(null);
     setIronmanType("none");
+    setLastFetched(null);
     localStorage.removeItem(STORAGE_KEY);
   }, []);
 
@@ -41,5 +44,5 @@ export function useHiscores() {
     if (rsn) lookup(rsn);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  return { rsn, data, loading, error, lookup, clear, ironmanType };
+  return { rsn, data, loading, error, lookup, clear, ironmanType, lastFetched };
 }

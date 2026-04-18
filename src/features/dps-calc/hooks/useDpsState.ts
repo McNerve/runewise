@@ -231,6 +231,16 @@ export function useDpsState({ hiscores }: Props) {
     }
   }, [params.monster, wikiMonsters]);
 
+  // Handle onTask param from Slayer cross-nav — activate slayer_helm modifier
+  useEffect(() => {
+    if (params.onTask !== "1") return;
+    setActiveModifiers((prev) => {
+      const next = new Set(prev);
+      next.add("slayer_helm");
+      return next;
+    });
+  }, [params.onTask]);
+
   // Reset stance and prayer when combat style changes, or apply pending loadout
   useEffect(() => {
     const loadout = pendingLoadout.current;

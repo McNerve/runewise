@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import {
   STAR_TIERS,
   STAR_SITES,
@@ -17,6 +17,7 @@ import { useNavigation } from "../../lib/NavigationContext";
 import { sendNotification } from "../../lib/notify";
 import { useSettings } from "../../hooks/useSettings";
 import { loadJSON, saveJSON } from "../../lib/localStorage";
+import FreshnessStrip from "../../components/FreshnessStrip";
 
 const STAR_ALERTS_KEY = "runewise_star_alerts";
 
@@ -232,6 +233,7 @@ export default function ShootingStars() {
   const [tab, setTab] = useState<Tab>("live");
   const [stars, setStars] = useState<LiveStar[]>([]);
   const [loading, setLoading] = useState(true);
+  const [starsLastFetched, setStarsLastFetched] = useState<Date | null>(null);
   const [selectedStar, setSelectedStar] = useState<LiveStar | null>(null);
   const userDismissedRef = useRef(false);
   const [referenceSites, setReferenceSites] = useState<StarSite[]>([]);
@@ -247,6 +249,20 @@ export default function ShootingStars() {
   // Persist alert settings
   useEffect(() => { saveJSON(STAR_ALERTS_KEY, alertSettings); }, [alertSettings]);
 
+  const loadStars = useCallback((forceRefresh = false) => {
+    if (forceRefresh) {
+      // Manually clear in-memory star cache so we bypass the 30s TTL
+      import("../../lib/api/cache").then(({ clearCacheKey }) => {
+        clearCacheKey("live-stars:v3");
+      }).catch(() => undefined);
+    }
+    fetchLiveStars().then((data) => {
+      setStars(data);
+      setLoading(false);
+      setStarsLastFetched(new Date());
+    }).catch(() => { setLoading(false); });
+  }, []);
+
   // Fetch live stars
   useEffect(() => {
     let cancelled = false;
@@ -255,6 +271,7 @@ export default function ShootingStars() {
         if (!cancelled) {
           setStars(data);
           setLoading(false);
+          setStarsLastFetched(new Date());
         }
       });
     };
@@ -364,17 +381,26 @@ export default function ShootingStars() {
   return (
     <div className="max-w-4xl">
       <div className="mb-5 space-y-1">
-        <div className="flex items-center gap-3">
-          <h2 className="text-hero font-semibold tracking-tight">Star Helper</h2>
-          {tab === "live" && !loading && (
-            <span className="text-[11px] text-text-secondary/50">
-              {activeCount} active · refreshes every 30s
-            </span>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3">
+              <h2 className="text-hero font-semibold tracking-tight">Star Helper</h2>
+              {tab === "live" && !loading && (
+                <span className="text-[11px] text-text-secondary/50">
+                  {activeCount} active · auto-refreshes every 30s
+                </span>
+              )}
+            </div>
+            <p className="max-w-2xl text-sm text-text-secondary">
+              Track active shooting stars across all worlds. Data from Star Miners crowdsource API.
+            </p>
+          </div>
+          {tab === "live" && (
+            <div className="shrink-0 pt-1">
+              <FreshnessStrip updatedAt={starsLastFetched} onRefresh={() => loadStars(true)} />
+            </div>
           )}
         </div>
-        <p className="max-w-2xl text-sm text-text-secondary">
-          Track active shooting stars across all worlds. Data from Star Miners crowdsource API.
-        </p>
       </div>
 
       {/* Tabs */}

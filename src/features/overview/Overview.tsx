@@ -8,6 +8,7 @@ import { useNavigation } from "../../lib/NavigationContext";
 import WikiImage from "../../components/WikiImage";
 import { StatGrid, StatCard } from "../../components/primitives";
 import { TRAINING_METHODS } from "../../lib/data/training-methods";
+import FreshnessStrip from "../../components/FreshnessStrip";
 
 function ProgressRing({ obtained, total, size = 22 }: { obtained: number; total: number; size?: number }) {
   const pct = total > 0 ? obtained / total : 0;
@@ -27,6 +28,8 @@ function ProgressRing({ obtained, total, size = 22 }: { obtained: number; total:
 interface Props {
   hiscores: HiscoreData;
   rsn: string;
+  lastFetched?: Date | null;
+  onRefresh?: () => void;
 }
 
 function hoursTo99(skillName: string, currentXp: number): string | null {
@@ -54,7 +57,7 @@ const SKILL_ORDER = [
   "Construction", "Hunter", "Sailing",
 ];
 
-export default function Overview({ hiscores, rsn }: Props) {
+export default function Overview({ hiscores, rsn, lastFetched = null, onRefresh }: Props) {
   const { navigate } = useNavigation();
   const [womPlayer, setWomPlayer] = useState<WomPlayer | null>(null);
   const [showAllBosses, setShowAllBosses] = useState<boolean>(false);
@@ -123,7 +126,12 @@ export default function Overview({ hiscores, rsn }: Props) {
 
   return (
     <div className="max-w-3xl">
-      <h2 className="text-xl font-semibold mb-4">{rsn}</h2>
+      <div className="flex items-center justify-between mb-4 gap-4">
+        <h2 className="text-xl font-semibold">{rsn}</h2>
+        {onRefresh && (
+          <FreshnessStrip updatedAt={lastFetched} onRefresh={onRefresh} />
+        )}
+      </div>
 
       {/* Summary cards */}
       <div className="grid grid-cols-4 gap-3 mb-6">
@@ -383,7 +391,11 @@ export default function Overview({ hiscores, rsn }: Props) {
               {visibleBosses.map((boss) => (
                 <button
                   key={boss.name}
-                  onClick={() => navigate("bosses", { boss: boss.name })}
+                  onClick={() => {
+                    // Store KC in sessionStorage for Dry Calc prefill
+                    sessionStorage.setItem("runewise_pending_kc", JSON.stringify({ boss: boss.name, kc: boss.score }));
+                    navigate("bosses", { boss: boss.name });
+                  }}
                   className="bg-bg-secondary rounded px-2 py-2 hover:bg-bg-tertiary transition-colors flex items-center gap-2"
                 >
                   <div className="w-6 h-6 shrink-0 relative">

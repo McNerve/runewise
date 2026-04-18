@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState, useEffect, useMemo, useCallback } from "react";
+import { lazy, Suspense, useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   searchItems,
   fetchVolumes,
@@ -13,6 +13,7 @@ import {
 import { useDebounce } from "../../hooks/useDebounce";
 import { useWatchlist } from "../../hooks/useWatchlist";
 import { formatGp, timeAgo } from "../../lib/format";
+import FreshnessStrip from "../../components/FreshnessStrip";
 import { itemIcon, encodeIconFilename, WIKI_IMG } from "../../lib/sprites";
 import { useNavigation } from "../../lib/NavigationContext";
 import WikiImage from "../../components/WikiImage";
@@ -282,9 +283,11 @@ export default function Market({
   const { params, navigate } = useNavigation();
   const { settings } = useSettings();
   const { items: watchlistItems, addItem: addToWatchlist } = useWatchlist();
-  const { mapping: allItems, prices, pricesLoaded, fetchIfNeeded } = useGEData();
+  const { mapping: allItems, prices, pricesLoaded, fetchIfNeeded, refreshPrices } = useGEData();
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebounce(query, 250);
+  const [pricesLastFetched, setPricesLastFetched] = useState<Date | null>(null);
+  const pricesFetchedRef = useRef(false);
 
   const paramTab = params.tab as Tab | undefined;
   const resolvedInitial: Tab = paramTab === "watchlist" || paramTab === "alch" || paramTab === "browse" || paramTab === "bulk" ? paramTab : initialTab;
@@ -303,6 +306,14 @@ export default function Market({
 
   useEffect(() => { fetchIfNeeded(); }, [fetchIfNeeded]);
 
+  // Track when prices arrive so FreshnessStrip can show a timestamp
+  useEffect(() => {
+    if (pricesLoaded && !pricesFetchedRef.current) {
+      pricesFetchedRef.current = true;
+      setPricesLastFetched(new Date());
+    }
+  }, [pricesLoaded]);
+
   // Load volumes on mount (not part of GE context)
   useEffect(() => {
     let cancelled = false;
@@ -320,6 +331,12 @@ export default function Market({
     // Prices now come from GE context; this is kept for the retry button
     fetchIfNeeded();
   }, [fetchIfNeeded]);
+
+  const handlePricesRefresh = useCallback(async () => {
+    await refreshPrices();
+    setPricesLastFetched(new Date());
+    pricesFetchedRef.current = true;
+  }, [refreshPrices]);
 
   useEffect(() => {
     setTab(initialTab);
@@ -464,8 +481,15 @@ export default function Market({
       {/* Left: search + table */}
       <div className="min-w-0">
         <div className="mb-4">
-          <h2 className="text-hero font-semibold tracking-tight">{title}</h2>
-          <p className="max-w-2xl text-sm text-text-secondary">{subtitle}</p>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-hero font-semibold tracking-tight">{title}</h2>
+              <p className="max-w-2xl text-sm text-text-secondary">{subtitle}</p>
+            </div>
+            <div className="shrink-0 pt-1">
+              <FreshnessStrip updatedAt={pricesLastFetched} onRefresh={handlePricesRefresh} cacheLabel="5 min" />
+            </div>
+          </div>
           {settings.ironmanMode && (
             <div className="mt-2 rounded-lg border border-warning/30 bg-warning/5 px-3 py-1.5 text-xs text-warning">
               Ironman mode — GE prices shown for reference only. Items must be self-obtained.

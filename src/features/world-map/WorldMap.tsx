@@ -2,6 +2,7 @@ import { useRef, useState, useCallback, useEffect, useMemo } from "react";
 
 import { isTauri } from "../../lib/env";
 import { FilterPills, type FilterPillItem } from "../../components/primitives";
+import { useNavigation } from "../../lib/NavigationContext";
 import {
   WORLD_MAP_POIS,
   CATEGORY_META,
@@ -27,6 +28,8 @@ const FILTER_ITEMS: readonly FilterPillItem<CategoryFilter>[] = [
 ];
 
 export default function WorldMap() {
+  const { params } = useNavigation();
+  const focusLocation = params.location ?? null;
   const containerRef = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(0.5);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -124,6 +127,12 @@ export default function WorldMap() {
           </a>
         </div>
       </div>
+
+      {focusLocation && (
+        <div className="mb-3 rounded-lg border border-accent/30 bg-accent/5 px-3 py-2 text-xs text-accent">
+          Looking for: <span className="font-medium">{focusLocation}</span> — pan the map to find this location.
+        </div>
+      )}
 
       <div className="mb-3 flex items-center gap-3 flex-wrap">
         <FilterPills

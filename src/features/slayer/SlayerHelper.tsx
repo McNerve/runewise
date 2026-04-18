@@ -447,6 +447,7 @@ export default function SlayerHelper() {
                   >
                     Slayer Lvl{arrow("slayerLevel")}
                   </th>
+                  <th scope="col" className="px-3 py-2 w-12" />
                 </tr>
               </thead>
               <tbody>
@@ -518,6 +519,15 @@ export default function SlayerHelper() {
                     </td>
                     <td className="px-4 py-2 text-right text-text-secondary tabular-nums">
                       {task.slayerLevel > 1 ? task.slayerLevel : "—"}
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      <button
+                        onClick={() => navigate("dps-calc", { monster: task.monster, onTask: "1" })}
+                        className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-accent/10 text-accent hover:bg-accent/20 transition-colors"
+                        title={`Open DPS Calc for ${task.monster} on task`}
+                      >
+                        DPS
+                      </button>
                     </td>
                   </tr>
                 ))}

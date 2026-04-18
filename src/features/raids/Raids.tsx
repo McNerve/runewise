@@ -10,13 +10,13 @@ type RaidTab = "cox" | "tob" | "toa";
 
 const TYPE_COLORS: Record<string, string> = {
   combat: "border-danger/30 bg-danger/5",
-  puzzle: "border-accent/30 bg-accent/5",
+  puzzle: "border-purple-500/30 bg-purple-500/5",
   boss: "border-warning/30 bg-warning/5",
 };
 
 const TYPE_BADGE: Record<string, string> = {
   combat: "bg-danger/15 text-danger",
-  puzzle: "bg-accent/15 text-accent",
+  puzzle: "bg-purple-500/15 text-purple-400",
   boss: "bg-warning/15 text-warning",
 };
 

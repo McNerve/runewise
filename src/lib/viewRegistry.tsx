@@ -45,6 +45,8 @@ interface AppViewContext {
     rsn: string;
     data: HiscoreData | null;
     ironmanType: IronmanType;
+    lastFetched?: Date | null;
+    onRefresh?: () => void;
   };
 }
 
@@ -62,7 +64,7 @@ export const VIEW_RENDERERS: Record<View, ViewRenderer> = {
   home: ({ hiscores }) => <Home hiscores={hiscores} />,
   overview: ({ hiscores }) =>
     hiscores.data ? (
-      <Overview hiscores={hiscores.data} rsn={hiscores.rsn} />
+      <Overview hiscores={hiscores.data} rsn={hiscores.rsn} lastFetched={hiscores.lastFetched ?? null} onRefresh={hiscores.onRefresh} />
     ) : (
       <EmptyState
         icon={NAV_ICONS.overview}
