@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useSettings } from "../../hooks/useSettings";
 import { DEFAULT_KEYBINDS, type KeybindMap } from "../../lib/settings";
 import { isTauri, isMac } from "../../lib/env";
+import { setUpdateMode, getUpdateMode, type UpdateMode } from "../../lib/updateBus";
 
 declare const __APP_VERSION__: string;
 
@@ -248,6 +249,36 @@ function SettingsCard({
   );
 }
 
+function UpdateModeSelect() {
+  const [mode, setMode] = useState<UpdateMode>(getUpdateMode);
+
+  const handleChange = (next: UpdateMode) => {
+    setMode(next);
+    setUpdateMode(next);
+  };
+
+  if (!isTauri) return null;
+
+  return (
+    <div className="flex items-center justify-between gap-4 pt-3 border-t border-border/30">
+      <div>
+        <span className="text-sm font-medium text-text-primary">Update notifications</span>
+        <p className="mt-0.5 text-xs text-text-secondary/70">
+          Modal interrupts on launch. Pill shows a quiet footer badge.
+        </p>
+      </div>
+      <select
+        value={mode}
+        onChange={(e) => handleChange(e.target.value as UpdateMode)}
+        className="rounded-lg border border-border bg-bg-tertiary px-2 py-1.5 text-xs text-text-primary focus:outline-none focus:border-accent/50"
+      >
+        <option value="modal">Modal</option>
+        <option value="pill">Pill</option>
+      </select>
+    </div>
+  );
+}
+
 export default function Settings() {
   const { settings, update, resetAll } = useSettings();
 
@@ -433,6 +464,8 @@ export default function Settings() {
             </div>
             {isTauri ? <UpdateButton /> : <span className="text-xs text-text-secondary/70">Browser</span>}
           </div>
+
+          <UpdateModeSelect />
 
           <div className="flex items-center justify-between gap-4 pt-3 border-t border-border/30">
             <div>
