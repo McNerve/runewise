@@ -90,10 +90,28 @@ export default function WorldMap() {
   const [filter, setFilter] = useState<CategoryFilter>("all");
   const [openPoi, setOpenPoi] = useState<WorldMapPoi | null>(null);
 
+  // Cursor-anchored zoom: the map point under the cursor stays under the
+  // cursor while zooming, so users don't "lose their place" when wheel-zooming.
+  // Ratio-based scale factor gives smooth trackpad + mouse wheel feel.
   const handleWheel = useCallback((e: WheelEvent) => {
     e.preventDefault();
-    const delta = e.deltaY > 0 ? -0.02 : 0.02;
-    setZoom((z) => Math.max(0.05, Math.min(1.5, z + delta)));
+    const el = containerRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const dx = e.clientX - (rect.left + rect.width / 2);
+    const dy = e.clientY - (rect.top + rect.height / 2);
+    const scaleFactor = Math.exp(-e.deltaY * 0.002);
+    setZoom((currentZoom) => {
+      const newZoom = Math.max(0.05, Math.min(1.5, currentZoom * scaleFactor));
+      const actualFactor = newZoom / currentZoom;
+      if (actualFactor !== 1) {
+        setPan((currentPan) => ({
+          x: dx - (dx - currentPan.x) * actualFactor,
+          y: dy - (dy - currentPan.y) * actualFactor,
+        }));
+      }
+      return newZoom;
+    });
   }, []);
 
   useEffect(() => {
