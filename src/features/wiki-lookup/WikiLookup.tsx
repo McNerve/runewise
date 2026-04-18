@@ -18,6 +18,7 @@ import {
 } from "../../lib/wiki/interactive";
 import { useGEData } from "../../hooks/useGEData";
 import { fetchVolumes } from "../../lib/api/ge";
+import WikiSectionContent from "./components/WikiSectionContent";
 import { formatGp } from "../../lib/format";
 
 const COLLAPSED_SECTIONS = [
@@ -592,19 +593,19 @@ export default function WikiLookup() {
                   <summary className="mb-4 text-lg font-semibold tracking-tight cursor-pointer text-text-primary hover:text-accent transition-colors">
                     {section.title}
                   </summary>
-                  <div
+                  <WikiSectionContent
+                    html={section.html}
                     className={`article-content${extra ? ` ${extra}` : ""}`}
                     onClick={handleContentClick}
-                    dangerouslySetInnerHTML={{ __html: section.html }}
                   />
                 </details>
               ) : (
                 <section key={section.id}>
                   <h4 className="mb-4 text-lg font-semibold tracking-tight">{section.title}</h4>
-                  <div
+                  <WikiSectionContent
+                    html={section.html}
                     className={`article-content${extra ? ` ${extra}` : ""}`}
                     onClick={handleContentClick}
-                    dangerouslySetInnerHTML={{ __html: section.html }}
                   />
                 </section>
               );
