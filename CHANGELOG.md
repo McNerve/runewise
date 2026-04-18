@@ -2,6 +2,48 @@
 
 All notable changes to RuneWise are documented here. Versions follow [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Page-by-page audit follow-ups
+
+Post-v1.6 sweep across all 40 views in 9 families. See `.claude/v16-audit.md`.
+
+### Fixes
+
+- **Skill Calculator no longer crashes** when target level exceeds current capacity. Root cause: wiki recipe JSON sometimes returned `materials`/`output` as objects not arrays; `Array.isArray()` guard added at the data-source boundary (`src/lib/api/recipes.ts`) plus defensive `?? []` in the recipe table.
+- **Arceuus, Ancient, and Lunar spells** now correctly show P2P. Wiki data occasionally flagged individual spells as F2P despite the spellbook being members-only — hard-gated by spellbook type.
+- **Alch profit display for capped items** no longer shows `-2,147,450,647`. Items at the GE cap (≥2.147B gp) are filtered from the alch rankings and browse-all view.
+- **Collection Log "Recently Obtained"** now uses real item icons with a proper fallback chain (wiki image → itemIcon → letter placeholder) instead of letter tiles.
+- **Collection Log boss-row drill-in** scrolls the items panel into view on category click.
+- **ErrorBoundary copy** no longer references "V5" — generic reload message.
+- **Settings keybind slots** no longer display empty `⌘` labels for actions without a default bind; labels are filtered to only bound actions.
+
+### Consistency + primitives
+
+- New shared UI primitives under `src/components/primitives/`:
+  - `Tabs` — keyboard-navigable underline tab strip with optional icons + count badges.
+  - `FilterPills` — horizontal pill row matching Clue Helper / OSRS convention.
+  - `StatGrid` + `StatCard` — unified stat tile layout (white value, muted label, one optional accent). Replaces the per-page rainbow tile pattern.
+  - `TierBadge` + `TIER_COLORS` — canonical OSRS tier palette (Beginner gray / Easy green / Medium yellow / Hard red / Elite purple / Master orange).
+- Migrated Home, Profile, DPS Calc, Combat Tasks, Money Making, Items/Market, Clue Helper to the primitives. Net −170 LOC.
+
+### Dedupe + surfaces
+
+- **Profile** no longer embeds Quests/Diaries/Combat Tasks tabs. Single deep-link CTA to the canonical `#progress` page. Progress remains the only home for those surfaces (plus its unique "What Can I Do?" tab).
+- **Alch Profits** is now sole-sourced from Items & Watchlist. Money Making links through instead of duplicating.
+- **Profit Rankings** tab in Money Making is canonical. The standalone `#profit-hub` page has been folded in; `#profit-hub` silently redirects to `#money-making?tab=rankings` via `LEGACY_ALIASES`.
+- Deleted unreachable features: `src/features/runelite/` and `src/features/price-charts/` (no registry entries, no imports).
+
+### Navigation + tables
+
+- **Boss Guides** action row collapsed into 3 trailing icon buttons (Profit Calculator / DPS / Open Wiki, plus Raid Rooms on raids). Kills the "Loot Calculator" vs "Loot & Drops" ambiguity.
+- **Sticky table headers** (`thead.sticky-thead` helper in `index.css`) on 8 long tables: Boss Guides loot, Market Browse All, Loot profit calc + boss rankings, Gear Compare weapons.
+- **OSRS News tabs** slimmed from a 2×2 oversized grid to a horizontal pill row matching Money Making.
+
+### About
+
+- Added TempleOSRS and Star Miners to the Data Sources list.
+
 ## [1.6.0] - 2026-04-17
 
 ### Pet Calculator — full redesign
