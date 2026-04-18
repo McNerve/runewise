@@ -1,4 +1,12 @@
 import WikiImage from "../../components/WikiImage";
+import {
+  parseLoadoutRowsWithEntries,
+  parseSuggestedSkillItems,
+  normalizeText,
+  isSuggestedSkillFallback,
+  type LoadoutRow,
+  type SuggestedSkillResult,
+} from "../../lib/wiki/scraper";
 
 interface StructuredSectionProps {
   title: string;
@@ -10,34 +18,8 @@ interface IconTextItem {
   text: string;
 }
 
-interface LoadoutRow {
-  slot: IconTextItem;
-  options: IconTextItem[];
-}
-
-const INVALID_LOADOUT_LABELS = [
-  "n/a",
-  "see ranged",
-  "see melee",
-  "see magic",
-  "see mage",
-  "see inventory",
-  "see equipment",
-  "ranged",
-  "melee",
-  "magic",
-  "mage",
-] as const;
-
-// Threshold: items with text longer than this are likely descriptions, not requirements
+// MAX_REQUIREMENT_LENGTH: items longer than this without an icon are likely descriptions
 const MAX_REQUIREMENT_LENGTH = 80;
-
-function normalizeText(value: string) {
-  return value
-    .replace(/\s+/g, " ")
-    .replace(/^[•◦▪▸►●○◆◇‣⁃\-–—]\s*/, "")
-    .trim();
-}
 
 function parseDocument(html: string) {
   const parser = new DOMParser();
@@ -45,112 +27,14 @@ function parseDocument(html: string) {
 }
 
 function parseListItems(doc: Document, title: string): IconTextItem[] {
-  const items = Array.from(doc.querySelectorAll("li, p"))
+  return Array.from(doc.querySelectorAll("li, p"))
     .map((node) => ({
       icon: node.querySelector("img")?.getAttribute("src") ?? null,
       text: normalizeText(node.textContent ?? ""),
     }))
     .filter((item) => item.text.length > 0)
     .filter((item) => item.text.toLowerCase() !== title.trim().toLowerCase())
-    // Filter out long description paragraphs — keep only actual requirements/skills
     .filter((item) => item.text.length <= MAX_REQUIREMENT_LENGTH || item.icon !== null);
-
-  return items;
-}
-
-function normalizeItemLabel(value: string) {
-  return normalizeText(
-    value
-      .replace(/\s*[>•|]\s*/g, "\n")
-      .replace(/\s+or\s+/gi, "\n")
-      .replace(/\s+\/\s+/g, "\n")
-  );
-}
-
-function extractSlotLabel(cell: HTMLTableCellElement): string {
-  const image = cell.querySelector("img");
-  const fromImage =
-    image?.getAttribute("alt") ||
-    image?.getAttribute("title") ||
-    image?.closest("a")?.getAttribute("title") ||
-    "";
-
-  const fromText = normalizeText(cell.textContent ?? "");
-  const raw = fromText || fromImage;
-  const cleaned = raw
-    .replace(/_+/g, " ")
-    .replace(/\bslot\b/gi, "")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  return cleaned || "Slot";
-}
-
-function extractItemsFromCell(cell: HTMLTableCellElement): IconTextItem[] {
-  const linkedItems = Array.from(cell.querySelectorAll("a"))
-    .map((link) => {
-      const text = normalizeText(link.textContent ?? "");
-      if (!text) return null;
-      const image =
-        link.querySelector("img")?.getAttribute("src") ??
-        link.previousElementSibling?.tagName === "IMG"
-          ? link.previousElementSibling?.getAttribute("src") ?? null
-          : null;
-      return { icon: image, text };
-    })
-    .filter((item): item is IconTextItem => item !== null);
-
-  if (linkedItems.length > 0) {
-    const seen = new Set<string>();
-    return linkedItems.filter((item) => {
-      const key = item.text.toLowerCase();
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-  }
-
-  const images = Array.from(cell.querySelectorAll("img")).map((img) => img.getAttribute("src"));
-  const textParts = normalizeItemLabel(cell.textContent ?? "")
-    .split("\n")
-    .map((part) => part.trim())
-    .filter((part) => part.length > 0);
-
-  return textParts.map((text, index) => ({
-    icon: images[index] ?? images[0] ?? null,
-    text,
-  }));
-}
-
-function isValidLoadoutItem(item: IconTextItem) {
-  const normalized = item.text.trim().toLowerCase();
-  if (!normalized) return false;
-  return !INVALID_LOADOUT_LABELS.includes(normalized as (typeof INVALID_LOADOUT_LABELS)[number]);
-}
-
-function parseLoadoutRows(doc: Document): LoadoutRow[] {
-  const rows = Array.from(doc.querySelectorAll("table tr")).slice(1);
-
-  return rows
-    .map((row) => {
-      const cells = Array.from(row.querySelectorAll("td"));
-      if (cells.length < 2) return null;
-
-      const slotCell = cells[0];
-      const slot: IconTextItem = {
-        icon: slotCell.querySelector("img")?.getAttribute("src") ?? null,
-        text: extractSlotLabel(slotCell),
-      };
-
-      const options = cells
-        .slice(1)
-        .flatMap((cell) => extractItemsFromCell(cell as HTMLTableCellElement))
-        .filter(isValidLoadoutItem);
-
-      if (options.length === 0) return null;
-      return { slot, options };
-    })
-    .filter((row): row is LoadoutRow => row !== null);
 }
 
 function sectionKind(title: string) {
@@ -192,34 +76,42 @@ function RawHtmlFallback({ html, kind }: { html: string; kind: string | null }) 
   );
 }
 
-export default function StructuredSection({ title, html }: StructuredSectionProps) {
-  const kind = sectionKind(title);
-  if (!kind) return null;
-
-  const doc = parseDocument(html);
-
-  if (kind === "requirements" || kind === "skills") {
-    const items = parseListItems(doc, title);
-    if (items.length === 0) return <RawHtmlFallback html={html} kind={kind} />;
-
+function SkillTile({ result, index, titleKey }: { result: SuggestedSkillResult; index: number; titleKey: string }) {
+  if (isSuggestedSkillFallback(result)) {
     return (
-      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-        {items.map((item, index) => (
-          <div
-            key={`${title}-${index}`}
-            className="flex items-center gap-2.5 rounded-lg border border-border/50 bg-bg-primary/40 px-3 py-2"
-          >
-            {renderIcon(item.icon, item.text, "sm")}
-            <div className="min-w-0 text-sm leading-5 text-text-primary">{item.text}</div>
-          </div>
-        ))}
+      <div
+        key={`${titleKey}-${index}`}
+        className="flex items-center gap-2.5 rounded-lg border border-border/50 bg-bg-primary/40 px-3 py-2"
+      >
+        {result.icon ? renderIcon(result.icon, result.fallback, "sm") : (
+          <span className="flex h-6 w-6 text-[8px] items-center justify-center rounded-md bg-bg-primary/60 font-semibold text-text-secondary">
+            ?
+          </span>
+        )}
+        <div className="min-w-0 text-sm leading-5 text-text-primary">{result.fallback}</div>
       </div>
     );
   }
 
-  const rows = parseLoadoutRows(doc);
-  if (rows.length === 0) return <RawHtmlFallback html={html} kind="loadout" />;
+  return (
+    <div
+      key={`${titleKey}-${index}`}
+      className="flex items-center gap-2.5 rounded-lg border border-border/50 bg-bg-primary/40 px-3 py-2"
+    >
+      <span className="flex h-6 w-6 text-[8px] items-center justify-center rounded-md bg-bg-primary/60 font-semibold text-text-secondary">
+        {result.skill[0]}
+      </span>
+      <div className="min-w-0 text-sm leading-5 text-text-primary">
+        <span className="font-medium">{result.skill}</span>
+        {result.level !== null && (
+          <span className="ml-1 text-text-secondary">{result.level}+</span>
+        )}
+      </div>
+    </div>
+  );
+}
 
+function LoadoutSection({ title, rows }: { title: string; rows: LoadoutRow[] }) {
   return (
     <div className="space-y-1">
       {rows.map((row, index) => (
@@ -238,15 +130,20 @@ export default function StructuredSection({ title, html }: StructuredSectionProp
               <div
                 key={`${title}-row-${index}-option-${optionIndex}`}
                 className={`flex items-center gap-1.5 rounded-lg border px-2 py-1 ${
-                  optionIndex === 0
-                    ? "border-accent/25 bg-accent/8"
-                    : "border-border/40 bg-bg-secondary/40"
+                  option.type === "see-section"
+                    ? "border-accent/40 bg-accent/12 cursor-pointer"
+                    : optionIndex === 0
+                      ? "border-accent/25 bg-accent/8"
+                      : "border-border/40 bg-bg-secondary/40"
                 }`}
               >
                 {renderIcon(option.icon, option.text, "sm")}
                 <span className="text-xs text-text-primary truncate max-w-[160px]">{option.text}</span>
-                {optionIndex === 0 && (
+                {option.type !== "see-section" && optionIndex === 0 && (
                   <span className="text-[9px] uppercase tracking-wide text-accent/70 font-semibold">Best</span>
+                )}
+                {option.type === "see-section" && (
+                  <span className="text-[9px] uppercase tracking-wide text-accent/70 font-semibold">→</span>
                 )}
               </div>
             ))}
@@ -255,4 +152,49 @@ export default function StructuredSection({ title, html }: StructuredSectionProp
       ))}
     </div>
   );
+}
+
+export default function StructuredSection({ title, html }: StructuredSectionProps) {
+  const kind = sectionKind(title);
+  if (!kind) return null;
+
+  const doc = parseDocument(html);
+
+  if (kind === "requirements") {
+    const items = parseListItems(doc, title);
+    if (items.length === 0) return <RawHtmlFallback html={html} kind={kind} />;
+
+    return (
+      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+        {items.map((item, index) => (
+          <div
+            key={`${title}-${index}`}
+            className="flex items-center gap-2.5 rounded-lg border border-border/50 bg-bg-primary/40 px-3 py-2"
+          >
+            {renderIcon(item.icon, item.text, "sm")}
+            <div className="min-w-0 text-sm leading-5 text-text-primary">{item.text}</div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (kind === "skills") {
+    const results = parseSuggestedSkillItems(doc, title);
+    if (results.length === 0) return <RawHtmlFallback html={html} kind={kind} />;
+
+    return (
+      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+        {results.map((result, index) => (
+          <SkillTile key={`${title}-skill-${index}`} result={result} index={index} titleKey={title} />
+        ))}
+      </div>
+    );
+  }
+
+  // loadout
+  const rows = parseLoadoutRowsWithEntries(doc);
+  if (rows.length === 0) return <RawHtmlFallback html={html} kind="loadout" />;
+
+  return <LoadoutSection title={title} rows={rows} />;
 }
