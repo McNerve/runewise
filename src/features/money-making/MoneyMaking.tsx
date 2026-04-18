@@ -310,7 +310,7 @@ export default function MoneyMaking({ hiscores }: Props) {
                       onClick={() => navigate("bosses", { boss: method.name })}
                       className="text-[10px] text-text-secondary/40 hover:text-accent transition-colors"
                     >
-                      Guide
+                      Open guide
                     </button>
                   )}
                 </div>

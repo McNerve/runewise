@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   fetchAllSpells,
   getSpellsByBook,
@@ -10,7 +10,9 @@ import ErrorState from "../../components/ErrorState";
 import { TableSkeleton } from "../../components/Skeleton";
 import WikiImage from "../../components/WikiImage";
 import { useAsyncData } from "../../hooks/useAsyncData";
+import { useGEData } from "../../hooks/useGEData";
 import { useNavigation } from "../../lib/NavigationContext";
+import { formatGp } from "../../lib/format";
 import { WIKI_IMG } from "../../lib/sprites";
 
 const BOOKS: { id: Spellbook; label: string; description: string }[] = [
@@ -129,10 +131,41 @@ function spellIcon(spell: WikiSpell): string {
 export default function Spells() {
   const { navigate } = useNavigation();
   const { data, loading, error, retry } = useAsyncData(fetchAllSpells, []);
+  const { mapping, prices, fetchIfNeeded } = useGEData();
   const allSpells = useMemo(() => data ?? [], [data]);
   const [activeBook, setActiveBook] = useState<Spellbook>("normal");
   const [query, setQuery] = useState("");
   const [expandedSpell, setExpandedSpell] = useState<string | null>(null);
+
+  useEffect(() => { fetchIfNeeded(); }, [fetchIfNeeded]);
+
+  const runePrice = useMemo(() => {
+    const idByName = new Map<string, number>();
+    for (const item of mapping) idByName.set(item.name.toLowerCase(), item.id);
+    return (runeName: string): number | null => {
+      const key = runeName.toLowerCase().includes("rune")
+        ? runeName.toLowerCase()
+        : `${runeName.toLowerCase()} rune`;
+      const id = idByName.get(key);
+      if (!id) return null;
+      const p = prices[String(id)];
+      return p?.high ?? p?.low ?? null;
+    };
+  }, [mapping, prices]);
+
+  function totalCost(runes: RuneCost[]): number | null {
+    if (runes.length === 0) return null;
+    let total = 0;
+    let anyKnown = false;
+    for (const r of runes) {
+      const price = runePrice(r.name);
+      if (price != null) {
+        total += price * r.amount;
+        anyKnown = true;
+      }
+    }
+    return anyKnown ? total : null;
+  }
 
   const spells = useMemo(() => {
     let filtered = getSpellsByBook(allSpells, activeBook);
@@ -222,6 +255,7 @@ export default function Spells() {
                   <th scope="col" className="text-right px-4 py-2">Max Hit</th>
                 )}
                 <th scope="col" className="text-left px-4 py-2">Rune Cost</th>
+                <th scope="col" className="text-right px-4 py-2">Cost</th>
                 <th scope="col" className="text-left px-4 py-2">Type</th>
                 <th scope="col" className="text-center px-4 py-2">Members</th>
               </tr>
@@ -285,6 +319,12 @@ export default function Spells() {
                     )}
                     <td className="px-4 py-2 align-top">
                       {!isExpanded && <RunePills runes={runes} />}
+                    </td>
+                    <td className="px-4 py-2 text-right text-xs tabular-nums text-text-secondary align-top">
+                      {(() => {
+                        const cost = totalCost(runes);
+                        return cost == null ? <span className="text-text-secondary/40">—</span> : formatGp(cost);
+                      })()}
                     </td>
                     <td className="px-4 py-2 text-xs text-text-secondary align-top">
                       {spell.type || "—"}
