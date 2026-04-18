@@ -229,6 +229,15 @@ export default function ClueHelper() {
 
                         {/* Actions */}
                         <div className="flex items-center gap-1.5 shrink-0">
+                          {clue.type === "Coordinate" && clue.location && (
+                            <button
+                              onClick={() => navigate("world-map", { location: clue.location })}
+                              className="rounded-lg border border-border bg-bg-primary/60 px-2 py-1 text-[10px] font-medium text-text-secondary transition hover:border-accent/40 hover:text-accent"
+                              title="Show on map"
+                            >
+                              Map
+                            </button>
+                          )}
                           <button
                             onClick={() => navigate("wiki", { search: clue.text })}
                             className="rounded-lg border border-border bg-bg-primary/60 px-2 py-1 text-[10px] font-medium text-accent transition hover:border-accent/40"
