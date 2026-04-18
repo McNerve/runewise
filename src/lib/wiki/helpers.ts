@@ -116,6 +116,21 @@ export function normalizeImages(root: Element): void {
     img.removeAttribute("data-file-width");
     img.removeAttribute("data-file-height");
     img.setAttribute("loading", "lazy");
+
+    // Hide images with no usable src — avoids gray-void cells in tables.
+    // A src is "unresolved" when it's empty, a data URI placeholder, or still
+    // a relative path that didn't match any rewrite rule above.
+    const resolvedSrc = img.getAttribute("src") || "";
+    const isUnresolved =
+      !resolvedSrc ||
+      resolvedSrc.startsWith("data:") ||
+      (!resolvedSrc.startsWith("http") && !resolvedSrc.startsWith("//"));
+
+    if (isUnresolved) {
+      img.setAttribute("data-unresolved", "1");
+      // Hide at the DOM level so the table cell collapses cleanly
+      img.style.display = "none";
+    }
   });
 }
 
