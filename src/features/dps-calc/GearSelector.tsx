@@ -12,9 +12,10 @@ interface Props {
   slot: EquipmentSlot | "2h";
   onSelect: (item: WikiEquipment | null) => void;
   onClose: () => void;
+  combatStyle?: "melee" | "ranged" | "magic";
 }
 
-export default function GearSelector({ slot, onSelect, onClose }: Props) {
+export default function GearSelector({ slot, onSelect, onClose, combatStyle = "melee" }: Props) {
   const [allEquipment, setAllEquipment] = useState<WikiEquipment[]>([]);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
@@ -26,17 +27,26 @@ export default function GearSelector({ slot, onSelect, onClose }: Props) {
     });
   }, []);
 
+  const styleScore = (item: WikiEquipment): number => {
+    if (combatStyle === "ranged") return item.attackRanged + item.rangedStrength;
+    if (combatStyle === "magic") return item.attackMagic + item.magicDamage;
+    return item.attackStab + item.attackSlash + item.attackCrush + item.strengthBonus;
+  };
+
   const results = useMemo(() => {
     if (slot === "weapon") {
       // For weapon slot, search both "weapon" and "2h" items
-      const weapons = searchEquipment(allEquipment, query, "weapon" as EquipmentSlot, 40);
-      const twoHanders = searchEquipment(allEquipment, query, "2h" as EquipmentSlot, 40);
+      const weapons = searchEquipment(allEquipment, query, "weapon" as EquipmentSlot, 80);
+      const twoHanders = searchEquipment(allEquipment, query, "2h" as EquipmentSlot, 80);
       const combined = [...weapons, ...twoHanders];
       if (query.trim()) return combined.slice(0, 40);
-      return combined.sort((a, b) => (b.strengthBonus + b.rangedStrength) - (a.strengthBonus + a.rangedStrength)).slice(0, 40);
+      return combined
+        .sort((a, b) => styleScore(b) - styleScore(a))
+        .slice(0, 40);
     }
     return searchEquipment(allEquipment, query, slot as EquipmentSlot, 40);
-  }, [allEquipment, query, slot]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allEquipment, query, slot, combatStyle]);
 
   return (
     <div
