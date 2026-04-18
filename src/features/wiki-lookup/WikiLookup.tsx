@@ -16,6 +16,8 @@ import {
   initWikiInteractive,
   handleLightboxClick,
 } from "../../lib/wiki/interactive";
+import WikiSectionContent from "./components/WikiSectionContent";
+import RequirementsSection from "./components/RequirementsSection";
 
 const COLLAPSED_SECTIONS = [
   "used in recommended equipment",
@@ -267,7 +269,11 @@ export default function WikiLookup() {
 
   useEffect(() => {
     if (!loadingDocument && document && contentRef.current) {
-      initWikiInteractive(contentRef.current);
+      const pageSlug = document.title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "");
+      initWikiInteractive(contentRef.current, pageSlug);
     }
   }, [loadingDocument, document]);
 
@@ -514,27 +520,43 @@ export default function WikiLookup() {
             ) : null}
 
             {document.sections.map((section) => {
+              const lower = section.title.toLowerCase();
+              const isRequirements =
+                lower.includes("requirements") &&
+                !lower.includes("equipment");
               const extra = sectionExtraClasses(section.title);
               const collapsed = shouldCollapse(section.title);
+
+              const sectionBody = isRequirements ? (
+                <RequirementsSection
+                  html={section.html}
+                  onQuestClick={(questName) =>
+                    navigate("progress", { quest: questName, tab: "quests" })
+                  }
+                />
+              ) : (
+                <WikiSectionContent
+                  html={section.html}
+                  className={`article-content${extra ? ` ${extra}` : ""}`}
+                  onClick={handleContentClick}
+                  onLinkClick={(href) => {
+                    const page = resolveWikiPageFromHref(href);
+                    if (page) void routeWikiPage(page);
+                  }}
+                />
+              );
+
               return collapsed ? (
                 <details key={section.id} className="article-content-collapse">
                   <summary className="mb-4 text-lg font-semibold tracking-tight cursor-pointer text-text-primary hover:text-accent transition-colors">
                     {section.title}
                   </summary>
-                  <div
-                    className={`article-content${extra ? ` ${extra}` : ""}`}
-                    onClick={handleContentClick}
-                    dangerouslySetInnerHTML={{ __html: section.html }}
-                  />
+                  {sectionBody}
                 </details>
               ) : (
                 <section key={section.id}>
                   <h4 className="mb-4 text-lg font-semibold tracking-tight">{section.title}</h4>
-                  <div
-                    className={`article-content${extra ? ` ${extra}` : ""}`}
-                    onClick={handleContentClick}
-                    dangerouslySetInnerHTML={{ __html: section.html }}
-                  />
+                  {sectionBody}
                 </section>
               );
             })}
