@@ -1,19 +1,46 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { dropChance, killsForConfidence } from "../../lib/formulas/dry";
 import { POPULAR_DROPS, DROP_CATEGORIES, type DropEntry } from "../../lib/data/drops";
 import { itemIcon } from "../../lib/sprites";
 import { findActivityScore, type HiscoreData } from "../../lib/api/hiscores";
+import { useNavigation } from "../../lib/NavigationContext";
 
 interface Props {
   hiscores: HiscoreData | null;
 }
 
 export default function DryCalculator({ hiscores }: Props) {
+  const { params } = useNavigation();
   const [kills, setKills] = useState(0);
   const [rate, setRate] = useState(512);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [selectedDrop, setSelectedDrop] = useState<DropEntry | null>(null);
   const [kcAutoFilled, setKcAutoFilled] = useState(false);
+
+  // Handle cross-nav params: boss=<slug>&kc=<kills>
+  useEffect(() => {
+    const kcParam = params.kc ? Number(params.kc) : null;
+    if (kcParam != null && kcParam > 0) {
+      setKills(kcParam);
+      setKcAutoFilled(true);
+    }
+    if (params.boss) {
+      const bossNorm = params.boss.toLowerCase();
+      const match = POPULAR_DROPS.find(
+        (d) => d.source.toLowerCase() === bossNorm
+      );
+      if (match) {
+        setSelectedDrop(match);
+        setRate(Math.round(match.rate));
+        if (!(kcParam != null && kcParam > 0)) {
+          const kc = hiscores ? findActivityScore(hiscores, match.source) ?? 0 : 0;
+          if (kc > 0) { setKills(kc); setKcAutoFilled(true); }
+        }
+      }
+    }
+  // Only re-run on param changes, not on every hiscores update
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params.boss, params.kc]);
 
   const chance = kills > 0 && rate > 0 ? dropChance(kills, rate) * 100 : 0;
   const kills95 = rate > 0 ? killsForConfidence(rate, 0.95) : 0;
