@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import DOMPurify from "dompurify";
 import { apiFetch } from "../../lib/api/fetch";
 import { isTauri } from "../../lib/env";
@@ -256,6 +256,7 @@ export default function News() {
   const [selectedPost, setSelectedPost] = useState<NewsPost | null>(null);
   const [articleHtml, setArticleHtml] = useState<string | null>(null);
   const [articleLoading, setArticleLoading] = useState(false);
+  const [articleError, setArticleError] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const articleRequestId = useRef(0);
 
@@ -274,20 +275,45 @@ export default function News() {
     };
   }, [refreshKey]);
 
+  const handleClose = useCallback(() => {
+    setSelectedPost(null);
+    setArticleHtml(null);
+    setArticleError(false);
+  }, []);
+
+  // Close modal on Escape, and prevent background scroll while open.
+  useEffect(() => {
+    if (!selectedPost) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") handleClose();
+    };
+    document.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [selectedPost, handleClose]);
+
   function handlePostClick(post: NewsPost) {
     const id = ++articleRequestId.current;
     setSelectedPost(post);
     setArticleHtml(null);
+    setArticleError(false);
     setArticleLoading(true);
     fetchArticleContent(post.url)
-      .then((html) => { if (articleRequestId.current === id) setArticleHtml(html); })
-      .catch(() => { if (articleRequestId.current === id) setArticleHtml("<p>Failed to load article.</p>"); })
-      .finally(() => { if (articleRequestId.current === id) setArticleLoading(false); });
-  }
-
-  function handleBack() {
-    setSelectedPost(null);
-    setArticleHtml(null);
+      .then((html) => {
+        if (articleRequestId.current !== id) return;
+        setArticleHtml(html);
+      })
+      .catch(() => {
+        if (articleRequestId.current !== id) return;
+        setArticleError(true);
+      })
+      .finally(() => {
+        if (articleRequestId.current === id) setArticleLoading(false);
+      });
   }
 
   const filtered =
@@ -370,8 +396,14 @@ export default function News() {
     </div>
   );
 
-  if (!selectedPost) {
-    return (
+  const externalHref = selectedPost
+    ? selectedPost.url.startsWith("http")
+      ? selectedPost.url
+      : `https://secure.runescape.com${selectedPost.url}`
+    : "";
+
+  return (
+    <>
       <div className="max-w-4xl">
         <div className="flex items-center gap-3 mb-1">
           <h2 className="text-2xl font-semibold tracking-tight">OSRS News</h2>
@@ -415,67 +447,84 @@ export default function News() {
           </div>
         )}
       </div>
-    );
-  }
 
-  return (
-    <div className="grid grid-cols-[280px_minmax(0,1fr)] gap-5">
-      <aside className="min-w-0">
-        <div className="mb-3 px-2 text-[10px] uppercase tracking-[0.2em] text-text-secondary/45">
-          Articles
-        </div>
-        {filterButtons}
+      {selectedPost && (
         <div
-          className="space-y-1.5 overflow-y-auto scroll-fade sidebar-scroll"
-          style={{ maxHeight: "calc(100vh - 220px)" }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="news-article-title"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          onClick={handleClose}
         >
-          {filtered.map((post, i) => postRow(post, i))}
-        </div>
-      </aside>
-
-      <div className="min-w-0">
-        <div className="flex items-center gap-3 mb-4">
-          <button
-            onClick={handleBack}
-            className="text-sm text-accent hover:text-accent-hover transition-colors"
+          <div
+            className="flex w-full max-w-[720px] max-h-[min(90vh,960px)] flex-col overflow-hidden rounded-xl border border-border/60 bg-bg-primary shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
           >
-            ← Back to list
-          </button>
-          <a
-            href={selectedPost.url.startsWith("http") ? selectedPost.url : `https://secure.runescape.com${selectedPost.url}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-text-secondary hover:text-text-primary transition-colors"
-          >
-            Open on RuneScape.com ↗
-          </a>
-        </div>
+            <header className="flex items-start justify-between gap-3 border-b border-border/40 p-5">
+              <div className="min-w-0">
+                <h3 id="news-article-title" className="text-lg font-semibold truncate">
+                  {selectedPost.title}
+                </h3>
+                <div className="mt-1.5 flex items-center gap-2 flex-wrap">
+                  <span className="text-xs text-text-secondary">
+                    {selectedPost.date}
+                  </span>
+                  <span
+                    className={`text-xs px-1.5 py-0.5 rounded ${categoryColor(selectedPost.category)}`}
+                  >
+                    {selectedPost.category}
+                  </span>
+                  {statusBadge(selectedPost.status)}
+                </div>
+              </div>
+              <button
+                onClick={handleClose}
+                aria-label="Close article"
+                className="-mt-1 -mr-1 rounded-lg p-1.5 text-text-secondary hover:bg-bg-secondary hover:text-text-primary"
+              >
+                ×
+              </button>
+            </header>
 
-        <h3 className="text-lg font-semibold mb-2">{selectedPost.title}</h3>
+            <div className="flex-1 overflow-y-auto p-5">
+              {articleLoading && <CardSkeleton />}
 
-        <div className="flex items-center gap-2 mb-4">
-          <span className="text-xs text-text-secondary">
-            {selectedPost.date}
-          </span>
-          <span
-            className={`text-xs px-1.5 py-0.5 rounded ${categoryColor(selectedPost.category)}`}
-          >
-            {selectedPost.category}
-          </span>
-          {statusBadge(selectedPost.status)}
-        </div>
+              {!articleLoading && articleError && (
+                <div className="space-y-3 text-sm text-text-secondary leading-relaxed">
+                  <p>
+                    Couldn't load the article preview in-app. Open it on RuneScape.com
+                    to read the full post.
+                  </p>
+                </div>
+              )}
 
-        {articleLoading && <CardSkeleton />}
+              {!articleLoading && !articleError && articleHtml && (
+                <div
+                  className="article-content text-sm text-text-secondary leading-relaxed space-y-3"
+                  dangerouslySetInnerHTML={{ __html: articleHtml }}
+                />
+              )}
+            </div>
 
-        {!articleLoading && articleHtml && (
-          <div className="rounded-xl border border-border/40 bg-bg-primary/25 p-5">
-            <div
-              className="article-content text-sm text-text-secondary leading-relaxed space-y-3"
-              dangerouslySetInnerHTML={{ __html: articleHtml }}
-            />
+            <footer className="flex items-center justify-between gap-3 border-t border-border/40 p-4">
+              <button
+                onClick={handleClose}
+                className="text-sm text-text-secondary hover:text-text-primary transition-colors"
+              >
+                Close
+              </button>
+              <a
+                href={externalHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-lg bg-accent px-4 py-1.5 text-sm font-medium text-on-accent hover:bg-accent-hover transition-colors"
+              >
+                Open original ↗
+              </a>
+            </footer>
           </div>
-        )}
-      </div>
-    </div>
+        </div>
+      )}
+    </>
   );
 }
