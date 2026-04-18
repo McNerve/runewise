@@ -193,6 +193,20 @@ export default function SkillCalculator({ hiscores }: Props) {
       </div>
 
       <div className="bg-bg-tertiary rounded-lg p-4 space-y-4">
+        <div className="flex items-center justify-between border-b border-border pb-3 -mx-4 px-4 -mt-4 pt-4 mb-1">
+          <div className="flex items-center gap-2">
+            <img src={SKILL_ICONS[selectedSkill]} alt="" className="w-6 h-6" />
+            <div>
+              <div className="text-sm font-semibold text-text-primary">{selectedSkill}</div>
+              {currentLevel !== null && (
+                <div className="text-[11px] text-text-secondary">Level {currentLevel}</div>
+              )}
+            </div>
+          </div>
+          <span className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
+            Editing
+          </span>
+        </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-xs text-text-secondary mb-1">

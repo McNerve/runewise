@@ -568,35 +568,71 @@ export async function fetchBossGuideDocument(
 // Equipment parsing helpers (used by StructuredSection)
 // -----------------------------------------------------------------------
 
-const SEE_SECTION_RE = /^see\s+(.+?)\s+sections?$/i;
+const SEE_SECTION_RE = /^see\s*:?\s+(.+?)\s+sections?$/i;
+
+/** Labels that wiki emits as equipment entries but carry no useful signal. */
+const INVALID_EQUIPMENT_LABELS = new Set([
+  "n/a",
+  "na",
+  "-",
+  "—",
+  "ranged",
+  "melee",
+  "magic",
+  "mage",
+]);
+
+/**
+ * Split on ` / ` (with spaces) between alternative items. Preserves URL-style
+ * slashes and names that contain `/` without spaces. Also trims bare leading/
+ * trailing slashes that result from partial wiki templates.
+ */
+function splitOnSlash(text: string): string[] {
+  return text
+    .split(/\s+\/\s+/)
+    .map((p) => p.replace(/^\/+\s*|\s*\/+$/g, "").trim())
+    .filter((p) => p.length > 0);
+}
 
 /** Parse a single list item's text into an EquipmentEntry. */
 export function parseEquipmentEntry(
   text: string,
   imageUrl?: string
 ): EquipmentEntry {
-  const m = text.trim().match(SEE_SECTION_RE);
+  const trimmed = text.trim().replace(/^\/+\s*|\s*\/+$/g, "").trim();
+  const m = trimmed.match(SEE_SECTION_RE);
   if (m) {
     return { type: "see-section", targetSectionTitle: m[1] };
   }
-  return { type: "item", name: text.trim(), imageUrl };
+  return { type: "item", name: trimmed, imageUrl };
+}
+
+/** Filter out equipment entries that are N/A or redundant style labels. */
+function isValidEquipmentEntry(entry: EquipmentEntry): boolean {
+  if (entry.type === "see-section") return true;
+  const normalized = entry.name.trim().toLowerCase();
+  if (!normalized) return false;
+  return !INVALID_EQUIPMENT_LABELS.has(normalized);
 }
 
 /**
  * Split a cell's content into individual EquipmentEntry items.
  * Splits on <li> boundaries or <br> elements rather than stripping to plain text.
+ * Then splits each resulting text on ` / ` for slash-joined alternatives.
  */
 export function parseEquipmentCellEntries(cell: Element): EquipmentEntry[] {
   // If the cell has <li> items, use those
   const listItems = cell.querySelectorAll("li");
   if (listItems.length > 0) {
-    return Array.from(listItems).flatMap((li) => {
+    const entries = Array.from(listItems).flatMap((li) => {
       const text = (li.textContent ?? "").replace(/\s+/g, " ").trim();
       const img = li.querySelector("img");
       const imageUrl = resolveImageSrc(img?.getAttribute("src") ?? img?.getAttribute("data-src") ?? null);
       if (!text) return [];
-      return [parseEquipmentEntry(text, imageUrl ?? undefined)];
+      // Also split li text on ` / ` for alternatives joined inline
+      return splitOnSlash(text).map((part) => parseEquipmentEntry(part, imageUrl ?? undefined));
     });
+    return entries.filter(isValidEquipmentEntry);
   }
 
   // Otherwise split on <br> boundaries
@@ -605,23 +641,29 @@ export function parseEquipmentCellEntries(cell: Element): EquipmentEntry[] {
     br.replaceWith(document.createTextNode("\n"));
   });
   const rawText = (clone.textContent ?? "").trim();
-  const parts = rawText.split("\n").map((p) => p.replace(/\s+/g, " ").trim()).filter(Boolean);
+  const parts = rawText
+    .split("\n")
+    .flatMap((p) => splitOnSlash(p.replace(/\s+/g, " ").trim()))
+    .filter(Boolean);
 
   if (parts.length > 1) {
     const images = Array.from(cell.querySelectorAll("img"));
-    return parts.map((text, i) => {
+    const entries = parts.map((text, i) => {
       const img = images[i] ?? images[0] ?? null;
       const imageUrl = resolveImageSrc(img?.getAttribute("src") ?? img?.getAttribute("data-src") ?? null);
       return parseEquipmentEntry(text, imageUrl ?? undefined);
     });
+    return entries.filter(isValidEquipmentEntry);
   }
 
-  // Single text block — return as one entry
+  // Single text block — split on ` / ` for alternatives, filter invalids
   const text = rawText.replace(/\s+/g, " ").trim();
   if (!text) return [];
   const img = cell.querySelector("img");
   const imageUrl = resolveImageSrc(img?.getAttribute("src") ?? img?.getAttribute("data-src") ?? null);
-  return [parseEquipmentEntry(text, imageUrl ?? undefined)];
+  const singleParts = splitOnSlash(text);
+  const entries = singleParts.map((p) => parseEquipmentEntry(p, imageUrl ?? undefined));
+  return entries.filter(isValidEquipmentEntry);
 }
 
 function resolveImageSrc(src: string | null): string | null {
