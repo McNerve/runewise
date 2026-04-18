@@ -95,6 +95,7 @@ const TOOL_POOL: Array<{ id: View; label: string }> = [
   { id: "overview", label: "Profile" },
   { id: "lookup", label: "Hiscores" },
   { id: "collection-log", label: "Collection Log" },
+  { id: "flip-journal", label: "Flip Journal" },
 ];
 
 const QUICK_ACCESS_TILES: Array<{ id: View; label: string; desc: string }> = [
@@ -260,11 +261,18 @@ export default function Home({ hiscores }: HomeProps) {
           <h2 className="text-hero font-semibold tracking-tight">
             {savedRsn ? `Welcome back, ${savedRsn}` : "RuneWise"}
           </h2>
-          <p className="text-ui text-text-secondary">
-            {savedRsn
-              ? "Your dashboard, tools, and recent activity."
-              : "Your OSRS companion. Set a RSN to get started."}
-          </p>
+          {savedRsn && data && (
+            <p className="text-ui text-text-secondary">
+              {[
+                combatLevel ? `Combat ${combatLevel}` : null,
+                totalLevel ? `${totalLevel.toLocaleString()} total` : null,
+                maxedSkills ? `${maxedSkills}/24 maxed` : null,
+              ].filter(Boolean).join(" · ")}
+            </p>
+          )}
+          {!savedRsn && (
+            <p className="text-ui text-text-secondary">Your OSRS companion. Set a RSN to get started.</p>
+          )}
         </div>
         {settings.ironmanMode && (
           <span className="text-[10px] text-warning border border-warning/20 bg-warning/5 rounded-full px-2.5 py-0.5">
@@ -413,28 +421,39 @@ export default function Home({ hiscores }: HomeProps) {
           {/* Recent */}
           <section>
             <h3 className="text-kicker font-semibold uppercase tracking-[0.16em] text-text-secondary/70 mb-2">Recent</h3>
-            {recentEntities.length > 0 ? (
-              <div className="grid grid-cols-2 gap-1.5">
-                {recentEntities.map((entity) => (
-                  <button
-                    key={entity.id}
-                    type="button"
-                    onClick={() => navigate(entity.view, entity.params)}
-                    className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-left transition hover:bg-bg-secondary/50"
-                  >
-                    <WikiImage src={entity.icon ?? NAV_ICONS.wiki} alt="" className="h-5 w-5 shrink-0" fallback={entity.name[0]} />
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-medium">{entity.name}</div>
-                      <div className="text-[10px] text-text-secondary/40">{entity.category}</div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <p className="text-xs text-text-secondary/50">
-                Items, bosses, quests, and wiki pages you visit will land here.
-              </p>
-            )}
+            <div className="grid grid-cols-2 gap-1.5">
+              {recentEntities.map((entity) => (
+                <button
+                  key={entity.id}
+                  type="button"
+                  onClick={() => navigate(entity.view, entity.params)}
+                  className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-left transition hover:bg-bg-secondary/50"
+                >
+                  <WikiImage src={entity.icon ?? NAV_ICONS.wiki} alt="" className="h-5 w-5 shrink-0" fallback={entity.name[0]} />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium">{entity.name}</div>
+                    <div className="text-[10px] text-text-secondary/40">{entity.category}</div>
+                  </div>
+                </button>
+              ))}
+              {recentEntities.length === 0 && Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-2.5 rounded-lg px-3 py-2 border border-dashed border-border/30">
+                  <div className="h-5 w-5 shrink-0 rounded bg-bg-tertiary/60" />
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <div className="h-3 rounded bg-bg-tertiary/60 w-3/4" />
+                    <div className="h-2.5 rounded bg-bg-tertiary/40 w-1/2" />
+                  </div>
+                </div>
+              ))}
+              {recentEntities.length > 0 && recentEntities.length < 4 && Array.from({ length: 4 - recentEntities.length }).map((_, i) => (
+                <div key={`pad-${i}`} className="flex items-center gap-2.5 rounded-lg px-3 py-2 border border-dashed border-border/20">
+                  <div className="h-5 w-5 shrink-0 rounded bg-bg-tertiary/40" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] text-text-secondary/30">No recent activity</div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </section>
 
         </div>
@@ -500,7 +519,7 @@ export default function Home({ hiscores }: HomeProps) {
                         {activeTimers} active {activeTimers === 1 ? "run" : "runs"}
                       </div>
                     </div>
-                    <span className="text-[10px] tabular-nums text-accent">{activeTimers}</span>
+                    <span className="inline-flex items-center justify-center rounded-full bg-accent/20 border border-accent/30 px-1.5 py-0.5 text-[10px] tabular-nums text-accent font-medium">{activeTimers}</span>
                   </button>
                 )}
                 {liveStarCount > 0 && (
@@ -516,7 +535,7 @@ export default function Home({ hiscores }: HomeProps) {
                         {liveStarCount} called in last 30m
                       </div>
                     </div>
-                    <span className="text-[10px] tabular-nums text-accent">{liveStarCount}</span>
+                    <span className="inline-flex items-center justify-center rounded-full bg-accent/20 border border-accent/30 px-1.5 py-0.5 text-[10px] tabular-nums text-accent font-medium">{liveStarCount}</span>
                   </button>
                 )}
               </div>

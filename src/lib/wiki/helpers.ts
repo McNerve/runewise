@@ -99,23 +99,53 @@ export function buildWikiAppHref(page: string): string {
 
 export function normalizeImages(root: Element): void {
   root.querySelectorAll("img").forEach((img) => {
+    // Lazy-load: copy data-src → src
     const dataSrc = img.getAttribute("data-src");
     if (dataSrc) {
       img.setAttribute("src", dataSrc);
       img.removeAttribute("data-src");
     }
 
+    // srcset-only: extract first candidate URL before stripping
     const src = img.getAttribute("src") || "";
-    if (src.startsWith("//")) {
-      img.setAttribute("src", `https:${src}`);
-    } else if (src.startsWith("/")) {
-      img.setAttribute("src", `https://oldschool.runescape.wiki${src}`);
+    if (!src) {
+      const srcset = img.getAttribute("srcset") || "";
+      if (srcset) {
+        // First entry in srcset is "<url> <descriptor>" — grab just the URL
+        const firstCandidate = srcset.split(",")[0].trim().split(/\s+/)[0];
+        if (firstCandidate) {
+          img.setAttribute("src", firstCandidate);
+        }
+      }
+    }
+
+    // Prefix relative URLs
+    const resolvedSrc = img.getAttribute("src") || "";
+    if (resolvedSrc.startsWith("//")) {
+      img.setAttribute("src", `https:${resolvedSrc}`);
+    } else if (resolvedSrc.startsWith("/")) {
+      img.setAttribute("src", `https://oldschool.runescape.wiki${resolvedSrc}`);
     }
 
     img.removeAttribute("srcset");
     img.removeAttribute("data-file-width");
     img.removeAttribute("data-file-height");
     img.setAttribute("loading", "lazy");
+
+    // Hide images with no usable src — avoids gray-void cells in tables.
+    // A src is "unresolved" when it's empty, a data URI placeholder, or still
+    // a relative path that didn't match any rewrite rule above.
+    const finalSrc = img.getAttribute("src") || "";
+    const isUnresolved =
+      !finalSrc ||
+      finalSrc.startsWith("data:") ||
+      (!finalSrc.startsWith("http") && !finalSrc.startsWith("//"));
+
+    if (isUnresolved) {
+      img.setAttribute("data-unresolved", "1");
+      // Hide at the DOM level so the table cell collapses cleanly
+      img.style.display = "none";
+    }
   });
 }
 

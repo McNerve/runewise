@@ -2,6 +2,9 @@ import { useState, useEffect } from "react";
 import { useSettings } from "../../hooks/useSettings";
 import { DEFAULT_KEYBINDS, type KeybindMap } from "../../lib/settings";
 import { isTauri, isMac } from "../../lib/env";
+import { ONBOARDING_KEY } from "../onboarding/constants";
+import { setUpdateMode, getUpdateMode, type UpdateMode } from "../../lib/updateBus";
+import { sendNotification, onNotificationDenied } from "../../lib/notify";
 
 declare const __APP_VERSION__: string;
 
@@ -27,6 +30,7 @@ const KEYBIND_LABELS_ALL: Record<string, { label: string; family: string }> = {
   market: { label: "Items", family: "Market" },
   loot: { label: "Loot & Drops", family: "Market" },
   spells: { label: "Spells", family: "Market" },
+  "flip-journal": { label: "Flip Journal", family: "Market" },
   progress: { label: "Progress", family: "Guides" },
   slayer: { label: "Slayer Helper", family: "Guides" },
   "clue-helper": { label: "Clue Helper", family: "Guides" },
@@ -248,6 +252,109 @@ function SettingsCard({
   );
 }
 
+function UpdateModeSelect() {
+  const [mode, setMode] = useState<UpdateMode>(getUpdateMode);
+
+  const handleChange = (next: UpdateMode) => {
+    setMode(next);
+    setUpdateMode(next);
+  };
+
+  if (!isTauri) return null;
+
+  return (
+    <div className="flex items-center justify-between gap-4 pt-3 border-t border-border/30">
+      <div>
+        <span className="text-sm font-medium text-text-primary">Update notifications</span>
+        <p className="mt-0.5 text-xs text-text-secondary/70">
+          Modal interrupts on launch. Pill shows a quiet footer badge.
+        </p>
+      </div>
+      <select
+        value={mode}
+        onChange={(e) => handleChange(e.target.value as UpdateMode)}
+        className="rounded-lg border border-border bg-bg-tertiary px-2 py-1.5 text-xs text-text-primary focus:outline-none focus:border-accent/50"
+      >
+        <option value="modal">Modal</option>
+        <option value="pill">Pill</option>
+      </select>
+    </div>
+  );
+}
+
+function NotificationsCard() {
+  const { settings, update } = useSettings();
+  const [denied, setDenied] = useState(false);
+  const [testStatus, setTestStatus] = useState<"idle" | "sent" | "denied">("idle");
+
+  useEffect(() => {
+    return onNotificationDenied(() => setDenied(true));
+  }, []);
+
+  const fireTest = async () => {
+    await sendNotification("RuneWise test", "Notifications are working");
+    setTestStatus(denied ? "denied" : "sent");
+    setTimeout(() => setTestStatus("idle"), 3000);
+  };
+
+  const notifs = settings.notifications;
+
+  const rows: { key: keyof typeof notifs; label: string; description: string }[] = [
+    { key: "priceAlerts", label: "Watchlist price alerts", description: "Alert when a watched item crosses your buy/sell threshold." },
+    { key: "farming", label: "Farming timer alerts", description: "Alert when a farming patch or birdhouse run is ready to harvest." },
+    { key: "stars", label: "Shooting star alerts", description: "Alert on new stars matching your tier and region filters. Off by default — can be frequent." },
+    { key: "milestones", label: "XP milestone alerts", description: "Alert on level 99, 200M XP, and max total milestone achievements." },
+  ];
+
+  return (
+    <div className="bg-bg-tertiary rounded-lg p-5">
+      <h3 className="text-xs font-semibold uppercase tracking-wider text-text-secondary mb-3">
+        Notifications
+      </h3>
+
+      <p className="text-xs text-text-secondary/70 mb-4 leading-relaxed">
+        RuneWise sends native system notifications for these events. Desktop only — requires Tauri runtime.
+      </p>
+
+      {denied && (
+        <div className="mb-4 rounded-lg border border-warning/30 bg-warning/5 px-3 py-2 text-xs text-warning">
+          Notifications are disabled — enable them in System Settings to receive alerts.
+        </div>
+      )}
+
+      <div className="space-y-4">
+        {rows.map(({ key, label, description }) => (
+          <div key={key} className="flex items-center justify-between gap-4">
+            <div>
+              <span className="text-sm font-medium text-text-primary">{label}</span>
+              <p className="mt-0.5 text-xs text-text-secondary/70">{description}</p>
+            </div>
+            <ToggleSwitch
+              checked={notifs[key]}
+              onChange={() => update({ notifications: { ...notifs, [key]: !notifs[key] } })}
+              label={label}
+            />
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-5 pt-4 border-t border-border/30 flex items-center gap-3">
+        <button
+          onClick={fireTest}
+          className="rounded-lg border border-border bg-bg-tertiary px-3 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:border-accent/40 transition-colors"
+        >
+          {testStatus === "idle" && "Test notification"}
+          {testStatus === "sent" && "Sent ✓"}
+          {testStatus === "denied" && "Permission denied"}
+        </button>
+        {!isTauri && (
+          <span className="text-xs text-text-secondary/50">Browser mode — using web Notification API</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Settings() {
   const { settings, update, resetAll } = useSettings();
 
@@ -326,32 +433,25 @@ export default function Settings() {
               label="Ironman mode"
             />
           </div>
+
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <span className="text-sm font-medium text-text-primary">Show Leagues Spells</span>
+              <p className="mt-0.5 text-xs text-text-secondary/70">
+                Include Leagues-exclusive spells (e.g. Leagues Home Teleport) in the Spells tool.
+              </p>
+            </div>
+            <ToggleSwitch
+              checked={settings.showLeagueSpells}
+              onChange={() => update({ showLeagueSpells: !settings.showLeagueSpells })}
+              label="Show leagues spells"
+            />
+          </div>
         </div>
       </SettingsCard>
 
-      {/* Notifications */}
-      <SettingsCard title="Notifications">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <span className="text-sm font-medium text-text-primary">Price alerts</span>
-            <p className="mt-0.5 text-xs text-text-secondary/70">
-              Notify when watchlist items hit your target prices.
-            </p>
-          </div>
-          <ToggleSwitch
-            checked={settings.notifications.priceAlerts}
-            onChange={() =>
-              update({
-                notifications: {
-                  ...settings.notifications,
-                  priceAlerts: !settings.notifications.priceAlerts,
-                },
-              })
-            }
-            label="Price alerts"
-          />
-        </div>
-      </SettingsCard>
+      {/* Notifications — the richer <NotificationsCard/> already has all 4 toggles (price/farming/stars/milestones) + test button */}
+      <NotificationsCard />
 
       {/* Keyboard Shortcuts */}
       <SettingsCard title="Keyboard Shortcuts">
@@ -421,6 +521,28 @@ export default function Settings() {
         </div>
       </SettingsCard>
 
+      {/* App */}
+      {isTauri && (
+        <SettingsCard title="App">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <span className="text-sm font-medium text-text-primary">Close to tray</span>
+                <p className="mt-0.5 text-xs text-text-secondary/70">
+                  Clicking the close button hides RuneWise to the system tray instead of quitting.
+                </p>
+              </div>
+              <ToggleSwitch
+                checked={settings.closeToTray}
+                onChange={() => update({ closeToTray: !settings.closeToTray })}
+                label="Close to tray"
+              />
+            </div>
+
+          </div>
+        </SettingsCard>
+      )}
+
       {/* System */}
       <SettingsCard title="System">
         <div className="space-y-4">
@@ -432,6 +554,26 @@ export default function Settings() {
               </p>
             </div>
             {isTauri ? <UpdateButton /> : <span className="text-xs text-text-secondary/70">Browser</span>}
+          </div>
+
+          <UpdateModeSelect />
+
+          <div className="flex items-center justify-between gap-4 pt-3 border-t border-border/30">
+            <div>
+              <span className="text-sm font-medium text-text-primary">Welcome tour</span>
+              <p className="mt-0.5 text-xs text-text-secondary/70">
+                Re-run the setup wizard to configure your RSN and notifications.
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                localStorage.removeItem(ONBOARDING_KEY);
+                window.location.reload();
+              }}
+              className="rounded-lg border border-border bg-bg-tertiary px-3 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:border-accent/40 transition-colors"
+            >
+              Restart tour
+            </button>
           </div>
 
           <div className="flex items-center justify-between gap-4 pt-3 border-t border-border/30">

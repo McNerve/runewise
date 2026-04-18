@@ -191,6 +191,8 @@ export default function SlayerHelper() {
   const [showBlocked, setShowBlocked] = useState(true);
   const [rewardFilter, setRewardFilter] = useState<SlayerRewardCategory | "all">("all");
   const [purchasedRewards, setPurchasedRewards] = useState<Set<string>>(loadPurchased);
+  const [hideUnaffordable, setHideUnaffordable] = useState(false);
+  const [myPoints, setMyPoints] = useState<number | "">("");
 
   const blockedTasks = useMemo(
     () => new Set(blockedMap[selectedMaster.name] ?? []),
@@ -265,9 +267,12 @@ export default function SlayerHelper() {
   };
 
   const filteredRewards = useMemo(() => {
-    if (rewardFilter === "all") return SLAYER_REWARDS;
-    return SLAYER_REWARDS.filter((r) => r.category === rewardFilter);
-  }, [rewardFilter]);
+    let rewards = rewardFilter === "all" ? SLAYER_REWARDS : SLAYER_REWARDS.filter((r) => r.category === rewardFilter);
+    if (hideUnaffordable && typeof myPoints === "number" && myPoints > 0) {
+      rewards = rewards.filter((r) => r.cost <= myPoints);
+    }
+    return rewards;
+  }, [rewardFilter, hideUnaffordable, myPoints]);
 
   const totalCost = SLAYER_REWARDS.reduce((sum, r) => sum + r.cost, 0);
   const purchasedCost = SLAYER_REWARDS.filter((r) => purchasedRewards.has(r.name)).reduce((sum, r) => sum + r.cost, 0);
@@ -447,6 +452,7 @@ export default function SlayerHelper() {
                   >
                     Slayer Lvl{arrow("slayerLevel")}
                   </th>
+                  <th scope="col" className="px-3 py-2 w-12" />
                 </tr>
               </thead>
               <tbody>
@@ -519,6 +525,15 @@ export default function SlayerHelper() {
                     <td className="px-4 py-2 text-right text-text-secondary tabular-nums">
                       {task.slayerLevel > 1 ? task.slayerLevel : "—"}
                     </td>
+                    <td className="px-3 py-2 text-right">
+                      <button
+                        onClick={() => navigate("dps-calc", { monster: task.monster, onTask: "1" })}
+                        className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-accent/10 text-accent hover:bg-accent/20 transition-colors"
+                        title={`Open DPS Calc for ${task.monster} on task`}
+                      >
+                        DPS
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -584,6 +599,32 @@ export default function SlayerHelper() {
                 </tbody>
               </table>
             </div>
+          </div>
+
+          {/* Points + affordability filter */}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-text-secondary shrink-0" htmlFor="slayer-my-points">My Points</label>
+              <input
+                id="slayer-my-points"
+                type="number"
+                min={0}
+                placeholder="0"
+                value={myPoints}
+                onChange={(e) => setMyPoints(e.target.value === "" ? "" : Number(e.target.value))}
+                className="w-28 px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors tabular-nums"
+              />
+            </div>
+            <label className="flex items-center gap-1.5 text-xs text-text-secondary cursor-pointer">
+              <input
+                type="checkbox"
+                checked={hideUnaffordable}
+                onChange={(e) => setHideUnaffordable(e.target.checked)}
+                disabled={myPoints === "" || myPoints === 0}
+                className="rounded border-border"
+              />
+              Hide unaffordable
+            </label>
           </div>
 
           {/* Category filters */}

@@ -10,7 +10,7 @@ const SKILLS = [
   "Runecraft", "Hitpoints", "Crafting", "Mining", "Smithing",
   "Fishing", "Cooking", "Firemaking", "Woodcutting", "Agility",
   "Herblore", "Thieving", "Fletching", "Slayer", "Farming",
-  "Construction", "Hunter",
+  "Construction", "Hunter", "Sailing",
 ];
 
 function getSkillLevel(hiscores: HiscoreData | null, name: string): number {

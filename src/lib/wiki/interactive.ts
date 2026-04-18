@@ -139,7 +139,136 @@ export function handleLightboxClick(e: React.MouseEvent | MouseEvent) {
   document.body.appendChild(overlay);
 }
 
-export function initWikiInteractive(container: HTMLElement) {
+/**
+ * Wire up in-page anchor links so they smooth-scroll to the right heading.
+ *
+ * Wiki HTML uses `href="#Section_Name"` links (spaces encoded as underscores).
+ * We scan all headings in the container, build a slug → element map, then
+ * intercept anchor clicks that match.  A page-name prefix prevents collisions
+ * when multiple pages are mounted simultaneously.
+ */
+export function initAnchorScroll(container: HTMLElement, pageSlug = "") {
+  // Build slug → heading map
+  const slugMap = new Map<string, HTMLElement>();
+  const counter = new Map<string, number>();
+
+  container
+    .querySelectorAll("h1, h2, h3, h4, h5, h6, [id]")
+    .forEach((el) => {
+      const rawId = el.id || el.getAttribute("id") || "";
+      if (!rawId) return;
+
+      // Normalise: lowercase, replace underscores/spaces with hyphens
+      const base = rawId.toLowerCase().replace(/[_ ]+/g, "-");
+      const prefixed = pageSlug ? `${pageSlug}-${base}` : base;
+
+      // Deduplicate collisions with a counter suffix
+      const count = (counter.get(prefixed) ?? 0) + 1;
+      counter.set(prefixed, count);
+      const slug = count === 1 ? prefixed : `${prefixed}-${count}`;
+
+      // Set the id on the element so native :target also works
+      el.id = slug;
+      slugMap.set(base, el as HTMLElement);
+      // Also store without page prefix for direct fragment links
+      slugMap.set(rawId.toLowerCase().replace(/[_ ]+/g, "-"), el as HTMLElement);
+    });
+
+  // Intercept anchor clicks
+  container.querySelectorAll("a[href^='#']").forEach((link) => {
+    const rawHref = link.getAttribute("href") ?? "";
+    if (!rawHref.startsWith("#")) return;
+
+    const fragment = rawHref.slice(1).toLowerCase().replace(/[_ ]+/g, "-");
+    const target = slugMap.get(fragment);
+    if (!target) return;
+
+    link.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
+}
+
+/**
+ * Wire item names in wiki drop/comparison tables to navigate into the Market
+ * item workspace on click, with a hover hint. The wiki uses two common
+ * templates:
+ *   - Drop tables: `<td class="item-col">Item name</td>` (plain text cell)
+ *   - Inline plinkt: `<span class="plinkt-template"><img/><a>Item name</a></span>`
+ *                    or a bare `<a class="plinkt-link">` link
+ * Both paths end in the item name being user-visible text. We layer click +
+ * hover interactivity without mutating the HTML structure.
+ */
+function openItemInMarket(name: string) {
+  const hash = `#items?search=${encodeURIComponent(name)}&select=1`;
+  if (window.location.hash === hash) {
+    window.dispatchEvent(new HashChangeEvent("hashchange"));
+  } else {
+    window.location.hash = hash;
+  }
+}
+
+export function initItemTextLinks(container: HTMLElement) {
+  // 1. Drop-table plain text cells (`<td class="item-col">Item</td>`)
+  container.querySelectorAll("td.item-col").forEach((cell) => {
+    if (cell.getAttribute("data-item-link-init")) return;
+    cell.setAttribute("data-item-link-init", "1");
+    const text = (cell.textContent ?? "").trim();
+    if (!text || text.length < 2) return;
+    // If an anchor is already present, just style it (already navigable)
+    const existingAnchor = cell.querySelector("a");
+    if (existingAnchor) {
+      (existingAnchor as HTMLAnchorElement).style.color = "var(--color-accent)";
+      return;
+    }
+    const el = cell as HTMLElement;
+    el.style.cursor = "pointer";
+    el.setAttribute("title", `Open ${text} in Market`);
+    el.classList.add("item-col-interactive");
+    el.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      openItemInMarket(text);
+    });
+  });
+
+  // 2. Inline plinkt templates — anchors that reference an item page
+  container.querySelectorAll("a.plinkt-link").forEach((a) => {
+    if (a.getAttribute("data-item-link-init")) return;
+    a.setAttribute("data-item-link-init", "1");
+    const text = (a.textContent ?? "").trim();
+    if (!text || text.length < 2) return;
+    (a as HTMLAnchorElement).setAttribute("title", `Open ${text} in Market`);
+    a.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      openItemInMarket(text);
+    });
+  });
+
+  // 3. plinkt-template / plink-template wrappers (covers both historical class names)
+  container
+    .querySelectorAll("span.plinkt-template, span.plink-template")
+    .forEach((span) => {
+      if (span.getAttribute("data-item-link-init")) return;
+      span.setAttribute("data-item-link-init", "1");
+      const anchor = span.querySelector("a");
+      if (anchor) return; // handled above
+      const text = (span.textContent ?? "").trim();
+      if (!text || text.length < 2) return;
+      const el = span as HTMLElement;
+      el.style.cursor = "pointer";
+      el.setAttribute("title", `Open ${text} in Market`);
+      el.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        openItemInMarket(text);
+      });
+    });
+}
+
+export function initWikiInteractive(container: HTMLElement, pageSlug = "") {
   initWikiTabbers(container);
   initTooltips(container);
+  initItemTextLinks(container);
+  initAnchorScroll(container, pageSlug);
 }

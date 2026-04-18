@@ -39,12 +39,15 @@ const Raids = lazy(() => import("../features/raids/Raids"));
 const ProductionCalc = lazy(() => import("../features/production/ProductionCalc"));
 const ShopHelper = lazy(() => import("../features/shop-helper/ShopHelper"));
 const Kingdom = lazy(() => import("../features/kingdom/Kingdom"));
+const FlipJournal = lazy(() => import("../features/flip-journal/FlipJournal"));
 
 interface AppViewContext {
   hiscores: {
     rsn: string;
     data: HiscoreData | null;
     ironmanType: IronmanType;
+    lastFetched?: Date | null;
+    onRefresh?: () => void;
   };
 }
 
@@ -62,7 +65,7 @@ export const VIEW_RENDERERS: Record<View, ViewRenderer> = {
   home: ({ hiscores }) => <Home hiscores={hiscores} />,
   overview: ({ hiscores }) =>
     hiscores.data ? (
-      <Overview hiscores={hiscores.data} rsn={hiscores.rsn} />
+      <Overview hiscores={hiscores.data} rsn={hiscores.rsn} lastFetched={hiscores.lastFetched ?? null} onRefresh={hiscores.onRefresh} />
     ) : (
       <EmptyState
         icon={NAV_ICONS.overview}
@@ -99,6 +102,7 @@ export const VIEW_RENDERERS: Record<View, ViewRenderer> = {
   "production-calc": renderComponent(ProductionCalc),
   "shop-helper": renderComponent(ShopHelper),
   kingdom: renderComponent(Kingdom),
+  "flip-journal": renderComponent(FlipJournal, "Flip Journal"),
   about: renderComponent(About),
   settings: renderComponent(Settings),
 };

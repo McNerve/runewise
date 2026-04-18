@@ -1,4 +1,4 @@
-import { memo, useMemo } from "react";
+import { memo, useMemo, useState, useEffect } from "react";
 
 declare const __APP_VERSION__: string;
 import * as Tooltip from "@radix-ui/react-tooltip";
@@ -8,18 +8,27 @@ import { useSettings } from "../hooks/useSettings";
 import { FEATURE_FAMILIES, SIDEBAR_FEATURES } from "../lib/features";
 import { getFeatureAccent } from "../lib/featureAccent";
 import ShellIcon from "./ShellIcon";
+import { onUpdateAvailable, emitOpenUpdate, getUpdateMode } from "../lib/updateBus";
+import SessionWidget from "../features/session-intelligence/SessionWidget";
 
 const mod = isMac ? "⌘" : "Ctrl+";
 const OPEN_SEARCH_EVENT = "runewise:open-search";
 
 interface SidebarProps {
   currentView: View;
-  onNavigate: (view: View) => void;
+  onNavigate: (view: View, params?: Record<string, string>) => void;
+  rsn?: string;
 }
 
-const Sidebar = memo(function Sidebar({ currentView, onNavigate }: SidebarProps) {
+const Sidebar = memo(function Sidebar({ currentView, onNavigate, rsn = "" }: SidebarProps) {
   const { settings, update } = useSettings();
   const collapsed = settings.sidebar.collapsed;
+  const [pillVersion, setPillVersion] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (getUpdateMode() !== "pill") return;
+    return onUpdateAvailable(({ version }) => setPillVersion(version));
+  }, []);
 
   const toggleCollapse = () => {
     update({ sidebar: { ...settings.sidebar, collapsed: !collapsed } });
@@ -183,6 +192,9 @@ const Sidebar = memo(function Sidebar({ currentView, onNavigate }: SidebarProps)
           </div>
         ))}
       </nav>
+      {!collapsed && (
+        <SessionWidget rsn={rsn} onNavigate={onNavigate} />
+      )}
       <div className={`${collapsed ? "p-2" : "px-2.5 py-2"} border-t border-border/80`}>
         {collapsed ? (
           <button
@@ -221,6 +233,17 @@ const Sidebar = memo(function Sidebar({ currentView, onNavigate }: SidebarProps)
               </button>
               <span className="text-[9px] text-text-secondary/30 tabular-nums">v{__APP_VERSION__}</span>
             </div>
+            {pillVersion && (
+              <button
+                onClick={() => emitOpenUpdate()}
+                className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-2.5 py-1.5 text-[11px] text-accent hover:bg-accent/20 transition-colors"
+              >
+                <svg viewBox="0 0 16 10" className="w-3 h-2" fill="none">
+                  <path d="M1 5h12M9 1l4 4-4 4" stroke="var(--color-accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                v{pillVersion} ready
+              </button>
+            )}
           </div>
         )}
       </div>

@@ -5,17 +5,20 @@ import QuestTracker from "../quests/QuestTracker";
 import DiaryTracker from "../diaries/DiaryTracker";
 import EmptyState from "../../components/EmptyState";
 import { NAV_ICONS } from "../../lib/sprites";
+import Tabs, { type TabItem } from "../../components/primitives/Tabs";
 
 const CombatTasks = lazy(() => import("../combat-tasks/CombatTasks"));
 const QuestUnlock = lazy(() => import("./components/QuestUnlock"));
+const QuestMap = lazy(() => import("../quest-map/QuestMap"));
 
-type Tab = "quests" | "diaries" | "combat-tasks" | "unlock";
+type Tab = "quests" | "diaries" | "combat-tasks" | "unlock" | "quest-map";
 
-const TABS: { id: Tab; label: string }[] = [
+const TABS: readonly TabItem<Tab>[] = [
   { id: "quests", label: "Quests" },
   { id: "diaries", label: "Diaries" },
   { id: "combat-tasks", label: "Combat Tasks" },
   { id: "unlock", label: "What Can I Do?" },
+  { id: "quest-map", label: "Quest Map" },
 ];
 
 interface Props {
@@ -23,7 +26,7 @@ interface Props {
 }
 
 function resolveTab(raw: string | undefined): Tab {
-  if (raw === "diaries" || raw === "combat-tasks" || raw === "unlock") return raw;
+  if (raw === "diaries" || raw === "combat-tasks" || raw === "unlock" || raw === "quest-map") return raw;
   return "quests";
 }
 
@@ -38,22 +41,13 @@ export default function Progress({ hiscores }: Props) {
 
   return (
     <div>
-      <div className="flex gap-1 mb-6">
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            aria-pressed={activeTab === tab.id}
-            className={`px-4 py-1.5 rounded text-sm font-medium transition-colors ${
-              activeTab === tab.id
-                ? "bg-accent text-on-accent"
-                : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <Tabs
+        items={TABS}
+        activeId={activeTab}
+        onChange={setActiveTab}
+        className="mb-6"
+        ariaLabel="Progress sections"
+      />
 
       {activeTab === "quests" && <QuestTracker hiscores={hiscores ?? null} />}
       {activeTab === "diaries" && <DiaryTracker hiscores={hiscores ?? null} />}
@@ -73,6 +67,11 @@ export default function Progress({ hiscores }: Props) {
           title="No hiscores loaded"
           description="Look up your RSN above to see which quests you can tackle."
         />
+      )}
+      {activeTab === "quest-map" && (
+        <Suspense fallback={<div className="py-8 text-center"><div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4 mx-auto" /></div>}>
+          <QuestMap />
+        </Suspense>
       )}
     </div>
   );

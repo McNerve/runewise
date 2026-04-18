@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from "react
 import { PATCH_TYPES, PATCH_CATEGORIES, PRESETS, type PatchType } from "../../lib/data/farm-timers";
 import { loadJSON, saveJSON } from "../../lib/localStorage";
 import { sendNotification } from "../../lib/notify";
+import { useSettings } from "../../hooks/useSettings";
 import { WIKI_IMG } from "../../lib/sprites";
 import EmptyState from "../../components/EmptyState";
 
@@ -234,6 +235,7 @@ function FarmOverview({ timers, now, onGoToTimers }: { timers: Timer[]; now: num
 }
 
 export default function FarmTimers() {
+  const { settings } = useSettings();
   const [timers, setTimers] = useState<Timer[]>(() => loadJSON(TIMERS_KEY, []));
   const [now, setNow] = useState(() => Date.now());
   const [selectedPatch, setSelectedPatch] = useState(PATCH_TYPES[0].name);
@@ -256,8 +258,10 @@ export default function FarmTimers() {
   useEffect(() => {
     const newlyReady = timers.filter((timer) => !timer.notified && now >= timer.readyAt);
     if (newlyReady.length > 0) {
-      for (const timer of newlyReady) {
-        sendNotification("Farm Timer", `${timer.patchName} is ready!`);
+      if (settings.notifications.farming) {
+        for (const timer of newlyReady) {
+          sendNotification("Farm timer ready", `${timer.patchName} is ready to harvest`);
+        }
       }
       // eslint-disable-next-line react-hooks/set-state-in-effect -- gated behind length check, fires once per timer
       setTimers((prev) =>
@@ -422,7 +426,7 @@ export default function FarmTimers() {
                           return { ...prev, slots: updated };
                         });
                       }}
-                      className="flex-1 bg-bg-tertiary border border-border rounded px-2 py-1 text-xs"
+                      className="flex-1 px-2 py-1.5 rounded-lg bg-bg-tertiary border border-border text-xs focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
                     >
                       {slot.alternatives.map((alt) => (
                         <option key={alt.name} value={alt.name}>

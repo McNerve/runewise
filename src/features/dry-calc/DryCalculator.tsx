@@ -1,19 +1,60 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { dropChance, killsForConfidence } from "../../lib/formulas/dry";
 import { POPULAR_DROPS, DROP_CATEGORIES, type DropEntry } from "../../lib/data/drops";
 import { itemIcon } from "../../lib/sprites";
 import { findActivityScore, type HiscoreData } from "../../lib/api/hiscores";
+import { useNavigation } from "../../lib/NavigationContext";
 
 interface Props {
   hiscores: HiscoreData | null;
 }
 
 export default function DryCalculator({ hiscores }: Props) {
-  const [kills, setKills] = useState(0);
+  const { params } = useNavigation();
+  const [kills, setKills] = useState(() => {
+    // Backward-compat: legacy sessionStorage handoff (Overview → BossGuide → DryCalc).
+    // New code should use URL params: #dry-calc?boss=slug&kc=N.
+    try {
+      const raw = sessionStorage.getItem("runewise_pending_kc");
+      if (raw) {
+        sessionStorage.removeItem("runewise_pending_kc");
+        const parsed = JSON.parse(raw) as { kc: number };
+        return parsed.kc ?? 0;
+      }
+    } catch {
+      // ignore
+    }
+    return 0;
+  });
   const [rate, setRate] = useState(512);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [selectedDrop, setSelectedDrop] = useState<DropEntry | null>(null);
   const [kcAutoFilled, setKcAutoFilled] = useState(false);
+
+  // Handle cross-nav params: boss=<slug>&kc=<kills>
+  useEffect(() => {
+    const kcParam = params.kc ? Number(params.kc) : null;
+    if (kcParam != null && kcParam > 0) {
+      setKills(kcParam);
+      setKcAutoFilled(true);
+    }
+    if (params.boss) {
+      const bossNorm = params.boss.toLowerCase();
+      const match = POPULAR_DROPS.find(
+        (d) => d.source.toLowerCase() === bossNorm
+      );
+      if (match) {
+        setSelectedDrop(match);
+        setRate(Math.round(match.rate));
+        if (!(kcParam != null && kcParam > 0)) {
+          const kc = hiscores ? findActivityScore(hiscores, match.source) ?? 0 : 0;
+          if (kc > 0) { setKills(kc); setKcAutoFilled(true); }
+        }
+      }
+    }
+  // Only re-run on param changes, not on every hiscores update
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params.boss, params.kc]);
 
   const chance = kills > 0 && rate > 0 ? dropChance(kills, rate) * 100 : 0;
   const kills95 = rate > 0 ? killsForConfidence(rate, 0.95) : 0;
@@ -54,6 +95,7 @@ export default function DryCalculator({ hiscores }: Props) {
               </div>
               <button
                 onClick={() => { setSelectedDrop(null); setRate(512); setKills(0); setKcAutoFilled(false); }}
+                aria-label="Clear selected drop"
                 className="text-xs text-text-secondary/50 hover:text-text-primary transition-colors cursor-pointer"
               >
                 ×
@@ -78,7 +120,7 @@ export default function DryCalculator({ hiscores }: Props) {
                 setRate(Number(e.target.value) || 0);
                 setSelectedDrop(null);
               }}
-              className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm"
+              className="w-full px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
             />
           </div>
           <div>
@@ -93,11 +135,26 @@ export default function DryCalculator({ hiscores }: Props) {
                 setKills(Number(e.target.value) || 0);
                 setKcAutoFilled(false);
               }}
-              className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm"
+              className="w-full px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
             />
             {kcAutoFilled && (
               <p className="text-[10px] text-accent/80 mt-1">Auto-filled from hiscores</p>
             )}
+            {selectedDrop && hiscores && !kcAutoFilled && (() => {
+              const hiscoreKc = findActivityScore(hiscores, selectedDrop.source) ?? 0;
+              if (hiscoreKc > 0 && hiscoreKc !== kills) {
+                return (
+                  <button
+                    type="button"
+                    onClick={() => { setKills(hiscoreKc); setKcAutoFilled(true); }}
+                    className="mt-1.5 text-[10px] text-accent hover:text-accent-hover transition-colors"
+                  >
+                    Use my KC ({hiscoreKc.toLocaleString()}) ↑
+                  </button>
+                );
+              }
+              return null;
+            })()}
           </div>
 
           <div className="border-t border-border pt-4">
@@ -115,7 +172,7 @@ export default function DryCalculator({ hiscores }: Props) {
                 {chance.toFixed(1)}%
               </span>
               <p className="text-xs text-text-secondary mt-1">
-                chance of receiving 1+ drops in {kills.toLocaleString()} kills
+                chance of receiving 1+ drops in {kills.toLocaleString()} {kills === 1 ? "kill" : "kills"}
               </p>
             </div>
 

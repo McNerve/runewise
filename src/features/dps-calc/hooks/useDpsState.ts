@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect -- hook syncs state from external URL params + hiscores; effects are the correct integration point */
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import {
   calculateDps,
@@ -44,6 +45,12 @@ export interface GearLoadout {
   modifiers: string[];
   bonusMode?: BonusMode;
   gear?: Record<string, WikiEquipment>;
+  // v2 snapshot fields
+  contentTag?: string;
+  note?: string;
+  savedAt?: string;
+  dps?: number;
+  maxHit?: number;
 }
 
 export function sumGearBonuses(gear: EquippedGear): {
@@ -70,6 +77,18 @@ export function sumGearBonuses(gear: EquippedGear): {
 }
 
 const LOADOUTS_KEY = "runewise_dps_loadouts";
+const LOADOUTS_V2_KEY = "runewise_loadouts_v2";
+
+function migrateLoadouts(): GearLoadout[] {
+  const v2 = loadJSON<GearLoadout[]>(LOADOUTS_V2_KEY, []);
+  if (v2.length > 0) return v2;
+  // Migrate from legacy key
+  const legacy = loadJSON<GearLoadout[]>(LOADOUTS_KEY, []);
+  if (legacy.length > 0) {
+    saveJSON(LOADOUTS_V2_KEY, legacy);
+  }
+  return legacy;
+}
 
 export const GENERIC_STANCES: Record<CombatStyle, WeaponStance[]> = {
   melee: getWeaponType("Slash Sword").stances,
@@ -125,9 +144,7 @@ export function useDpsState({ hiscores }: Props) {
   const [activeModifiers, setActiveModifiers] = useState<Set<string>>(new Set());
   const [wikiMonsters, setWikiMonsters] = useState<WikiMonster[]>([]);
   const [showBreakdown, setShowBreakdown] = useState(false);
-  const [loadouts, setLoadouts] = useState<GearLoadout[]>(() =>
-    loadJSON(LOADOUTS_KEY, [])
-  );
+  const [loadouts, setLoadouts] = useState<GearLoadout[]>(() => migrateLoadouts());
   const [loadoutName, setLoadoutName] = useState("");
   const [selectedSpec, setSelectedSpec] = useState<SpecWeapon | null>(null);
   const [selectedSpell, setSelectedSpell] = useState<CombatSpell | null>(null);
@@ -187,7 +204,17 @@ export function useDpsState({ hiscores }: Props) {
     }
   }, [hiscores]);
 
-  // Handle monster param from cross-nav
+  // Handle style param from cross-nav (e.g. from boss guide weakness chip)
+  useEffect(() => {
+    const s = params.style;
+    if (!s) return;
+    if (s === "melee" || s === "ranged" || s === "magic") {
+      setCombatStyle(s);
+    }
+  }, [params.style]);
+
+  // Handle monster param from cross-nav. Syncing state from an external URL
+  // param is a legitimate effect use.
   useEffect(() => {
     if (!params.monster || wikiMonsters.length === 0) return;
     const match = wikiMonsters.find(
@@ -230,6 +257,16 @@ export function useDpsState({ hiscores }: Props) {
       }
     }
   }, [params.monster, wikiMonsters]);
+
+  // Handle onTask param from Slayer cross-nav — activate slayer_helm modifier.
+  useEffect(() => {
+    if (params.onTask !== "1") return;
+    setActiveModifiers((prev) => {
+      const next = new Set(prev);
+      next.add("slayer_helm");
+      return next;
+    });
+  }, [params.onTask]);
 
   // Reset stance and prayer when combat style changes, or apply pending loadout
   useEffect(() => {
@@ -518,7 +555,7 @@ export function useDpsState({ hiscores }: Props) {
     });
   }, []);
 
-  const saveLoadout = useCallback(() => {
+  const saveLoadout = useCallback((opts?: { contentTag?: string; note?: string }) => {
     const name = loadoutName.trim();
     if (!name) return;
     const loadout: GearLoadout = {
@@ -532,16 +569,20 @@ export function useDpsState({ hiscores }: Props) {
       modifiers: [...activeModifiers],
       bonusMode,
       gear: bonusMode === "equipment" ? { ...equippedGear } as Record<string, WikiEquipment> : undefined,
+      contentTag: opts?.contentTag,
+      note: opts?.note,
+      savedAt: new Date().toISOString(),
+      dps: result.dps,
+      maxHit: result.maxHit,
     };
     setLoadouts((prev) => {
       const next = prev.filter((l) => l.name !== name);
       next.push(loadout);
-      saveJSON(LOADOUTS_KEY, next);
+      saveJSON(LOADOUTS_V2_KEY, next);
       return next;
     });
     setLoadoutName("");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loadoutName, combatStyle, stanceIdx, prayerIdx, attackBonus, strengthBonus, attackSpeed, activeModifiers]);
+  }, [loadoutName, combatStyle, stanceIdx, prayerIdx, attackBonus, strengthBonus, attackSpeed, activeModifiers, bonusMode, equippedGear, result.dps, result.maxHit]);
 
   const applyLoadout = useCallback((loadout: GearLoadout) => {
     const apply = () => {
@@ -565,8 +606,28 @@ export function useDpsState({ hiscores }: Props) {
   const deleteLoadout = useCallback((name: string) => {
     setLoadouts((prev) => {
       const next = prev.filter((l) => l.name !== name);
-      saveJSON(LOADOUTS_KEY, next);
+      saveJSON(LOADOUTS_V2_KEY, next);
       return next;
+    });
+  }, []);
+
+  const duplicateLoadout = useCallback((name: string) => {
+    setLoadouts((prev) => {
+      const src = prev.find((l) => l.name === name);
+      if (!src) return prev;
+      const copy: GearLoadout = { ...src, name: `${src.name} (copy)`, savedAt: new Date().toISOString() };
+      const next = [...prev.filter((l) => l.name !== copy.name), copy];
+      saveJSON(LOADOUTS_V2_KEY, next);
+      return next;
+    });
+  }, []);
+
+  const importLoadouts = useCallback((incoming: GearLoadout[]) => {
+    setLoadouts((prev) => {
+      const nameSet = new Set(prev.map((l) => l.name));
+      const merged = [...prev, ...incoming.filter((l) => !nameSet.has(l.name))];
+      saveJSON(LOADOUTS_V2_KEY, merged);
+      return merged;
     });
   }, []);
 
@@ -695,6 +756,8 @@ export function useDpsState({ hiscores }: Props) {
     saveLoadout,
     applyLoadout,
     deleteLoadout,
+    duplicateLoadout,
+    importLoadouts,
     compareLoadout,
     setCompareLoadout,
     comparisonResult,

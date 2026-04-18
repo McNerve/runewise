@@ -1,10 +1,11 @@
-import { Suspense, lazy, useEffect } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import Sidebar from "./components/Sidebar";
 import PlayerBar from "./components/PlayerBar";
 import GlobalSearch from "./components/GlobalSearch";
 const UpdateDialog = lazy(() => import("./components/UpdateDialog"));
+const Welcome = lazy(() => import("./features/onboarding/Welcome"));
 import ErrorBoundary from "./components/ErrorBoundary";
 import { initItemIconCache } from "./lib/itemIcons";
 import { migrateFromLocalStorage } from "./lib/storage";
@@ -17,12 +18,20 @@ import { SettingsContext, useSettings } from "./hooks/useSettings";
 import { useSettingsProvider } from "./hooks/useSettings";
 import { VIEW_RENDERERS } from "./lib/viewRegistry";
 import { getFeatureAccent } from "./lib/featureAccent";
+import { isTauri } from "./lib/env";
+import { ONBOARDING_KEY, RSN_KEY } from "./features/onboarding/constants";
 
 function AppContent() {
   const { view, navigate } = useNavigation();
   const hiscores = useHiscores();
   const { settings, update: updateSettings } = useSettings();
   useKeyboardNav(navigate);
+
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    const completed = localStorage.getItem(ONBOARDING_KEY);
+    const hasRsn = Boolean(localStorage.getItem(RSN_KEY));
+    return !completed && !hasRsn;
+  });
   const renderView = VIEW_RENDERERS[view];
 
   // Auto-toggle ironman mode when an ironman account is detected
@@ -33,10 +42,31 @@ function AppContent() {
     }
   }, [hiscores.ironmanType]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Close-to-tray: listen for Rust close-requested event and hide instead of closing
+  useEffect(() => {
+    if (!isTauri) return;
+    let unlisten: (() => void) | null = null;
+    import("@tauri-apps/api/event").then(({ listen }) => {
+      listen("runewise:close-requested", async () => {
+        const { settings: currentSettings } = await import("./lib/settings").then((m) => ({
+          settings: m.loadSettings(),
+        }));
+        if (currentSettings.closeToTray) {
+          const { getCurrentWindow } = await import("@tauri-apps/api/window");
+          await getCurrentWindow().hide();
+        } else {
+          const { exit } = await import("@tauri-apps/plugin-process");
+          await exit(0);
+        }
+      }).then((fn) => { unlisten = fn; });
+    });
+    return () => { unlisten?.(); };
+  }, []); // intentionally runs once — listener references stable Tauri API
+
   return (
     <>
       <div className="flex h-screen">
-        <Sidebar currentView={view} onNavigate={navigate} />
+        <Sidebar currentView={view} onNavigate={navigate} rsn={hiscores.rsn} />
         <div className="flex-1 flex flex-col overflow-hidden">
           <PlayerBar
             rsn={hiscores.rsn}
@@ -67,6 +97,8 @@ function AppContent() {
                               rsn: hiscores.rsn,
                               data: hiscores.data,
                               ironmanType: hiscores.ironmanType,
+                              lastFetched: hiscores.lastFetched,
+                              onRefresh: () => { void hiscores.lookup(hiscores.rsn); },
                             },
                           })
                         : <div className="py-16 text-center text-text-secondary">View not found.</div>}
@@ -82,6 +114,11 @@ function AppContent() {
       <Suspense fallback={null}>
         <UpdateDialog />
       </Suspense>
+      {showOnboarding && (
+        <Suspense fallback={null}>
+          <Welcome onDismiss={() => setShowOnboarding(false)} />
+        </Suspense>
+      )}
     </>
   );
 }

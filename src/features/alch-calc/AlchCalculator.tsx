@@ -296,21 +296,23 @@ export default function AlchCalculator() {
                   <td className="px-4 py-2 text-right text-warning">
                     {formatGp(row.highalch)}
                   </td>
-                  <td
-                    className={`px-4 py-2 text-right font-medium ${
-                      row.profit >= 0 ? "text-success" : "text-danger"
-                    }`}
-                  >
-                    {row.profit >= 0 ? "+" : ""}
-                    {formatGp(row.profit)}
+                  <td className="px-4 py-2 text-right font-medium">
+                    {row.profit < 0 ? (
+                      <span className="text-text-secondary/40">{"\u2014"}</span>
+                    ) : (
+                      <span className="text-success">
+                        {row.profit > 0 ? "+" : ""}{formatGp(row.profit)}
+                      </span>
+                    )}
                   </td>
-                  <td
-                    className={`px-4 py-2 text-right ${
-                      row.roi >= 0 ? "text-success" : "text-danger"
-                    }`}
-                  >
-                    {row.roi >= 0 ? "+" : ""}
-                    {row.roi.toFixed(1)}%
+                  <td className="px-4 py-2 text-right">
+                    {row.roi < 0 ? (
+                      <span className="text-text-secondary/40">{"\u2014"}</span>
+                    ) : (
+                      <span className="text-success">
+                        {row.roi > 0 ? "+" : ""}{row.roi.toFixed(1)}%
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-2 text-right text-text-secondary">
                     {row.item.limit ?? "\u2014"}

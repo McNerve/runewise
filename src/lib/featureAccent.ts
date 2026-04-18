@@ -35,6 +35,7 @@ const FEATURE_ACCENTS: Record<View, string> = {
   "shop-helper": MID,
   kingdom: MID,
   watchlist: MID,
+  "flip-journal": MID,
   progress: MID,
   slayer: MID,
   "clue-helper": MID,

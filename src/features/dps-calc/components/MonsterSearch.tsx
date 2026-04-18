@@ -15,6 +15,18 @@ function getDefForStyle(m: WikiMonster, style: "melee" | "ranged" | "magic"): nu
   return Math.min(m.defStab, m.defSlash, m.defCrush);
 }
 
+/** Strip "Name#AnchorText" wiki sub-page format down to just "AnchorText". */
+function cleanVersion(version: string): string {
+  const hashIdx = version.indexOf("#");
+  return hashIdx >= 0 ? version.slice(hashIdx + 1) : version;
+}
+
+const ZULRAH_WEAKNESS: Record<string, string> = {
+  Serpentine: "Magic weak",
+  Magma: "Ranged weak",
+  Tanzanite: "Melee weak",
+};
+
 export default memo(function MonsterSearch({
   monsters,
   selected,
@@ -76,7 +88,7 @@ export default memo(function MonsterSearch({
           setQuery("");
         }}
         placeholder="Search monsters..."
-        className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm"
+        className="w-full px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
       />
 
       {open && results.length > 0 && (
@@ -84,29 +96,38 @@ export default memo(function MonsterSearch({
           ref={listRef}
           className="absolute z-30 top-full mt-1 w-full bg-bg-tertiary border border-border rounded-lg shadow-xl max-h-60 overflow-y-auto"
         >
-          {results.map((m) => (
-            <button
-              key={`${m.name}:${m.version ?? ""}`}
-              onClick={() => {
-                onSelect(m);
-                setOpen(false);
-                setQuery("");
-              }}
-              className="w-full text-left px-3 py-2 text-sm hover:bg-bg-secondary transition-colors flex items-center justify-between gap-2"
-            >
-              <span className="truncate">
-                {m.name}
-                {m.version && (
-                  <span className="text-text-secondary/50 ml-1">
-                    ({m.version})
-                  </span>
-                )}
-              </span>
-              <span className="text-xs text-text-secondary shrink-0">
-                Lv{m.combatLevel} · {m.hitpoints} HP · Def {getDefForStyle(m, combatStyle)}
-              </span>
-            </button>
-          ))}
+          {results.map((m) => {
+            const ver = m.version ? cleanVersion(m.version) : null;
+            const weakness = m.name === "Zulrah" && ver ? ZULRAH_WEAKNESS[ver] : null;
+            return (
+              <button
+                key={`${m.name}:${m.version ?? ""}`}
+                onClick={() => {
+                  onSelect(m);
+                  setOpen(false);
+                  setQuery("");
+                }}
+                className="w-full text-left px-3 py-2 text-sm hover:bg-bg-secondary transition-colors flex items-center justify-between gap-2"
+              >
+                <span className="truncate">
+                  {m.name}
+                  {ver && (
+                    <span className="text-text-secondary/50 ml-1">
+                      ({ver})
+                    </span>
+                  )}
+                  {weakness && (
+                    <span className="ml-1.5 text-[10px] text-accent/70 bg-accent/10 rounded px-1 py-0.5">
+                      {weakness}
+                    </span>
+                  )}
+                </span>
+                <span className="text-xs text-text-secondary shrink-0">
+                  Lv{m.combatLevel} · {m.hitpoints} HP · Def {getDefForStyle(m, combatStyle)}
+                </span>
+              </button>
+            );
+          })}
         </div>
       )}
 

@@ -381,6 +381,18 @@ export default function AppIcon({ view, className = "h-4 w-4" }: AppIconProps) {
         </Glyph>
       );
 
+    // Flip Journal — ledger with a coin
+    case "flip-journal":
+      return (
+        <Glyph className={className}>
+          <rect x="4" y="3" width="12" height="16" rx="1.5" />
+          <rect x="16" y="5" width="4" height="14" rx="1" />
+          <path d="M7 7h6M7 10h6M7 13h4" stroke="var(--app-bg, #0b0f17)" strokeWidth="1" opacity="0.55" fill="none" />
+          <circle cx="18" cy="18" r="3.5" />
+          <path d="M18 15.5v5M16.5 17h2.5M16.5 19h2.5" stroke="var(--app-bg, #0b0f17)" strokeWidth="0.8" opacity="0.7" fill="none" />
+        </Glyph>
+      );
+
     default:
       return (
         <Glyph className={className}>

@@ -327,6 +327,10 @@ fn runelite_read_loot_tracker(profile_id: String) -> Result<Vec<LootEntry>, Stri
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    use tauri::{Emitter, Manager, WindowEvent};
+    use tauri::tray::{TrayIconBuilder, TrayIconEvent};
+    use tauri::menu::{Menu, MenuItem};
+
     tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
@@ -337,7 +341,7 @@ pub fn run() {
             proxy_fetch,
             runelite_status,
             runelite_read_profiles,
-            runelite_read_loot_tracker
+            runelite_read_loot_tracker,
         ])
         .setup(|app| {
             if cfg!(debug_assertions) {
@@ -347,7 +351,65 @@ pub fn run() {
                         .build(),
                 )?;
             }
+
+            // Build system tray
+            let show_item = MenuItem::with_id(app, "show", "Show RuneWise", true, None::<&str>)?;
+            let star_item = MenuItem::with_id(app, "stars", "Star Radar", true, None::<&str>)?;
+            let quit_item = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
+            let menu = Menu::with_items(app, &[&show_item, &star_item, &quit_item])?;
+
+            let _tray = TrayIconBuilder::new()
+                .icon(app.default_window_icon().cloned().unwrap())
+                .tooltip("RuneWise")
+                .menu(&menu)
+                .on_tray_icon_event(|tray, event| {
+                    if let TrayIconEvent::Click { .. } = event {
+                        let app = tray.app_handle();
+                        if let Some(window) = app.get_webview_window("main") {
+                            if window.is_visible().unwrap_or(false) {
+                                let _ = window.hide();
+                            } else {
+                                let _ = window.show();
+                                let _ = window.set_focus();
+                            }
+                        }
+                    }
+                })
+                .on_menu_event(|app, event| match event.id().as_ref() {
+                    "show" => {
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                        }
+                    }
+                    "stars" => {
+                        // Navigate main window to stars view via JS
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                            let _ = window.eval("window.location.hash = '#stars'");
+                        }
+                    }
+                    "quit" => {
+                        app.exit(0);
+                    }
+                    _ => {}
+                })
+                .build(app)?;
+
             Ok(())
+        })
+        .on_window_event(|window, event| {
+            if window.label() != "main" {
+                return;
+            }
+            // Read close-to-tray preference from localStorage via JS is complex from Rust;
+            // instead emit an event so the frontend can intercept and hide instead of close.
+            if let WindowEvent::CloseRequested { api, .. } = event {
+                // Prevent default close — frontend handles via "runewise:close-requested" event
+                api.prevent_close();
+                let _ = window.emit("runewise:close-requested", ());
+            }
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -73,7 +73,7 @@ export default function BulkSearch({ mapping, prices }: BulkSearchProps) {
         onChange={(e) => setInput(e.target.value)}
         placeholder={"Twisted bow\nScythe of vitur\nTumeken's shadow\nOsmumten's fang"}
         rows={4}
-        className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm resize-y mb-4"
+        className="w-full px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors resize-y mb-4"
       />
 
       {results.length > 0 && (

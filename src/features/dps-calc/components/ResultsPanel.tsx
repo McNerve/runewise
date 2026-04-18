@@ -88,15 +88,15 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
           <div className="grid grid-cols-3 gap-2 mt-3">
             <div>
               <label className="text-[10px] text-text-secondary/50">Def Level</label>
-              <input type="number" min={1} max={500} value={customDef.defLevel} onChange={(e) => setCustomDef((p) => ({ ...p, defLevel: Number(e.target.value) }))} className="w-full bg-bg-tertiary border border-border rounded px-2 py-1.5 text-sm mt-0.5" />
+              <input type="number" min={1} max={500} value={customDef.defLevel} onChange={(e) => setCustomDef((p) => ({ ...p, defLevel: Number(e.target.value) }))} className="w-full px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors mt-0.5" />
             </div>
             <div>
               <label className="text-[10px] text-text-secondary/50">Def Bonus</label>
-              <input type="number" min={-100} max={500} value={customDef.defBonus} onChange={(e) => setCustomDef((p) => ({ ...p, defBonus: Number(e.target.value) }))} className="w-full bg-bg-tertiary border border-border rounded px-2 py-1.5 text-sm mt-0.5" />
+              <input type="number" min={-100} max={500} value={customDef.defBonus} onChange={(e) => setCustomDef((p) => ({ ...p, defBonus: Number(e.target.value) }))} className="w-full px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors mt-0.5" />
             </div>
             <div>
               <label className="text-[10px] text-text-secondary/50">HP</label>
-              <input type="number" min={1} max={10000} value={customDef.hp} onChange={(e) => setCustomDef((p) => ({ ...p, hp: Number(e.target.value) }))} className="w-full bg-bg-tertiary border border-border rounded px-2 py-1.5 text-sm mt-0.5" />
+              <input type="number" min={1} max={10000} value={customDef.hp} onChange={(e) => setCustomDef((p) => ({ ...p, hp: Number(e.target.value) }))} className="w-full px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors mt-0.5" />
             </div>
           </div>
         )}
@@ -109,7 +109,7 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
             max={10}
             value={defReductions}
             onChange={(e) => setDefReductions(Math.min(10, Math.max(0, Number(e.target.value))))}
-            className="w-full bg-bg-tertiary border border-border rounded-lg px-3 py-1.5 text-sm mt-1"
+            className="w-full px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors mt-1"
           />
         </div>
 
@@ -125,11 +125,11 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
               <div className="mt-2 grid grid-cols-2 gap-2">
                 <div>
                   <label className="text-[10px] text-text-secondary/50">ToA Invocations</label>
-                  <input type="number" min={0} max={600} value={toaInvocation} onChange={(e) => setToaInvocation(Number(e.target.value))} className="w-full bg-bg-tertiary border border-border rounded-lg px-3 py-1.5 text-sm mt-1" />
+                  <input type="number" min={0} max={600} value={toaInvocation} onChange={(e) => setToaInvocation(Number(e.target.value))} className="w-full px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors mt-1" />
                 </div>
                 <div>
                   <label className="text-[10px] text-text-secondary/50">CoX Party Size</label>
-                  <input type="number" min={1} max={100} value={coxPartySize} onChange={(e) => setCoxPartySize(Number(e.target.value))} className="w-full bg-bg-tertiary border border-border rounded-lg px-3 py-1.5 text-sm mt-1" />
+                  <input type="number" min={1} max={100} value={coxPartySize} onChange={(e) => setCoxPartySize(Number(e.target.value))} className="w-full px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors mt-1" />
                 </div>
               </div>
               {(toaInvocation !== 0 || coxPartySize !== 1) && (
@@ -156,7 +156,7 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
             const spec = specWeapons.find((s) => s.id === e.target.value) ?? null;
             setSelectedSpec(spec);
           }}
-          className="w-full bg-bg-tertiary border border-border rounded-lg px-3 py-1.5 text-sm"
+          className="w-full px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
         >
           <option value="">None</option>
           {specWeapons.map((s) => (
@@ -205,7 +205,7 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
               <select
                 value={poisonType}
                 onChange={(e) => setPoisonType(e.target.value as "none" | "poison" | "venom")}
-                className="bg-bg-tertiary border border-border rounded-lg px-2 py-1 text-xs"
+                className="px-2 py-1.5 rounded-lg bg-bg-tertiary border border-border text-xs text-text-primary focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
               >
                 <option value="none">None</option>
                 <option value="poison">Poison (+)</option>

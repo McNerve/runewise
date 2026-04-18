@@ -10,9 +10,11 @@ export interface AppSettings {
   theme: "dark" | "light" | "system";
   keybinds: KeybindMap;
   keybindsEnabled: boolean;
-  notifications: { priceAlerts: boolean };
+  notifications: { priceAlerts: boolean; farming: boolean; stars: boolean; milestones: boolean };
   sidebar: { collapsed: boolean; pinned: string[] };
   ironmanMode: boolean;
+  closeToTray: boolean;
+  showLeagueSpells: boolean;
 }
 
 // Safe Cmd/Ctrl keybinds — avoids system shortcuts (C/X/V/Z/A/S/Q/W/F/R/N/P/O/H/L)
@@ -42,15 +44,19 @@ export const DEFAULT_KEYBINDS: KeybindMap = {
   "world-map": "e",
   news: "9",
   wiki: "0",
+  // Market
+  "flip-journal": "l",
 };
 
 export const DEFAULT_SETTINGS: AppSettings = {
   theme: "dark",
   keybinds: DEFAULT_KEYBINDS,
   keybindsEnabled: true,
-  notifications: { priceAlerts: true },
+  notifications: { priceAlerts: true, farming: true, stars: false, milestones: true },
   sidebar: { collapsed: false, pinned: [] },
   ironmanMode: false,
+  closeToTray: false,
+  showLeagueSpells: false,
 };
 
 export function loadSettings(): AppSettings {
@@ -63,6 +69,8 @@ export function loadSettings(): AppSettings {
     sidebar: { ...DEFAULT_SETTINGS.sidebar, ...saved.sidebar },
     keybindsEnabled: saved.keybindsEnabled ?? true,
     ironmanMode: saved.ironmanMode ?? false,
+    closeToTray: saved.closeToTray ?? false,
+    showLeagueSpells: saved.showLeagueSpells ?? false,
   };
 }
 

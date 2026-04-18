@@ -29,9 +29,37 @@ import {
   BOSS_DROP_TABLES,
   type BossDropTable,
 } from "../../lib/data/boss-drops";
+import { getRaidLoot, type RaidDropEntry } from "../../lib/data/raid-loot";
+
+// Weakness → DPS Calc combat style mapping
+const WEAKNESS_STYLE_MAP: Record<string, string> = {
+  stab: "melee",
+  slash: "melee",
+  crush: "melee",
+  melee: "melee",
+  ranged: "ranged",
+  range: "ranged",
+  magic: "magic",
+  mage: "magic",
+};
+
+function weaknessToStyle(weakness: string): string {
+  return WEAKNESS_STYLE_MAP[weakness.toLowerCase()] ?? "melee";
+}
+
+/** Attempt to extract weakness from description prose as fallback */
+function extractWeaknessFromSummary(summary: string | undefined): string | null {
+  if (!summary) return null;
+  const m = summary.match(/weak(?:\s+against|\s+to|ness:?)\s+([a-z]+)/i);
+  return m ? m[1] : null;
+}
+
+function normalizeBossSlug(name: string): string {
+  return name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+}
 import { openExternal } from "../../lib/openExternal";
 import { formatGp } from "../../lib/format";
-import SourceAttribution from "../../components/SourceAttribution";
+import FreshnessStrip from "../../components/FreshnessStrip";
 import { useNavigation } from "../../lib/NavigationContext";
 import WikiImage from "../../components/WikiImage";
 import StructuredSection from "./StructuredSection";
@@ -256,6 +284,14 @@ export default function BossGuide({ hiscores }: Props) {
     );
   }, [selectedBoss]);
 
+  // Raid loot fallback: used when wiki drops are empty and boss is a raid
+  const raidLootFallback = useMemo(() => {
+    if (!selectedBoss) return null;
+    const hasLootData = dropCategories.length > 0 || wikiDrops.length > 0 || bossLootTable !== null;
+    if (hasLootData) return null;
+    return getRaidLoot(selectedBoss.name);
+  }, [selectedBoss, dropCategories, wikiDrops, bossLootTable]);
+
   const topDrops = useMemo(() => {
     if (dropCategories.length > 0) {
       return dropCategories
@@ -291,6 +327,12 @@ export default function BossGuide({ hiscores }: Props) {
       .slice(0, 3);
   }, [bossLootTable, dropCategories, itemMap, prices]);
 
+  // Top drop from raid fallback (for summary card)
+  const raidTopDrop = useMemo((): string | null => {
+    if (!raidLootFallback) return null;
+    return raidLootFallback.uniques[0]?.name ?? null;
+  }, [raidLootFallback]);
+
   const lootRows = useMemo(() => {
     if (!bossLootTable) return [];
 
@@ -316,11 +358,26 @@ export default function BossGuide({ hiscores }: Props) {
     return { perKill, perHour };
   }, [lootRows]);
 
+  // Raid bosses have structured loot even without a static BossDropTable entry.
+  // Known raid category counts: Uniques + Common = 2.
+  const RAID_DROP_CATEGORY_COUNTS: Record<string, number> = {
+    "Tombs of Amascut": 2,
+    "Tombs of Amascut: Expert Mode": 2,
+    "Theatre of Blood": 2,
+    "Theatre of Blood: Hard Mode": 2,
+    "Chambers of Xeric": 2,
+    "Chambers of Xeric: Challenge Mode": 2,
+  };
+
   const dropCategoryCount = useMemo(() => {
     if (dropCategories.length > 0) return dropCategories.length;
-    if (!bossLootTable) return null;
-    return new Set(bossLootTable.drops.map((drop) => drop.category)).size;
-  }, [bossLootTable, dropCategories]);
+    if (bossLootTable) return new Set(bossLootTable.drops.map((drop) => drop.category)).size;
+    if (selectedBoss && RAID_DROP_CATEGORY_COUNTS[selectedBoss.name] != null) {
+      return RAID_DROP_CATEGORY_COUNTS[selectedBoss.name];
+    }
+    return null;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bossLootTable, dropCategories, selectedBoss]);
 
   useEffect(() => {
     let cancelled = false;
@@ -488,7 +545,7 @@ export default function BossGuide({ hiscores }: Props) {
                       fallback={boss.name[0]}
                     />
                     <div className="min-w-0">
-                      <div className="truncate text-sm font-medium text-text-primary">
+                      <div className="line-clamp-2 text-sm font-medium text-text-primary">
                         {boss.name}
                       </div>
                       <div className="mt-1 text-[11px] text-text-secondary">
@@ -548,10 +605,40 @@ export default function BossGuide({ hiscores }: Props) {
                         </span>
                       ) : null}
                       {bossKc != null ? (
-                        <span className="rounded-full border border-success/20 bg-success/10 px-3 py-1 text-success">
+                        <button
+                          type="button"
+                          title="Open Dry Calculator with this boss and KC prefilled"
+                          onClick={() =>
+                            navigate("dry-calc", {
+                              boss: selectedBoss.name,
+                              kc: String(bossKc),
+                            })
+                          }
+                          className="rounded-full border border-success/20 bg-success/10 px-3 py-1 text-success transition hover:bg-success/20 cursor-pointer"
+                        >
                           Your KC {bossKc.toLocaleString()}
-                        </span>
+                        </button>
                       ) : null}
+                      {(() => {
+                        const weakness: string | undefined = selectedBoss.weakness ?? (extractWeaknessFromSummary(guide?.summary ?? undefined) ?? undefined);
+                        if (!weakness) return null;
+                        const style = weaknessToStyle(weakness);
+                        return (
+                          <button
+                            type="button"
+                            title={`Open DPS Calculator — ${weakness} style`}
+                            onClick={() =>
+                              navigate("dps-calc", {
+                                monster: selectedBoss.name,
+                                style,
+                              })
+                            }
+                            className="rounded-full border border-warning/25 bg-warning/10 px-3 py-1 text-warning transition hover:bg-warning/20 cursor-pointer"
+                          >
+                            Weak: {weakness.charAt(0).toUpperCase() + weakness.slice(1)}
+                          </button>
+                        );
+                      })()}
                       {selectedBoss.location ? (
                         <a
                           href={`https://oldschool.runescape.wiki/w/${selectedBoss.location.replace(/ /g, "_")}`}
@@ -562,15 +649,32 @@ export default function BossGuide({ hiscores }: Props) {
                           📍 {selectedBoss.location}
                         </a>
                       ) : null}
+                      {guide?.recommendedApproach ? (
+                        <span className="rounded-full border border-border bg-bg-primary/60 px-3 py-1 text-text-secondary">
+                          Approach: {guide.recommendedApproach}
+                        </span>
+                      ) : null}
+                      {guide?.teamSize ? (
+                        <span className="rounded-full border border-border bg-bg-primary/60 px-3 py-1 text-text-secondary">
+                          Team: {guide.teamSize}
+                        </span>
+                      ) : null}
+                      {guide?.combatLevel && !selectedBoss.combatLevel ? (
+                        <span className="rounded-full border border-border bg-bg-primary/60 px-3 py-1 text-text-secondary">
+                          Combat {guide.combatLevel}
+                        </span>
+                      ) : null}
                     </div>
                     {guide?.summary ? (
                       <p className="max-w-3xl text-sm leading-6 text-text-secondary">
                         {guide.summary}
                       </p>
                     ) : null}
-                    <SourceAttribution
-                      source="OSRS Wiki"
-                      fetchedAt={guide?.fetchedAt ?? null}
+                    <FreshnessStrip
+                      updatedAt={guide?.fetchedAt ? new Date(guide.fetchedAt) : null}
+                      onRefresh={() => {
+                        if (selectedBoss) void selectBoss(selectedBoss);
+                      }}
                       cacheLabel="1 hour"
                     />
                   </div>
@@ -662,7 +766,9 @@ export default function BossGuide({ hiscores }: Props) {
                       ? "Embedded loot groups from the OSRS Wiki."
                       : bossLootTable
                         ? "Curated loot groups from RuneWise data."
-                        : "No structured loot groups available yet."}
+                        : dropCategoryCount != null
+                          ? "Known raid loot groups (Uniques + Common)."
+                          : "No structured loot groups available yet."}
                   </div>
                 </div>
                 <div className="rounded-xl border border-border/60 bg-bg-primary/45 px-4 py-3">
@@ -680,11 +786,32 @@ export default function BossGuide({ hiscores }: Props) {
                   <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
                     Top Drop
                   </div>
-                  <div className="mt-1 text-lg font-semibold text-text-primary">
-                    {topDrops[0]?.gePrice != null ? formatGp(topDrops[0].gePrice) : "\u2014"}
-                  </div>
-                  <div className="mt-1 truncate text-xs text-text-secondary">
-                    {topDrops[0]?.drop.name ?? "Waiting on loot data"}
+                  {topDrops[0] ? (
+                    <>
+                      <div className="mt-1 truncate text-sm font-semibold text-text-primary">
+                        {topDrops[0].drop.name}
+                      </div>
+                      <div className="mt-0.5 text-xs text-success">
+                        {topDrops[0].gePrice != null
+                          ? formatGp(topDrops[0].gePrice)
+                          : topDrops[0].drop.price || "\u2014"}
+                      </div>
+                    </>
+                  ) : raidTopDrop ? (
+                    <div className="mt-1 truncate text-sm font-semibold text-text-primary">
+                      {raidTopDrop}
+                    </div>
+                  ) : (
+                    <div className="mt-1 text-lg font-semibold text-text-primary">{"\u2014"}</div>
+                  )}
+                  <div className="mt-1 text-[11px] text-text-secondary/50">
+                    {topDrops[0]?.drop.name
+                      ? topDrops[0].gePrice != null
+                        ? "Top drop value"
+                        : "No price data"
+                      : raidTopDrop
+                        ? "Featured unique (curated)"
+                        : "Waiting on loot data"}
                   </div>
                 </div>
               </div>
@@ -731,28 +858,54 @@ export default function BossGuide({ hiscores }: Props) {
                       key={section.id}
                       type="button"
                       onClick={() => scrollToGuideSection(section.id)}
-                      className="group flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-text-secondary transition hover:bg-bg-primary/60 hover:text-text-primary"
+                      className={`group flex w-full items-center gap-2 rounded-lg text-left text-text-secondary transition hover:bg-bg-primary/60 hover:text-text-primary ${
+                        section.level === 3
+                          ? "pl-6 pr-2.5 py-1.5"
+                          : "px-2.5 py-2"
+                      }`}
                     >
-                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-bg-tertiary/60 text-[10px] font-medium text-text-secondary/60 group-hover:text-text-primary">
-                        {index + 1}
+                      {section.level === 2 ? (
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-bg-tertiary/60 text-[10px] font-medium text-text-secondary/60 group-hover:text-text-primary">
+                          {index + 1}
+                        </span>
+                      ) : (
+                        <span className="w-1 h-1 shrink-0 rounded-full bg-text-secondary/30 group-hover:bg-accent/50" />
+                      )}
+                      <span
+                        className={`line-clamp-2 leading-snug ${
+                          section.level === 3
+                            ? "text-xs text-text-secondary/70"
+                            : "text-sm"
+                        }`}
+                      >
+                        {section.title}
                       </span>
-                      <span className="truncate">{section.title}</span>
                     </button>
                   ))}
                 </div>
               </aside>
 
-              <div ref={guideContentRef} className="space-y-4" onClick={handleGuideClick}>
+              <div ref={guideContentRef} className="space-y-3" onClick={handleGuideClick}>
                 {guide.sections.map((section) => (
                   <section
                     key={section.id}
                     id={section.id}
-                    className="rounded-xl border border-border/40 bg-bg-primary/25 p-5"
+                    className={`rounded-xl border bg-bg-primary/25 ${
+                      section.level === 3
+                        ? "border-border/25 ml-4 p-4"
+                        : "border-border/40 p-5"
+                    }`}
                   >
-                    <h4 className="mb-4 text-base font-semibold tracking-tight text-text-primary">
-                      {section.title}
-                    </h4>
-                    <StructuredSection title={section.title} html={section.html} />
+                    {section.level === 3 ? (
+                      <h5 className="mb-3 text-sm font-semibold tracking-tight text-text-secondary">
+                        {section.title}
+                      </h5>
+                    ) : (
+                      <h4 className="mb-4 text-base font-semibold tracking-tight text-text-primary">
+                        {section.title}
+                      </h4>
+                    )}
+                    <StructuredSection title={section.title} html={section.html} bossSlug={normalizeBossSlug(selectedBoss.name)} />
                     <div
                       className={`article-content text-sm leading-7 text-text-secondary ${guideSectionClassName(section.title)}`.trim()}
                       dangerouslySetInnerHTML={{ __html: section.html }}
@@ -1044,6 +1197,57 @@ export default function BossGuide({ hiscores }: Props) {
                     </tbody>
                   </table>
                   </div>
+                </div>
+              ) : raidLootFallback ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-xs text-text-secondary/60">
+                    <span className="rounded-full border border-border bg-bg-primary/60 px-2 py-1">Source: curated</span>
+                    <span>Drop rates from OSRS Wiki (approximate, party-size-variable)</span>
+                  </div>
+                  {raidLootFallback.uniques.length > 0 && (
+                    <div>
+                      <h4 className="text-xs uppercase tracking-wider text-text-secondary/60 mb-2">Unique Drops</h4>
+                      <div className="rounded-xl border border-border/60 overflow-hidden">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b border-border text-text-secondary text-xs">
+                              <th scope="col" className="text-left px-4 py-2">Item</th>
+                              <th scope="col" className="text-right px-4 py-2">Rate</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {raidLootFallback.uniques.map((drop: RaidDropEntry) => (
+                              <tr key={drop.name} className="border-b border-border/50 even:bg-bg-primary/25 hover:bg-bg-secondary">
+                                <td className="px-4 py-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => navigate("market", { query: drop.name })}
+                                    className="flex items-center gap-2 text-left text-text-primary transition hover:text-accent"
+                                  >
+                                    <WikiImage src={itemIcon(drop.name)} alt="" className="h-5 w-5 shrink-0" fallback={drop.name[0]} />
+                                    <span>{drop.name}</span>
+                                  </button>
+                                </td>
+                                <td className="px-4 py-2 text-right text-text-secondary tabular-nums">{drop.rate}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                  {raidLootFallback.common.length > 0 && (
+                    <div>
+                      <h4 className="text-xs uppercase tracking-wider text-text-secondary/60 mb-2">Common Drops</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {raidLootFallback.common.map((drop: RaidDropEntry) => (
+                          <span key={drop.name} className="rounded-full border border-border bg-bg-primary/60 px-3 py-1 text-xs text-text-secondary">
+                            {drop.name}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <EmptyState

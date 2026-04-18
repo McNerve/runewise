@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo, lazy, Suspense } from "react";
-import { xpForLevel } from "../../lib/formulas/xp";
+import { xpForLevel, levelForXp } from "../../lib/formulas/xp";
 import { getSkillXp, type HiscoreData } from "../../lib/api/hiscores";
 import { useGEData } from "../../hooks/useGEData";
 import { formatGp } from "../../lib/format";
@@ -98,7 +98,7 @@ export default function SkillCalculator({ hiscores }: Props) {
   }, [selectedSkill]);
 
   const handleTargetChange = (value: number) => {
-    const clamped = Math.max(2, Math.min(126, value));
+    const clamped = Math.max(2, Math.min(99, value));
     setTargetLevel(clamped);
     customTargets.current.set(selectedSkill, clamped);
   };
@@ -193,6 +193,20 @@ export default function SkillCalculator({ hiscores }: Props) {
       </div>
 
       <div className="bg-bg-tertiary rounded-lg p-4 space-y-4">
+        <div className="flex items-center justify-between border-b border-border pb-3 -mx-4 px-4 -mt-4 pt-4 mb-1">
+          <div className="flex items-center gap-2">
+            <img src={SKILL_ICONS[selectedSkill]} alt="" className="w-6 h-6" />
+            <div>
+              <div className="text-sm font-semibold text-text-primary">{selectedSkill}</div>
+              {currentLevel !== null && (
+                <div className="text-[11px] text-text-secondary">Level {currentLevel}</div>
+              )}
+            </div>
+          </div>
+          <span className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
+            Editing
+          </span>
+        </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-xs text-text-secondary mb-1">
@@ -203,13 +217,11 @@ export default function SkillCalculator({ hiscores }: Props) {
               min={0}
               value={currentXp}
               onChange={(e) => setCurrentXp(Number(e.target.value))}
-              className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm"
+              className="w-full px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
             />
-            {currentLevel !== null && (
-              <p className="text-xs text-text-secondary mt-1">
-                Level {currentLevel}
-              </p>
-            )}
+            <p className="text-xs text-text-secondary mt-1">
+              Level {Math.min(99, levelForXp(currentXp))}
+            </p>
           </div>
           <div>
             <div className="flex items-center justify-between mb-1">
@@ -228,10 +240,10 @@ export default function SkillCalculator({ hiscores }: Props) {
               <input
                 type="number"
                 min={2}
-                max={126}
+                max={99}
                 value={targetLevel}
                 onChange={(e) => handleTargetChange(Number(e.target.value))}
-                className="flex-1 bg-bg-tertiary border border-border rounded px-3 py-2 text-sm"
+                className="flex-1 px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
               />
               {currentLevel !== null && currentLevel < 99 && (
                 <button

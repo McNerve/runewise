@@ -115,6 +115,7 @@ export default function PanelLayout({ renderView, currentView }: PanelLayoutProp
                 {panels.length > 1 && (
                   <button
                     onClick={() => removePanel(panel.id)}
+                    aria-label="Remove panel"
                     className="text-[10px] text-text-secondary/50 hover:text-danger transition-colors"
                   >
                     ✕

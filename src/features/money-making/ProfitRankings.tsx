@@ -133,7 +133,7 @@ export default function ProfitRankings() {
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search methods..."
           aria-label="Search profit methods"
-          className="flex-1 min-w-[180px] bg-bg-tertiary border border-border rounded-lg px-3 py-1.5 text-sm"
+          className="flex-1 min-w-[180px] px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
         />
         <div className="flex gap-1">
           {(
@@ -209,12 +209,15 @@ export default function ProfitRankings() {
                 </div>
                 <div className="mt-1 h-1 rounded-full bg-bg-tertiary overflow-hidden">
                   <div
-                    className="h-full rounded-full bg-success/60 transition-all duration-300"
-                    style={{ width: `${barWidth}%` }}
+                    className="h-full rounded-full transition-all duration-300"
+                    style={{
+                      width: `${barWidth}%`,
+                      background: "linear-gradient(90deg, var(--color-accent) 0%, rgba(212, 165, 116, 0.4) 100%)",
+                    }}
                   />
                 </div>
               </div>
-              <span className="text-sm font-semibold text-success tabular-nums shrink-0">
+              <span className="text-sm font-semibold text-accent tabular-nums shrink-0">
                 {formatGp(entry.gpPerHour)}/hr
               </span>
             </button>

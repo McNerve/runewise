@@ -10,6 +10,7 @@ import {
 } from "../../lib/api/temple";
 import { clearCacheKey } from "../../lib/api/cache";
 import { useNavigation } from "../../lib/NavigationContext";
+import FreshnessStrip from "../../components/FreshnessStrip";
 
 function ProgressRing({
   obtained,
@@ -241,7 +242,8 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
           <div className="text-[10px] uppercase tracking-wider text-text-secondary/50 mb-2">Recently Obtained</div>
           <div className="flex gap-2 overflow-x-auto pb-2">
             {recentItems.map((item) => {
-              const name = resolveName(item);
+              // Prefer schema-resolved name (matches what works in the category grid)
+              const name = itemNames.get(item.id) ?? resolveName(item);
               const date = item.obtained_at ? new Date(item.obtained_at + " UTC") : null;
               return (
                 <div
@@ -401,7 +403,7 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
                   return (
                     <div
                       key={item.id}
-                      onClick={() => navigate("wiki", { query: name })}
+                      onClick={() => navigate("market", { query: name, select: "1" })}
                       className={`group flex flex-col items-center gap-1 p-2 rounded-lg transition-all cursor-pointer ${
                         isObtained
                           ? "bg-success/6 hover:bg-success/12 hover:scale-105"
@@ -462,6 +464,7 @@ export default function CollectionLog({ rsn }: Props) {
   const [templeLoading, setTempleLoading] = useState(false);
   const [templeSynced, setTempleSynced] = useState<boolean | null>(null);
   const [templeError, setTempleError] = useState<string | null>(null);
+  const [templeLastFetched, setTempleLastFetched] = useState<Date | null>(null);
 
   useEffect(() => {
     if (!rsn) return;
@@ -497,6 +500,7 @@ export default function CollectionLog({ rsn }: Props) {
         if (hasClogData) {
           setTempleData(clog);
         }
+        setTempleLastFetched(new Date());
         setTempleLoading(false);
       } catch (err: unknown) {
         if (cancelled) return;
@@ -514,9 +518,42 @@ export default function CollectionLog({ rsn }: Props) {
     };
   }, [rsn]);
 
+  const handleTempleRefresh = useCallback(() => {
+    if (!rsn) return;
+    clearCacheKey(`temple-player-info:${rsn.toLowerCase()}`);
+    clearCacheKey(`temple-clog:${rsn.toLowerCase()}`);
+    setTempleLoading(true);
+    setTempleError(null);
+    setTempleSynced(null);
+    Promise.all([fetchTemplePlayerInfo(rsn), fetchTempleCollectionLog(rsn)])
+      .then(([info, clog]) => {
+        const hasClog = clog && Object.keys(clog.categories).length > 0;
+        if (hasClog) {
+          setTempleSynced(true);
+          setTempleData(clog);
+          setTempleLastFetched(new Date());
+        } else if (info?.clog_synced) {
+          setTempleSynced(true);
+          setTempleLastFetched(new Date());
+        } else {
+          setTempleSynced(false);
+        }
+        setTempleLoading(false);
+      })
+      .catch(() => {
+        setTempleError("Failed to reach Temple OSRS");
+        setTempleLoading(false);
+      });
+  }, [rsn]);
+
   return (
     <div>
-      <h2 className="text-2xl font-semibold tracking-tight mb-1">Collection Log</h2>
+      <div className="flex items-start justify-between mb-1 gap-4">
+        <h2 className="text-2xl font-semibold tracking-tight">Collection Log</h2>
+        <div className="shrink-0 pt-1">
+          <FreshnessStrip updatedAt={templeLastFetched} onRefresh={handleTempleRefresh} />
+        </div>
+      </div>
       <p className="text-xs text-text-secondary/60 mb-5">
         Live collection log synced from TempleOSRS. Click any item to look it up on the wiki.
       </p>

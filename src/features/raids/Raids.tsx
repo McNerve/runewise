@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { COX_ROOMS, COX_UNIQUES, type RaidRoom } from "./data/cox";
 import { TOB_ROOMS, TOB_UNIQUES } from "./data/tob";
 import { TOA_ROOMS, TOA_UNIQUES } from "./data/toa";
@@ -6,17 +6,19 @@ import { itemIcon } from "../../lib/sprites";
 import RaidLootCalc from "./components/RaidLootCalc";
 import { useNavigation } from "../../lib/NavigationContext";
 
-type RaidTab = "cox" | "tob" | "toa";
+const RaidCompanion = lazy(() => import("../raid-companion/RaidCompanion"));
+
+type RaidTab = "cox" | "tob" | "toa" | "companion";
 
 const TYPE_COLORS: Record<string, string> = {
   combat: "border-danger/30 bg-danger/5",
-  puzzle: "border-accent/30 bg-accent/5",
+  puzzle: "border-purple-500/30 bg-purple-500/5",
   boss: "border-warning/30 bg-warning/5",
 };
 
 const TYPE_BADGE: Record<string, string> = {
   combat: "bg-danger/15 text-danger",
-  puzzle: "bg-accent/15 text-accent",
+  puzzle: "bg-purple-500/15 text-purple-400",
   boss: "bg-warning/15 text-warning",
 };
 
@@ -163,6 +165,7 @@ const RAID_TABS = [
   { id: "cox" as const, label: "Chambers of Xeric", short: "CoX", rooms: COX_ROOMS },
   { id: "tob" as const, label: "Theatre of Blood", short: "ToB", rooms: TOB_ROOMS },
   { id: "toa" as const, label: "Tombs of Amascut", short: "ToA", rooms: TOA_ROOMS },
+  { id: "companion" as const, label: "Split Tracker", short: "Splits", rooms: [] },
 ];
 
 export default function Raids() {
@@ -190,9 +193,11 @@ export default function Raids() {
               </button>.
             </p>
           </div>
-          <div className="text-[11px] uppercase tracking-[0.18em] text-text-secondary/60">
-            {activeRaid.rooms.length} rooms — {activeRaid.rooms.filter((r) => r.type === "combat").length} combat, {activeRaid.rooms.filter((r) => r.type === "puzzle").length} puzzle, {activeRaid.rooms.filter((r) => r.type === "boss").length} boss
-          </div>
+          {tab !== "companion" && (
+            <div className="text-[11px] uppercase tracking-[0.18em] text-text-secondary/60">
+              {activeRaid.rooms.length} rooms — {activeRaid.rooms.filter((r) => r.type === "combat").length} combat, {activeRaid.rooms.filter((r) => r.type === "puzzle").length} puzzle, {activeRaid.rooms.filter((r) => r.type === "boss").length} boss
+            </div>
+          )}
         </div>
       </div>
 
@@ -277,6 +282,11 @@ export default function Raids() {
             calculateRate={(invocation) => Math.max(1, 48 * (150 / Math.max(1, invocation)))}
           />
         </>
+      )}
+      {tab === "companion" && (
+        <Suspense fallback={<div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4" />}>
+          <RaidCompanion />
+        </Suspense>
       )}
     </div>
   );

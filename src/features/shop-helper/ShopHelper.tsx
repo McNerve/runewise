@@ -414,7 +414,7 @@ export default function ShopHelper() {
                             <ItemTooltip itemName={item.name}>
                               <button
                                 type="button"
-                                onClick={() => navigate("wiki", { page: item.name.replace(/ /g, "_") })}
+                                onClick={() => navigate("market", { query: item.name })}
                                 className="text-left hover:text-accent transition-colors font-medium"
                               >
                                 {item.name}

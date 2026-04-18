@@ -1,9 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { sendNotification } from "../../lib/notify";
+import { useSettings } from "../../hooks/useSettings";
 import { useNavigation } from "../../lib/NavigationContext";
 import { WIKI_IMG, skillIcon, bossIconSmall } from "../../lib/sprites";
 import { TableSkeleton } from "../../components/Skeleton";
 import EmptyState from "../../components/EmptyState";
 import Tabs from "../../components/primitives/Tabs";
+import FreshnessStrip from "../../components/FreshnessStrip";
 import {
   createChart,
   ColorType,
@@ -12,7 +15,6 @@ import {
   type Time,
 } from "lightweight-charts";
 import { warn } from "../../lib/logger";
-import { timeAgo } from "../../lib/format";
 
 function skillIconUrl(name: string): string {
   if (name === "Overall") return `${WIKI_IMG}/Stats_icon.png`;
@@ -132,6 +134,18 @@ function metricDisplayName(rawMetric: string): string {
   return METRIC_FIXUPS[rawMetric] ?? SKILL_NAMES[rawMetric] ?? formatBossName(rawMetric);
 }
 
+function relativeTime(date: Date, now: Date): string {
+  const diffMs = date.getTime() - now.getTime();
+  const diffDays = Math.round(Math.abs(diffMs) / 86400000);
+  if (diffDays === 0) return "today";
+  const past = diffMs < 0;
+  if (diffDays < 7) return past ? `${diffDays}d ago` : `in ${diffDays}d`;
+  const weeks = Math.round(diffDays / 7);
+  if (weeks < 5) return past ? `${weeks}w ago` : `in ${weeks}w`;
+  const months = Math.round(diffDays / 30);
+  return past ? `${months}mo ago` : `in ${months}mo`;
+}
+
 function CompetitionsView({ competitions }: { competitions: WomPlayerCompetition[] }) {
   const now = new Date();
   const sorted = [...competitions].sort(
@@ -147,8 +161,12 @@ function CompetitionsView({ competitions }: { competitions: WomPlayerCompetition
         const rawMetric = comp.metric ?? "";
         const metric = rawMetric.replace(/_/g, " ");
         const compIcon = metricIconUrl(rawMetric);
-        const start = comp.startsAt ? new Date(comp.startsAt).toLocaleDateString() : "\u2014";
-        const end = comp.endsAt ? new Date(comp.endsAt).toLocaleDateString() : "\u2014";
+        const startDate = comp.startsAt ? new Date(comp.startsAt) : null;
+        const endDate = comp.endsAt ? new Date(comp.endsAt) : null;
+        const start = startDate ? startDate.toLocaleDateString() : "\u2014";
+        const end = endDate ? endDate.toLocaleDateString() : "\u2014";
+        const startRel = startDate ? relativeTime(startDate, now) : null;
+        const endRel = endDate ? relativeTime(endDate, now) : null;
         const gained = pc.progress?.gained ?? 0;
         const rank = pc.rank ?? 0;
         return (
@@ -175,7 +193,13 @@ function CompetitionsView({ competitions }: { competitions: WomPlayerCompetition
                 </div>
                 <div className="flex gap-3 mt-1 text-xs text-text-secondary">
                   <span className="capitalize">{metric}</span>
-                  <span>{start} \u2013 {end}</span>
+                  <span title={`${start} – ${end}`}>
+                    {isActive
+                      ? `ends ${endRel ?? end}`
+                      : startDate && startDate > now
+                        ? `starts ${startRel ?? start}`
+                        : `ended ${endRel ?? end}`}
+                  </span>
                   {comp.group && <span className="text-accent">{comp.group.name}</span>}
                 </div>
                 {pc.teamName && (
@@ -293,7 +317,21 @@ function XpOverTimeChart({
   return <div ref={containerRef} className="w-full" />;
 }
 
+// Achievements considered milestones for notification purposes
+function isMilestoneAchievement(a: WomAchievement): boolean {
+  // 99 in any skill
+  if (a.measure === "experience" && a.threshold === 13_034_431) return true;
+  // Max total level (2277)
+  if (a.name.toLowerCase().includes("maxed") || a.name.toLowerCase().includes("max total")) return true;
+  // 200m XP in any skill
+  if (a.measure === "experience" && a.threshold === 200_000_000) return true;
+  // First rank-100 (approximation: any rank achievement with threshold <= 100)
+  if (a.measure === "rank" && a.threshold <= 100) return true;
+  return false;
+}
+
 export default function XpTracker({ rsn }: Props) {
+  const { settings } = useSettings();
   const { navigate } = useNavigation();
   const [period, setPeriod] = useState<GainsPeriod>("week");
   const [gains, setGains] = useState<WomGains | null>(null);
@@ -309,6 +347,7 @@ export default function XpTracker({ rsn }: Props) {
   const [competitions, setCompetitions] = useState<WomPlayerCompetition[]>([]);
   const [competitionsLoaded, setCompetitionsLoaded] = useState(false);
   const [fetchKey, setFetchKey] = useState(0);
+  const notifiedAchievementKeys = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (!rsn) return;
@@ -361,6 +400,18 @@ export default function XpTracker({ rsn }: Props) {
     return () => { cancelled = true; };
   }, [tab, rsn, competitionsLoaded]);
 
+  // Fire milestone notifications for newly-observed achievements
+  useEffect(() => {
+    if (!settings.notifications.milestones) return;
+    for (const a of achievements) {
+      if (!isMilestoneAchievement(a)) continue;
+      const key = `${a.metric}:${a.threshold}:${a.createdAt}`;
+      if (notifiedAchievementKeys.current.has(key)) continue;
+      notifiedAchievementKeys.current.add(key);
+      sendNotification("XP milestone", `${a.name} — ${rsn}`);
+    }
+  }, [achievements, settings.notifications.milestones, rsn]);
+
   const handleRefresh = useCallback(() => {
     setFetchKey((k) => k + 1);
     setCompetitionsLoaded(false);
@@ -375,13 +426,8 @@ export default function XpTracker({ rsn }: Props) {
             Track XP gains, boss kills, achievements, and records via Wise Old Man.
           </p>
         </div>
-        <div className="flex items-center gap-3 shrink-0 pt-1.5">
-          {lastUpdated && (
-            <span className="text-xs text-text-secondary">
-              Updated {timeAgo(Math.floor(lastUpdated.getTime() / 1000))}
-            </span>
-          )}
-          <button onClick={handleRefresh} className="text-xs text-accent hover:underline">Refresh</button>
+        <div className="shrink-0 pt-1.5">
+          <FreshnessStrip updatedAt={lastUpdated} onRefresh={handleRefresh} />
         </div>
       </div>
       {nameChanges.length > 0 && (

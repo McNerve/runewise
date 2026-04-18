@@ -8,6 +8,8 @@ import { useNavigation } from "../../lib/NavigationContext";
 import WikiImage from "../../components/WikiImage";
 import { StatGrid, StatCard } from "../../components/primitives";
 import { TRAINING_METHODS } from "../../lib/data/training-methods";
+import FreshnessStrip from "../../components/FreshnessStrip";
+import { BOSSES } from "../../lib/data/bosses";
 
 function ProgressRing({ obtained, total, size = 22 }: { obtained: number; total: number; size?: number }) {
   const pct = total > 0 ? obtained / total : 0;
@@ -27,6 +29,8 @@ function ProgressRing({ obtained, total, size = 22 }: { obtained: number; total:
 interface Props {
   hiscores: HiscoreData;
   rsn: string;
+  lastFetched?: Date | null;
+  onRefresh?: () => void;
 }
 
 function hoursTo99(skillName: string, currentXp: number): string | null {
@@ -54,7 +58,7 @@ const SKILL_ORDER = [
   "Construction", "Hunter", "Sailing",
 ];
 
-export default function Overview({ hiscores, rsn }: Props) {
+export default function Overview({ hiscores, rsn, lastFetched = null, onRefresh }: Props) {
   const { navigate } = useNavigation();
   const [womPlayer, setWomPlayer] = useState<WomPlayer | null>(null);
   const [showAllBosses, setShowAllBosses] = useState<boolean>(false);
@@ -108,6 +112,14 @@ export default function Overview({ hiscores, rsn }: Props) {
     count: hiscores.activities?.find((a) => a.name.toLowerCase() === `clue scrolls (${tier})`)?.score ?? 0,
   })).filter((c) => c.count > 0);
 
+  const BOSS_WEAKNESS: Record<string, string> = Object.fromEntries(
+    BOSSES.filter((b) => b.weakness).flatMap((b) => {
+      const entries: [string, string][] = [[b.name.toLowerCase(), b.weakness as string]];
+      if (b.hiscoresName) entries.push([b.hiscoresName.toLowerCase(), b.weakness as string]);
+      return entries;
+    })
+  );
+
   const NON_BOSS = ["Clue", "Points", "Rank", "Zeal", "Rifts", "Glory", "Collections", "Grid", "League", "Deadman", "Bounty", "LMS"];
   const bossActivities = hiscores.activities?.filter((a) =>
     a.score > 0 && a.id >= 20 && !NON_BOSS.some((k) => a.name.includes(k))
@@ -123,7 +135,12 @@ export default function Overview({ hiscores, rsn }: Props) {
 
   return (
     <div className="max-w-3xl">
-      <h2 className="text-xl font-semibold mb-4">{rsn}</h2>
+      <div className="flex items-center justify-between mb-4 gap-4">
+        <h2 className="text-xl font-semibold">{rsn}</h2>
+        {onRefresh && (
+          <FreshnessStrip updatedAt={lastFetched} onRefresh={onRefresh} />
+        )}
+      </div>
 
       {/* Summary cards */}
       <div className="grid grid-cols-4 gap-3 mb-6">
@@ -200,30 +217,29 @@ export default function Overview({ hiscores, rsn }: Props) {
         )}
       </StatGrid>
 
-      {/* WOM stats: Rank, EHP, EHB */}
+      {/* Efficiency card — Rank + EHP + EHB in one row */}
       {(overallRank > 0 || (womPlayer?.ehp ?? 0) > 0 || (womPlayer?.ehb ?? 0) > 0) && (
-        <StatGrid columns={3} className="mb-6">
+        <div className="rounded-lg border border-border/60 bg-bg-primary/30 px-4 py-3 mb-6 flex flex-wrap items-center gap-4">
+          <span className="text-[10px] uppercase tracking-wider text-text-secondary/50">Efficiency</span>
           {overallRank > 0 && (
-            <StatCard
-              label="Overall Rank"
-              value={`#${overallRank.toLocaleString()}`}
-            />
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-sm font-semibold tabular-nums">#{overallRank.toLocaleString()}</span>
+              <span className="text-[10px] text-text-secondary/60">Overall Rank</span>
+            </div>
           )}
           {womPlayer?.ehp != null && womPlayer.ehp > 0 && (
-            <StatCard
-              label="EHP"
-              value={womPlayer.ehp.toFixed(0)}
-              title="Efficient Hours Played"
-            />
+            <div className="flex items-baseline gap-1.5" title="Efficient Hours Played">
+              <span className="text-sm font-semibold tabular-nums">{womPlayer.ehp.toFixed(0)}</span>
+              <span className="text-[10px] text-text-secondary/60">EHP</span>
+            </div>
           )}
           {womPlayer?.ehb != null && womPlayer.ehb > 0 && (
-            <StatCard
-              label="EHB"
-              value={womPlayer.ehb.toFixed(0)}
-              title="Efficient Hours Bossed"
-            />
+            <div className="flex items-baseline gap-1.5" title="Efficient Hours Bossed">
+              <span className="text-sm font-semibold tabular-nums">{womPlayer.ehb.toFixed(0)}</span>
+              <span className="text-[10px] text-text-secondary/60">EHB</span>
+            </div>
           )}
-        </StatGrid>
+        </div>
       )}
 
       {womPlayer?.type && womPlayer.type !== "regular" && (
@@ -251,6 +267,12 @@ export default function Overview({ hiscores, rsn }: Props) {
         <span className="text-accent group-hover:translate-x-0.5 transition-transform">→</span>
       </button>
       {/* Skill grid — 3 columns, OSRS layout */}
+      {maxedSkills >= 24 && (
+        <div className="mb-3 rounded-lg border border-[#d4a017]/40 bg-[#d4a017]/8 px-4 py-2.5 flex items-center gap-2">
+          <img src={`${WIKI_IMG}/Max_cape.png`} alt="" className="w-5 h-5" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+          <span className="text-sm font-semibold text-[#d4a017]">All skills 99</span>
+        </div>
+      )}
       <div className="grid grid-cols-3 gap-1.5">
         {SKILL_ORDER.map((skillName) => {
           const skill = get(skillName);
@@ -261,6 +283,7 @@ export default function Overview({ hiscores, rsn }: Props) {
                   (xpForLevel(skill.level + 1) - xpForLevel(skill.level))) *
                 100
               : 100;
+          const isMax = skill.level >= 99;
 
           return (
             <button
@@ -272,7 +295,7 @@ export default function Overview({ hiscores, rsn }: Props) {
                 <WikiImage src={SKILL_ICONS[skillName]} alt="" className="w-4 h-4" fallback={skillName[0]} />
                 <span
                   className={`text-sm font-medium ${
-                    skill.level >= 99 ? "text-success" : ""
+                    isMax ? "text-success" : ""
                   }`}
                 >
                   {skill.level}
@@ -280,7 +303,7 @@ export default function Overview({ hiscores, rsn }: Props) {
                 <span className="text-xs text-text-secondary group-hover:text-accent transition-colors">{skillName}</span>
               </div>
               <div className="flex items-center gap-2">
-                {skill.level < 99 ? (
+                {!isMax ? (
                   <>
                     {(() => {
                       const h = hoursTo99(skillName, skill.xp);
@@ -295,9 +318,9 @@ export default function Overview({ hiscores, rsn }: Props) {
                       />
                     </div>
                   </>
-                ) : (
+                ) : maxedSkills < 24 ? (
                   <span className="text-[10px] text-success">MAX</span>
-                )}
+                ) : null}
               </div>
             </button>
           );
@@ -380,41 +403,54 @@ export default function Overview({ hiscores, rsn }: Props) {
               Boss Kill Counts
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
-              {visibleBosses.map((boss) => (
-                <button
-                  key={boss.name}
-                  onClick={() => navigate("bosses", { boss: boss.name })}
-                  className="bg-bg-secondary rounded px-2 py-2 hover:bg-bg-tertiary transition-colors flex items-center gap-2"
-                >
-                  <div className="w-6 h-6 shrink-0 relative">
-                    <img
-                      src={bossIconSmall(boss.name)}
-                      alt=""
-                      className="w-6 h-6 rounded"
-                      onError={(e) => {
-                        // Try the large icon as fallback
-                        const fallback = bossIcon(boss.name);
-                        if (e.currentTarget.src !== fallback) {
-                          e.currentTarget.src = fallback;
-                        } else {
-                          e.currentTarget.style.display = "none";
-                          const sib = e.currentTarget.nextElementSibling as HTMLElement;
-                          if (sib) sib.style.display = "flex";
-                        }
-                      }}
-                    />
-                    <div
-                      className="w-6 h-6 rounded bg-bg-tertiary text-[10px] font-bold text-text-secondary items-center justify-center hidden"
-                    >
-                      {boss.name[0]}
+              {visibleBosses.map((boss) => {
+                const weakness = BOSS_WEAKNESS[boss.name.toLowerCase()];
+                return (
+                  <button
+                    key={boss.name}
+                    onClick={() => {
+                      // Store KC in sessionStorage for Dry Calc prefill when user jumps into Boss Guide
+                      sessionStorage.setItem("runewise_pending_kc", JSON.stringify({ boss: boss.name, kc: boss.score }));
+                      navigate("bosses", { boss: boss.name });
+                    }}
+                    className="bg-bg-secondary rounded px-2 py-2 hover:bg-bg-tertiary transition-colors flex items-center gap-2"
+                  >
+                    <div className="w-6 h-6 shrink-0 relative">
+                      <img
+                        src={bossIconSmall(boss.name)}
+                        alt=""
+                        className="w-6 h-6 rounded"
+                        onError={(e) => {
+                          const fallback = bossIcon(boss.name);
+                          if (e.currentTarget.src !== fallback) {
+                            e.currentTarget.src = fallback;
+                          } else {
+                            e.currentTarget.style.display = "none";
+                            const sib = e.currentTarget.nextElementSibling as HTMLElement;
+                            if (sib) sib.style.display = "flex";
+                          }
+                        }}
+                      />
+                      <div
+                        className="w-6 h-6 rounded bg-bg-tertiary text-[10px] font-bold text-text-secondary items-center justify-center hidden"
+                      >
+                        {boss.name[0]}
+                      </div>
                     </div>
-                  </div>
-                  <div className="min-w-0 text-left">
-                    <div className="text-sm font-bold">{boss.score.toLocaleString()}</div>
-                    <div className="text-[10px] text-text-secondary truncate" title={boss.name}>{boss.name}</div>
-                  </div>
-                </button>
-              ))}
+                    <div className="min-w-0 text-left flex-1">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-sm font-bold">{boss.score.toLocaleString()}</span>
+                        {weakness && (
+                          <span className="px-1.5 py-0.5 rounded-full text-[9px] font-medium bg-amber-500/15 text-amber-400 border border-amber-500/20 leading-none">
+                            {weakness}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[10px] text-text-secondary truncate" title={boss.name}>{boss.name}</div>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
             {hasMore && (
               <button
