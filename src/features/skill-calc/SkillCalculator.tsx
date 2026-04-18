@@ -36,7 +36,12 @@ export default function SkillCalculator({ hiscores }: Props) {
   const { params, navigate } = useNavigation();
   const { mapping, prices, fetchIfNeeded } = useGEData();
   const [skillTab, setSkillTab] = useState<SkillTab>(() => params.tab === "plan" ? "plan" : "calculator");
-  const [selectedSkill, setSelectedSkill] = useState<string>(params.skill ?? "Attack");
+  const normalizeSkill = (name: string | undefined): string => {
+    if (!name) return "Attack";
+    const match = SKILLS.find((s) => s.toLowerCase() === name.toLowerCase());
+    return match ?? "Attack";
+  };
+  const [selectedSkill, setSelectedSkill] = useState<string>(normalizeSkill(params.skill));
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- sync tab from nav params
@@ -45,7 +50,7 @@ export default function SkillCalculator({ hiscores }: Props) {
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- sync skill from nav params
-    if (params.skill) setSelectedSkill(params.skill);
+    if (params.skill) setSelectedSkill(normalizeSkill(params.skill));
   }, [params.skill]);
   const [currentXp, setCurrentXp] = useState(0);
   const [targetLevel, setTargetLevel] = useState(99);
