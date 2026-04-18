@@ -14,7 +14,6 @@ export interface AppSettings {
   sidebar: { collapsed: boolean; pinned: string[] };
   ironmanMode: boolean;
   closeToTray: boolean;
-  discordRpc: boolean;
   showLeagueSpells: boolean;
 }
 
@@ -57,7 +56,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
   sidebar: { collapsed: false, pinned: [] },
   ironmanMode: false,
   closeToTray: false,
-  discordRpc: false,
   showLeagueSpells: false,
 };
 
@@ -72,7 +70,6 @@ export function loadSettings(): AppSettings {
     keybindsEnabled: saved.keybindsEnabled ?? true,
     ironmanMode: saved.ironmanMode ?? false,
     closeToTray: saved.closeToTray ?? false,
-    discordRpc: saved.discordRpc ?? false,
     showLeagueSpells: saved.showLeagueSpells ?? false,
   };
 }

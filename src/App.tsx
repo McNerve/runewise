@@ -18,7 +18,6 @@ import { useSettingsProvider } from "./hooks/useSettings";
 import { VIEW_RENDERERS } from "./lib/viewRegistry";
 import { getFeatureAccent } from "./lib/featureAccent";
 import { isTauri } from "./lib/env";
-import { initDiscordRpc, updateDiscordRpc } from "./lib/discord-rpc";
 
 function AppContent() {
   const { view, navigate } = useNavigation();
@@ -55,17 +54,6 @@ function AppContent() {
     });
     return () => { unlisten?.(); };
   }, []); // intentionally runs once — listener references stable Tauri API
-
-  // Discord Rich Presence: init when enabled, update on view change
-  useEffect(() => {
-    if (!isTauri || !settings.discordRpc) return;
-    initDiscordRpc();
-  }, [settings.discordRpc]);
-
-  useEffect(() => {
-    if (!isTauri || !settings.discordRpc) return;
-    updateDiscordRpc(view, hiscores.rsn);
-  }, [view, hiscores.rsn, settings.discordRpc]);
 
   return (
     <>
