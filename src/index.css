@@ -639,6 +639,72 @@ body {
   background: transparent;
 }
 
+/* Wiki comparison tables — compact by default, hover to expand notes cell */
+.article-content .wikitable {
+  width: 100%;
+  table-layout: auto;
+}
+
+.article-content .wikitable tbody tr > td {
+  vertical-align: middle;
+  padding: 0.55rem 0.75rem;
+  line-height: 1.45;
+  font-size: 0.8125rem;
+}
+
+/* First column — item image — keep narrow */
+.article-content .wikitable tbody tr > td:first-child {
+  width: 56px;
+  min-width: 48px;
+  text-align: center;
+}
+
+.article-content .wikitable tbody tr > td:first-child img {
+  margin: 0 auto;
+  display: inline-block;
+}
+
+/* Last column — Notes prose — clamp height with hover/focus expand */
+.article-content .wikitable tbody tr > td:last-child {
+  max-width: 36ch;
+  max-height: 5.5rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  position: relative;
+  transition: max-height 0.2s ease;
+  vertical-align: top;
+  color: var(--color-text-secondary);
+}
+
+.article-content .wikitable tbody tr:hover > td:last-child,
+.article-content .wikitable tbody tr > td:last-child:focus-within {
+  max-height: 24rem;
+}
+
+.article-content .wikitable tbody tr > td:last-child p {
+  margin: 0 0 0.4rem 0;
+}
+
+.article-content .wikitable tbody tr > td:last-child p:last-child {
+  margin-bottom: 0;
+}
+
+.article-content .wikitable tbody tr + tr > td {
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 35%, transparent);
+}
+
+/* Header row uses the accent underline */
+.article-content .wikitable thead th,
+.article-content .wikitable tbody tr:first-child th {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-secondary);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+
 .article-content--loadout-table table {
   display: table;
   width: 100%;

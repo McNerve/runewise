@@ -331,10 +331,10 @@ function SkillTile({
     return (
       <div
         title={item.fallback}
-        className="flex items-center gap-2.5 rounded-lg border border-border/50 bg-bg-primary/40 px-3 py-2"
+        className="flex items-start gap-2.5 rounded-lg border border-border/50 bg-bg-primary/40 px-3 py-2"
       >
         {renderIcon(item.icon, item.fallback[0] ?? "?", "sm")}
-        <div className="min-w-0 text-sm leading-5 text-text-primary truncate">
+        <div className="min-w-0 text-sm leading-snug text-text-primary whitespace-normal break-words">
           {item.fallback}
         </div>
       </div>
@@ -342,7 +342,8 @@ function SkillTile({
   }
 
   const s = item;
-  const primaryText = `${s.skill} ${s.level}+`;
+  const isUnknownSkill = !s.skill || s.skill.toLowerCase() === "unknown";
+  const primaryText = isUnknownSkill ? `Level ${s.level}+` : `${s.skill} ${s.level}+`;
   const tooltip = s.description ?? undefined;
 
   return (
@@ -538,7 +539,7 @@ function LoadoutTable({ title, html, doc, bossSlug }: { title: string; html: str
                 onChange={() => toggleOwned(slotKey)}
                 aria-label={`Mark ${slotLabel} item as owned`}
                 title="Track items you own"
-                className="h-4 w-4 cursor-pointer accent-accent"
+                className="h-4 w-4 cursor-pointer appearance-none rounded border border-border/60 bg-bg-tertiary checked:border-accent checked:bg-accent checked:bg-[url('data:image/svg+xml;utf8,%3Csvg%20viewBox%3D%220%200%2016%2016%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M3.5%208.5l3%203%206-6%22%20stroke%3D%22%231a1a1a%22%20stroke-width%3D%222.25%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20fill%3D%22none%22/%3E%3C/svg%3E')] checked:bg-center checked:bg-no-repeat hover:border-accent/60 transition-colors"
               />
             </div>
           </div>
@@ -585,7 +586,7 @@ function LoadoutTable({ title, html, doc, bossSlug }: { title: string; html: str
                 onChange={() => toggleOwned(slotKey)}
                 aria-label={`Mark ${slotLabel} item as owned`}
                 title="Track items you own"
-                className="h-4 w-4 cursor-pointer accent-accent"
+                className="h-4 w-4 cursor-pointer appearance-none rounded border border-border/60 bg-bg-tertiary checked:border-accent checked:bg-accent checked:bg-[url('data:image/svg+xml;utf8,%3Csvg%20viewBox%3D%220%200%2016%2016%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M3.5%208.5l3%203%206-6%22%20stroke%3D%22%231a1a1a%22%20stroke-width%3D%222.25%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20fill%3D%22none%22/%3E%3C/svg%3E')] checked:bg-center checked:bg-no-repeat hover:border-accent/60 transition-colors"
               />
             </div>
           </div>
