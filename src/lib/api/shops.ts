@@ -131,7 +131,8 @@ export async function fetchAllShops(): Promise<Shop[]> {
           });
         }
 
-        shops.sort((a, b) => a.name.localeCompare(b.name));
+        const sortKey = (name: string) => name.replace(/[^a-z0-9]/gi, "").toLowerCase();
+        shops.sort((a, b) => sortKey(a.name).localeCompare(sortKey(b.name)));
         if (shops.length > 0) setCache(CACHE_KEY, shops, { persist: true });
         shopPromise = null;
         return shops;
