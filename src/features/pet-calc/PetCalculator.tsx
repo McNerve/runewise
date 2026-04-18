@@ -395,7 +395,7 @@ export default function PetCalculator({ hiscores, rsn }: Props) {
                   key={pet.name}
                   onClick={() => selectPet(pet)}
                   title={`${pet.name} — ${pet.source} (1/${pet.baseRate.toLocaleString()})${isOwned ? " — owned" : ""}`}
-                  className={`group relative flex flex-col items-center gap-1 p-2 rounded-lg transition-all ${
+                  className={`group relative flex flex-col items-center gap-1 p-2 rounded-lg transition-all min-h-[64px] ${
                     isActive
                       ? "bg-accent/15 ring-2 ring-accent scale-105"
                       : isOwned
@@ -412,7 +412,7 @@ export default function PetCalculator({ hiscores, rsn }: Props) {
                     className={`w-8 h-8 object-contain transition-all ${isActive || isOwned ? "" : "opacity-60 group-hover:opacity-100"}`}
                     onError={(e) => { e.currentTarget.style.display = "none"; }}
                   />
-                  <span className={`text-[9px] text-center leading-tight truncate w-full ${
+                  <span className={`text-[9px] text-center leading-tight line-clamp-2 w-full ${
                     isActive ? "text-accent font-medium" : isOwned ? "text-success/80" : "text-text-secondary/60"
                   }`}>
                     {pet.name}
@@ -543,7 +543,7 @@ export default function PetCalculator({ hiscores, rsn }: Props) {
                       const n = Number(e.target.value);
                       setSkillLevel(Math.max(1, Math.min(99, Number.isFinite(n) ? n : 99)));
                     }}
-                    className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm"
+                    className="w-full px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
                   />
                   {!hiscoreSkill && (
                     <p className="text-[11px] text-text-secondary/60 mt-1">
@@ -571,7 +571,7 @@ export default function PetCalculator({ hiscores, rsn }: Props) {
                       setXpInput(v);
                       setActionCount(Math.floor(v / selectedAction.xpPerAction));
                     }}
-                    className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm"
+                    className="w-full px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
                   />
                   <p className="text-[11px] text-text-secondary/60 mt-1 tabular-nums">
                     = {actionCount.toLocaleString()} actions
@@ -593,7 +593,7 @@ export default function PetCalculator({ hiscores, rsn }: Props) {
                       setCountTouched(true);
                       setActionCount(Number(e.target.value) || 0);
                     }}
-                    className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm"
+                    className="w-full px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
                   />
                 </div>
               )}
@@ -608,7 +608,7 @@ export default function PetCalculator({ hiscores, rsn }: Props) {
                   min={0}
                   value={ratePerHour || ""}
                   onChange={(e) => setRatePerHour(Number(e.target.value) || 0)}
-                  className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm"
+                  className="w-full px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
                 />
               </div>
             </>
@@ -658,7 +658,7 @@ export default function PetCalculator({ hiscores, rsn }: Props) {
                     <select
                       value={val}
                       onChange={(e) => setModifierState((s) => ({ ...s, [m.id]: e.target.value }))}
-                      className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm"
+                      className="w-full px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
                     >
                       {m.options.map((opt) => (
                         <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -691,7 +691,7 @@ export default function PetCalculator({ hiscores, rsn }: Props) {
                     setCountTouched(true);
                     setKillCount(Number(e.target.value) || 0);
                   }}
-                  className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm"
+                  className="w-full px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
                 />
               </div>
               <div>
@@ -703,7 +703,7 @@ export default function PetCalculator({ hiscores, rsn }: Props) {
                   min={0}
                   value={ratePerHour || ""}
                   onChange={(e) => setRatePerHour(Number(e.target.value) || 0)}
-                  className="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm"
+                  className="w-full px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
                 />
               </div>
             </>
