@@ -238,6 +238,27 @@ export function bossIconSmall(bossName: string): string {
   return `${WIKI_IMG}/${name}_icon.png`;
 }
 
+// Hand-curated overrides for NPC icons that don't match the default
+// "{Name}.png" pattern on the wiki.
+const NPC_ICON_OVERRIDES: Record<string, string> = {
+  "Bob": "Bob_Barter.png",
+};
+
+/**
+ * Best-effort wiki image URL for an NPC or shopkeeper. Consumers should
+ * combine with a <WikiImage fallback="..."/> so a 404 still degrades cleanly.
+ */
+export function npcIcon(npcName: string): string {
+  if (NPC_ICON_OVERRIDES[npcName]) return `${WIKI_IMG}/${NPC_ICON_OVERRIDES[npcName]}`;
+  // Strip decorative characters (tildes, asterisks, quotes).
+  const cleaned = npcName
+    .replace(/[~"*]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  const name = cleaned.replace(/ /g, "_").replace(/'/g, "%27");
+  return `${WIKI_IMG}/${name}.png`;
+}
+
 export const NAV_ICONS: Record<string, string> = {
   home: `${WIKI_IMG}/Teleport_to_House_icon_%28mobile%29.png`,
   overview: `${WIKI_IMG}/Character_Summary_tab_icon.png`,
