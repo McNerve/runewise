@@ -125,6 +125,24 @@ body {
   scrollbar-color: rgba(161, 161, 170, 0.45) transparent;
 }
 
+/* Sticky table header — applied to <thead> in long-scroll tables */
+.sticky-thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--color-bg-primary);
+}
+
+.sticky-thead::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: var(--color-border);
+}
+
 .sidebar-scroll {
   scrollbar-width: thin;
   scrollbar-color: rgba(161, 161, 170, 0.28) transparent;

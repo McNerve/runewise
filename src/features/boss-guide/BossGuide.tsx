@@ -72,20 +72,42 @@ const CATEGORY_LABELS: Record<string, string> = {
   Varlamore: "Varlamore",
 };
 
-function BossActionButton({
+function BossActionIcon({
   label,
+  icon,
   onClick,
+  href,
 }: {
   label: string;
-  onClick: () => void;
+  icon: string;
+  onClick?: () => void;
+  href?: string;
 }) {
+  const className =
+    "flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-bg-primary/50 text-base text-text-secondary transition hover:border-accent/40 hover:bg-bg-primary/80 hover:text-text-primary";
+  if (href) {
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={label}
+        title={label}
+        className={className}
+      >
+        {icon}
+      </a>
+    );
+  }
   return (
     <button
       type="button"
       onClick={onClick}
-      className="rounded-xl border border-border bg-bg-primary/60 px-3 py-2 text-xs font-medium text-text-secondary transition hover:border-accent/40 hover:text-text-primary"
+      aria-label={label}
+      title={label}
+      className={className}
     >
-      {label}
+      {icon}
     </button>
   );
 }
@@ -555,59 +577,63 @@ export default function BossGuide({ hiscores }: Props) {
                 </div>
 
                 <div className="flex flex-col gap-3 xl:items-end">
-                  <div className="flex flex-wrap gap-2 xl:justify-end">
-                  {BOSS_WORKSPACE_TABS.map((tab) => (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      aria-pressed={activeTab === tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`relative rounded-xl border px-3.5 py-2 text-left transition ${
-                        activeTab === tab.id
-                          ? "border-accent/50 bg-accent/10"
-                          : "border-border bg-bg-primary/50 text-text-secondary hover:border-border hover:bg-bg-primary/70"
-                      }`}
-                    >
-                      {activeTab === tab.id && (
-                        <div className="absolute -bottom-px left-3 right-3 h-0.5 rounded-full bg-accent" />
-                      )}
-                      <div className={`text-xs font-semibold ${activeTab === tab.id ? "text-accent" : ""}`}>
-                        {tab.label}
-                      </div>
-                      <div className={`hidden sm:block text-[11px] ${activeTab === tab.id ? "text-accent/60" : "text-text-secondary/60"}`}>
-                        {tab.description}
-                      </div>
-                    </button>
-                  ))}
-                  </div>
-                  <div className="flex flex-wrap gap-2 xl:justify-end">
-                  <BossActionButton
-                    label="Loot Calculator"
-                    onClick={() =>
-                      navigate("loot", {
-                        boss: bossLootTable?.bossName ?? selectedBoss.name,
-                        tab: "profit",
-                      })
-                    }
-                  />
-                  <BossActionButton
-                    label="DPS"
-                    onClick={() => navigate("dps-calc", { monster: selectedBoss.name })}
-                  />
-                  {selectedBoss.category === "Raids" && (
-                    <BossActionButton
-                      label="Raid Rooms"
-                      onClick={() => navigate("raids")}
+                  <div className="flex flex-wrap items-stretch gap-2 xl:justify-end">
+                    {BOSS_WORKSPACE_TABS.map((tab) => (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        aria-pressed={activeTab === tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`relative rounded-xl border px-3.5 py-2 text-left transition ${
+                          activeTab === tab.id
+                            ? "border-accent/50 bg-accent/10"
+                            : "border-border bg-bg-primary/50 text-text-secondary hover:border-border hover:bg-bg-primary/70"
+                        }`}
+                      >
+                        {activeTab === tab.id && (
+                          <div className="absolute -bottom-px left-3 right-3 h-0.5 rounded-full bg-accent" />
+                        )}
+                        <div className={`text-xs font-semibold ${activeTab === tab.id ? "text-accent" : ""}`}>
+                          {tab.label}
+                        </div>
+                        <div className={`hidden sm:block text-[11px] ${activeTab === tab.id ? "text-accent/60" : "text-text-secondary/60"}`}>
+                          {tab.description}
+                        </div>
+                      </button>
+                    ))}
+                    <div
+                      className="mx-1 hidden self-stretch w-px bg-border/60 sm:block"
+                      aria-hidden="true"
                     />
-                  )}
-                  <a
-                    href={`https://oldschool.runescape.wiki/w/${selectedBoss.wikiPage}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="rounded-xl border border-border bg-bg-primary/60 px-3 py-2 text-xs font-medium text-text-secondary transition hover:border-accent/40 hover:text-text-primary"
-                  >
-                    Open Wiki
-                  </a>
+                    <div className="flex items-center gap-2">
+                      <BossActionIcon
+                        label="Profit Calculator"
+                        icon="💰"
+                        onClick={() =>
+                          navigate("loot", {
+                            boss: bossLootTable?.bossName ?? selectedBoss.name,
+                            tab: "profit",
+                          })
+                        }
+                      />
+                      <BossActionIcon
+                        label="DPS Calculator"
+                        icon="⚔️"
+                        onClick={() => navigate("dps-calc", { monster: selectedBoss.name })}
+                      />
+                      {selectedBoss.category === "Raids" && (
+                        <BossActionIcon
+                          label="Raid Rooms"
+                          icon="🏛️"
+                          onClick={() => navigate("raids")}
+                        />
+                      )}
+                      <BossActionIcon
+                        label="Open OSRS Wiki"
+                        icon="🔗"
+                        href={`https://oldschool.runescape.wiki/w/${selectedBoss.wikiPage}`}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -834,7 +860,7 @@ export default function BossGuide({ hiscores }: Props) {
 
                       <div className="rounded-xl border border-border/60 overflow-hidden">
                         <table className="w-full text-sm">
-                          <thead>
+                          <thead className="sticky-thead">
                             <tr className="border-b border-border text-text-secondary text-xs">
                               <th scope="col" className="px-4 py-2 text-left">Item</th>
                               <th scope="col" className="px-4 py-2 text-right">Rate</th>
@@ -921,7 +947,7 @@ export default function BossGuide({ hiscores }: Props) {
                       </h5>
                       <div className="rounded-xl border border-border/60 overflow-hidden">
                         <table className="w-full text-sm">
-                          <thead>
+                          <thead className="sticky-thead">
                             <tr className="border-b border-border text-text-secondary text-xs">
                               <th scope="col" className="px-4 py-2 text-left">Item</th>
                               <th scope="col" className="px-4 py-2 text-right">Qty</th>
@@ -981,7 +1007,7 @@ export default function BossGuide({ hiscores }: Props) {
                   </p>
                   <div className="rounded-xl border border-border/60 overflow-hidden">
                   <table className="w-full text-sm">
-                    <thead>
+                    <thead className="sticky-thead">
                       <tr className="border-b border-border text-text-secondary text-xs">
                         <th scope="col" className="px-4 py-2 text-left">Item</th>
                         <th scope="col" className="px-4 py-2 text-right">Qty</th>

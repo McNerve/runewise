@@ -198,7 +198,7 @@ export default function GearCompare() {
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-left">
-            <thead>
+            <thead className="sticky-thead">
               <tr className="border-b border-border">
                 <th scope="col" className="px-2 py-2 text-xs text-text-secondary font-normal w-8" />
                 <th
