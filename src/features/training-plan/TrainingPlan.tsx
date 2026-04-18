@@ -84,7 +84,7 @@ export default function TrainingPlan({ hiscores }: Props) {
           onClick={() => { setAllTo(99); setActivePreset("all99"); }}
           aria-pressed={activePreset === "all99"}
           className={`px-3 py-1.5 rounded text-xs transition-colors ${
-            activePreset === "all99" ? "bg-accent text-white" : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
+            activePreset === "all99" ? "bg-accent text-on-accent" : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
           }`}
         >
           All 99
@@ -102,7 +102,7 @@ export default function TrainingPlan({ hiscores }: Props) {
           }}
           aria-pressed={activePreset === "combat"}
           className={`px-3 py-1.5 rounded text-xs transition-colors ${
-            activePreset === "combat" ? "bg-accent text-white" : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
+            activePreset === "combat" ? "bg-accent text-on-accent" : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
           }`}
         >
           Max Combat
@@ -126,7 +126,7 @@ export default function TrainingPlan({ hiscores }: Props) {
             aria-pressed={preference === p.id}
             className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
               preference === p.id
-                ? "bg-accent text-white"
+                ? "bg-accent text-on-accent"
                 : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
             }`}
           >

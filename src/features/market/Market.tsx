@@ -193,7 +193,7 @@ function MarketDetail({
               aria-pressed={period === p}
               className={`px-2 py-1 text-[10px] font-medium rounded-md transition-colors ${
                 period === p
-                  ? "bg-accent text-white"
+                  ? "bg-accent text-on-accent"
                   : "text-text-secondary hover:text-text-primary"
               }`}
             >
@@ -207,7 +207,7 @@ function MarketDetail({
             aria-pressed={chartMode === "line"}
             className={`px-2 py-1 text-[10px] font-medium rounded-md transition-colors ${
               chartMode === "line"
-                ? "bg-accent text-white"
+                ? "bg-accent text-on-accent"
                 : "text-text-secondary hover:text-text-primary"
             }`}
           >
@@ -218,7 +218,7 @@ function MarketDetail({
             aria-pressed={chartMode === "candlestick"}
             className={`px-2 py-1 text-[10px] font-medium rounded-md transition-colors ${
               chartMode === "candlestick"
-                ? "bg-accent text-white"
+                ? "bg-accent text-on-accent"
                 : "text-text-secondary hover:text-text-primary"
             }`}
           >
@@ -241,7 +241,7 @@ function MarketDetail({
           className={`flex-1 text-xs py-2 rounded transition-colors ${
             isWatched
               ? "bg-bg-tertiary text-text-secondary"
-              : "bg-accent hover:bg-accent-hover text-white"
+              : "bg-accent hover:bg-accent-hover text-on-accent"
           }`}
         >
           {isWatched ? "On Watchlist" : "Add to Watchlist"}
@@ -524,7 +524,7 @@ export default function Market({
                   className={`rounded-xl px-3 py-2 text-xs font-medium transition ${
                     selectedWatched
                       ? "border border-border bg-bg-primary/70 text-text-secondary hover:border-accent/35 hover:text-text-primary"
-                      : "bg-accent text-white hover:bg-accent-hover"
+                      : "bg-accent text-on-accent hover:bg-accent-hover"
                   }`}
                 >
                   {selectedWatched ? "Open Watchlist" : "Watch Item"}

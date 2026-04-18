@@ -129,7 +129,7 @@ export default function SkillCalculator({ hiscores }: Props) {
             aria-pressed={skillTab === tab.id}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
               skillTab === tab.id
-                ? "bg-accent text-white"
+                ? "bg-accent text-on-accent"
                 : "text-text-secondary hover:bg-bg-secondary/50"
             }`}
           >
@@ -168,7 +168,7 @@ export default function SkillCalculator({ hiscores }: Props) {
               aria-pressed={selectedSkill === skill}
               className={`px-2 py-1.5 rounded text-xs transition-colors relative flex items-center gap-1.5 ${
                 selectedSkill === skill
-                  ? "bg-accent text-white"
+                  ? "bg-accent text-on-accent"
                   : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
               }`}
             >
@@ -178,7 +178,7 @@ export default function SkillCalculator({ hiscores }: Props) {
                 <span
                   className={`block text-[10px] ${
                     selectedSkill === skill
-                      ? "text-white/70"
+                      ? "text-on-accent/70"
                       : level >= 99
                         ? "text-success/70"
                         : "text-text-secondary/50"
@@ -239,7 +239,7 @@ export default function SkillCalculator({ hiscores }: Props) {
                   aria-pressed={targetLevel === currentLevel + 1}
                   className={`px-2 py-1 rounded text-xs transition-colors ${
                     targetLevel === currentLevel + 1
-                      ? "bg-accent text-white"
+                      ? "bg-accent text-on-accent"
                       : "bg-bg-tertiary text-text-secondary hover:bg-bg-tertiary/80"
                   }`}
                 >
@@ -251,7 +251,7 @@ export default function SkillCalculator({ hiscores }: Props) {
                 aria-pressed={targetLevel === 99}
                 className={`px-2 py-1 rounded text-xs transition-colors ${
                   targetLevel === 99
-                    ? "bg-accent text-white"
+                    ? "bg-accent text-on-accent"
                     : "bg-bg-tertiary text-text-secondary hover:bg-bg-tertiary/80"
                 }`}
               >
@@ -302,7 +302,7 @@ export default function SkillCalculator({ hiscores }: Props) {
                   aria-pressed={intensityFilter === f}
                   className={`px-2.5 py-1 rounded-full text-xs transition-colors ${
                     intensityFilter === f
-                      ? "bg-accent text-white"
+                      ? "bg-accent text-on-accent"
                       : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
                   }`}
                 >

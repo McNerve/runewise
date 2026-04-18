@@ -413,7 +413,7 @@ export default function ProductionCalc() {
                     aria-pressed={quantity === q}
                     className={`px-2 py-1 rounded text-xs transition-colors ${
                       quantity === q
-                        ? "bg-accent text-white"
+                        ? "bg-accent text-on-accent"
                         : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
                     }`}
                   >

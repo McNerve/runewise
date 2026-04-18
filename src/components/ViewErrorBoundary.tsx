@@ -39,7 +39,7 @@ export default class ViewErrorBoundary extends Component<Props, State> {
             <button
               type="button"
               onClick={this.handleRetry}
-              className="rounded-lg bg-accent px-4 py-1.5 text-xs font-medium text-white hover:bg-accent-hover transition-colors"
+              className="rounded-lg bg-accent px-4 py-1.5 text-xs font-medium text-on-accent hover:bg-accent-hover transition-colors"
             >
               Try Again
             </button>

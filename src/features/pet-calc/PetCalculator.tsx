@@ -347,12 +347,12 @@ export default function PetCalculator({ hiscores, rsn }: Props) {
               aria-pressed={category === cat.id}
               className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
                 category === cat.id
-                  ? "bg-accent text-white"
+                  ? "bg-accent text-on-accent"
                   : "text-text-secondary hover:bg-bg-secondary"
               }`}
             >
               {cat.label}
-              <span className={`ml-1 tabular-nums ${category === cat.id ? "text-white/70" : "text-text-secondary/40"}`}>
+              <span className={`ml-1 tabular-nums ${category === cat.id ? "text-on-accent/70" : "text-text-secondary/40"}`}>
                 {count}
               </span>
             </button>

@@ -195,7 +195,7 @@ export default function AlchCalculator() {
               aria-pressed={membersFilter === f}
               className={`px-3 py-2 rounded text-xs uppercase ${
                 membersFilter === f
-                  ? "bg-accent text-white"
+                  ? "bg-accent text-on-accent"
                   : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
               }`}
             >

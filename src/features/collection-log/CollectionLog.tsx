@@ -257,7 +257,7 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
                       </span>
                     </div>
                     {item.count > 1 && (
-                      <span className="absolute -top-1.5 -right-1.5 bg-accent text-white text-[10px] font-bold rounded-full px-1.5 min-w-[18px] text-center leading-[18px] shadow-sm shadow-black/30">
+                      <span className="absolute -top-1.5 -right-1.5 bg-accent text-on-accent text-[10px] font-bold rounded-full px-1.5 min-w-[18px] text-center leading-[18px] shadow-sm shadow-black/30">
                         {item.count}
                       </span>
                     )}
@@ -289,13 +289,13 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
               aria-pressed={isActive}
               className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
                 isActive
-                  ? "bg-accent text-white"
+                  ? "bg-accent text-on-accent"
                   : "text-text-secondary hover:bg-bg-secondary/50"
               }`}
             >
               {tab.charAt(0).toUpperCase() + tab.slice(1)}
               {stats && (
-                <span className={`tabular-nums ${isActive ? "text-white/70" : "text-text-secondary/40"}`}>
+                <span className={`tabular-nums ${isActive ? "text-on-accent/70" : "text-text-secondary/40"}`}>
                   {stats.obtained}/{stats.total}
                 </span>
               )}
@@ -383,7 +383,7 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
                       aria-pressed={itemFilter === f}
                       className={`px-2.5 py-1 rounded text-[11px] font-medium transition-colors ${
                         itemFilter === f
-                          ? "bg-accent text-white"
+                          ? "bg-accent text-on-accent"
                           : "text-text-secondary hover:text-text-primary"
                       }`}
                     >
@@ -421,7 +421,7 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
                           />
                         </div>
                         {isObtained && item.count > 1 && (
-                          <span className="absolute -top-1.5 -right-2 bg-accent text-white text-[10px] font-bold rounded-full px-1.5 min-w-[18px] text-center leading-[18px] shadow-sm shadow-black/30">
+                          <span className="absolute -top-1.5 -right-2 bg-accent text-on-accent text-[10px] font-bold rounded-full px-1.5 min-w-[18px] text-center leading-[18px] shadow-sm shadow-black/30">
                             {item.count}
                           </span>
                         )}

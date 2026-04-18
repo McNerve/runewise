@@ -12,6 +12,9 @@
   /* Signature accent — rune/magic gold. Was Tailwind blue-500. */
   --color-accent: #d4a574;
   --color-accent-hover: #e0b585;
+  /* Foreground color to use on accent-filled surfaces. Gold is light (~L70),
+     so white text fails WCAG at ~1.9:1; use dark navy for ~10:1 contrast. */
+  --color-on-accent: #0f1117;
   --color-info: #3b82f6;
   --color-border: #2e3345;
   --color-success: #22c55e;
@@ -36,6 +39,8 @@
   --color-text-secondary: #424754;
   --color-accent: #b08552;
   --color-accent-hover: #986c3c;
+  /* Light-mode gold is darker (~L50); white reads fine here. */
+  --color-on-accent: #ffffff;
   --color-info: #2563eb;
   --color-border: #bcc4d1;
   --color-success: #15803d;

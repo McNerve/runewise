@@ -241,7 +241,7 @@ export default function ShootingStars() {
           onClick={() => setTab("live")}
           aria-pressed={tab === "live"}
           className={`px-3 py-1.5 rounded text-xs transition-colors ${
-            tab === "live" ? "bg-accent text-white" : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
+            tab === "live" ? "bg-accent text-on-accent" : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
           }`}
         >
           Live Tracker
@@ -250,7 +250,7 @@ export default function ShootingStars() {
           onClick={() => setTab("reference")}
           aria-pressed={tab === "reference"}
           className={`px-3 py-1.5 rounded text-xs transition-colors ${
-            tab === "reference" ? "bg-accent text-white" : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
+            tab === "reference" ? "bg-accent text-on-accent" : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
           }`}
         >
           Reference
@@ -306,7 +306,7 @@ export default function ShootingStars() {
                   <button
                     type="button"
                     onClick={() => openStarDetails(topStar)}
-                    className="rounded-xl bg-accent px-3 py-2 text-xs font-medium text-white transition hover:bg-accent-hover"
+                    className="rounded-xl bg-accent px-3 py-2 text-xs font-medium text-on-accent transition hover:bg-accent-hover"
                   >
                     Open Details
                   </button>
@@ -504,7 +504,7 @@ export default function ShootingStars() {
                     <button
                       type="button"
                       onClick={() => navigate("wiki", { query: selectedStar.calledLocation })}
-                      className="rounded-xl bg-accent px-3 py-2 text-xs font-medium text-white transition hover:bg-accent-hover"
+                      className="rounded-xl bg-accent px-3 py-2 text-xs font-medium text-on-accent transition hover:bg-accent-hover"
                     >
                       Open Wiki Lookup
                     </button>

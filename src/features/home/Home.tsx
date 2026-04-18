@@ -164,7 +164,7 @@ export default function Home({ hiscores }: HomeProps) {
                         const input = document.querySelector<HTMLInputElement>('.topbar-shell input[type="text"]');
                         if (input) { input.focus(); input.select(); }
                       }}
-                      className="rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent-hover transition-colors"
+                      className="rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-on-accent hover:bg-accent-hover transition-colors"
                     >
                       Set Your RSN
                     </button>

@@ -148,7 +148,7 @@ export default function UpdateDialog() {
             <div className="flex flex-col gap-2">
               <button
                 onClick={startDownload}
-                className="w-full py-2.5 rounded-lg bg-accent hover:bg-accent-hover text-white font-medium text-sm transition-colors"
+                className="w-full py-2.5 rounded-lg bg-accent hover:bg-accent-hover text-on-accent font-medium text-sm transition-colors"
               >
                 Download
               </button>
@@ -203,7 +203,7 @@ export default function UpdateDialog() {
 
             <button
               onClick={installAndRelaunch}
-              className="px-8 py-2.5 rounded-lg bg-accent hover:bg-accent-hover text-white font-medium text-sm transition-colors"
+              className="px-8 py-2.5 rounded-lg bg-accent hover:bg-accent-hover text-on-accent font-medium text-sm transition-colors"
             >
               Install and Relaunch
             </button>
@@ -228,7 +228,7 @@ export default function UpdateDialog() {
                 href="https://github.com/McNerve/runewise/releases/latest"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-4 py-2 rounded-lg bg-accent hover:bg-accent-hover text-white text-sm transition-colors"
+                className="px-4 py-2 rounded-lg bg-accent hover:bg-accent-hover text-on-accent text-sm transition-colors"
               >
                 Download from GitHub
               </a>

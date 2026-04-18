@@ -146,7 +146,7 @@ function UpdateButton() {
       <button
         onClick={() => checkForUpdates(false)}
         disabled={status === "checking" || status === "downloading"}
-        className="bg-accent hover:bg-accent-hover text-white text-xs px-3 py-1.5 rounded transition-colors disabled:opacity-50"
+        className="bg-accent hover:bg-accent-hover text-on-accent text-xs px-3 py-1.5 rounded transition-colors disabled:opacity-50"
       >
         {status === "idle" && "Check for Updates"}
         {status === "checking" && "Checking..."}

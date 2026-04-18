@@ -249,7 +249,7 @@ export default function PlayerLookup() {
                 aria-pressed={mode === m.id}
                 className={`px-4 py-1.5 rounded text-sm font-medium transition-colors ${
                   mode === m.id
-                    ? "bg-accent text-white"
+                    ? "bg-accent text-on-accent"
                     : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
                 }`}
               >
@@ -280,7 +280,7 @@ export default function PlayerLookup() {
               <button
                 type="submit"
                 disabled={loading}
-                className="rounded-xl bg-accent px-4 py-3 text-sm font-medium text-white transition hover:bg-accent-hover disabled:opacity-50"
+                className="rounded-xl bg-accent px-4 py-3 text-sm font-medium text-on-accent transition hover:bg-accent-hover disabled:opacity-50"
               >
                 {loading ? "Looking up..." : "Lookup player"}
               </button>
@@ -385,7 +385,7 @@ export default function PlayerLookup() {
                 disabled={
                   compareLoading || !leftQuery.trim() || !rightQuery.trim()
                 }
-                className="rounded-xl bg-accent px-4 py-3 text-sm font-medium text-white transition hover:bg-accent-hover disabled:opacity-50"
+                className="rounded-xl bg-accent px-4 py-3 text-sm font-medium text-on-accent transition hover:bg-accent-hover disabled:opacity-50"
               >
                 {compareLoading ? "Comparing..." : "Compare"}
               </button>

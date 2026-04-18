@@ -359,7 +359,7 @@ export default function News() {
             aria-pressed={active}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
               active
-                ? "bg-accent text-white"
+                ? "bg-accent text-on-accent"
                 : "text-text-secondary hover:bg-bg-secondary/50"
             }`}
           >

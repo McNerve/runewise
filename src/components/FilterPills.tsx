@@ -11,7 +11,7 @@ export default function FilterPills<T extends string>({
   selected,
   onChange,
   labels,
-  activeColor = "bg-accent text-white",
+  activeColor = "bg-accent text-on-accent",
 }: FilterPillsProps<T>) {
   return (
     <div className="flex gap-1.5 flex-wrap">

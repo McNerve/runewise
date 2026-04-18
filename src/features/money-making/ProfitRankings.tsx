@@ -149,7 +149,7 @@ export default function ProfitRankings() {
               aria-pressed={sourceFilter === f.id}
               className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
                 sourceFilter === f.id
-                  ? "bg-accent text-white"
+                  ? "bg-accent text-on-accent"
                   : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
               }`}
             >

@@ -46,7 +46,7 @@ export default function Progress({ hiscores }: Props) {
             aria-pressed={activeTab === tab.id}
             className={`px-4 py-1.5 rounded text-sm font-medium transition-colors ${
               activeTab === tab.id
-                ? "bg-accent text-white"
+                ? "bg-accent text-on-accent"
                 : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
             }`}
           >

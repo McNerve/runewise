@@ -147,7 +147,7 @@ export default function StatsPanel({ state }: StatsPanelProps) {
                       aria-pressed={bonusMode === m}
                       className={`px-2 py-0.5 rounded text-[10px] capitalize transition-colors ${
                         bonusMode === m
-                          ? "bg-accent text-white"
+                          ? "bg-accent text-on-accent"
                           : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
                       }`}
                     >

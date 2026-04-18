@@ -149,7 +149,7 @@ export default function Kingdom() {
           onClick={optimize}
           aria-pressed={isOptimal}
           className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
-            isOptimal ? "bg-accent text-white" : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
+            isOptimal ? "bg-accent text-on-accent" : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
           }`}
         >
           Optimal

@@ -437,7 +437,7 @@ export default function BossGuide({ hiscores }: Props) {
             onClick={() => setSelectedCategory("All")}
             className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
               selectedCategory === "All"
-                ? "bg-accent text-white"
+                ? "bg-accent text-on-accent"
                 : "border border-border bg-bg-primary/60 text-text-secondary hover:text-text-primary"
             }`}
           >
@@ -451,7 +451,7 @@ export default function BossGuide({ hiscores }: Props) {
               onClick={() => setSelectedCategory(category)}
               className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
                 selectedCategory === category
-                  ? "bg-accent text-white"
+                  ? "bg-accent text-on-accent"
                   : "border border-border bg-bg-primary/60 text-text-secondary hover:text-text-primary"
               }`}
             >

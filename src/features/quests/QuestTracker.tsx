@@ -142,7 +142,7 @@ export default function QuestTracker({ hiscores }: Props) {
                     ? "bg-success/20 text-success"
                     : f === "locked"
                       ? "bg-danger/20 text-danger"
-                      : "bg-accent text-white"
+                      : "bg-accent text-on-accent"
                   : "bg-bg-tertiary text-text-secondary"
               }`}
             >
@@ -157,7 +157,7 @@ export default function QuestTracker({ hiscores }: Props) {
           onClick={() => setDiffFilter("all")}
           className={`px-2 py-0.5 rounded text-xs ${
             diffFilter === "all"
-              ? "bg-accent text-white"
+              ? "bg-accent text-on-accent"
               : "bg-bg-tertiary text-text-secondary"
           }`}
         >

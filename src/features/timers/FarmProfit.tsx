@@ -66,7 +66,7 @@ export default function FarmProfit() {
             onClick={() => setCategoryFilter("All")}
             className={`px-2 py-0.5 rounded text-xs ${
               categoryFilter === "All"
-                ? "bg-accent text-white"
+                ? "bg-accent text-on-accent"
                 : "bg-bg-tertiary text-text-secondary"
             }`}
           >
@@ -78,7 +78,7 @@ export default function FarmProfit() {
               onClick={() => setCategoryFilter(cat)}
               className={`px-2 py-0.5 rounded text-xs ${
                 categoryFilter === cat
-                  ? "bg-accent text-white"
+                  ? "bg-accent text-on-accent"
                   : "bg-bg-tertiary text-text-secondary"
               }`}
             >
@@ -99,7 +99,7 @@ export default function FarmProfit() {
               onClick={() => setSortBy(s.id)}
               className={`px-2 py-0.5 rounded text-xs ${
                 sortBy === s.id
-                  ? "bg-accent text-white"
+                  ? "bg-accent text-on-accent"
                   : "bg-bg-tertiary text-text-secondary"
               }`}
             >

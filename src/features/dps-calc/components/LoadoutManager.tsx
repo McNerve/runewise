@@ -96,7 +96,7 @@ export default function LoadoutManager({ state }: LoadoutManagerProps) {
             <button
               onClick={saveLoadout}
               disabled={!loadoutName.trim()}
-              className="px-3 py-1.5 text-xs font-medium bg-accent text-white rounded-lg hover:bg-accent-hover transition-colors disabled:opacity-40"
+              className="px-3 py-1.5 text-xs font-medium bg-accent text-on-accent rounded-lg hover:bg-accent-hover transition-colors disabled:opacity-40"
             >Save</button>
           </div>
         )}

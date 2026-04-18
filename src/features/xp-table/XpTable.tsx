@@ -69,7 +69,7 @@ export default function XpTable() {
               onClick={() => setSelected(isSelected ? null : level)}
               className={`py-2 rounded text-xs font-medium tabular-nums transition-all ${
                 isSelected
-                  ? "bg-accent text-white scale-110 shadow-lg shadow-accent/20"
+                  ? "bg-accent text-on-accent scale-110 shadow-lg shadow-accent/20"
                   : level === 99
                     ? "bg-success/15 text-success hover:bg-success/25"
                     : isMilestone
@@ -98,7 +98,7 @@ export default function XpTable() {
               onClick={() => setSelected(isSelected ? null : level)}
               className={`py-2 rounded text-xs font-medium tabular-nums transition-all ${
                 isSelected
-                  ? "bg-accent text-white scale-110 shadow-lg shadow-accent/20"
+                  ? "bg-accent text-on-accent scale-110 shadow-lg shadow-accent/20"
                   : "bg-accent/8 text-accent/70 hover:bg-accent/15"
               }`}
             >

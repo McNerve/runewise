@@ -108,7 +108,7 @@ function FarmOverview({ timers, now, onGoToTimers }: { timers: Timer[]; now: num
           </p>
           <button
             onClick={onGoToTimers}
-            className="px-3 py-1.5 text-xs font-medium bg-accent text-white rounded-lg hover:bg-accent-hover transition-colors"
+            className="px-3 py-1.5 text-xs font-medium bg-accent text-on-accent rounded-lg hover:bg-accent-hover transition-colors"
           >
             Go to Timers
           </button>
@@ -344,7 +344,7 @@ export default function FarmTimers() {
             aria-pressed={tab === t.id}
             className={`px-4 py-1.5 rounded text-sm font-medium transition-colors ${
               tab === t.id
-                ? "bg-accent text-white"
+                ? "bg-accent text-on-accent"
                 : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
             }`}
           >
@@ -438,7 +438,7 @@ export default function FarmTimers() {
                   addPreset(configuringPreset.slots.map((s) => s.selectedPatch));
                   setConfiguringPreset(null);
                 }}
-                className="w-full py-1.5 text-xs font-medium bg-accent text-white rounded-lg hover:bg-accent-hover transition-colors"
+                className="w-full py-1.5 text-xs font-medium bg-accent text-on-accent rounded-lg hover:bg-accent-hover transition-colors"
               >
                 Start {configuringPreset.slots.length} Timers
               </button>
@@ -459,7 +459,7 @@ export default function FarmTimers() {
             </select>
             <button
               onClick={() => addTimer(selectedPatch)}
-              className="px-4 py-2 text-sm font-medium bg-accent text-white rounded-lg hover:bg-accent-hover transition-colors"
+              className="px-4 py-2 text-sm font-medium bg-accent text-on-accent rounded-lg hover:bg-accent-hover transition-colors"
             >
               Start Timer
             </button>

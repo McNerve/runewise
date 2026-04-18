@@ -156,7 +156,7 @@ export default function DryCalculator({ hiscores }: Props) {
             onClick={() => { setSelectedDrop(null); setRate(512); setKills(0); setKcAutoFilled(false); }}
             className={`w-full mb-3 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
               !selectedDrop
-                ? "bg-accent text-white"
+                ? "bg-accent text-on-accent"
                 : "bg-bg-tertiary text-text-secondary hover:bg-bg-tertiary/80"
             }`}
           >
@@ -169,7 +169,7 @@ export default function DryCalculator({ hiscores }: Props) {
               aria-pressed={selectedCategory === "All"}
               className={`px-2 py-0.5 rounded text-xs ${
                 selectedCategory === "All"
-                  ? "bg-accent text-white"
+                  ? "bg-accent text-on-accent"
                   : "bg-bg-tertiary text-text-secondary"
               }`}
             >
@@ -182,7 +182,7 @@ export default function DryCalculator({ hiscores }: Props) {
                 aria-pressed={selectedCategory === cat}
                 className={`px-2 py-0.5 rounded text-xs ${
                   selectedCategory === cat
-                    ? "bg-accent text-white"
+                    ? "bg-accent text-on-accent"
                     : "bg-bg-tertiary text-text-secondary"
                 }`}
               >
