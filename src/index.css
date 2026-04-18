@@ -639,6 +639,19 @@ body {
   background: transparent;
 }
 
+/* Item-name cells in wiki drop/comparison tables become clickable links
+   to the Market workspace. Styled subtly, reveal on hover. */
+.article-content td.item-col {
+  color: var(--color-text-primary);
+}
+
+.article-content td.item-col.item-col-interactive:hover {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+
 /* Wiki comparison tables — compact by default, hover to expand notes cell */
 .article-content .wikitable {
   width: 100%;
