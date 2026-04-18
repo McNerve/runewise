@@ -223,7 +223,7 @@ export default function ShootingStars() {
     <div className="max-w-4xl">
       <div className="mb-5 space-y-1">
         <div className="flex items-center gap-3">
-          <h2 className="text-2xl font-semibold tracking-tight">Star Helper</h2>
+          <h2 className="text-hero font-semibold tracking-tight">Star Helper</h2>
           {tab === "live" && !loading && (
             <span className="text-[11px] text-text-secondary/50">
               {activeCount} active · refreshes every 30s
@@ -241,7 +241,7 @@ export default function ShootingStars() {
           onClick={() => setTab("live")}
           aria-pressed={tab === "live"}
           className={`px-3 py-1.5 rounded text-xs transition-colors ${
-            tab === "live" ? "bg-accent text-white" : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+            tab === "live" ? "bg-accent text-on-accent" : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
           }`}
         >
           Live Tracker
@@ -250,7 +250,7 @@ export default function ShootingStars() {
           onClick={() => setTab("reference")}
           aria-pressed={tab === "reference"}
           className={`px-3 py-1.5 rounded text-xs transition-colors ${
-            tab === "reference" ? "bg-accent text-white" : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+            tab === "reference" ? "bg-accent text-on-accent" : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
           }`}
         >
           Reference
@@ -290,7 +290,7 @@ export default function ShootingStars() {
               <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div>
                   <div className="section-kicker">Best Star Right Now</div>
-                  <h3 className="mt-2 text-xl font-semibold tracking-tight">
+                  <h3 className="mt-2 text-h4 font-semibold tracking-tight">
                     {topStar.calledLocation}
                   </h3>
                   <p className="mt-1 text-sm text-text-secondary">
@@ -306,7 +306,7 @@ export default function ShootingStars() {
                   <button
                     type="button"
                     onClick={() => openStarDetails(topStar)}
-                    className="rounded-xl bg-accent px-3 py-2 text-xs font-medium text-white transition hover:bg-accent-hover"
+                    className="rounded-xl bg-accent px-3 py-2 text-xs font-medium text-on-accent transition hover:bg-accent-hover"
                   >
                     Open Details
                   </button>
@@ -327,7 +327,7 @@ export default function ShootingStars() {
           )}
 
           {!loading && stars.length === 0 && (
-            <div className="bg-bg-secondary rounded-lg p-6 text-center">
+            <div className="bg-bg-tertiary rounded-lg p-6 text-center">
               <p className="text-sm text-text-secondary">No active stars reported right now.</p>
               <p className="text-xs text-text-secondary/50 mt-1">Data from Star Miners crowdsource API</p>
             </div>
@@ -355,8 +355,8 @@ export default function ShootingStars() {
                       }
                       openStarDetails(star);
                     }}
-                    className={`w-full rounded-2xl bg-bg-secondary px-4 py-3 text-left transition-colors ${
-                      isExpired ? "opacity-40" : "hover:bg-bg-tertiary"
+                    className={`w-full rounded-2xl bg-bg-tertiary px-4 py-3 text-left transition-colors ${
+                      isExpired ? "opacity-40" : "hover:bg-bg-secondary"
                     } ${isSelected ? "ring-1 ring-accent" : ""}`}
                   >
                     <div className="mb-1 flex items-center justify-between gap-3">
@@ -504,7 +504,7 @@ export default function ShootingStars() {
                     <button
                       type="button"
                       onClick={() => navigate("wiki", { query: selectedStar.calledLocation })}
-                      className="rounded-xl bg-accent px-3 py-2 text-xs font-medium text-white transition hover:bg-accent-hover"
+                      className="rounded-xl bg-accent px-3 py-2 text-xs font-medium text-on-accent transition hover:bg-accent-hover"
                     >
                       Open Wiki Lookup
                     </button>
@@ -552,7 +552,7 @@ export default function ShootingStars() {
               </thead>
               <tbody>
                 {STAR_TIERS.map((tier) => (
-                  <tr key={tier.tier} className="border-b border-border/50 even:bg-bg-primary/30 hover:bg-bg-tertiary transition-colors">
+                  <tr key={tier.tier} className="border-b border-border/50 even:bg-bg-primary/30 hover:bg-bg-secondary transition-colors">
                     <td className="px-4 py-1.5 font-medium">
                       <span className={tierColor(tier.tier)}>T{tier.tier}</span>
                     </td>
@@ -581,7 +581,7 @@ export default function ShootingStars() {
               </thead>
               <tbody>
                 {STARDUST_REWARDS.map((r) => (
-                  <tr key={r.name} className="border-b border-border/50 even:bg-bg-primary/30 hover:bg-bg-tertiary transition-colors">
+                  <tr key={r.name} className="border-b border-border/50 even:bg-bg-primary/30 hover:bg-bg-secondary transition-colors">
                     <td className="px-4 py-1.5 font-medium">{r.name}</td>
                     <td className="px-4 py-1.5 text-right text-warning">{r.cost.toLocaleString()}</td>
                     <td className="px-4 py-1.5 text-right text-text-secondary">×{r.quantity}</td>
@@ -611,12 +611,12 @@ export default function ShootingStars() {
               onChange={(e) => setSiteQuery(e.target.value)}
               placeholder="Search sites..."
               aria-label="Search landing sites"
-              className="flex-1 bg-bg-secondary border border-border rounded-lg px-3 py-1.5 text-sm"
+              className="flex-1 bg-bg-tertiary border border-border rounded-lg px-3 py-1.5 text-sm"
             />
             <select
               value={regionFilter}
               onChange={(e) => setRegionFilter(e.target.value)}
-              className="bg-bg-secondary border border-border rounded-lg px-3 py-1.5 text-sm text-text-secondary"
+              className="bg-bg-tertiary border border-border rounded-lg px-3 py-1.5 text-sm text-text-secondary"
             >
               {regions.map((r) => (
                 <option key={r} value={r}>{r}</option>
@@ -633,7 +633,7 @@ export default function ShootingStars() {
                       key={site.name}
                       type="button"
                       onClick={() => navigate("wiki", { query: site.name })}
-                      className="w-full px-4 py-2 text-left text-sm text-text-primary transition-colors hover:bg-bg-tertiary"
+                      className="w-full px-4 py-2 text-left text-sm text-text-primary transition-colors hover:bg-bg-secondary"
                     >
                       {site.name}
                     </button>

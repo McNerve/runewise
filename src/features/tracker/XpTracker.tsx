@@ -1,8 +1,16 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigation } from "../../lib/NavigationContext";
 import { WIKI_IMG, skillIcon, bossIconSmall } from "../../lib/sprites";
 import { TableSkeleton } from "../../components/Skeleton";
 import EmptyState from "../../components/EmptyState";
+import Tabs from "../../components/primitives/Tabs";
+import {
+  createChart,
+  ColorType,
+  LineSeries,
+  type IChartApi,
+  type Time,
+} from "lightweight-charts";
 import { warn } from "../../lib/logger";
 import { timeAgo } from "../../lib/format";
 
@@ -149,7 +157,7 @@ function CompetitionsView({ competitions }: { competitions: WomPlayerCompetition
             href={`https://wiseoldman.net/competitions/${comp.id}`}
             target="_blank"
             rel="noopener noreferrer"
-            className={`block bg-bg-secondary rounded-lg px-4 py-3 border-l-2 transition-colors hover:bg-bg-tertiary ${
+            className={`block bg-bg-tertiary rounded-lg px-4 py-3 border-l-2 transition-colors hover:bg-bg-secondary ${
               isActive ? "border-success" : "border-border/30 opacity-50"
             }`}
           >
@@ -197,7 +205,93 @@ function CompetitionsView({ competitions }: { competitions: WomPlayerCompetition
   );
 }
 
-const CONTENT_TABS = ["gains", "achievements", "records", "competitions"] as const;
+const PERIOD_SECONDS: Record<GainsPeriod, number> = {
+  day: 24 * 60 * 60,
+  week: 7 * 24 * 60 * 60,
+  month: 30 * 24 * 60 * 60,
+  year: 365 * 24 * 60 * 60,
+};
+
+function XpOverTimeChart({
+  startXp,
+  endXp,
+  period,
+  endTime,
+}: {
+  startXp: number;
+  endXp: number;
+  period: GainsPeriod;
+  endTime: Date;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const chartRef = useRef<IChartApi | null>(null);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const chart = createChart(containerRef.current, {
+      height: 200,
+      layout: {
+        background: { type: ColorType.Solid, color: "transparent" },
+        textColor: "#a1a1aa",
+      },
+      grid: {
+        vertLines: { color: "#2e334520" },
+        horzLines: { color: "#2e334520" },
+      },
+      crosshair: {
+        vertLine: { color: "#3b82f680", width: 1, labelBackgroundColor: "#3b82f6" },
+        horzLine: { color: "#3b82f680", width: 1, labelBackgroundColor: "#3b82f6" },
+      },
+      timeScale: {
+        borderColor: "#2e3345",
+        timeVisible: true,
+      },
+      rightPriceScale: {
+        borderColor: "#2e3345",
+      },
+      localization: {
+        priceFormatter: (price: number) => {
+          const abs = Math.abs(price);
+          if (abs >= 1_000_000_000) return `${(price / 1_000_000_000).toFixed(2)}B`;
+          if (abs >= 1_000_000) return `${(price / 1_000_000).toFixed(1)}M`;
+          if (abs >= 1_000) return `${(price / 1_000).toFixed(0)}K`;
+          return price.toFixed(0);
+        },
+      },
+    });
+
+    const series = chart.addSeries(LineSeries, {
+      color: "#3b82f6",
+      lineWidth: 2,
+    });
+
+    const endSec = Math.floor(endTime.getTime() / 1000);
+    const startSec = endSec - PERIOD_SECONDS[period];
+    series.setData([
+      { time: startSec as Time, value: startXp },
+      { time: endSec as Time, value: endXp },
+    ]);
+
+    chart.timeScale().fitContent();
+    chartRef.current = chart;
+
+    const observer = new ResizeObserver(() => {
+      if (containerRef.current) {
+        chart.applyOptions({ width: containerRef.current.clientWidth });
+      }
+    });
+    observer.observe(containerRef.current);
+
+    return () => {
+      observer.disconnect();
+      chart.remove();
+      chartRef.current = null;
+    };
+  }, [startXp, endXp, period, endTime]);
+
+  return <div ref={containerRef} className="w-full" />;
+}
 
 export default function XpTracker({ rsn }: Props) {
   const { navigate } = useNavigation();
@@ -330,29 +424,28 @@ export default function XpTracker({ rsn }: Props) {
         .sort((a, b) => b[1].kills.gained - a[1].kills.gained)
     : [];
 
+  const overallXp = (() => {
+    const overall = gains?.skills?.overall?.experience;
+    if (!overall || overall.end <= 0) return null;
+    return { start: overall.start, end: overall.end };
+  })();
+
 
   return (
     <div className="max-w-3xl">
       {header}
 
-      <div className="flex gap-4 mb-4">
-        <div className="flex gap-1.5">
-          {CONTENT_TABS.map((t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              aria-pressed={tab === t}
-              className={`relative rounded-xl border px-3.5 py-2 text-left transition ${
-                tab === t
-                  ? "border-accent/50 bg-accent/10"
-                  : "border-border bg-bg-primary/50 text-text-secondary hover:bg-bg-primary/70"
-              }`}
-            >
-              {tab === t && <div className="absolute -bottom-px left-3 right-3 h-0.5 rounded-full bg-accent" />}
-              <div className={`text-xs font-semibold capitalize ${tab === t ? "text-accent" : ""}`}>{t}</div>
-            </button>
-          ))}
-        </div>
+      <div className="flex gap-4 mb-4 flex-wrap">
+        <Tabs
+          items={[
+            { id: "gains" as const, label: "Gains", count: skillGains.length + bossGains.length },
+            { id: "achievements" as const, label: "Achievements", count: achievements.length },
+            { id: "records" as const, label: "Records", count: records.length },
+            { id: "competitions" as const, label: "Competitions", count: competitionsLoaded ? competitions.length : undefined },
+          ]}
+          activeId={tab}
+          onChange={setTab}
+        />
 
         {tab === "gains" && (
           <div className="flex gap-1.5">
@@ -379,6 +472,28 @@ export default function XpTracker({ rsn }: Props) {
 
       {tab === "gains" && !loading && gains && (
         <div className="space-y-4">
+          {overallXp && (
+            <div>
+              <h3 className="text-sm font-medium text-text-secondary uppercase tracking-wider mb-2">
+                Overall XP Over Time
+              </h3>
+              <div className="rounded-xl border border-border/60 bg-bg-secondary/30 p-3">
+                <XpOverTimeChart
+                  startXp={overallXp.start}
+                  endXp={overallXp.end}
+                  period={period}
+                  endTime={lastUpdated ?? new Date()}
+                />
+                <div className="flex justify-between text-xs text-text-secondary mt-2 px-1 tabular-nums">
+                  <span>Start: {overallXp.start.toLocaleString()} XP</span>
+                  <span className="text-success">
+                    +{(overallXp.end - overallXp.start).toLocaleString()} gained
+                  </span>
+                  <span>Now: {overallXp.end.toLocaleString()} XP</span>
+                </div>
+              </div>
+            </div>
+          )}
           {skillGains.length > 0 && (
             <div>
               <h3 className="text-sm font-medium text-text-secondary uppercase tracking-wider mb-2">
@@ -397,7 +512,7 @@ export default function XpTracker({ rsn }: Props) {
                     {skillGains.map(([key, data]) => (
                       <tr
                         key={key}
-                        className="border-b border-border/50 even:bg-bg-primary/30 hover:bg-bg-tertiary"
+                        className="border-b border-border/50 even:bg-bg-primary/30 hover:bg-bg-secondary"
                       >
                         <td className="px-4 py-1.5 font-medium">
                           <button
@@ -445,7 +560,7 @@ export default function XpTracker({ rsn }: Props) {
                     {bossGains.map(([key, data]) => (
                       <tr
                         key={key}
-                        className="border-b border-border/50 even:bg-bg-primary/30 hover:bg-bg-tertiary"
+                        className="border-b border-border/50 even:bg-bg-primary/30 hover:bg-bg-secondary"
                       >
                         <td className="px-4 py-1.5 font-medium">
                           <button
@@ -479,7 +594,7 @@ export default function XpTracker({ rsn }: Props) {
       {tab === "achievements" && !loading && achievements.length > 0 && (
         <div className="rounded-xl border border-border/60 overflow-hidden max-h-[500px] overflow-y-auto">
           <table className="w-full text-sm">
-            <thead className="sticky top-0 bg-bg-secondary">
+            <thead className="sticky top-0 bg-bg-tertiary">
               <tr className="border-b border-border text-text-secondary text-xs">
                 <th scope="col" className="text-left px-4 py-2">Achievement</th>
                 <th scope="col" className="text-left px-4 py-2">Skill</th>
@@ -490,7 +605,7 @@ export default function XpTracker({ rsn }: Props) {
               {achievements.map((a, i) => (
                 <tr
                   key={i}
-                  className="border-b border-border/50 even:bg-bg-primary/30 hover:bg-bg-tertiary"
+                  className="border-b border-border/50 even:bg-bg-primary/30 hover:bg-bg-secondary"
                 >
                   <td className="px-4 py-1.5 font-medium">{a.name}</td>
                   <td className="px-4 py-1.5 text-text-secondary">

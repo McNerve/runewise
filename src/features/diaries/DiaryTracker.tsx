@@ -38,9 +38,11 @@ function taskKey(region: string, tier: string, taskIdx: number): string {
   return `${region}:${tier}:${taskIdx}`;
 }
 
+// Canonical OSRS tier palette — matches Clue Helper and Combat Tasks
+// Easy=green, Medium=yellow, Hard=red, Elite=purple
 const TIER_COLORS = {
   Easy: "text-success",
-  Medium: "text-warning",
+  Medium: "text-yellow-300",
   Hard: "text-danger",
   Elite: "text-purple-400",
 };
@@ -113,7 +115,7 @@ export default function DiaryTracker({ hiscores }: Props) {
                 className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
                   selectedRegion.name === region.name
                     ? "bg-accent/15 text-accent"
-                    : "bg-bg-secondary hover:bg-bg-tertiary text-text-secondary"
+                    : "bg-bg-tertiary hover:bg-bg-secondary text-text-secondary"
                 }`}
               >
                 <div className="flex items-center justify-between">
@@ -162,12 +164,12 @@ export default function DiaryTracker({ hiscores }: Props) {
             const allTasksDone = tasksDone === tier.tasks.length && tier.tasks.length > 0;
 
             return (
-              <div key={tier.tier} className="bg-bg-secondary rounded-lg overflow-hidden">
+              <div key={tier.tier} className="bg-bg-tertiary rounded-lg overflow-hidden">
                 <button
                   onClick={() =>
                     setExpandedTier(isExpanded ? null : tier.tier)
                   }
-                  className="w-full text-left px-4 py-3 flex items-center justify-between hover:bg-bg-tertiary transition-colors"
+                  className="w-full text-left px-4 py-3 flex items-center justify-between hover:bg-bg-secondary transition-colors"
                 >
                   <div className="flex items-center gap-3">
                     <span
@@ -185,17 +187,15 @@ export default function DiaryTracker({ hiscores }: Props) {
                     )}
                   </div>
                   <div className="flex items-center gap-3">
-                    {tier.tasks.length > 0 && (
+                    {tier.tasks.length > 0 && tasksDone > 0 && (
                       <span
                         className={`text-[10px] tabular-nums ${
-                          allTasksDone
-                            ? "text-success"
-                            : tasksDone > 0
-                              ? "text-accent"
-                              : "text-text-secondary/40"
+                          allTasksDone ? "text-success" : "text-accent"
                         }`}
                       >
-                        {tasksDone}/{tier.tasks.length} tasks
+                        {allTasksDone
+                          ? `${tier.tasks.length}/${tier.tasks.length} Complete`
+                          : `${tasksDone}/${tier.tasks.length} tasks`}
                       </span>
                     )}
                     <span className="text-text-secondary text-xs">
@@ -269,7 +269,7 @@ export default function DiaryTracker({ hiscores }: Props) {
                                     e.stopPropagation();
                                     toggleTask(key);
                                   }}
-                                  className={`flex items-start gap-2 w-full text-left rounded px-1 py-0.5 transition-colors hover:bg-bg-tertiary ${
+                                  className={`flex items-start gap-2 w-full text-left rounded px-1 py-0.5 transition-colors hover:bg-bg-secondary ${
                                     isDone
                                       ? "text-success/60"
                                       : "text-text-secondary"

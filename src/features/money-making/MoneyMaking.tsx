@@ -6,11 +6,11 @@ import { formatGp } from "../../lib/format";
 import { WIKI_IMG, SKILL_ICONS, NAV_ICONS } from "../../lib/sprites";
 import { useNavigation } from "../../lib/NavigationContext";
 import EmptyState from "../../components/EmptyState";
+import { Tabs, FilterPills } from "../../components/primitives";
 
-const ProfitHub = lazy(() => import("../profit-hub/ProfitHub"));
-const AlchCalculator = lazy(() => import("../alch-calc/AlchCalculator"));
+const ProfitRankings = lazy(() => import("./ProfitRankings"));
 
-type MainTab = "methods" | "rankings" | "alch" | "wiki";
+type MainTab = "methods" | "rankings" | "wiki";
 
 interface Props {
   hiscores: HiscoreData | null;
@@ -53,14 +53,23 @@ function getMissingSkills(
   return missing;
 }
 
+function resolveMainTab(raw: string | undefined): MainTab {
+  return raw === "rankings" || raw === "wiki" ? raw : "methods";
+}
+
 export default function MoneyMaking({ hiscores }: Props) {
-  const { navigate } = useNavigation();
+  const { navigate, params } = useNavigation();
   const [category, setCategory] = useState<Category>("All");
   const [search, setSearch] = useState("");
   const [membersOnly, setMembersOnly] = useState(true);
   const [bestForMe, setBestForMe] = useState(false);
   const [wikiMethods, setWikiMethods] = useState<WikiMoneyMethod[]>([]);
-  const [mainTab, setMainTab] = useState<MainTab>("methods");
+  const [mainTab, setMainTab] = useState<MainTab>(() => resolveMainTab(params.tab));
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync tab from nav params
+    setMainTab(resolveMainTab(params.tab));
+  }, [params.tab]);
 
   useEffect(() => {
     fetchAllMoneyMethods().then((methods) => {
@@ -115,34 +124,40 @@ export default function MoneyMaking({ hiscores }: Props) {
 
   return (
     <div className="max-w-4xl">
-      <h2 className="text-2xl font-semibold tracking-tight">Money Making</h2>
+      <h2 className="text-hero font-semibold tracking-tight">Money Making</h2>
       <p className="text-sm text-text-secondary mb-4">
         {totalMethods} curated methods
         {availableCount !== null && ` — ${availableCount} available for your stats`}
       </p>
 
       {/* Main tabs */}
-      <div className="flex gap-1 mb-4">
-        {([
-          { id: "methods" as const, label: "Methods", icon: `${WIKI_IMG}/Coins_detail.png` },
-          { id: "rankings" as const, label: "Profit Rankings", icon: `${WIKI_IMG}/Coins_10000.png` },
-          { id: "alch" as const, label: "Alch Profits", icon: `${WIKI_IMG}/High_Level_Alchemy.png` },
-        ]).map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setMainTab(tab.id)}
-            aria-pressed={mainTab === tab.id}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-              mainTab === tab.id
-                ? "bg-accent text-white"
-                : "text-text-secondary hover:bg-bg-secondary/50"
-            }`}
-          >
-            <img src={tab.icon} alt="" className="w-4 h-4" onError={(e) => { e.currentTarget.style.display = "none"; }} />
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <Tabs
+        className="mb-4"
+        activeId={mainTab}
+        onChange={setMainTab}
+        ariaLabel="Money making sections"
+        items={[
+          { id: "methods" as MainTab, label: "Methods", icon: `${WIKI_IMG}/Coins_detail.png` },
+          { id: "rankings" as MainTab, label: "Profit Rankings", icon: `${WIKI_IMG}/Coins_10000.png` },
+        ]}
+      />
+
+      {/* Alch Profits CTA — moved to Market (Items & Watchlist) */}
+      {mainTab === "methods" && (
+        <button
+          onClick={() => navigate("market", { tab: "alch" })}
+          className="w-full mb-4 flex items-center justify-between gap-3 px-4 py-2.5 rounded-lg bg-bg-secondary/60 hover:bg-bg-secondary border border-border/60 hover:border-accent/40 transition-colors text-left group"
+        >
+          <div className="flex items-center gap-3">
+            <img src={`${WIKI_IMG}/High_Level_Alchemy.png`} alt="" className="w-4 h-4" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+            <div>
+              <div className="text-sm font-medium">See alch profits in Items</div>
+              <div className="text-[11px] text-text-secondary">Live alchemy calculator lives in Items &amp; Watchlist</div>
+            </div>
+          </div>
+          <span className="text-accent group-hover:translate-x-0.5 transition-transform">→</span>
+        </button>
+      )}
 
       {/* Filters — only for Methods tab */}
       {mainTab === "methods" && (
@@ -154,25 +169,15 @@ export default function MoneyMaking({ hiscores }: Props) {
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search methods..."
           aria-label="Search money making methods"
-          className="flex-1 min-w-[200px] bg-bg-secondary border border-border rounded px-3 py-1.5 text-sm"
+          className="flex-1 min-w-[200px] bg-bg-tertiary border border-border rounded px-3 py-1.5 text-sm"
         />
 
-        <div className="flex gap-1">
-          {CATEGORIES.map((c) => (
-            <button
-              key={c}
-              onClick={() => setCategory(c)}
-              aria-pressed={category === c}
-              className={`px-2.5 py-1.5 rounded text-xs transition-colors ${
-                category === c
-                  ? "bg-accent text-white"
-                  : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
-              }`}
-            >
-              {c}
-            </button>
-          ))}
-        </div>
+        <FilterPills
+          ariaLabel="Method category"
+          activeKey={category}
+          onChange={setCategory}
+          items={CATEGORIES.map((c) => ({ id: c, label: c }))}
+        />
       </div>
 
       <div className="flex gap-3 mb-4">
@@ -211,7 +216,7 @@ export default function MoneyMaking({ hiscores }: Props) {
           return (
             <div
               key={method.name}
-              className={`bg-bg-secondary rounded-lg px-4 py-3 transition-colors ${
+              className={`bg-bg-tertiary rounded-lg px-4 py-3 transition-colors ${
                 canDo ? "" : "opacity-50"
               }`}
             >
@@ -305,7 +310,7 @@ export default function MoneyMaking({ hiscores }: Props) {
                       onClick={() => navigate("bosses", { boss: method.name })}
                       className="text-[10px] text-text-secondary/40 hover:text-accent transition-colors"
                     >
-                      Guide
+                      Open guide
                     </button>
                   )}
                 </div>
@@ -326,13 +331,7 @@ export default function MoneyMaking({ hiscores }: Props) {
 
       {mainTab === "rankings" && (
         <Suspense fallback={<div className="py-8"><div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4 mx-auto" /></div>}>
-          <ProfitHub />
-        </Suspense>
-      )}
-
-      {mainTab === "alch" && (
-        <Suspense fallback={<div className="py-8"><div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4 mx-auto" /></div>}>
-          <AlchCalculator />
+          <ProfitRankings />
         </Suspense>
       )}
 

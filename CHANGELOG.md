@@ -2,6 +2,121 @@
 
 All notable changes to RuneWise are documented here. Versions follow [Semantic Versioning](https://semver.org/).
 
+## [1.6.1] - 2026-04-18
+
+### Page-by-page audit follow-ups
+
+Post-v1.6 sweep across all 40 views in 9 families. See `.claude/v16-audit.md`.
+
+### Fixes
+
+- **Skill Calculator no longer crashes** when target level exceeds current capacity. Root cause: wiki recipe JSON sometimes returned `materials`/`output` as objects not arrays; `Array.isArray()` guard added at the data-source boundary (`src/lib/api/recipes.ts`) plus defensive `?? []` in the recipe table.
+- **Arceuus, Ancient, and Lunar spells** now correctly show P2P. Wiki data occasionally flagged individual spells as F2P despite the spellbook being members-only — hard-gated by spellbook type.
+- **Alch profit display for capped items** no longer shows `-2,147,450,647`. Items at the GE cap (≥2.147B gp) are filtered from the alch rankings and browse-all view.
+- **Collection Log "Recently Obtained"** now uses real item icons with a proper fallback chain (wiki image → itemIcon → letter placeholder) instead of letter tiles.
+- **Collection Log boss-row drill-in** scrolls the items panel into view on category click.
+- **ErrorBoundary copy** no longer references "V5" — generic reload message.
+- **Settings keybind slots** no longer display empty `⌘` labels for actions without a default bind; labels are filtered to only bound actions.
+
+### Consistency + primitives
+
+- New shared UI primitives under `src/components/primitives/`:
+  - `Tabs` — keyboard-navigable underline tab strip with optional icons + count badges.
+  - `FilterPills` — horizontal pill row matching Clue Helper / OSRS convention.
+  - `StatGrid` + `StatCard` — unified stat tile layout (white value, muted label, one optional accent). Replaces the per-page rainbow tile pattern.
+  - `TierBadge` + `TIER_COLORS` — canonical OSRS tier palette (Beginner gray / Easy green / Medium yellow / Hard red / Elite purple / Master orange).
+- Migrated Home, Profile, DPS Calc, Combat Tasks, Money Making, Items/Market, Clue Helper to the primitives. Net −170 LOC.
+
+### Dedupe + surfaces
+
+- **Profile** no longer embeds Quests/Diaries/Combat Tasks tabs. Single deep-link CTA to the canonical `#progress` page. Progress remains the only home for those surfaces (plus its unique "What Can I Do?" tab).
+- **Alch Profits** is now sole-sourced from Items & Watchlist. Money Making links through instead of duplicating.
+- **Profit Rankings** tab in Money Making is canonical. The standalone `#profit-hub` page has been folded in; `#profit-hub` silently redirects to `#money-making?tab=rankings` via `LEGACY_ALIASES`.
+- Deleted unreachable features: `src/features/runelite/` and `src/features/price-charts/` (no registry entries, no imports).
+
+### Navigation + tables
+
+- **Boss Guides** action row collapsed into 3 trailing icon buttons (Profit Calculator / DPS / Open Wiki, plus Raid Rooms on raids). Kills the "Loot Calculator" vs "Loot & Drops" ambiguity.
+- **Sticky table headers** (`thead.sticky-thead` helper in `index.css`) on 8 long tables: Boss Guides loot, Market Browse All, Loot profit calc + boss rankings, Gear Compare weapons.
+- **OSRS News tabs** slimmed from a 2×2 oversized grid to a horizontal pill row matching Money Making.
+
+### About
+
+- Added TempleOSRS and Star Miners to the Data Sources list.
+
+### Visual foundation
+
+- **Accent shift to rune/magic gold** (`#d4a574`). Replaces Tailwind blue-500 as the primary accent across nav, focus rings, active tabs, stat emphasis. Blue moves to `--color-info` for links and utility states; success/danger/warning unchanged.
+- **Feature accent system collapsed** from ~38 distinct hues in `src/lib/featureAccent.ts` to one accent family with three strengths (STRONG / MID / SOFT). Headline destinations use STRONG, mid-tier tools MID, meta/settings SOFT. The Clue Helper tier palette remains the one intentional exception.
+- **Surface hierarchy swap**. Cards/panels default to `bg-tertiary`. `bg-secondary` is reserved for elevated surfaces (active nav, tooltips, hover states). Makes panels feel grounded instead of ghostly.
+- **Type scale** added to Tailwind v4 `@theme` in `src/index.css`: `text-kicker/label/ui/base/h4/h3/hero`. Migrated headline sizing on Home, Profile, DPS Calc, Star Helper, Boss Guides, Market, Money Making.
+
+### OSRS-inspired iconography
+
+- Entire sidebar redesigned with custom OSRS-authentic SVG silhouettes replacing generic 2-stroke line icons. 30+ distinct glyphs including Lumbridge keep (Home), Slayer helmet (Slayer Helper), crossed scimitars (DPS Calc), skill cape (Skill Calc), rune tablet (Spells), clue scroll (Clue Helper), shooting star (Stars), GE booth (Market), farming seedlings (Timers), boss skull (Boss Guides), raid pillars (Raids), checkmark list (Progress). Every glyph is `currentColor`-based so the feature accent still tints them.
+- Fixed swapped `NAV_ICONS` entries in `src/lib/sprites.ts`: Slayer and Bosses were pointing to each other's icons.
+
+### Data coverage
+
+- **Combat Tasks** now attempts to load the full 637-task set from the OSRS Wiki `combat_achievement` bucket via `fetchAllCombatTasks()` in `src/lib/api/combatTasks.ts` (24h cache, IndexedDB persistence). Wiki data is merged with the hardcoded subset so boss-workspace links are preserved. Falls back gracefully to the curated sample with a visible "wiki unavailable" warning when the query fails or returns empty.
+- **Boss Rankings** now shows all 69 tracked bosses instead of only the 31 with curated drop data. Bosses without drop-table data render with em-dash placeholders and are pinned below those with GP/hr data.
+- **Alch Profits 200-item hard cap removed** — now paginated at 50/page with prev/next controls and "Page N of M" indicator. Filter/sort changes reset to page 1.
+
+### Polish
+
+- **Tab warm-switch bug** fixed across Money Making, Profile, Progress, Loot, Market, Skill Calc. Previously the `params.tab` was only read on mount — hash-based redirects like `#profit-hub` → `#money-making?tab=rankings` wouldn't switch the active tab if the component was already rendered. Added `useEffect` sync hooks everywhere the pattern occurred.
+- **Tier palette propagation** — canonical OSRS palette (Easy green / Medium yellow / Hard red / Elite purple / Master orange / Grandmaster amber) now applies consistently in Combat Tasks, Quest Tracker, Diary Tracker. Clue Helper already had it; the rest caught up.
+- **Empty-state warmth**: Home now always renders the "Recent" section with a hint when empty. Hiscores Lookup shows recent player chips. Wiki shows recent article chips. Recipe Calculator surfaces 10 popular recipes (Shark, Saradomin brew, Super combat potion, Rune platebody, Ranarr, Magic logs, Yew longbow, Dragonstone, Prayer potion, Anglerfish) before search.
+- **Collection Log drill-in** — category clicks now scroll the items panel into view on narrow viewports.
+
+### Profile + XP Tracker
+
+- **Profile stat hierarchy flattened** — the middle activity row (Collection Log / Boss Kills / Clue Scrolls / Colosseum Glory) and bottom WOM row (Overall Rank / EHP / EHB) now use `<StatGrid>` + `<StatCard>` at equal visual weight to the top row. Three stacked tiers of different sizes collapsed into three tiers at one consistent size.
+- **Profile Boss KC now shows top-12 by default** with "Show all N bosses" toggle. The unbounded 50+ row list is gone.
+- **Diary copy** when tasks are complete — "N/N Complete" replaces the confusing "0/N tasks" counter; hides entirely when no tasks tracked.
+- **XP-over-time chart** on XP Tracker using `lightweight-charts`. Renders the selected period's start→end XP anchors with gold-tinted line, gridlines, and tooltip. Shows Start / Gained / Now figures below.
+- **XP Tracker tab count badges** — Gains (n) / Achievements (n) / Records (n) / Competitions (n loaded). Users know if there's data before clicking.
+
+### Calc + gear polish
+
+- **DPS Calc modifier tooltips** — all 19 modifier pills (Void, Obsidian, Inquisitor's, Slayer helm (i), Salve amulets, Arclight, DHL, Berserker, Keris partisan, Leaf-bladed battleaxe) now surface hover tooltips with concise descriptions of when they apply.
+- **Gear Compare em-dash** — zero-bonus cells render as muted `—` instead of `0`, reducing visual noise on long tables.
+- **Training Plan** — skill tile names no longer truncate at 1440px; tiles flex to the full skill name.
+- **Kingdom Calculator** coffer upkeep line now has a "Daily coffer cost at 10 workers" subtitle clarifying the -75K default.
+- **Farm Timers Overview** empty state now differentiates from Timers tab — shows a "Go to Timers" CTA plus recent-run summary when available.
+
+### Visual QA refinements
+
+- **Market gold/yellow collision** fixed — P2P membership pills and the alch value column no longer use `text-warning` (OSRS yellow), which was muddy against the new rune-gold accent. P2P pills now render on a neutral `bg-tertiary` surface with a border; alch values use `text-text-primary`.
+- **Light theme contrast** — `--color-bg-tertiary` darkened from `#f4f5f8` to `#eef0f4` to prevent cards and tooltips from merging visually against the white `--color-bg-secondary`.
+- **Sidebar active-bar per-feature accent** — the active nav item's left border now uses the feature's individual `--item-accent` CSS variable (falling back to gold) so the sidebar retains feature identity while the primary accent stays consistent.
+
+### Shop Helper + Spells + Slayer + Money Making
+
+- **Shop Helper alphabetical sort** strips decorative characters — "~ Uglug's stuffsies ~" no longer floats to the top of the list.
+- **Spells cost column** — every spell now shows its runes-to-GP cost in a new Cost column between Rune Cost and Type, using live GE prices and `formatGp()`.
+- **Slayer master stats quad** migrated to `<StatGrid>` + `<StatCard>`. Points/Task gets the gold accent; Blocked tints danger when any are set.
+- **Money Making risk pills** now fill every method card (not just ToA variants). Missing risk classifications filled in the underlying `money-methods` data.
+- **Money Making guide link** relabelled "Open guide" — clearer that it navigates internally to Boss Guides.
+
+### Loaders + tests
+
+- **Branded skeleton shimmer** — `Skeleton` component now renders a subtle gold-tinted diagonal shimmer via `.skeleton-shimmer` in `index.css`. Respects `prefers-reduced-motion`.
+- **Active-state text readability** — added `--color-on-accent` token (dark navy in dark mode, white in light mode) and swapped every `text-white` on gold backgrounds to `text-on-accent` across 30 files. Fixes the ~1.9:1 WCAG failure where white text sat on rune-gold pills and buttons.
+
+### Closeout wave
+
+- **World Map POI markers** — new `src/lib/data/world-map-pois.ts` with ~100 hand-placed POIs across 5 categories (farm patches, fairy rings, slayer masters, altars, teleport spots). `FilterPills` above the map cycle categories; markers pan/zoom with the map and click-to-open popup with name, info, wiki link. 114 markers total.
+- **World Map action clarified** — the ambiguous "Download" button is now "Open full wiki map ↗", linking directly to the canonical OSRS Wiki map page.
+- **OSRS News inline article modal** — clicking a news card opens a centered modal (~720px, 90vh scrollable) instead of swapping the panel. Escape and backdrop click close; body scroll locks while open; fallback message + "Open original" link if fetch fails.
+- **Home tool grid personalization** — new `src/lib/toolUsage.ts` tracks the last 30 days of navigation hits. Right-click any tool tile to pin/unpin (persists to `runewise_pinned_tools`). Grid order is pinned → frequency → alphabetical, capped at 12. Pinned tiles show a gold pin glyph.
+- **Home "While Playing" split** into two sections: **Live now** (only renders when Farm Timers or Shooting Stars have real data, with pulse indicator) and **Quick access** (four curated always-on tiles: Slayer Helper, DPS Calc, Gear Compare, Boss Guides).
+- **Shop Helper real NPC icons** — new `npcIcon()` helper in `src/lib/sprites.ts` with an override table. `ShopIcon` cascades `npc → first-item → letter placeholder`. Detail view also picks up a 40px NPC portrait.
+- **DPS Calc combat stats verified** — `useDpsState` already loads Attack/Strength/Ranged/Magic together; `StatsPanel` conditionally renders per tab. Added `useDpsState.test.ts` with three regression tests locking in the behavior.
+- **Combat Tasks full 743 tasks** — `fetchAllCombatTasks()` in `src/lib/api/combatTasks.ts` now queries the live OSRS Wiki `combat_achievement` bucket successfully (earlier agents had false negatives). Per-tier counts are live: Easy 58 / Medium 82 / Hard 108 / Elite 179 / Master 180 / Grandmaster 136. Falls back to the curated subset only if the fetch actually errors.
+- **Light theme regression test** — `src/__tests__/light-theme.test.tsx` renders Home, Overview, Market, Settings under `.light-theme` and asserts design-token resolution. 5 new tests. Total suite now at 191/191 passing.
+- **Edge-case tests** added for `toWikiRecipe` (materials/output as objects) and `toWikiSpell` (Arceuus/Ancient/Lunar hard-gated to P2P regardless of wiki flag). Full suite at 179/179.
+
 ## [1.6.0] - 2026-04-17
 
 ### Pet Calculator — full redesign

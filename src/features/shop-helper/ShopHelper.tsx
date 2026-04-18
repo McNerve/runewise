@@ -3,7 +3,7 @@ import { fetchAllShops, searchShops, type Shop } from "../../lib/api/shops";
 import type { ItemPrice } from "../../lib/api/ge";
 import { useGEData } from "../../hooks/useGEData";
 import { useDebounce } from "../../hooks/useDebounce";
-import { encodeIconFilename, WIKI_IMG, itemIcon } from "../../lib/sprites";
+import { encodeIconFilename, WIKI_IMG, itemIcon, npcIcon } from "../../lib/sprites";
 import { formatGp } from "../../lib/format";
 import WikiImage from "../../components/WikiImage";
 import ItemTooltip from "../../components/ItemTooltip";
@@ -23,6 +23,56 @@ function getGEPrice(
   if (!id) return null;
   const p = prices[String(id)];
   return p?.high ?? p?.low ?? null;
+}
+
+/**
+ * Cascading shop icon: try the NPC/shop wiki thumbnail, fall back to a
+ * representative stock item icon, and finally a letter placeholder. Keeps
+ * retries off the render path with a small bit of local state.
+ */
+function ShopIcon({
+  shop,
+  iconMap,
+  className = "w-4 h-4 shrink-0 opacity-60",
+}: {
+  shop: Shop;
+  iconMap: Map<string, string>;
+  className?: string;
+}) {
+  const [stage, setStage] = useState<"npc" | "item" | "letter">("npc");
+
+  const representative = shop.items[0]?.name ?? null;
+  const fallbackLetter = shop.name.replace(/[~"*\s]+/g, "")[0]?.toUpperCase() ?? "S";
+
+  if (stage === "letter" || (stage === "item" && !representative)) {
+    return (
+      <span className={`${className} rounded bg-bg-tertiary text-[9px] font-bold flex items-center justify-center text-text-secondary`}>
+        {fallbackLetter}
+      </span>
+    );
+  }
+
+  if (stage === "item" && representative) {
+    const geIcon = iconMap.get(representative.toLowerCase());
+    const src = geIcon ? `${WIKI_IMG}/${encodeIconFilename(geIcon)}` : itemIcon(representative);
+    return (
+      <img
+        src={src}
+        alt=""
+        className={className}
+        onError={() => setStage("letter")}
+      />
+    );
+  }
+
+  return (
+    <img
+      src={npcIcon(shop.name)}
+      alt=""
+      className={className}
+      onError={() => setStage("item")}
+    />
+  );
 }
 
 export default function ShopHelper() {
@@ -147,7 +197,7 @@ export default function ShopHelper() {
                 className={`px-2.5 py-1 rounded-lg text-xs transition-colors ${
                   currencyFilter === f
                     ? "bg-accent/15 text-accent ring-1 ring-accent/40"
-                    : "bg-bg-tertiary/50 text-text-secondary hover:bg-bg-tertiary"
+                    : "bg-bg-tertiary/50 text-text-secondary hover:bg-bg-secondary"
                 }`}
               >
                 {f === "all" ? "All" : f === "Coins" ? "Coins" : "Special"}
@@ -161,7 +211,7 @@ export default function ShopHelper() {
                 className={`px-2.5 py-1 rounded-lg text-xs transition-colors ${
                   membersFilter === f
                     ? "bg-accent/15 text-accent ring-1 ring-accent/40"
-                    : "bg-bg-tertiary/50 text-text-secondary hover:bg-bg-tertiary"
+                    : "bg-bg-tertiary/50 text-text-secondary hover:bg-bg-secondary"
                 }`}
               >
                 {f === "all" ? "Both" : f === "f2p" ? "F2P" : "P2P"}
@@ -196,12 +246,7 @@ export default function ShopHelper() {
                   }`}
                 >
                   <div className="flex items-center gap-2">
-                    <WikiImage
-                      src={`${WIKI_IMG}/General_store_icon.png`}
-                      alt=""
-                      className="w-4 h-4 shrink-0 opacity-40"
-                      fallback="S"
-                    />
+                    <ShopIcon shop={shop} iconMap={iconMap} className="w-5 h-5 shrink-0 opacity-90" />
                     <span className="font-medium truncate flex-1">{shop.name}</span>
                     {shop.members && <span className="text-[9px] text-accent shrink-0">P2P</span>}
                   </div>
@@ -227,8 +272,10 @@ export default function ShopHelper() {
               {/* Shop header card */}
               <div className="rounded-xl border border-border/40 bg-bg-primary/20 p-4">
                 <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-semibold">{selectedShop.name}</h3>
+                  <div className="flex-1 min-w-0 flex items-start gap-3">
+                    <ShopIcon shop={selectedShop} iconMap={iconMap} className="w-10 h-10 shrink-0 rounded-lg" />
+                    <div className="min-w-0">
+                      <h3 className="text-lg font-semibold">{selectedShop.name}</h3>
                     <div className="flex flex-wrap items-center gap-2 mt-1.5">
                       {selectedShop.location && (
                         <span className="inline-flex items-center gap-1 text-xs text-text-secondary rounded-full border border-border/40 bg-bg-tertiary/30 px-2 py-0.5">
@@ -250,6 +297,7 @@ export default function ShopHelper() {
                           {[...new Set(selectedShop.items.map((i) => i.currency))].join(", ")}
                         </span>
                       )}
+                    </div>
                     </div>
                   </div>
                   <div className="flex gap-1.5 shrink-0">
@@ -413,7 +461,7 @@ export default function ShopHelper() {
                 src={`${WIKI_IMG}/General_store_icon.png`}
                 alt=""
                 className="w-12 h-12 mx-auto mb-3 opacity-30"
-                fallback="S"
+                fallback="\u00b7"
               />
               <div className="text-sm text-text-secondary">Select a shop to view its inventory</div>
               <div className="text-xs text-text-secondary/40 mt-1">

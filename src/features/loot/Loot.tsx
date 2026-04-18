@@ -170,21 +170,21 @@ function DropTablesTab({
                 <button
                   type="button"
                   onClick={() => navigate("bosses", { boss: selectedBoss.name, tab: "drops" })}
-                  className="rounded-xl border border-border bg-bg-secondary px-3 py-2 text-xs font-medium text-text-secondary transition hover:border-accent/35 hover:text-text-primary"
+                  className="rounded-xl border border-border bg-bg-tertiary px-3 py-2 text-xs font-medium text-text-secondary transition hover:border-accent/35 hover:text-text-primary"
                 >
                   Open Boss Workspace
                 </button>
                 <button
                   type="button"
                   onClick={() => navigate("bosses", { boss: selectedBoss.name, tab: "tasks" })}
-                  className="rounded-xl border border-border bg-bg-secondary px-3 py-2 text-xs font-medium text-text-secondary transition hover:border-accent/35 hover:text-text-primary"
+                  className="rounded-xl border border-border bg-bg-tertiary px-3 py-2 text-xs font-medium text-text-secondary transition hover:border-accent/35 hover:text-text-primary"
                 >
                   Combat Tasks
                 </button>
                 <button
                   type="button"
                   onClick={() => navigate("dps-calc", { monster: selectedBoss.name })}
-                  className="rounded-xl border border-border bg-bg-secondary px-3 py-2 text-xs font-medium text-text-secondary transition hover:border-accent/35 hover:text-text-primary"
+                  className="rounded-xl border border-border bg-bg-tertiary px-3 py-2 text-xs font-medium text-text-secondary transition hover:border-accent/35 hover:text-text-primary"
                 >
                   DPS
                 </button>
@@ -194,7 +194,7 @@ function DropTablesTab({
               href={`https://oldschool.runescape.wiki/w/${encodeURIComponent(selectedMonster.replace(/ /g, "_"))}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-xl border border-border bg-bg-secondary px-3 py-2 text-xs font-medium text-text-secondary transition hover:border-accent/35 hover:text-text-primary"
+              className="rounded-xl border border-border bg-bg-tertiary px-3 py-2 text-xs font-medium text-text-secondary transition hover:border-accent/35 hover:text-text-primary"
             >
               Open Wiki
             </a>
@@ -221,15 +221,15 @@ function DropTablesTab({
           }}
           placeholder="Search monsters..."
           aria-label="Search monsters"
-          className="w-full bg-bg-secondary border border-border rounded-lg px-4 py-2.5 text-sm"
+          className="w-full bg-bg-tertiary border border-border rounded-lg px-4 py-2.5 text-sm"
         />
         {showSuggestions && suggestions.length > 0 && (
-          <div className="absolute top-full left-0 right-0 mt-1 bg-bg-secondary border border-border rounded-lg overflow-hidden z-10 shadow-lg">
+          <div className="absolute top-full left-0 right-0 mt-1 bg-bg-tertiary border border-border rounded-lg overflow-hidden z-10 shadow-lg">
             {suggestions.map((name) => (
               <button
                 key={name}
                 onClick={() => selectMonster(name)}
-                className="w-full text-left px-4 py-2 text-sm hover:bg-bg-tertiary transition-colors"
+                className="w-full text-left px-4 py-2 text-sm hover:bg-bg-secondary transition-colors"
               >
                 {name}
               </button>
@@ -265,7 +265,7 @@ function DropTablesTab({
           </h3>
           <div className="rounded-xl border border-border/60 overflow-hidden">
             <table className="w-full text-sm">
-              <thead>
+              <thead className="sticky-thead">
                 <tr className="border-b border-border text-text-secondary text-xs">
                   <th scope="col" className="text-left px-4 py-2">Item</th>
                   <th scope="col" className="text-right px-4 py-2">Qty</th>
@@ -277,7 +277,7 @@ function DropTablesTab({
                 {cat.drops.map((drop, i) => (
                   <tr
                     key={`${drop.name}-${i}`}
-                    className="border-b border-border/50 even:bg-bg-primary/30 hover:bg-bg-tertiary transition-colors"
+                    className="border-b border-border/50 even:bg-bg-primary/30 hover:bg-bg-secondary transition-colors"
                   >
                     <td className="px-4 py-1.5 font-medium">
                       <button
@@ -591,7 +591,7 @@ function ProfitCalculatorTab({
           <button
             type="button"
             onClick={() => navigate("bosses", { boss: linkedBoss.name, tab: "drops" })}
-            className="rounded-xl border border-border bg-bg-secondary px-3 py-2 text-xs font-medium text-text-secondary transition hover:border-accent/35 hover:text-text-primary"
+            className="rounded-xl border border-border bg-bg-tertiary px-3 py-2 text-xs font-medium text-text-secondary transition hover:border-accent/35 hover:text-text-primary"
           >
             Open Boss Workspace
           </button>
@@ -668,7 +668,7 @@ function ProfitCalculatorTab({
         ) : null}
         {selectedBoss || wikiFallbackBoss ? (
           <table className="w-full text-sm">
-            <thead>
+            <thead className="sticky-thead">
               <tr className="border-b border-border text-text-secondary text-xs">
                 <th scope="col" className="text-left px-4 py-2">Item</th>
                 <th scope="col" className="text-right px-4 py-2">Rate</th>
@@ -728,12 +728,19 @@ function ProfitCalculatorTab({
 
 // --- Main Loot component ---
 
+function resolveLootTab(raw: string | undefined): LootTab {
+  return raw === "profit" || raw === "ranking" ? raw : "drops";
+}
+
 export default function Loot() {
   const { params, navigate } = useNavigation();
   const { mapping, prices, loading, fetchIfNeeded } = useGEData();
-  const [tab, setTab] = useState<LootTab>(
-    params.tab === "profit" ? "profit" : params.tab === "ranking" ? "ranking" : "drops"
-  );
+  const [tab, setTab] = useState<LootTab>(() => resolveLootTab(params.tab));
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync tab from nav params
+    setTab(resolveLootTab(params.tab));
+  }, [params.tab]);
 
   useEffect(() => { fetchIfNeeded(); }, [fetchIfNeeded]);
 

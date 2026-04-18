@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { itemIcon, NAV_ICONS } from "../../lib/sprites";
 import {
   fetchTempleCollectionLog,
@@ -53,30 +53,33 @@ function ProgressRing({
 }
 
 
-// Temple title-cases names ("Smashed Mirror") but wiki uses game casing ("Smashed_mirror.png")
-// Try original first, fall back to wiki-convention casing
-function itemIconWithFallback(name: string): { primary: string; fallback: string } {
+// Temple title-cases names ("Smashed Mirror") but wiki uses game casing ("Smashed_mirror.png").
+// Build a fallback chain: GE-mapping icon (primary) → wiki-cased name → fully-lowercased name.
+function itemIconCandidates(name: string): string[] {
   const primary = itemIcon(name);
-  const wikiCased = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
-  const fallback = itemIcon(wikiCased);
-  return { primary, fallback };
+  const wikiCased = itemIcon(name.charAt(0).toUpperCase() + name.slice(1).toLowerCase());
+  const lowered = itemIcon(name.toLowerCase());
+  return Array.from(new Set([primary, wikiCased, lowered]));
 }
 
 function ClogItemImage({ name, className }: { name: string; className?: string }) {
-  const { primary, fallback } = itemIconWithFallback(name);
+  const candidates = itemIconCandidates(name);
   return (
     <img
-      src={primary}
+      src={candidates[0]}
       alt={name}
+      data-attempt="0"
       className={className}
       onError={(e) => {
         const el = e.currentTarget;
-        if (el.src !== fallback) {
-          el.src = fallback;
+        const next = Number(el.dataset.attempt ?? "0") + 1;
+        if (next < candidates.length) {
+          el.dataset.attempt = String(next);
+          el.src = candidates[next]!;
         } else {
           el.style.display = "none";
-          const next = el.nextElementSibling;
-          if (next instanceof HTMLElement) next.style.display = "flex";
+          const sibling = el.nextElementSibling;
+          if (sibling instanceof HTMLElement) sibling.style.display = "flex";
         }
       }}
     />
@@ -92,6 +95,7 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
   const [activeTab, setActiveTab] = useState<string>("bosses");
   const [itemNames, setItemNames] = useState<Map<number, string>>(new Map());
   const [schema, setSchema] = useState<TempleClogSchema | null>(null);
+  const itemsPanelRef = useRef<HTMLDivElement>(null);
 
   // Build a set of obtained item IDs with counts from player data
   const obtainedMap = useMemo(() => {
@@ -253,7 +257,7 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
                       </span>
                     </div>
                     {item.count > 1 && (
-                      <span className="absolute -top-1.5 -right-1.5 bg-accent text-white text-[10px] font-bold rounded-full px-1.5 min-w-[18px] text-center leading-[18px] shadow-sm shadow-black/30">
+                      <span className="absolute -top-1.5 -right-1.5 bg-accent text-on-accent text-[10px] font-bold rounded-full px-1.5 min-w-[18px] text-center leading-[18px] shadow-sm shadow-black/30">
                         {item.count}
                       </span>
                     )}
@@ -285,13 +289,13 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
               aria-pressed={isActive}
               className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
                 isActive
-                  ? "bg-accent text-white"
+                  ? "bg-accent text-on-accent"
                   : "text-text-secondary hover:bg-bg-secondary/50"
               }`}
             >
               {tab.charAt(0).toUpperCase() + tab.slice(1)}
               {stats && (
-                <span className={`tabular-nums ${isActive ? "text-white/70" : "text-text-secondary/40"}`}>
+                <span className={`tabular-nums ${isActive ? "text-on-accent/70" : "text-text-secondary/40"}`}>
                   {stats.obtained}/{stats.total}
                 </span>
               )}
@@ -316,7 +320,17 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
               return (
                 <button
                   key={cat.slug}
-                  onClick={() => { setSelectedCategory(cat.slug); setItemFilter("all"); }}
+                  onClick={() => {
+                    setSelectedCategory(cat.slug);
+                    setItemFilter("all");
+                    // Scroll the items panel into view on narrow layouts where it stacks below.
+                    if (window.innerWidth < 1280) {
+                      setTimeout(
+                        () => itemsPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
+                        80
+                      );
+                    }
+                  }}
                   className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-colors ${
                     isActive
                       ? "bg-accent/10 border border-accent/25"
@@ -344,7 +358,7 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
         </div>
 
         {/* Items panel */}
-        <div>
+        <div ref={itemsPanelRef}>
           {!selectedCategory || !activeSchemaCat ? (
             <div className="py-12 text-center text-sm text-text-secondary">
               Select a category to view items
@@ -369,7 +383,7 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
                       aria-pressed={itemFilter === f}
                       className={`px-2.5 py-1 rounded text-[11px] font-medium transition-colors ${
                         itemFilter === f
-                          ? "bg-accent text-white"
+                          ? "bg-accent text-on-accent"
                           : "text-text-secondary hover:text-text-primary"
                       }`}
                     >
@@ -407,7 +421,7 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
                           />
                         </div>
                         {isObtained && item.count > 1 && (
-                          <span className="absolute -top-1.5 -right-2 bg-accent text-white text-[10px] font-bold rounded-full px-1.5 min-w-[18px] text-center leading-[18px] shadow-sm shadow-black/30">
+                          <span className="absolute -top-1.5 -right-2 bg-accent text-on-accent text-[10px] font-bold rounded-full px-1.5 min-w-[18px] text-center leading-[18px] shadow-sm shadow-black/30">
                             {item.count}
                           </span>
                         )}

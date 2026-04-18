@@ -226,7 +226,7 @@ export default function BossLootCalculator() {
           <button
             type="button"
             onClick={() => navigate("bosses", { boss: linkedBoss.name, tab: "drops" })}
-            className="rounded-xl border border-border bg-bg-secondary px-3 py-2 text-xs font-medium text-text-secondary transition hover:border-accent/35 hover:text-text-primary"
+            className="rounded-xl border border-border bg-bg-tertiary px-3 py-2 text-xs font-medium text-text-secondary transition hover:border-accent/35 hover:text-text-primary"
           >
             Open Boss Workspace
           </button>

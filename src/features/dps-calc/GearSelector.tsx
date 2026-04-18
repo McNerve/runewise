@@ -67,7 +67,7 @@ export default function GearSelector({ slot, onSelect, onClose }: Props) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search equipment..."
-            className="w-full bg-bg-secondary border border-border rounded-lg px-3 py-2 text-sm"
+            className="w-full bg-bg-tertiary border border-border rounded-lg px-3 py-2 text-sm"
           />
         </div>
 

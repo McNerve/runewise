@@ -5,7 +5,7 @@ export default function About() {
     <div className="max-w-lg">
       <h2 className="text-2xl font-semibold tracking-tight mb-4">About RuneWise</h2>
 
-      <div className="bg-bg-secondary rounded-lg p-4 mb-4">
+      <div className="bg-bg-tertiary rounded-lg p-4 mb-4">
         <div className="text-2xl font-bold mb-1">RuneWise</div>
         <div className="text-sm text-text-secondary mb-3">
           v{__APP_VERSION__} — OSRS Desktop Companion
@@ -16,7 +16,7 @@ export default function About() {
         </p>
       </div>
 
-      <div className="bg-bg-secondary rounded-lg p-4 mb-4">
+      <div className="bg-bg-tertiary rounded-lg p-4 mb-4">
         <h3 className="text-sm font-medium text-text-secondary uppercase tracking-wider mb-3">
           Data Sources
         </h3>
@@ -34,6 +34,18 @@ export default function About() {
             <span className="text-text-secondary">MIT</span>
           </div>
           <div className="flex justify-between">
+            <a href="https://templeosrs.com/" target="_blank" rel="noopener noreferrer" className="text-accent hover:text-accent-hover">
+              Temple OSRS
+            </a>
+            <span className="text-text-secondary">Temple OSRS</span>
+          </div>
+          <div className="flex justify-between">
+            <a href="https://starminers.site/" target="_blank" rel="noopener noreferrer" className="text-accent hover:text-accent-hover">
+              Star Miners
+            </a>
+            <span className="text-text-secondary">Star Miners</span>
+          </div>
+          <div className="flex justify-between">
             <a href="https://secure.runescape.com/m=hiscore_oldschool/" target="_blank" rel="noopener noreferrer" className="text-accent hover:text-accent-hover">
               OSRS Hiscores
             </a>
@@ -42,7 +54,7 @@ export default function About() {
         </div>
       </div>
 
-      <div className="bg-bg-secondary rounded-lg p-4 mb-4">
+      <div className="bg-bg-tertiary rounded-lg p-4 mb-4">
         <h3 className="text-sm font-medium text-text-secondary uppercase tracking-wider mb-3">
           Links
         </h3>

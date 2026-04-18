@@ -238,6 +238,27 @@ export function bossIconSmall(bossName: string): string {
   return `${WIKI_IMG}/${name}_icon.png`;
 }
 
+// Hand-curated overrides for NPC icons that don't match the default
+// "{Name}.png" pattern on the wiki.
+const NPC_ICON_OVERRIDES: Record<string, string> = {
+  "Bob": "Bob_Barter.png",
+};
+
+/**
+ * Best-effort wiki image URL for an NPC or shopkeeper. Consumers should
+ * combine with a <WikiImage fallback="..."/> so a 404 still degrades cleanly.
+ */
+export function npcIcon(npcName: string): string {
+  if (NPC_ICON_OVERRIDES[npcName]) return `${WIKI_IMG}/${NPC_ICON_OVERRIDES[npcName]}`;
+  // Strip decorative characters (tildes, asterisks, quotes).
+  const cleaned = npcName
+    .replace(/[~"*]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  const name = cleaned.replace(/ /g, "_").replace(/'/g, "%27");
+  return `${WIKI_IMG}/${name}.png`;
+}
+
 export const NAV_ICONS: Record<string, string> = {
   home: `${WIKI_IMG}/Teleport_to_House_icon_%28mobile%29.png`,
   overview: `${WIKI_IMG}/Character_Summary_tab_icon.png`,
@@ -247,11 +268,11 @@ export const NAV_ICONS: Record<string, string> = {
   "dry-calc": `${WIKI_IMG}/Ring_of_wealth.png`,
   "xp-table": `${WIKI_IMG}/Book_of_knowledge.png`,
   tracker: `${WIKI_IMG}/Partyhat_%26_specs.png`,
-  bosses: `${WIKI_IMG}/Slayer_helmet_%28i%29.png`,
+  bosses: `${WIKI_IMG}/Combat_icon.png`,
   raids: `${WIKI_IMG}/Olmlet.png`,
   loot: `${WIKI_IMG}/Looting_bag.png`,
   progress: `${WIKI_IMG}/Character_Summary_tab_icon.png`,
-  slayer: `${WIKI_IMG}/Slayer_icon.png`,
+  slayer: `${WIKI_IMG}/Slayer_helmet_%28i%29.png`,
   news: `${WIKI_IMG}/Newspaper.png`,
   "dps-calc": `${WIKI_IMG}/archive/20220902042551%21Damage_hitsplat_%28max_hit%29.png`,
   "training-plan": `${WIKI_IMG}/Quest_point_icon.png`,

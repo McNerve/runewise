@@ -149,14 +149,14 @@ export default function Kingdom() {
           onClick={optimize}
           aria-pressed={isOptimal}
           className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
-            isOptimal ? "bg-accent text-white" : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+            isOptimal ? "bg-accent text-on-accent" : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
           }`}
         >
           Optimal
         </button>
         <button
           onClick={resetAll}
-          className="px-3 py-1.5 rounded text-xs font-medium bg-bg-secondary text-text-secondary hover:bg-bg-tertiary transition-colors"
+          className="px-3 py-1.5 rounded text-xs font-medium bg-bg-tertiary text-text-secondary hover:bg-bg-secondary transition-colors"
         >
           Reset
         </button>
@@ -182,7 +182,7 @@ export default function Kingdom() {
         {rows.map((row, i) => (
           <div
             key={row.name}
-            className="flex items-center gap-3 py-2 px-2 rounded hover:bg-bg-tertiary transition-colors"
+            className="flex items-center gap-3 py-2 px-2 rounded hover:bg-bg-secondary transition-colors"
           >
             <img
               src={itemIcon(row.itemName)}
@@ -206,7 +206,7 @@ export default function Kingdom() {
               max={MAX_WORKERS - (totalWorkers - row.workers)}
               value={row.workers}
               onChange={(e) => setWorkers(i, Number(e.target.value) || 0)}
-              className="w-12 bg-bg-secondary border border-border rounded px-1.5 py-0.5 text-xs text-center tabular-nums"
+              className="w-12 bg-bg-tertiary border border-border rounded px-1.5 py-0.5 text-xs text-center tabular-nums"
             />
 
             <span className="text-xs text-text-secondary tabular-nums w-14 text-right">
@@ -225,7 +225,7 @@ export default function Kingdom() {
       {/* Summary */}
       <div className="section-kicker mb-2">Daily Summary</div>
       <div className="grid grid-cols-3 gap-3">
-        <div className="bg-bg-secondary rounded-lg px-3 py-2">
+        <div className="bg-bg-tertiary rounded-lg px-3 py-2">
           <div className="text-[11px] text-text-secondary uppercase tracking-wider">
             Gross Income
           </div>
@@ -233,15 +233,18 @@ export default function Kingdom() {
             {formatGp(Math.round(totalDailyGp))}
           </div>
         </div>
-        <div className="bg-bg-secondary rounded-lg px-3 py-2">
+        <div className="bg-bg-tertiary rounded-lg px-3 py-2">
           <div className="text-[11px] text-text-secondary uppercase tracking-wider">
             Coffer Upkeep
           </div>
           <div className="text-sm font-semibold tabular-nums mt-0.5 text-danger">
             -{formatGp(DAILY_UPKEEP)}
           </div>
+          <div className="text-[10px] text-text-secondary/50 mt-0.5 leading-tight">
+            Daily coffer cost at 10 workers
+          </div>
         </div>
-        <div className="bg-bg-secondary rounded-lg px-3 py-2">
+        <div className="bg-bg-tertiary rounded-lg px-3 py-2">
           <div className="text-[11px] text-text-secondary uppercase tracking-wider">
             Net Profit
           </div>

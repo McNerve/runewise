@@ -40,7 +40,7 @@ export default function WikiRecipeTable({
 
         // Calculate material cost
         let materialCost: number | null = 0;
-        for (const mat of r.materials) {
+        for (const mat of r.materials ?? []) {
           const price = getItemPrice(mat.name, itemMap, prices);
           if (price == null) {
             materialCost = null;
@@ -51,7 +51,7 @@ export default function WikiRecipeTable({
 
         // Calculate output value
         let outputValue = 0;
-        for (const out of r.output) {
+        for (const out of r.output ?? []) {
           const price = getItemPrice(out.name, itemMap, prices);
           if (price != null) outputValue += price * out.quantity;
         }

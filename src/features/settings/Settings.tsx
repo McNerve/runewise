@@ -5,7 +5,10 @@ import { isTauri, isMac } from "../../lib/env";
 
 declare const __APP_VERSION__: string;
 
-const KEYBIND_LABELS: Record<string, { label: string; family: string }> = {
+// Labels for every possible keybind action. Only entries present in
+// DEFAULT_KEYBINDS are actually rendered — the default set is intentionally
+// curated to avoid stomping on system shortcuts.
+const KEYBIND_LABELS_ALL: Record<string, { label: string; family: string }> = {
   overview: { label: "Profile", family: "Player" },
   tracker: { label: "XP Tracker", family: "Player" },
   "collection-log": { label: "Collection Log", family: "Player" },
@@ -32,6 +35,11 @@ const KEYBIND_LABELS: Record<string, { label: string; family: string }> = {
   news: { label: "OSRS News", family: "Live" },
   wiki: { label: "OSRS Wiki", family: "Live" },
 };
+
+const KEYBIND_LABELS: Record<string, { label: string; family: string }> =
+  Object.fromEntries(
+    Object.entries(KEYBIND_LABELS_ALL).filter(([action]) => action in DEFAULT_KEYBINDS)
+  );
 
 function ThemeGlyph({ theme }: { theme: "dark" | "light" | "system" }) {
   if (theme === "dark") {
@@ -138,7 +146,7 @@ function UpdateButton() {
       <button
         onClick={() => checkForUpdates(false)}
         disabled={status === "checking" || status === "downloading"}
-        className="bg-accent hover:bg-accent-hover text-white text-xs px-3 py-1.5 rounded transition-colors disabled:opacity-50"
+        className="bg-accent hover:bg-accent-hover text-on-accent text-xs px-3 py-1.5 rounded transition-colors disabled:opacity-50"
       >
         {status === "idle" && "Check for Updates"}
         {status === "checking" && "Checking..."}
@@ -187,7 +195,7 @@ function KeybindRecorder({
   ) : (
     <button
       onClick={() => setRecording(true)}
-      className="text-xs border border-border bg-bg-tertiary/80 text-text-primary px-2 py-1 rounded hover:bg-bg-tertiary transition-colors min-w-[80px]"
+      className="text-xs border border-border bg-bg-tertiary/80 text-text-primary px-2 py-1 rounded hover:bg-bg-secondary transition-colors min-w-[80px]"
     >
       {mod}
       {(value ?? "").toUpperCase()}
@@ -231,7 +239,7 @@ function SettingsCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-bg-secondary rounded-lg p-5">
+    <div className="bg-bg-tertiary rounded-lg p-5">
       <h3 className="text-xs font-semibold uppercase tracking-wider text-text-secondary mb-3">
         {title}
       </h3>
@@ -406,7 +414,7 @@ export default function Settings() {
           </p>
           <button
             onClick={resetKeybinds}
-            className="rounded-lg border border-border bg-bg-secondary px-3 py-1 text-xs text-text-secondary hover:text-text-primary hover:border-accent/40 transition-colors"
+            className="rounded-lg border border-border bg-bg-tertiary px-3 py-1 text-xs text-text-secondary hover:text-text-primary hover:border-accent/40 transition-colors"
           >
             Reset to Defaults
           </button>

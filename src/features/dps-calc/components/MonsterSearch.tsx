@@ -82,7 +82,7 @@ export default memo(function MonsterSearch({
       {open && results.length > 0 && (
         <div
           ref={listRef}
-          className="absolute z-30 top-full mt-1 w-full bg-bg-secondary border border-border rounded-lg shadow-xl max-h-60 overflow-y-auto"
+          className="absolute z-30 top-full mt-1 w-full bg-bg-tertiary border border-border rounded-lg shadow-xl max-h-60 overflow-y-auto"
         >
           {results.map((m) => (
             <button
@@ -92,7 +92,7 @@ export default memo(function MonsterSearch({
                 setOpen(false);
                 setQuery("");
               }}
-              className="w-full text-left px-3 py-2 text-sm hover:bg-bg-tertiary transition-colors flex items-center justify-between gap-2"
+              className="w-full text-left px-3 py-2 text-sm hover:bg-bg-secondary transition-colors flex items-center justify-between gap-2"
             >
               <span className="truncate">
                 {m.name}

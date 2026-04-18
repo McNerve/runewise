@@ -1,10 +1,15 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   COMBAT_TASKS,
   COMBAT_TIERS,
   COMBAT_TIER_COUNTS,
   type CombatTier,
 } from "../../lib/data/combat-achievements";
+import {
+  fetchAllCombatTasks,
+  tierCounts as computeTierCounts,
+  type WikiCombatTask,
+} from "../../lib/api/combatTasks";
 import { useNavigation } from "../../lib/NavigationContext";
 import { findBossByName } from "../../lib/data/bosses";
 import EmptyState from "../../components/EmptyState";
@@ -50,6 +55,22 @@ export default function CombatTasks() {
     () => new Set(loadJSON<string[]>(COMPLETED_KEY, []))
   );
   const [hideCompleted, setHideCompleted] = useState(false);
+  const [wikiTasks, setWikiTasks] = useState<WikiCombatTask[] | null>(null);
+  const [wikiFailed, setWikiFailed] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchAllCombatTasks()
+      .then((tasks) => {
+        if (!cancelled) setWikiTasks(tasks);
+      })
+      .catch(() => {
+        if (!cancelled) setWikiFailed(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   function toggleTask(taskName: string) {
     setCompletedTasks((prev) => {
@@ -61,13 +82,18 @@ export default function CombatTasks() {
     });
   }
 
-  const totalTasks = Object.values(COMBAT_TIER_COUNTS).reduce(
-    (sum, n) => sum + n,
-    0
+  const activeTasks = wikiTasks ?? COMBAT_TASKS.map((t) => ({ ...t, type: "" }));
+  const liveTierCounts = useMemo(
+    () => (wikiTasks ? computeTierCounts(wikiTasks) : COMBAT_TIER_COUNTS),
+    [wikiTasks]
+  );
+  const totalTasks = useMemo(
+    () => Object.values(liveTierCounts).reduce((sum, n) => sum + n, 0),
+    [liveTierCounts]
   );
 
   const tierTasks = useMemo(() => {
-    let tasks = COMBAT_TASKS.filter((t) => t.tier === selectedTier);
+    let tasks = activeTasks.filter((t) => t.tier === selectedTier);
 
     if (search.length >= 2) {
       const s = search.toLowerCase();
@@ -82,12 +108,12 @@ export default function CombatTasks() {
     if (hideCompleted) tasks = tasks.filter((t) => !completedTasks.has(t.name));
 
     return tasks;
-  }, [selectedTier, search, hideCompleted, completedTasks]);
+  }, [activeTasks, selectedTier, search, hideCompleted, completedTasks]);
 
   const tierCompletedCount = useMemo(() => {
-    const all = COMBAT_TASKS.filter((t) => t.tier === selectedTier);
+    const all = activeTasks.filter((t) => t.tier === selectedTier);
     return all.filter((t) => completedTasks.has(t.name)).length;
-  }, [selectedTier, completedTasks]);
+  }, [activeTasks, selectedTier, completedTasks]);
 
   const groupedByBoss = useMemo(() => {
     const groups: Record<string, typeof tierTasks> = {};
@@ -110,7 +136,11 @@ export default function CombatTasks() {
           official API.
         </p>
         <p className="mt-2 text-xs text-text-secondary">
-          {totalTasks} total official tasks across 6 tiers. The list below is a curated in-app reference sample, not a synced completion tracker.
+          {wikiTasks
+            ? `${totalTasks} tasks loaded from the OSRS Wiki.`
+            : wikiFailed
+              ? `Showing ${totalTasks} curated tasks — wiki unavailable.`
+              : `Loading tasks from the OSRS Wiki…`}
         </p>
       </div>
 
@@ -129,7 +159,7 @@ export default function CombatTasks() {
             >
               {tier}
               <span className="ml-1.5 opacity-60">
-                {COMBAT_TIER_COUNTS[tier]}
+                {liveTierCounts[tier]}
               </span>
             </button>
           );
@@ -159,15 +189,15 @@ export default function CombatTasks() {
       {/* Task count for current tier */}
       <div className="section-kicker mb-3 flex items-center gap-2">
         <span>
-          Showing {tierTasks.length} of {COMBAT_TIER_COUNTS[selectedTier]}{" "}
+          Showing {tierTasks.length} of {liveTierCounts[selectedTier]}{" "}
           {selectedTier} tasks
-          {tierTasks.length < COMBAT_TIER_COUNTS[selectedTier] && !search && !hideCompleted && (
+          {!wikiTasks && tierTasks.length < liveTierCounts[selectedTier] && !search && !hideCompleted && (
             <span className="opacity-50"> (representative sample)</span>
           )}
         </span>
         {tierCompletedCount > 0 && (
           <span className="text-success opacity-70">
-            · {tierCompletedCount}/{COMBAT_TIER_COUNTS[selectedTier]} completed
+            · {tierCompletedCount}/{liveTierCounts[selectedTier]} completed
           </span>
         )}
       </div>

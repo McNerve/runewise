@@ -20,6 +20,7 @@ import { Skeleton, TableSkeleton } from "../../components/Skeleton";
 import EmptyState from "../../components/EmptyState";
 import ItemTooltip from "../../components/ItemTooltip";
 import { useSettings } from "../../hooks/useSettings";
+import { Tabs, FilterPills, StatGrid, StatCard } from "../../components/primitives";
 import {
   PERIODS,
   PERIOD_TIMESTEP,
@@ -130,7 +131,7 @@ function MarketDetail({
   );
 
   return (
-    <div className="bg-bg-secondary rounded-lg p-4 sticky top-0 overflow-y-auto max-h-[calc(100vh-6rem)]">
+    <div className="bg-bg-tertiary rounded-lg p-4 sticky top-0 overflow-y-auto max-h-[calc(100vh-6rem)]">
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
@@ -145,7 +146,7 @@ function MarketDetail({
               {item.name}
             </h3>
             {item.members && (
-              <span className="text-xs bg-warning/20 text-warning px-1.5 py-0.5 rounded">
+              <span className="text-xs bg-bg-tertiary text-text-secondary/80 px-1.5 py-0.5 rounded border border-border/50">
                 P2P
               </span>
             )}
@@ -192,7 +193,7 @@ function MarketDetail({
               aria-pressed={period === p}
               className={`px-2 py-1 text-[10px] font-medium rounded-md transition-colors ${
                 period === p
-                  ? "bg-accent text-white"
+                  ? "bg-accent text-on-accent"
                   : "text-text-secondary hover:text-text-primary"
               }`}
             >
@@ -206,7 +207,7 @@ function MarketDetail({
             aria-pressed={chartMode === "line"}
             className={`px-2 py-1 text-[10px] font-medium rounded-md transition-colors ${
               chartMode === "line"
-                ? "bg-accent text-white"
+                ? "bg-accent text-on-accent"
                 : "text-text-secondary hover:text-text-primary"
             }`}
           >
@@ -217,7 +218,7 @@ function MarketDetail({
             aria-pressed={chartMode === "candlestick"}
             className={`px-2 py-1 text-[10px] font-medium rounded-md transition-colors ${
               chartMode === "candlestick"
-                ? "bg-accent text-white"
+                ? "bg-accent text-on-accent"
                 : "text-text-secondary hover:text-text-primary"
             }`}
           >
@@ -240,7 +241,7 @@ function MarketDetail({
           className={`flex-1 text-xs py-2 rounded transition-colors ${
             isWatched
               ? "bg-bg-tertiary text-text-secondary"
-              : "bg-accent hover:bg-accent-hover text-white"
+              : "bg-accent hover:bg-accent-hover text-on-accent"
           }`}
         >
           {isWatched ? "On Watchlist" : "Add to Watchlist"}
@@ -325,6 +326,12 @@ export default function Market({
   }, [initialTab]);
 
   useEffect(() => {
+    if (paramTab === "watchlist" || paramTab === "alch" || paramTab === "browse" || paramTab === "bulk") {
+      setTab(paramTab);
+    }
+  }, [paramTab]);
+
+  useEffect(() => {
     if (params.query) {
       setQuery(params.query);
     }
@@ -381,8 +388,15 @@ export default function Market({
   }, [query]);
 
   // Browse filtered results
+  // GE cap: items with buy price >= 2.147B gp hit the GE integer cap and
+  // produce useless displays (e.g., Alch Profit wrapping to -2.147B). Drop
+  // them from the catalogue — they're never tradeable in that state.
+  const GE_PRICE_CAP = 2_147_000_000;
   const browseFiltered = useMemo(() => {
-    let result = allItems;
+    let result = allItems.filter((item) => {
+      const price = prices[String(item.id)];
+      return price?.high == null || price.high < GE_PRICE_CAP;
+    });
     if (query.length >= 2) {
       const q = query.toLowerCase();
       result = result.filter((item) => item.name.toLowerCase().includes(q));
@@ -390,7 +404,7 @@ export default function Market({
     if (membersFilter === "f2p") result = result.filter((i) => !i.members);
     if (membersFilter === "p2p") result = result.filter((i) => i.members);
     return result.slice(0, 100);
-  }, [allItems, query, membersFilter]);
+  }, [allItems, prices, query, membersFilter]);
 
   // The items to show in the table
   const displayItems = tab === "search" ? searchResults : browseFiltered;
@@ -450,7 +464,7 @@ export default function Market({
       {/* Left: search + table */}
       <div className="min-w-0">
         <div className="mb-4">
-          <h2 className="text-2xl font-semibold tracking-tight">{title}</h2>
+          <h2 className="text-hero font-semibold tracking-tight">{title}</h2>
           <p className="max-w-2xl text-sm text-text-secondary">{subtitle}</p>
           {settings.ironmanMode && (
             <div className="mt-2 rounded-lg border border-warning/30 bg-warning/5 px-3 py-1.5 text-xs text-warning">
@@ -510,7 +524,7 @@ export default function Market({
                   className={`rounded-xl px-3 py-2 text-xs font-medium transition ${
                     selectedWatched
                       ? "border border-border bg-bg-primary/70 text-text-secondary hover:border-accent/35 hover:text-text-primary"
-                      : "bg-accent text-white hover:bg-accent-hover"
+                      : "bg-accent text-on-accent hover:bg-accent-hover"
                   }`}
                 >
                   {selectedWatched ? "Open Watchlist" : "Watch Item"}
@@ -518,21 +532,16 @@ export default function Market({
               </div>
             </div>
 
-            <div className="grid gap-3 md:grid-cols-4">
+            <StatGrid columns={4}>
               {selectedSummary.map((stat) => (
-                <div
+                <StatCard
                   key={stat.label}
-                  className="rounded-xl border border-border/60 bg-bg-primary/45 px-4 py-3"
-                >
-                  <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
-                    {stat.label}
-                  </div>
-                  <div className={`mt-1 text-lg font-semibold ${stat.tone}`}>
-                    {stat.value}
-                  </div>
-                </div>
+                  label={stat.label}
+                  value={stat.value}
+                  accent={stat.tone}
+                />
               ))}
-            </div>
+            </StatGrid>
           </div>
         ) : (
           <div className="mb-4 grid gap-3 md:grid-cols-3">
@@ -565,48 +574,31 @@ export default function Market({
 
         {/* Tab bar — always visible */}
         <div className="flex items-center gap-3 mb-4 flex-wrap">
-          <div className="flex flex-wrap gap-2">
-            {([
+          <Tabs
+            variant="default"
+            ariaLabel="Market sections"
+            activeId={tab}
+            onChange={(id) => { setTab(id); setSelectedItem(null); }}
+            items={[
               { id: "search" as Tab, label: "Search", description: "Find items by name" },
               { id: "browse" as Tab, label: allItems.length > 0 ? `Browse All (${allItems.length.toLocaleString()})` : "Browse All", description: "Full item catalogue" },
               { id: "watchlist" as Tab, label: "Watchlist", description: "Tracked items" },
               { id: "alch" as Tab, label: "Alch Profits", description: "Alchemy calculator" },
               { id: "bulk" as Tab, label: "Bulk Lookup", description: "Batch price check" },
-            ]).map((t) => (
-              <button
-                key={t.id}
-                onClick={() => { setTab(t.id); setSelectedItem(null); }}
-                aria-pressed={tab === t.id}
-                className={`relative rounded-xl border px-3.5 py-2 text-left transition ${
-                  tab === t.id
-                    ? "border-accent/50 bg-accent/10"
-                    : "border-border bg-bg-primary/50 text-text-secondary hover:bg-bg-primary/70"
-                }`}
-              >
-                {tab === t.id && <div className="absolute -bottom-px left-3 right-3 h-0.5 rounded-full bg-accent" />}
-                <div className={`text-xs font-semibold ${tab === t.id ? "text-accent" : ""}`}>{t.label}</div>
-                <div className={`hidden sm:block text-[11px] ${tab === t.id ? "text-accent/60" : "text-text-secondary/60"}`}>{t.description}</div>
-              </button>
-            ))}
-          </div>
+            ]}
+          />
 
           {tab === "browse" && (
-            <div className="flex gap-1">
-              {(["all", "f2p", "p2p"] as const).map((f) => (
-                <button
-                  key={f}
-                  onClick={() => setMembersFilter(f)}
-                  aria-pressed={membersFilter === f}
-                  className={`px-3 py-1.5 rounded text-xs uppercase transition-colors ${
-                    membersFilter === f
-                      ? "bg-accent text-white"
-                      : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
-                  }`}
-                >
-                  {f}
-                </button>
-              ))}
-            </div>
+            <FilterPills
+              ariaLabel="Members filter"
+              activeKey={membersFilter}
+              onChange={setMembersFilter}
+              items={[
+                { id: "all" as const, label: "All" },
+                { id: "f2p" as const, label: "F2P" },
+                { id: "p2p" as const, label: "P2P" },
+              ]}
+            />
           )}
         </div>
 
@@ -632,7 +624,7 @@ export default function Market({
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search items..."
           aria-label="Search items"
-          className="w-full bg-bg-secondary border border-border rounded-lg px-4 py-2.5 text-sm mb-3"
+          className="w-full bg-bg-tertiary border border-border rounded-lg px-4 py-2.5 text-sm mb-3"
         />
 
         {/* Status messages */}
@@ -668,7 +660,7 @@ export default function Market({
         {showTable && displayItems.length > 0 && (
           <div className="rounded-xl border border-border/60 overflow-hidden">
             <table className="w-full text-sm">
-              <thead>
+              <thead className="sticky-thead">
                 <tr className="border-b border-border text-text-secondary text-xs">
                   <th scope="col" className="text-left px-4 py-2">Item</th>
                   <th scope="col" className="text-right px-4 py-2">Buy</th>
@@ -695,7 +687,7 @@ export default function Market({
                     <tr
                       key={item.id}
                       onClick={() => setSelectedItem(item)}
-                      className={`border-b border-border/50 hover:bg-bg-tertiary transition-colors cursor-pointer ${
+                      className={`border-b border-border/50 hover:bg-bg-secondary transition-colors cursor-pointer ${
                         selectedItem?.id === item.id
                           ? "bg-bg-tertiary"
                           : "even:bg-bg-primary/30"
@@ -712,7 +704,7 @@ export default function Market({
                           <div>
                             <ItemTooltip itemName={item.name}><div className="font-medium cursor-default">{item.name}</div></ItemTooltip>
                             {item.members && (
-                              <span className="text-[10px] text-warning">P2P</span>
+                              <span className="text-[10px] text-text-secondary/60">P2P</span>
                             )}
                           </div>
                         </div>
@@ -752,7 +744,7 @@ export default function Market({
                           ? formatGp(volumes[String(item.id)])
                           : "\u2014"}
                       </td>
-                      <td className="px-4 py-2 text-right text-warning">
+                      <td className="px-4 py-2 text-right text-text-primary">
                         {formatGp(item.highalch)}
                       </td>
                       <td className="px-4 py-2 text-right">

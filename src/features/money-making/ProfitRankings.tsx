@@ -45,7 +45,7 @@ function methodToEntry(m: MoneyMethod): ProfitEntry {
   };
 }
 
-export default function ProfitHub() {
+export default function ProfitRankings() {
   const { navigate } = useNavigation();
   const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
   const [pricesLoaded, setPricesLoaded] = useState(false);
@@ -133,7 +133,7 @@ export default function ProfitHub() {
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search methods..."
           aria-label="Search profit methods"
-          className="flex-1 min-w-[180px] bg-bg-secondary border border-border rounded-lg px-3 py-1.5 text-sm"
+          className="flex-1 min-w-[180px] bg-bg-tertiary border border-border rounded-lg px-3 py-1.5 text-sm"
         />
         <div className="flex gap-1">
           {(
@@ -149,8 +149,8 @@ export default function ProfitHub() {
               aria-pressed={sourceFilter === f.id}
               className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
                 sourceFilter === f.id
-                  ? "bg-accent text-white"
-                  : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+                  ? "bg-accent text-on-accent"
+                  : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
               }`}
             >
               {f.label}

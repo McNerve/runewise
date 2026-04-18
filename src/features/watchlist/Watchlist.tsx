@@ -123,13 +123,13 @@ export default function Watchlist() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search items to watch..."
-          className="w-full bg-bg-secondary border border-border rounded-lg px-4 py-2.5 text-sm"
+          className="w-full bg-bg-tertiary border border-border rounded-lg px-4 py-2.5 text-sm"
         />
         {searching && (
           <p className="text-xs text-text-secondary mt-1">Searching...</p>
         )}
         {results.length > 0 && query.length >= 2 && (
-          <div className="absolute z-10 mt-1 w-full bg-bg-secondary border border-border rounded-lg shadow-lg overflow-hidden">
+          <div className="absolute z-10 mt-1 w-full bg-bg-tertiary border border-border rounded-lg shadow-lg overflow-hidden">
             {results.map((item) => (
               <button
                 key={item.id}
@@ -138,7 +138,7 @@ export default function Watchlist() {
                   setQuery("");
                   setResults([]);
                 }}
-                className="w-full text-left px-4 py-2 text-sm hover:bg-bg-tertiary transition-colors flex items-center justify-between"
+                className="w-full text-left px-4 py-2 text-sm hover:bg-bg-secondary transition-colors flex items-center justify-between"
               >
                 <span className="flex items-center gap-2">
                   <WikiImage src={itemIcon(item.name)} alt="" className="h-5 w-5 shrink-0" fallback={item.name[0]} />

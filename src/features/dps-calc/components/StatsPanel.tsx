@@ -147,8 +147,8 @@ export default function StatsPanel({ state }: StatsPanelProps) {
                       aria-pressed={bonusMode === m}
                       className={`px-2 py-0.5 rounded text-[10px] capitalize transition-colors ${
                         bonusMode === m
-                          ? "bg-accent text-white"
-                          : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+                          ? "bg-accent text-on-accent"
+                          : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
                       }`}
                     >
                       {m}
@@ -293,7 +293,7 @@ export default function StatsPanel({ state }: StatsPanelProps) {
                     className={`w-10 h-10 rounded-lg flex flex-col items-center justify-center transition-all ${
                       isActive
                         ? "bg-accent/20 ring-2 ring-accent scale-105"
-                        : "bg-bg-tertiary/40 hover:bg-bg-tertiary border border-border/20"
+                        : "bg-bg-tertiary/40 hover:bg-bg-secondary border border-border/20"
                     }`}
                   >
                     {p.icon ? (
@@ -357,7 +357,7 @@ export default function StatsPanel({ state }: StatsPanelProps) {
                     className={`px-2.5 py-2 rounded-lg text-left text-xs transition-all ${
                       isActive
                         ? "bg-accent/15 ring-1 ring-accent/50 text-text-primary"
-                        : "bg-bg-tertiary/40 text-text-secondary hover:bg-bg-tertiary border border-border/20"
+                        : "bg-bg-tertiary/40 text-text-secondary hover:bg-bg-secondary border border-border/20"
                     }`}
                   >
                     <div className="font-medium truncate">{s.name}</div>

@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Overview from "../overview/Overview";
 import { fetchHiscores, type HiscoreData, type HiscoreSkill } from "../../lib/api/hiscores";
 import { useNavigation } from "../../lib/NavigationContext";
 import EmptyState from "../../components/EmptyState";
 import { NAV_ICONS, SKILL_ICONS } from "../../lib/sprites";
+import { loadRecentEntities } from "../../lib/recentEntities";
 
 type Mode = "lookup" | "compare";
 
@@ -24,7 +25,7 @@ function StatCompare({
   return (
     <div>
       <div className="section-kicker mb-3">Skill Comparison</div>
-      <div className="bg-bg-secondary rounded-lg overflow-hidden">
+      <div className="bg-bg-tertiary rounded-lg overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border text-xs text-text-secondary">
@@ -42,7 +43,7 @@ function StatCompare({
               return (
                 <tr
                   key={skill.name}
-                  className="border-b border-border/30 hover:bg-bg-tertiary transition-colors"
+                  className="border-b border-border/30 hover:bg-bg-secondary transition-colors"
                 >
                   <td className="px-4 py-1.5">
                     <div className="flex items-center gap-2">
@@ -100,7 +101,7 @@ function StatCompare({
           return (
             <div
               key={rsn}
-              className="bg-bg-secondary rounded-lg px-4 py-3"
+              className="bg-bg-tertiary rounded-lg px-4 py-3"
             >
               <div className="text-xs font-medium text-text-primary mb-1">
                 {rsn}
@@ -133,6 +134,13 @@ export default function PlayerLookup() {
   const [data, setData] = useState<HiscoreData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const recentPlayers = useMemo(
+    () => loadRecentEntities().filter((e) => e.category === "Player").slice(0, 5),
+    // Re-read when a lookup lands so the list stays fresh across clicks.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [lookupRsn]
+  );
 
   // Compare state
   const [leftQuery, setLeftQuery] = useState("");
@@ -241,8 +249,8 @@ export default function PlayerLookup() {
                 aria-pressed={mode === m.id}
                 className={`px-4 py-1.5 rounded text-sm font-medium transition-colors ${
                   mode === m.id
-                    ? "bg-accent text-white"
-                    : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+                    ? "bg-accent text-on-accent"
+                    : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
                 }`}
               >
                 {m.label}
@@ -272,11 +280,32 @@ export default function PlayerLookup() {
               <button
                 type="submit"
                 disabled={loading}
-                className="rounded-xl bg-accent px-4 py-3 text-sm font-medium text-white transition hover:bg-accent-hover disabled:opacity-50"
+                className="rounded-xl bg-accent px-4 py-3 text-sm font-medium text-on-accent transition hover:bg-accent-hover disabled:opacity-50"
               >
                 {loading ? "Looking up..." : "Lookup player"}
               </button>
             </form>
+
+            {recentPlayers.length > 0 && !lookupRsn && !loading && !error ? (
+              <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                <span className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45 mr-1">
+                  Recent
+                </span>
+                {recentPlayers.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => {
+                      setQuery(p.name);
+                      void handleLookup(p.name);
+                    }}
+                    className="rounded-full border border-border/60 bg-bg-secondary/50 px-3 py-1 text-xs text-text-secondary transition hover:border-accent/40 hover:text-text-primary"
+                  >
+                    {p.name}
+                  </button>
+                ))}
+              </div>
+            ) : null}
 
             {error ? (
               <div className="mt-3">
@@ -356,7 +385,7 @@ export default function PlayerLookup() {
                 disabled={
                   compareLoading || !leftQuery.trim() || !rightQuery.trim()
                 }
-                className="rounded-xl bg-accent px-4 py-3 text-sm font-medium text-white transition hover:bg-accent-hover disabled:opacity-50"
+                className="rounded-xl bg-accent px-4 py-3 text-sm font-medium text-on-accent transition hover:bg-accent-hover disabled:opacity-50"
               >
                 {compareLoading ? "Comparing..." : "Compare"}
               </button>

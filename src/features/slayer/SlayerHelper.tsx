@@ -11,6 +11,7 @@ import {
 } from "../../lib/data/slayer";
 import { useNavigation } from "../../lib/NavigationContext";
 import WikiImage from "../../components/WikiImage";
+import { StatCard, StatGrid } from "../../components/primitives";
 import { WIKI_IMG } from "../../lib/sprites";
 
 type SlayerTab = "tasks" | "rewards" | "strategy";
@@ -339,25 +340,13 @@ export default function SlayerHelper() {
         </div>
 
         {/* Stats row */}
-        <div className="mt-3 pt-3 border-t border-border/40 grid grid-cols-4 gap-3">
-          <div className="rounded-xl border border-border/60 bg-bg-primary/45 px-3 py-2">
-            <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">Active Tasks</div>
-            <div className="mt-0.5 text-lg font-semibold text-text-primary">{activeTasks}</div>
-          </div>
-          <div className="rounded-xl border border-border/60 bg-bg-primary/45 px-3 py-2">
-            <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">Blocked</div>
-            <div className={`mt-0.5 text-lg font-semibold ${blockedTasks.size > 0 ? "text-danger" : "text-text-primary"}`}>
-              {blockedTasks.size}
-            </div>
-          </div>
-          <div className="rounded-xl border border-border/60 bg-bg-primary/45 px-3 py-2">
-            <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">Total Weight</div>
-            <div className="mt-0.5 text-lg font-semibold text-text-primary">{totalWeight}</div>
-          </div>
-          <div className="rounded-xl border border-border/60 bg-bg-primary/45 px-3 py-2">
-            <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">Points / Task</div>
-            <div className="mt-0.5 text-lg font-semibold text-accent">{selectedMaster.pointsPerTask}</div>
-          </div>
+        <div className="mt-3 pt-3 border-t border-border/40">
+          <StatGrid columns={4}>
+            <StatCard label="Active Tasks" value={activeTasks} />
+            <StatCard label="Blocked" value={blockedTasks.size} accent={blockedTasks.size > 0 ? "text-danger" : undefined} />
+            <StatCard label="Total Weight" value={totalWeight} />
+            <StatCard label="Points / Task" value={selectedMaster.pointsPerTask} accent="text-accent" />
+          </StatGrid>
         </div>
       </div>
 

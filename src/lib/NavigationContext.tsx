@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect } from "react";
 import { FEATURE_REGISTRY, type View } from "./features";
 import { saveRecentEntity } from "./recentEntities";
+import { recordToolHit } from "./toolUsage";
 
 export type { View } from "./features";
 
@@ -23,14 +24,30 @@ const STORAGE_KEY = "runewise_navigation";
 
 const VALID_VIEWS = new Set(Object.keys(FEATURE_REGISTRY));
 
+// Legacy hashes that should silently redirect to a canonical view.
+const LEGACY_ALIASES: Record<string, { view: View; params?: Record<string, string> }> = {
+  "profit-hub": { view: "money-making", params: { tab: "rankings" } },
+};
+
 function parseHash(hash: string): NavState | null {
   const raw = hash.replace(/^#/, "").trim();
   if (!raw) return null;
 
   const [viewPart, queryPart] = raw.split("?");
-  if (!viewPart || !VALID_VIEWS.has(viewPart)) return null;
+  if (!viewPart) return null;
 
   const params = Object.fromEntries(new URLSearchParams(queryPart ?? "").entries());
+
+  const alias = LEGACY_ALIASES[viewPart];
+  if (alias) {
+    return {
+      view: alias.view,
+      params: { ...(alias.params ?? {}), ...params },
+    };
+  }
+
+  if (!VALID_VIEWS.has(viewPart)) return null;
+
   return {
     view: viewPart as View,
     params,
@@ -105,6 +122,7 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
 
   useEffect(() => {
     saveRecentEntity(state.view, state.params);
+    recordToolHit(state.view);
   }, [state]);
 
   useEffect(() => {

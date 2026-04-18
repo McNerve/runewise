@@ -16,7 +16,7 @@ const RECIPE_FIELDS = [
   "production_json",
 ] as const;
 
-interface RawBucketRecipe {
+export interface RawBucketRecipe {
   [key: string]: unknown;
   page_name: string;
   uses_material?: string;
@@ -51,7 +51,7 @@ export interface WikiRecipe {
   boostable: boolean;
 }
 
-function toWikiRecipe(raw: RawBucketRecipe): WikiRecipe | null {
+export function toWikiRecipe(raw: RawBucketRecipe): WikiRecipe | null {
   let json: ProductionJson | null = null;
   if (raw.production_json) {
     try {
@@ -72,8 +72,8 @@ function toWikiRecipe(raw: RawBucketRecipe): WikiRecipe | null {
     skill,
     levelReq,
     xp,
-    materials: json?.materials ?? [],
-    output: json?.output ?? [{ name: raw.page_name, quantity: 1 }],
+    materials: Array.isArray(json?.materials) ? json.materials : [],
+    output: Array.isArray(json?.output) ? json.output : [{ name: raw.page_name, quantity: 1 }],
     facility: json?.facility || raw.uses_facility || null,
     ticks: json?.ticks ?? null,
     members: raw.is_members_only === "Yes" || json?.members === true,

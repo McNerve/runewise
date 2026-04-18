@@ -11,7 +11,7 @@ export default function FilterPills<T extends string>({
   selected,
   onChange,
   labels,
-  activeColor = "bg-accent text-white",
+  activeColor = "bg-accent text-on-accent",
 }: FilterPillsProps<T>) {
   return (
     <div className="flex gap-1.5 flex-wrap">
@@ -22,7 +22,7 @@ export default function FilterPills<T extends string>({
           className={`px-3 py-1.5 rounded text-xs transition-colors ${
             selected === option
               ? activeColor
-              : "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary"
+              : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
           }`}
         >
           {labels?.[option] ?? option}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "motion/react";
 import type { HiscoreData, IronmanType } from "../../lib/api/hiscores";
 import type { ItemPrice } from "../../lib/api/ge";
@@ -7,11 +7,18 @@ import { getFeatureAccent } from "../../lib/featureAccent";
 import { useNavigation, type View } from "../../lib/NavigationContext";
 import WikiImage from "../../components/WikiImage";
 import ShellIcon from "../../components/ShellIcon";
+import { StatGrid, StatCard } from "../../components/primitives";
 import { useSettings } from "../../hooks/useSettings";
 import { loadRecentEntities } from "../../lib/recentEntities";
 import { formatGp } from "../../lib/format";
 import { loadJSON } from "../../lib/localStorage";
 import { fetchLatestPrices } from "../../lib/api/ge";
+import {
+  getToolFrequency,
+  loadPinnedTools,
+  togglePinnedTool,
+} from "../../lib/toolUsage";
+import { fetchLiveStars, type LiveStar } from "../../lib/api/stars";
 
 interface WatchItem {
   itemId: number;
@@ -54,7 +61,11 @@ function getAccountType(data: HiscoreData | null, ironmanType?: IronmanType): { 
   return { label: "Main", color: "text-[#d4a017]", icon: "Combat_icon.png" };
 }
 
-const TOOL_GRID: Array<{ id: View; label: string }> = [
+const TOOL_GRID_SIZE = 12;
+
+// Candidate tiles for the Home tool grid. The final 12 are picked from this
+// pool in pinned → frequency → alphabetical order.
+const TOOL_POOL: Array<{ id: View; label: string }> = [
   { id: "skill-calc", label: "Skill Calc" },
   { id: "dps-calc", label: "DPS Calc" },
   { id: "bosses", label: "Boss Guides" },
@@ -67,7 +78,69 @@ const TOOL_GRID: Array<{ id: View; label: string }> = [
   { id: "stars", label: "Stars" },
   { id: "news", label: "News" },
   { id: "clue-helper", label: "Clues" },
+  { id: "gear-compare", label: "Gear Compare" },
+  { id: "training-plan", label: "Training Plan" },
+  { id: "money-making", label: "Money Making" },
+  { id: "timers", label: "Farm Timers" },
+  { id: "spells", label: "Spells" },
+  { id: "kingdom", label: "Kingdom" },
+  { id: "raids", label: "Raids" },
+  { id: "pet-calc", label: "Pet Calc" },
+  { id: "dry-calc", label: "Dry Calc" },
+  { id: "xp-table", label: "XP Table" },
+  { id: "production-calc", label: "Recipes" },
+  { id: "combat-tasks", label: "Combat Tasks" },
+  { id: "world-map", label: "World Map" },
+  { id: "tracker", label: "XP Tracker" },
+  { id: "overview", label: "Profile" },
+  { id: "lookup", label: "Hiscores" },
+  { id: "collection-log", label: "Collection Log" },
 ];
+
+const QUICK_ACCESS_TILES: Array<{ id: View; label: string; desc: string }> = [
+  { id: "slayer", label: "Slayer Helper", desc: "Task weights & blocks" },
+  { id: "dps-calc", label: "DPS Calculator", desc: "Gear & loadout DPS" },
+  { id: "gear-compare", label: "Gear Compare", desc: "BiS at a glance" },
+  { id: "bosses", label: "Boss Guides", desc: "Strategy + loot" },
+];
+
+/**
+ * Resolve the tool grid in pinned → frequency → alphabetical order, capped
+ * at {@link TOOL_GRID_SIZE}. Pinned tiles always appear even when the pool
+ * has higher-frequency candidates ahead of them.
+ */
+function resolveToolGrid(
+  pool: Array<{ id: View; label: string }>,
+  pinned: View[],
+  frequency: Map<View, number>,
+): Array<{ id: View; label: string; pinned: boolean }> {
+  const byId = new Map(pool.map((t) => [t.id, t]));
+  const result: Array<{ id: View; label: string; pinned: boolean }> = [];
+  const seen = new Set<View>();
+
+  for (const id of pinned) {
+    const tile = byId.get(id);
+    if (!tile) continue;
+    result.push({ ...tile, pinned: true });
+    seen.add(id);
+    if (result.length >= TOOL_GRID_SIZE) return result;
+  }
+
+  const remaining = pool.filter((t) => !seen.has(t.id));
+  const ranked = [...remaining].sort((a, b) => {
+    const freqA = frequency.get(a.id) ?? 0;
+    const freqB = frequency.get(b.id) ?? 0;
+    if (freqA !== freqB) return freqB - freqA;
+    return a.label.localeCompare(b.label);
+  });
+
+  for (const tile of ranked) {
+    result.push({ ...tile, pinned: false });
+    if (result.length >= TOOL_GRID_SIZE) break;
+  }
+
+  return result;
+}
 
 function getCombatLevel(data: HiscoreData): number {
   const get = (name: string) => data.skills.find((s) => s.name === name)?.level ?? 1;
@@ -97,13 +170,75 @@ function useWatchlistSnapshot() {
   return { items, prices };
 }
 
+interface FarmTimerShape {
+  id: string;
+  patchName: string;
+  readyAt: number;
+}
+
+/**
+ * Snapshot of genuinely live data we can surface on Home: active farm timers
+ * and currently-called shooting stars. Quiet when there's nothing to show so
+ * the section can hide itself.
+ */
+function useLiveNowData() {
+  const [timers, setTimers] = useState<FarmTimerShape[]>(() =>
+    loadJSON<FarmTimerShape[]>("runewise_timers", [])
+  );
+  const [stars, setStars] = useState<LiveStar[]>([]);
+
+  useEffect(() => {
+    const sync = () => setTimers(loadJSON<FarmTimerShape[]>("runewise_timers", []));
+    const tick = window.setInterval(sync, 30_000);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.clearInterval(tick);
+      window.removeEventListener("storage", sync);
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchLiveStars()
+      .then((res) => {
+        if (!cancelled) setStars(res);
+      })
+      .catch(() => {
+        if (!cancelled) setStars([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const activeTimers = timers.length;
+  // Simple count — the freshness filter lives on the fetch side (30s TTL)
+  // and the data provider already prunes stale stars. Anything returned by
+  // the API is considered "live right now".
+  const liveStarCount = stars.length;
+
+  return { activeTimers, liveStarCount };
+}
+
 export default function Home({ hiscores }: HomeProps) {
   const { items: watchlistItems, prices } = useWatchlistSnapshot();
   const { settings } = useSettings();
   const { navigate } = useNavigation();
   const [recentEntities] = useState(() => loadRecentEntities().slice(0, 4));
+  const [pinnedTools, setPinnedTools] = useState<View[]>(() => loadPinnedTools());
+  const toolFrequency = useMemo(() => getToolFrequency(), []);
+  const toolGrid = useMemo(
+    () => resolveToolGrid(TOOL_POOL, pinnedTools, toolFrequency),
+    [pinnedTools, toolFrequency],
+  );
+  const { activeTimers, liveStarCount } = useLiveNowData();
+  const hasLiveData = activeTimers > 0 || liveStarCount > 0;
   const savedRsn = hiscores?.rsn ?? "";
   const data = hiscores?.data ?? null;
+
+  const handleTogglePin = (view: View) => {
+    setPinnedTools(togglePinnedTool(view));
+  };
 
   const totalLevel = data?.skills
     .filter((s) => s.name !== "Overall")
@@ -122,10 +257,10 @@ export default function Home({ hiscores }: HomeProps) {
       {/* Header */}
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between mb-6">
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight">
+          <h2 className="text-hero font-semibold tracking-tight">
             {savedRsn ? `Welcome back, ${savedRsn}` : "RuneWise"}
           </h2>
-          <p className="text-sm text-text-secondary">
+          <p className="text-ui text-text-secondary">
             {savedRsn
               ? "Your dashboard, tools, and recent activity."
               : "Your OSRS companion. Set a RSN to get started."}
@@ -163,7 +298,7 @@ export default function Home({ hiscores }: HomeProps) {
                         const input = document.querySelector<HTMLInputElement>('.topbar-shell input[type="text"]');
                         if (input) { input.focus(); input.select(); }
                       }}
-                      className="rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent-hover transition-colors"
+                      className="rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-on-accent hover:bg-accent-hover transition-colors"
                     >
                       Set Your RSN
                     </button>
@@ -201,7 +336,7 @@ export default function Home({ hiscores }: HomeProps) {
                   />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <span className="text-lg font-semibold">{savedRsn}</span>
+                  <span className="text-h4 font-semibold">{savedRsn}</span>
                   <div className="flex items-center gap-3 text-xs text-text-secondary">
                     <span>Combat {combatLevel}</span>
                     {questPoints != null && questPoints > 0 && <span>{questPoints} QP</span>}
@@ -216,32 +351,23 @@ export default function Home({ hiscores }: HomeProps) {
                 </button>
               </div>
 
-              <div className="grid grid-cols-4 gap-3">
-                <div className="rounded-lg border border-border/40 bg-bg-tertiary/20 px-3 py-2 text-center">
-                  <div className="text-lg font-bold tabular-nums text-success">{totalLevel?.toLocaleString()}</div>
-                  <div className="text-[10px] text-text-secondary/50">Total</div>
-                </div>
-                <div className="rounded-lg border border-border/40 bg-bg-tertiary/20 px-3 py-2 text-center">
-                  <div className="text-lg font-bold tabular-nums text-accent">{totalXp ? `${(totalXp / 1_000_000).toFixed(0)}M` : "—"}</div>
-                  <div className="text-[10px] text-text-secondary/50">XP</div>
-                </div>
-                <div className="rounded-lg border border-border/40 bg-bg-tertiary/20 px-3 py-2 text-center">
-                  <div className="text-lg font-bold tabular-nums text-danger">{totalBossKills?.toLocaleString() ?? "—"}</div>
-                  <div className="text-[10px] text-text-secondary/50">Boss KC</div>
-                </div>
-                <div className="rounded-lg border border-border/40 bg-bg-tertiary/20 px-3 py-2 text-center">
-                  <div className="text-lg font-bold tabular-nums text-[#a78bfa]">{maxedSkills ?? 0}<span className="text-text-secondary/30 text-sm">/24</span></div>
-                  <div className="text-[10px] text-text-secondary/50">Maxed</div>
-                </div>
-              </div>
+              <StatGrid columns={4}>
+                <StatCard label="Total" value={totalLevel?.toLocaleString() ?? "—"} />
+                <StatCard label="XP" value={totalXp ? `${(totalXp / 1_000_000).toFixed(0)}M` : "—"} accent="text-accent" />
+                <StatCard label="Boss KC" value={totalBossKills?.toLocaleString() ?? "—"} />
+                <StatCard label="Maxed" value={maxedSkills ?? 0} suffix="/24" />
+              </StatGrid>
             </motion.div>
           )}
 
           {/* Tool grid */}
           <section>
-            <h3 className="text-[10px] font-medium uppercase tracking-[0.16em] text-text-secondary/50 mb-2">Tools</h3>
+            <div className="flex items-baseline justify-between mb-2">
+              <h3 className="text-kicker font-semibold uppercase tracking-[0.16em] text-text-secondary/70">Tools</h3>
+              <span className="text-[10px] text-text-secondary/40">Right-click to pin</span>
+            </div>
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
-              {TOOL_GRID.map((tool, i) => {
+              {toolGrid.map((tool, i) => {
                 const accent = getFeatureAccent(tool.id);
                 return (
                   <motion.button
@@ -251,8 +377,26 @@ export default function Home({ hiscores }: HomeProps) {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.02, duration: 0.15 }}
                     onClick={() => navigate(tool.id)}
-                    className="flex flex-col items-center gap-1.5 rounded-lg border border-border/30 px-2 py-3 transition hover:bg-bg-secondary/50 hover:border-border/60"
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      handleTogglePin(tool.id);
+                    }}
+                    aria-label={`${tool.label}${tool.pinned ? " (pinned)" : ""}`}
+                    className={`relative flex flex-col items-center gap-1.5 rounded-lg border px-2 py-3 transition hover:bg-bg-secondary/50 hover:border-border/60 ${
+                      tool.pinned ? "border-accent/40" : "border-border/30"
+                    }`}
                   >
+                    {tool.pinned && (
+                      <span
+                        aria-hidden
+                        title="Pinned"
+                        className="absolute top-1 right-1 text-accent"
+                      >
+                        <svg viewBox="0 0 16 16" className="h-3 w-3" fill="currentColor">
+                          <path d="M9.828.722a.5.5 0 0 1 .354.146l4.95 4.95a.5.5 0 0 1 0 .707c-.48.48-1.072.588-1.503.588a2.8 2.8 0 0 1-.51-.051l-3.16 3.16 .083 2.535a.5.5 0 0 1-.834.395L6.205 9.905l-3.89 3.89a.5.5 0 1 1-.708-.707l3.89-3.89L2.49 6.183a.5.5 0 0 1 .395-.834l2.535.083 3.16-3.16a2.78 2.78 0 0 1-.051-.51c0-.43.108-1.022.588-1.503a.5.5 0 0 1 .353-.146Z"/>
+                        </svg>
+                      </span>
+                    )}
                     <span
                       className="inline-flex h-7 w-7 items-center justify-center rounded-lg"
                       style={{ color: accent, background: `color-mix(in srgb, ${accent} 10%, transparent)` }}
@@ -267,9 +411,9 @@ export default function Home({ hiscores }: HomeProps) {
           </section>
 
           {/* Recent */}
-          {recentEntities.length > 0 && (
-            <section>
-              <h3 className="text-[10px] font-medium uppercase tracking-[0.16em] text-text-secondary/50 mb-2">Recent</h3>
+          <section>
+            <h3 className="text-kicker font-semibold uppercase tracking-[0.16em] text-text-secondary/70 mb-2">Recent</h3>
+            {recentEntities.length > 0 ? (
               <div className="grid grid-cols-2 gap-1.5">
                 {recentEntities.map((entity) => (
                   <button
@@ -286,8 +430,13 @@ export default function Home({ hiscores }: HomeProps) {
                   </button>
                 ))}
               </div>
-            </section>
-          )}
+            ) : (
+              <p className="text-xs text-text-secondary/50">
+                Items, bosses, quests, and wiki pages you visit will land here.
+              </p>
+            )}
+          </section>
+
         </div>
 
         {/* Right column — widgets */}
@@ -297,7 +446,7 @@ export default function Home({ hiscores }: HomeProps) {
           {watchlistItems.length > 0 && (
             <div className="rounded-xl border border-border/40 bg-bg-primary/20 p-3">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-[10px] font-medium uppercase tracking-[0.16em] text-text-secondary/50">Watchlist</h3>
+                <h3 className="text-kicker font-semibold uppercase tracking-[0.16em] text-text-secondary/70">Watchlist</h3>
                 <button
                   type="button"
                   onClick={() => navigate("watchlist")}
@@ -326,16 +475,61 @@ export default function Home({ hiscores }: HomeProps) {
             </div>
           )}
 
-          {/* Quick actions */}
-          <div className="rounded-xl border border-border/40 bg-bg-primary/20 p-3">
-            <h3 className="text-[10px] font-medium uppercase tracking-[0.16em] text-text-secondary/50 mb-2">While Playing</h3>
+          {/* Live now — only surfaces actual real-time data */}
+          {hasLiveData && (
+            <div className="rounded-xl border border-accent/30 bg-accent/5 p-3">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-kicker font-semibold uppercase tracking-[0.16em] text-accent/90">Live now</h3>
+                <span
+                  aria-hidden
+                  className="h-1.5 w-1.5 rounded-full bg-success"
+                  style={{ boxShadow: "0 0 8px currentColor" }}
+                />
+              </div>
+              <div className="space-y-0.5">
+                {activeTimers > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => navigate("timers")}
+                    className="flex items-center gap-2.5 w-full rounded-lg px-2 py-2 text-left transition hover:bg-bg-secondary/50"
+                  >
+                    <ShellIcon view="timers" className="h-4 w-4 shrink-0 text-accent" />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs font-medium">Farm Timers</div>
+                      <div className="text-[10px] text-text-secondary/50">
+                        {activeTimers} active {activeTimers === 1 ? "run" : "runs"}
+                      </div>
+                    </div>
+                    <span className="text-[10px] tabular-nums text-accent">{activeTimers}</span>
+                  </button>
+                )}
+                {liveStarCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => navigate("stars")}
+                    className="flex items-center gap-2.5 w-full rounded-lg px-2 py-2 text-left transition hover:bg-bg-secondary/50"
+                  >
+                    <ShellIcon view="stars" className="h-4 w-4 shrink-0 text-accent" />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs font-medium">Shooting Stars</div>
+                      <div className="text-[10px] text-text-secondary/50">
+                        {liveStarCount} called in last 30m
+                      </div>
+                    </div>
+                    <span className="text-[10px] tabular-nums text-accent">{liveStarCount}</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Quick access — curated shortcuts, no live state implied.
+              On mobile, collapse to a single section: if Live has data, hide
+              Quick access to save vertical space. */}
+          <div className={`rounded-xl border border-border/40 bg-bg-primary/20 p-3 ${hasLiveData ? "hidden lg:block" : ""}`}>
+            <h3 className="text-kicker font-semibold uppercase tracking-[0.16em] text-text-secondary/70 mb-2">Quick access</h3>
             <div className="space-y-0.5">
-              {([
-                { id: "timers" as View, label: "Farm Timers", desc: "Track growth cycles" },
-                { id: "stars" as View, label: "Shooting Stars", desc: "Live star calls" },
-                { id: "slayer" as View, label: "Slayer Helper", desc: "Task weights & blocks" },
-                { id: "dps-calc" as View, label: "DPS Calculator", desc: "Gear & loadout DPS" },
-              ]).map(({ id, label, desc }) => (
+              {QUICK_ACCESS_TILES.map(({ id, label, desc }) => (
                 <button
                   key={id}
                   type="button"
@@ -355,7 +549,7 @@ export default function Home({ hiscores }: HomeProps) {
           {/* Keyboard shortcuts hint */}
           {settings.keybindsEnabled && (
             <div className="rounded-xl border border-border/40 bg-bg-primary/20 p-3">
-              <h3 className="text-[10px] font-medium uppercase tracking-[0.16em] text-text-secondary/50 mb-2">Shortcuts</h3>
+              <h3 className="text-kicker font-semibold uppercase tracking-[0.16em] text-text-secondary/70 mb-2">Shortcuts</h3>
               <div className="grid grid-cols-2 gap-1 text-[10px]">
                 {[
                   { key: "K", label: "Search" },

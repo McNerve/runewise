@@ -11,12 +11,13 @@ import type { View } from "../../../lib/features";
 
 interface BossProfit {
   name: string;
-  killsPerHour: number;
-  gpPerKill: number;
-  gpPerHour: number;
+  killsPerHour: number | null;
+  gpPerKill: number | null;
+  gpPerHour: number | null;
   uniqueCount: number;
   topUnique: string;
   topUniqueValue: number | null;
+  hasDropData: boolean;
 }
 
 type SortKey = "gpPerHour" | "gpPerKill" | "killsPerHour" | "name";
@@ -27,27 +28,54 @@ export default function BossProfitRanking({
   navigate: (view: View, params?: Record<string, string>) => void;
 }) {
   const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
+  const [pricesLoaded, setPricesLoaded] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>("gpPerHour");
   const [sortAsc, setSortAsc] = useState(false);
 
   useEffect(() => {
-    fetchLatestPrices().then(setPrices);
+    fetchLatestPrices()
+      .then((p) => {
+        setPrices(p);
+        setPricesLoaded(true);
+      })
+      .catch(() => setPricesLoaded(true));
   }, []);
 
   const rankings = useMemo<BossProfit[]>(() => {
-    return BOSS_DROP_TABLES.map((boss) => {
+    const dropTablesByName = new Map(
+      BOSS_DROP_TABLES.map((b) => [b.bossName.toLowerCase(), b])
+    );
+
+    return BOSSES.map((boss) => {
+      const dropTable = dropTablesByName.get(boss.name.toLowerCase());
+      if (!dropTable) {
+        return {
+          name: boss.name,
+          killsPerHour: null,
+          gpPerKill: null,
+          gpPerHour: null,
+          uniqueCount: 0,
+          topUnique: "",
+          topUniqueValue: null,
+          hasDropData: false,
+        } satisfies BossProfit;
+      }
+
       let totalEvPerKill = 0;
       let topUnique = "";
       let topUniqueValue: number | null = null;
 
-      for (const drop of boss.drops) {
+      for (const drop of dropTable.drops) {
         const p = prices[String(drop.itemId)];
         const gePrice = p?.high ?? p?.low ?? null;
         if (gePrice != null) {
           const ev = (drop.quantity * gePrice) / drop.rate;
           totalEvPerKill += ev;
 
-          if (drop.category === "unique" && (topUniqueValue === null || gePrice > topUniqueValue)) {
+          if (
+            drop.category === "unique" &&
+            (topUniqueValue === null || gePrice > topUniqueValue)
+          ) {
             topUnique = drop.itemName;
             topUniqueValue = gePrice;
           }
@@ -55,33 +83,52 @@ export default function BossProfitRanking({
       }
 
       return {
-        name: boss.bossName,
-        killsPerHour: boss.killsPerHour,
+        name: dropTable.bossName,
+        killsPerHour: dropTable.killsPerHour,
         gpPerKill: Math.round(totalEvPerKill),
-        gpPerHour: Math.round(totalEvPerKill * boss.killsPerHour),
-        uniqueCount: boss.drops.filter((d) => d.category === "unique").length,
+        gpPerHour: Math.round(totalEvPerKill * dropTable.killsPerHour),
+        uniqueCount: dropTable.drops.filter((d) => d.category === "unique").length,
         topUnique,
         topUniqueValue,
-      };
-    }).filter((b) => b.gpPerKill > 0);
+        hasDropData: true,
+      } satisfies BossProfit;
+    });
   }, [prices]);
 
   const sorted = useMemo(() => {
     return [...rankings].sort((a, b) => {
+      // Always surface rows with drop data above rows without
+      if (a.hasDropData !== b.hasDropData) {
+        return a.hasDropData ? -1 : 1;
+      }
+
       const aVal = a[sortKey];
       const bVal = b[sortKey];
+
       if (typeof aVal === "string" && typeof bVal === "string") {
         return sortAsc ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
       }
-      return sortAsc ? (aVal as number) - (bVal as number) : (bVal as number) - (aVal as number);
+
+      const aNum = typeof aVal === "number" ? aVal : null;
+      const bNum = typeof bVal === "number" ? bVal : null;
+
+      if (aNum == null && bNum == null) return a.name.localeCompare(b.name);
+      if (aNum == null) return 1;
+      if (bNum == null) return -1;
+
+      return sortAsc ? aNum - bNum : bNum - aNum;
     });
   }, [rankings, sortKey, sortAsc]);
 
   function handleSort(key: SortKey) {
     if (sortKey === key) setSortAsc(!sortAsc);
-    else { setSortKey(key); setSortAsc(false); }
+    else {
+      setSortKey(key);
+      setSortAsc(false);
+    }
   }
 
+  const withDropData = rankings.filter((b) => b.hasDropData).length;
   const totalBosses = BOSSES.length;
 
   return (
@@ -91,13 +138,13 @@ export default function BossProfitRanking({
           Boss Profit Ranking
         </h3>
         <p className="text-xs text-text-secondary mt-0.5">
-          {sorted.length} of {totalBosses} bosses with curated drop data — remaining bosses can be viewed in Boss Guides.
+          All {totalBosses} tracked bosses — {withDropData} with curated drop data ranked by GP/hr. Bosses without drop data sit at the bottom; open the wiki or Boss Guides for their loot details.
         </p>
       </div>
 
       <div className="rounded-xl border border-border/60 overflow-hidden">
         <table className="w-full text-left">
-          <thead>
+          <thead className="sticky-thead">
             <tr className="border-b border-border text-text-secondary text-xs">
               <th className="px-2 py-2 w-8 text-center">#</th>
               <th className="px-2 py-2 w-6" />
@@ -132,7 +179,9 @@ export default function BossProfitRanking({
             {sorted.map((boss, i) => (
               <tr
                 key={boss.name}
-                className="border-b border-border/20 even:bg-bg-primary/25 hover:bg-bg-secondary/30 cursor-pointer transition-colors"
+                className={`border-b border-border/20 even:bg-bg-primary/25 hover:bg-bg-secondary/30 cursor-pointer transition-colors ${
+                  boss.hasDropData ? "" : "opacity-60"
+                }`}
                 onClick={() => navigate("bosses", { boss: boss.name, tab: "drops" })}
               >
                 <td className="px-2 py-2 text-center text-xs tabular-nums text-text-secondary">
@@ -148,18 +197,22 @@ export default function BossProfitRanking({
                 </td>
                 <td className="px-2 py-2 text-sm font-medium">{boss.name}</td>
                 <td className="px-2 py-2 text-right text-sm tabular-nums text-success font-medium">
-                  {formatGp(boss.gpPerHour)}
+                  {boss.gpPerHour != null ? formatGp(boss.gpPerHour) : "\u2014"}
                 </td>
                 <td className="px-2 py-2 text-right text-xs tabular-nums text-text-secondary">
-                  {formatGp(boss.gpPerKill)}
+                  {boss.gpPerKill != null ? formatGp(boss.gpPerKill) : "\u2014"}
                 </td>
                 <td className="px-2 py-2 text-right text-xs tabular-nums text-text-secondary">
-                  {boss.killsPerHour}
+                  {boss.killsPerHour ?? "\u2014"}
                 </td>
                 <td className="px-2 py-2 text-right text-xs text-text-secondary truncate max-w-[120px]">
                   {boss.topUnique ? (
-                    <ItemTooltip itemName={boss.topUnique}><span className="cursor-default">{boss.topUnique}</span></ItemTooltip>
-                  ) : "\u2014"}
+                    <ItemTooltip itemName={boss.topUnique}>
+                      <span className="cursor-default">{boss.topUnique}</span>
+                    </ItemTooltip>
+                  ) : (
+                    "\u2014"
+                  )}
                   {boss.topUniqueValue != null && (
                     <span className="ml-1 text-accent">{formatGp(boss.topUniqueValue)}</span>
                   )}
@@ -170,7 +223,7 @@ export default function BossProfitRanking({
         </table>
       </div>
 
-      {sorted.length === 0 && (
+      {!pricesLoaded && (
         <div className="text-center py-8 text-text-secondary">
           <Skeleton className="h-4 w-32 mx-auto mb-2" />
           <p className="text-sm">Loading price data...</p>

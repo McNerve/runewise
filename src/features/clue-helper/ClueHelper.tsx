@@ -6,63 +6,10 @@ import EmptyState from "../../components/EmptyState";
 import { NAV_ICONS } from "../../lib/sprites";
 import { useNavigation } from "../../lib/NavigationContext";
 import { TableSkeleton } from "../../components/Skeleton";
+import { TIER_COLORS } from "../../components/primitives";
 
 const TYPES: (ClueType | "All")[] = ["All", "Anagram", "Cipher", "Coordinate", "Cryptic", "Map", "Emote"];
 const TIERS: (ClueTier | "All")[] = ["All", "Beginner", "Easy", "Medium", "Hard", "Elite", "Master"];
-
-const TIER_TEXT_COLORS: Record<ClueTier, string> = {
-  Beginner: "text-text-secondary",
-  Easy: "text-success",
-  Medium: "text-accent",
-  Hard: "text-warning",
-  Elite: "text-purple-400",
-  Master: "text-danger",
-};
-
-const TIER_BORDER_COLORS: Record<ClueTier, string> = {
-  Beginner: "border-text-secondary/30",
-  Easy: "border-success/30",
-  Medium: "border-accent/30",
-  Hard: "border-warning/30",
-  Elite: "border-purple-400/30",
-  Master: "border-danger/30",
-};
-
-const TIER_BG: Record<ClueTier, string> = {
-  Beginner: "bg-text-secondary/5",
-  Easy: "bg-success/5",
-  Medium: "bg-accent/5",
-  Hard: "bg-warning/5",
-  Elite: "bg-purple-500/5",
-  Master: "bg-danger/5",
-};
-
-const TIER_BADGE: Record<ClueTier, string> = {
-  Beginner: "bg-text-secondary/15 text-text-secondary",
-  Easy: "bg-success/15 text-success",
-  Medium: "bg-accent/15 text-accent",
-  Hard: "bg-warning/15 text-warning",
-  Elite: "bg-purple-500/15 text-purple-400",
-  Master: "bg-danger/15 text-danger",
-};
-
-const TIER_ACTIVE_BORDER: Record<ClueTier, string> = {
-  Beginner: "border-text-secondary/50",
-  Easy: "border-success/50",
-  Medium: "border-accent/50",
-  Hard: "border-warning/50",
-  Elite: "border-purple-400/50",
-  Master: "border-danger/50",
-};
-
-const TIER_ACTIVE_BG: Record<ClueTier, string> = {
-  Beginner: "bg-text-secondary/10",
-  Easy: "bg-success/10",
-  Medium: "bg-accent/10",
-  Hard: "bg-warning/10",
-  Elite: "bg-purple-500/10",
-  Master: "bg-danger/10",
-};
 
 function highlight(text: string, query: string): React.ReactNode {
   if (!query || query.length < 2) return text;
@@ -157,7 +104,7 @@ export default function ClueHelper() {
             return (
               <div key={tier} className="rounded-xl border border-border/60 bg-bg-primary/45 px-3 py-2 text-center">
                 <div className="text-[10px] uppercase tracking-wider text-text-secondary/50">{tier}</div>
-                <div className={`text-lg font-semibold ${TIER_TEXT_COLORS[tier]}`}>{total}</div>
+                <div className={`text-lg font-semibold ${TIER_COLORS[tier].text}`}>{total}</div>
               </div>
             );
           })}
@@ -170,7 +117,7 @@ export default function ClueHelper() {
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Paste your clue text here to find the solution..."
-        className="w-full bg-bg-secondary border border-border rounded-xl px-4 py-3 text-sm mb-5 placeholder:text-text-secondary/50"
+        className="w-full bg-bg-tertiary border border-border rounded-xl px-4 py-3 text-sm mb-5 placeholder:text-text-secondary/50"
       />
 
       {/* Tier Filter Tabs */}
@@ -186,7 +133,7 @@ export default function ClueHelper() {
               className={`relative rounded-xl border px-3.5 py-2 text-xs font-semibold transition ${
                 active
                   ? tierColor
-                    ? `${TIER_ACTIVE_BORDER[tierColor]} ${TIER_ACTIVE_BG[tierColor]} ${TIER_TEXT_COLORS[tierColor]}`
+                    ? `${TIER_COLORS[tierColor].activeBorder} ${TIER_COLORS[tierColor].activeBg} ${TIER_COLORS[tierColor].text}`
                     : "border-accent/50 bg-accent/10 text-accent"
                   : "border-border bg-bg-primary/50 text-text-secondary hover:border-border hover:bg-bg-primary/70"
               }`}
@@ -236,9 +183,9 @@ export default function ClueHelper() {
           if (tierClues.length === 0) return null;
           return (
             <div key={tier} className="rounded-xl border border-border/60 overflow-hidden">
-              <div className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold uppercase tracking-wider ${TIER_TEXT_COLORS[tier]} ${TIER_BG[tier]} border-b ${TIER_BORDER_COLORS[tier]}`}>
+              <div className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold uppercase tracking-wider ${TIER_COLORS[tier].text} ${TIER_COLORS[tier].bg} border-b ${TIER_COLORS[tier].border}`}>
                 <span>{tier}</span>
-                <span className={`px-1.5 py-0.5 rounded ${TIER_BADGE[tier]}`}>{tierClues.length}</span>
+                <span className={`px-1.5 py-0.5 rounded ${TIER_COLORS[tier].badge}`}>{tierClues.length}</span>
               </div>
               <div className="divide-y divide-border/30">
                 {tierClues.map((clue) => {
@@ -296,7 +243,7 @@ export default function ClueHelper() {
                           >
                             {copiedKey === key ? "\u2713 Copied" : "Copy"}
                           </button>
-                          <span className={`rounded-lg border px-2 py-1 text-[10px] font-medium ${TIER_BADGE[tier]} border-current/20`}>
+                          <span className={`rounded-lg border px-2 py-1 text-[10px] font-medium ${TIER_COLORS[tier].badge} border-current/20`}>
                             {clue.type}
                           </span>
                         </div>

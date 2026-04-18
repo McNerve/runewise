@@ -40,17 +40,20 @@ const STAT_COLUMNS: { key: SortKey; label: string; short: string }[] = [
 ];
 
 function StatCell({ value }: { value: number }) {
+  if (value === 0) {
+    return (
+      <td className="px-2 py-1.5 text-right tabular-nums text-xs">
+        <span className="text-text-secondary/30">&mdash;</span>
+      </td>
+    );
+  }
   return (
     <td
       className={`px-2 py-1.5 text-right tabular-nums text-xs ${
-        value > 0
-          ? "text-success"
-          : value < 0
-            ? "text-danger"
-            : "text-text-secondary/40"
+        value > 0 ? "text-success" : "text-danger"
       }`}
     >
-      {value > 0 ? `+${value}` : value === 0 ? "0" : String(value)}
+      {value > 0 ? `+${value}` : String(value)}
     </td>
   );
 }
@@ -114,7 +117,7 @@ export default function GearCompare() {
             className={`px-2.5 py-1 rounded text-xs transition-colors ${
               selectedSlot === slot
                 ? "bg-accent/20 text-accent border border-accent/30"
-                : "bg-bg-secondary text-text-secondary border border-transparent hover:border-border"
+                : "bg-bg-tertiary text-text-secondary border border-transparent hover:border-border"
             }`}
           >
             {SLOT_LABELS[slot]}
@@ -140,7 +143,7 @@ export default function GearCompare() {
           </div>
           <div className="grid grid-cols-3 gap-3">
             {selected.map((item, i) => (
-              <div key={`${item.name}-${i}`} className="bg-bg-secondary rounded-lg p-3 relative">
+              <div key={`${item.name}-${i}`} className="bg-bg-tertiary rounded-lg p-3 relative">
                 <button
                   onClick={() => setSelected((prev) => prev.filter((_, j) => j !== i))}
                   className="absolute top-1.5 right-1.5 text-text-secondary/40 hover:text-text-primary text-xs"
@@ -198,7 +201,7 @@ export default function GearCompare() {
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-left">
-            <thead>
+            <thead className="sticky-thead">
               <tr className="border-b border-border">
                 <th scope="col" className="px-2 py-2 text-xs text-text-secondary font-normal w-8" />
                 <th

@@ -66,8 +66,8 @@ export default function FarmProfit() {
             onClick={() => setCategoryFilter("All")}
             className={`px-2 py-0.5 rounded text-xs ${
               categoryFilter === "All"
-                ? "bg-accent text-white"
-                : "bg-bg-secondary text-text-secondary"
+                ? "bg-accent text-on-accent"
+                : "bg-bg-tertiary text-text-secondary"
             }`}
           >
             All
@@ -78,8 +78,8 @@ export default function FarmProfit() {
               onClick={() => setCategoryFilter(cat)}
               className={`px-2 py-0.5 rounded text-xs ${
                 categoryFilter === cat
-                  ? "bg-accent text-white"
-                  : "bg-bg-secondary text-text-secondary"
+                  ? "bg-accent text-on-accent"
+                  : "bg-bg-tertiary text-text-secondary"
               }`}
             >
               {cat}
@@ -99,8 +99,8 @@ export default function FarmProfit() {
               onClick={() => setSortBy(s.id)}
               className={`px-2 py-0.5 rounded text-xs ${
                 sortBy === s.id
-                  ? "bg-accent text-white"
-                  : "bg-bg-secondary text-text-secondary"
+                  ? "bg-accent text-on-accent"
+                  : "bg-bg-tertiary text-text-secondary"
               }`}
             >
               {s.label}
@@ -109,7 +109,7 @@ export default function FarmProfit() {
         </div>
       </div>
 
-      <div className="bg-bg-secondary rounded-lg overflow-hidden">
+      <div className="bg-bg-tertiary rounded-lg overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border text-text-secondary text-xs">
@@ -125,7 +125,7 @@ export default function FarmProfit() {
             {crops.map((crop) => (
               <tr
                 key={crop.name}
-                className="border-b border-border/50 hover:bg-bg-tertiary transition-colors"
+                className="border-b border-border/50 hover:bg-bg-secondary transition-colors"
               >
                 <td className="px-4 py-1.5">
                   <div className="flex items-center gap-2">
