@@ -391,7 +391,11 @@ export default function Overview({ hiscores, rsn, lastFetched = null, onRefresh 
               {visibleBosses.map((boss) => (
                 <button
                   key={boss.name}
-                  onClick={() => navigate("bosses", { boss: boss.name })}
+                  onClick={() => {
+                    // Store KC in sessionStorage for Dry Calc prefill
+                    sessionStorage.setItem("runewise_pending_kc", JSON.stringify({ boss: boss.name, kc: boss.score }));
+                    navigate("bosses", { boss: boss.name });
+                  }}
                   className="bg-bg-secondary rounded px-2 py-2 hover:bg-bg-tertiary transition-colors flex items-center gap-2"
                 >
                   <div className="w-6 h-6 shrink-0 relative">

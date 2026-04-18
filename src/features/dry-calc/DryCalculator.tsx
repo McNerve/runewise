@@ -9,7 +9,20 @@ interface Props {
 }
 
 export default function DryCalculator({ hiscores }: Props) {
-  const [kills, setKills] = useState(0);
+  const [kills, setKills] = useState(() => {
+    // Consume pending KC from cross-nav (Overview → BossGuide → DryCalc)
+    try {
+      const raw = sessionStorage.getItem("runewise_pending_kc");
+      if (raw) {
+        sessionStorage.removeItem("runewise_pending_kc");
+        const parsed = JSON.parse(raw) as { kc: number };
+        return parsed.kc ?? 0;
+      }
+    } catch {
+      // ignore
+    }
+    return 0;
+  });
   const [rate, setRate] = useState(512);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [selectedDrop, setSelectedDrop] = useState<DropEntry | null>(null);
