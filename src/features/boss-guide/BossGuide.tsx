@@ -649,6 +649,21 @@ export default function BossGuide({ hiscores }: Props) {
                           📍 {selectedBoss.location}
                         </a>
                       ) : null}
+                      {guide?.recommendedApproach ? (
+                        <span className="rounded-full border border-border bg-bg-primary/60 px-3 py-1 text-text-secondary">
+                          Approach: {guide.recommendedApproach}
+                        </span>
+                      ) : null}
+                      {guide?.teamSize ? (
+                        <span className="rounded-full border border-border bg-bg-primary/60 px-3 py-1 text-text-secondary">
+                          Team: {guide.teamSize}
+                        </span>
+                      ) : null}
+                      {guide?.combatLevel && !selectedBoss.combatLevel ? (
+                        <span className="rounded-full border border-border bg-bg-primary/60 px-3 py-1 text-text-secondary">
+                          Combat {guide.combatLevel}
+                        </span>
+                      ) : null}
                     </div>
                     {guide?.summary ? (
                       <p className="max-w-3xl text-sm leading-6 text-text-secondary">
