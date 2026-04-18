@@ -137,7 +137,7 @@ export default function TrainingPlan({ hiscores }: Props) {
 
       {/* Skill grid */}
       <div className="section-kicker mb-3">Set target levels</div>
-      <div className="grid grid-cols-4 gap-2 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 mb-6">
         {SKILLS.map((skill) => {
           const current = currentLevels[skill] ?? 1;
           const target = targets[skill] ?? current;
@@ -146,7 +146,7 @@ export default function TrainingPlan({ hiscores }: Props) {
           return (
             <div
               key={skill}
-              className={`flex items-center gap-2 px-2.5 py-2 rounded transition-colors border ${
+              className={`flex items-center gap-1.5 px-2.5 py-2 rounded transition-colors border ${
                 hasGap
                   ? "bg-accent/8 border-accent/20"
                   : "bg-bg-secondary/50 border-transparent"
@@ -158,18 +158,18 @@ export default function TrainingPlan({ hiscores }: Props) {
                 className="w-4 h-4 shrink-0"
                 onError={(e) => { e.currentTarget.style.display = "none"; }}
               />
-              <span className={`text-xs truncate flex-1 ${hasGap ? "text-text-primary" : "text-text-secondary"}`}>{skill}</span>
-              <span className="text-xs text-text-secondary/50 tabular-nums w-5 text-right">
+              <span className={`text-xs flex-1 min-w-0 ${hasGap ? "text-text-primary" : "text-text-secondary"}`}>{skill}</span>
+              <span className="text-xs text-text-secondary/50 tabular-nums shrink-0">
                 {current}
               </span>
-              <span className="text-text-secondary/30 text-xs">→</span>
+              <span className="text-text-secondary/30 text-xs shrink-0">&rarr;</span>
               <input
                 type="number"
                 min={current}
                 max={126}
                 value={target}
                 onChange={(e) => setTarget(skill, Math.min(126, Math.max(current, Number(e.target.value))))}
-                className={`w-10 bg-bg-tertiary border rounded px-1 py-0.5 text-xs text-center tabular-nums ${
+                className={`w-10 shrink-0 bg-bg-tertiary border rounded px-1 py-0.5 text-xs text-center tabular-nums ${
                   hasGap ? "border-accent/30" : "border-border"
                 }`}
               />
