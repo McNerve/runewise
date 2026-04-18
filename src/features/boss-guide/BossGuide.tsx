@@ -748,27 +748,53 @@ export default function BossGuide({ hiscores }: Props) {
                       key={section.id}
                       type="button"
                       onClick={() => scrollToGuideSection(section.id)}
-                      className="group flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-text-secondary transition hover:bg-bg-primary/60 hover:text-text-primary"
+                      className={`group flex w-full items-center gap-2 rounded-lg text-left text-text-secondary transition hover:bg-bg-primary/60 hover:text-text-primary ${
+                        section.level === 3
+                          ? "pl-6 pr-2.5 py-1.5"
+                          : "px-2.5 py-2"
+                      }`}
                     >
-                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-bg-tertiary/60 text-[10px] font-medium text-text-secondary/60 group-hover:text-text-primary">
-                        {index + 1}
+                      {section.level === 2 ? (
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-bg-tertiary/60 text-[10px] font-medium text-text-secondary/60 group-hover:text-text-primary">
+                          {index + 1}
+                        </span>
+                      ) : (
+                        <span className="w-1 h-1 shrink-0 rounded-full bg-text-secondary/30 group-hover:bg-accent/50" />
+                      )}
+                      <span
+                        className={`truncate ${
+                          section.level === 3
+                            ? "text-xs text-text-secondary/70"
+                            : "text-sm"
+                        }`}
+                      >
+                        {section.title}
                       </span>
-                      <span className="truncate">{section.title}</span>
                     </button>
                   ))}
                 </div>
               </aside>
 
-              <div ref={guideContentRef} className="space-y-4" onClick={handleGuideClick}>
+              <div ref={guideContentRef} className="space-y-3" onClick={handleGuideClick}>
                 {guide.sections.map((section) => (
                   <section
                     key={section.id}
                     id={section.id}
-                    className="rounded-xl border border-border/40 bg-bg-primary/25 p-5"
+                    className={`rounded-xl border bg-bg-primary/25 ${
+                      section.level === 3
+                        ? "border-border/25 ml-4 p-4"
+                        : "border-border/40 p-5"
+                    }`}
                   >
-                    <h4 className="mb-4 text-base font-semibold tracking-tight text-text-primary">
-                      {section.title}
-                    </h4>
+                    {section.level === 3 ? (
+                      <h5 className="mb-3 text-sm font-semibold tracking-tight text-text-secondary">
+                        {section.title}
+                      </h5>
+                    ) : (
+                      <h4 className="mb-4 text-base font-semibold tracking-tight text-text-primary">
+                        {section.title}
+                      </h4>
+                    )}
                     <StructuredSection title={section.title} html={section.html} />
                     <div
                       className={`article-content text-sm leading-7 text-text-secondary ${guideSectionClassName(section.title)}`.trim()}
