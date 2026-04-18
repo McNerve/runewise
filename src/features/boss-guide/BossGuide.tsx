@@ -488,7 +488,7 @@ export default function BossGuide({ hiscores }: Props) {
                       fallback={boss.name[0]}
                     />
                     <div className="min-w-0">
-                      <div className="truncate text-sm font-medium text-text-primary">
+                      <div className="line-clamp-2 text-sm font-medium text-text-primary">
                         {boss.name}
                       </div>
                       <div className="mt-1 text-[11px] text-text-secondary">
