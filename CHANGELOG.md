@@ -103,6 +103,18 @@ Post-v1.6 sweep across all 40 views in 9 families. See `.claude/v16-audit.md`.
 
 - **Branded skeleton shimmer** — `Skeleton` component now renders a subtle gold-tinted diagonal shimmer via `.skeleton-shimmer` in `index.css`. Respects `prefers-reduced-motion`.
 - **Active-state text readability** — added `--color-on-accent` token (dark navy in dark mode, white in light mode) and swapped every `text-white` on gold backgrounds to `text-on-accent` across 30 files. Fixes the ~1.9:1 WCAG failure where white text sat on rune-gold pills and buttons.
+
+### Closeout wave
+
+- **World Map POI markers** — new `src/lib/data/world-map-pois.ts` with ~100 hand-placed POIs across 5 categories (farm patches, fairy rings, slayer masters, altars, teleport spots). `FilterPills` above the map cycle categories; markers pan/zoom with the map and click-to-open popup with name, info, wiki link. 114 markers total.
+- **World Map action clarified** — the ambiguous "Download" button is now "Open full wiki map ↗", linking directly to the canonical OSRS Wiki map page.
+- **OSRS News inline article modal** — clicking a news card opens a centered modal (~720px, 90vh scrollable) instead of swapping the panel. Escape and backdrop click close; body scroll locks while open; fallback message + "Open original" link if fetch fails.
+- **Home tool grid personalization** — new `src/lib/toolUsage.ts` tracks the last 30 days of navigation hits. Right-click any tool tile to pin/unpin (persists to `runewise_pinned_tools`). Grid order is pinned → frequency → alphabetical, capped at 12. Pinned tiles show a gold pin glyph.
+- **Home "While Playing" split** into two sections: **Live now** (only renders when Farm Timers or Shooting Stars have real data, with pulse indicator) and **Quick access** (four curated always-on tiles: Slayer Helper, DPS Calc, Gear Compare, Boss Guides).
+- **Shop Helper real NPC icons** — new `npcIcon()` helper in `src/lib/sprites.ts` with an override table. `ShopIcon` cascades `npc → first-item → letter placeholder`. Detail view also picks up a 40px NPC portrait.
+- **DPS Calc combat stats verified** — `useDpsState` already loads Attack/Strength/Ranged/Magic together; `StatsPanel` conditionally renders per tab. Added `useDpsState.test.ts` with three regression tests locking in the behavior.
+- **Combat Tasks full 743 tasks** — `fetchAllCombatTasks()` in `src/lib/api/combatTasks.ts` now queries the live OSRS Wiki `combat_achievement` bucket successfully (earlier agents had false negatives). Per-tier counts are live: Easy 58 / Medium 82 / Hard 108 / Elite 179 / Master 180 / Grandmaster 136. Falls back to the curated subset only if the fetch actually errors.
+- **Light theme regression test** — `src/__tests__/light-theme.test.tsx` renders Home, Overview, Market, Settings under `.light-theme` and asserts design-token resolution. 5 new tests. Total suite now at 191/191 passing.
 - **Edge-case tests** added for `toWikiRecipe` (materials/output as objects) and `toWikiSpell` (Arceuus/Ancient/Lunar hard-gated to P2P regardless of wiki flag). Full suite at 179/179.
 
 ## [1.6.0] - 2026-04-17
