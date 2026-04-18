@@ -16,6 +16,9 @@ import {
   initWikiInteractive,
   handleLightboxClick,
 } from "../../lib/wiki/interactive";
+import { useGEData } from "../../hooks/useGEData";
+import { fetchVolumes } from "../../lib/api/ge";
+import { formatGp } from "../../lib/format";
 
 const COLLAPSED_SECTIONS = [
   "used in recommended equipment",
@@ -52,6 +55,12 @@ function sectionExtraClasses(title: string): string {
   return "";
 }
 
+interface GESnapshot {
+  price: number | null;
+  buyLimit: number | null;
+  dailyVolume: number | null;
+}
+
 export default function WikiLookup() {
   const { params, navigate } = useNavigation();
   const [query, setQuery] = useState(params.query ?? "");
@@ -65,6 +74,66 @@ export default function WikiLookup() {
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const contentRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
+  const [geSnapshot, setGeSnapshot] = useState<GESnapshot | null>(null);
+  const { mapping, prices, fetchIfNeeded } = useGEData();
+
+  // Fetch GE mapping on mount so it's ready for enrichment.
+  useEffect(() => { fetchIfNeeded(); }, [fetchIfNeeded]);
+
+  // GE enrichment: when an item page loads, look up live price/limit/volume.
+  useEffect(() => {
+    if (!document || document.pageType !== "item") {
+      setGeSnapshot(null);
+      return;
+    }
+
+    const title = document.title.toLowerCase();
+    const match = mapping.find((m) => m.name.toLowerCase() === title);
+    if (!match) {
+      setGeSnapshot(null);
+      return;
+    }
+
+    const priceEntry = prices[String(match.id)];
+    const price = priceEntry?.high ?? priceEntry?.low ?? null;
+
+    let cancelled = false;
+    fetchVolumes()
+      .then((vols) => {
+        if (cancelled) return;
+        setGeSnapshot({
+          price,
+          buyLimit: match.limit ?? null,
+          dailyVolume: vols[String(match.id)] ?? null,
+        });
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setGeSnapshot({ price, buyLimit: match.limit ?? null, dailyVolume: null });
+        }
+      });
+
+    return () => { cancelled = true; };
+  }, [document, mapping, prices]);
+
+  // Close dropdown on outside click or Escape key.
+  useEffect(() => {
+    function handleOutsideClick(e: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    }
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === "Escape") setDropdownOpen(false);
+    }
+    window.document.addEventListener("mousedown", handleOutsideClick);
+    window.document.addEventListener("keydown", handleEscape);
+    return () => {
+      window.document.removeEventListener("mousedown", handleOutsideClick);
+      window.document.removeEventListener("keydown", handleEscape);
+    };
+  }, []);
 
   const breadcrumbPages = useMemo(() => {
     const rawTrail = params.trail?.split("|").filter(Boolean) ?? [];
@@ -295,7 +364,8 @@ export default function WikiLookup() {
         </div>
 
         <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_280px]">
-          <form className="space-y-2" onSubmit={handleSubmit}>
+          <div ref={searchRef}>
+          <form className="relative" onSubmit={handleSubmit}>
             <input
               type="text"
               value={query}
@@ -313,7 +383,7 @@ export default function WikiLookup() {
               className="w-full rounded-xl border border-border bg-bg-primary px-4 py-3 text-sm outline-none transition focus:border-accent"
             />
             {showResultsPanel ? (
-              <div className="rounded-xl border border-border/60 bg-bg-primary/55">
+              <div className="absolute left-0 right-0 top-full z-20 mt-1 rounded-xl border border-border/60 bg-bg-primary shadow-lg">
                 {loadingResults ? (
                   <div className="space-y-2 px-4 py-3">
                     <Skeleton className="h-4 w-2/3" />
@@ -348,6 +418,7 @@ export default function WikiLookup() {
               </div>
             ) : null}
           </form>
+          </div>
 
           <div className="text-sm text-text-secondary">
             <div className="text-[10px] uppercase tracking-[0.18em] text-text-secondary/45">
@@ -437,7 +508,7 @@ export default function WikiLookup() {
                         <button
                           type="button"
                           onClick={() => openPage(page)}
-                          className="max-w-40 truncate transition hover:text-text-primary"
+                          className="max-w-40 truncate text-accent transition hover:underline cursor-pointer"
                           title={page}
                         >
                           {page}
@@ -576,6 +647,34 @@ export default function WikiLookup() {
                     Quick-reference facts pulled from the page infobox where available.
                   </div>
                 </div>
+
+                {geSnapshot ? (
+                  <div
+                    data-testid="snapshot-ge-price"
+                    className="rounded-xl border border-accent/20 bg-accent/5 px-3 py-3 space-y-1"
+                  >
+                    <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
+                      Grand Exchange
+                    </div>
+                    <div className={`text-lg font-semibold ${geSnapshot.price !== null && geSnapshot.price >= 1_000_000 ? "text-accent" : "text-text-primary"}`}>
+                      {geSnapshot.price !== null ? `${formatGp(geSnapshot.price)} coins` : "—"}
+                    </div>
+                    {(geSnapshot.buyLimit !== null || geSnapshot.dailyVolume !== null) ? (
+                      <div className="text-xs text-text-secondary">
+                        {geSnapshot.buyLimit !== null && (
+                          <span>Buy limit: {geSnapshot.buyLimit.toLocaleString()}</span>
+                        )}
+                        {geSnapshot.buyLimit !== null && geSnapshot.dailyVolume !== null && (
+                          <span className="mx-1">·</span>
+                        )}
+                        {geSnapshot.dailyVolume !== null && (
+                          <span>Daily vol: {geSnapshot.dailyVolume.toLocaleString()}</span>
+                        )}
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+
                 <div className="space-y-2">
                   {document.infoboxFields.length > 0 ? (
                     <>
@@ -591,9 +690,20 @@ export default function WikiLookup() {
                         </div>
                       ))}
                       {document.totalInfoboxFields > document.infoboxFields.length ? (
-                        <div className="px-3 py-1 text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
-                          +{document.totalInfoboxFields - document.infoboxFields.length} more fields on wiki
-                        </div>
+                        pageUrl ? (
+                          <a
+                            href={pageUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block px-3 py-1 text-[10px] uppercase tracking-[0.16em] text-accent hover:underline cursor-pointer"
+                          >
+                            +{document.totalInfoboxFields - document.infoboxFields.length} more fields on wiki
+                          </a>
+                        ) : (
+                          <div className="px-3 py-1 text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
+                            +{document.totalInfoboxFields - document.infoboxFields.length} more fields on wiki
+                          </div>
+                        )
                       ) : null}
                     </>
                   ) : (
