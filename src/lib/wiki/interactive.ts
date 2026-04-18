@@ -139,7 +139,59 @@ export function handleLightboxClick(e: React.MouseEvent | MouseEvent) {
   document.body.appendChild(overlay);
 }
 
-export function initWikiInteractive(container: HTMLElement) {
+/**
+ * Wire up in-page anchor links so they smooth-scroll to the right heading.
+ *
+ * Wiki HTML uses `href="#Section_Name"` links (spaces encoded as underscores).
+ * We scan all headings in the container, build a slug → element map, then
+ * intercept anchor clicks that match.  A page-name prefix prevents collisions
+ * when multiple pages are mounted simultaneously.
+ */
+export function initAnchorScroll(container: HTMLElement, pageSlug = "") {
+  // Build slug → heading map
+  const slugMap = new Map<string, HTMLElement>();
+  const counter = new Map<string, number>();
+
+  container
+    .querySelectorAll("h1, h2, h3, h4, h5, h6, [id]")
+    .forEach((el) => {
+      const rawId = el.id || el.getAttribute("id") || "";
+      if (!rawId) return;
+
+      // Normalise: lowercase, replace underscores/spaces with hyphens
+      const base = rawId.toLowerCase().replace(/[_ ]+/g, "-");
+      const prefixed = pageSlug ? `${pageSlug}-${base}` : base;
+
+      // Deduplicate collisions with a counter suffix
+      const count = (counter.get(prefixed) ?? 0) + 1;
+      counter.set(prefixed, count);
+      const slug = count === 1 ? prefixed : `${prefixed}-${count}`;
+
+      // Set the id on the element so native :target also works
+      el.id = slug;
+      slugMap.set(base, el as HTMLElement);
+      // Also store without page prefix for direct fragment links
+      slugMap.set(rawId.toLowerCase().replace(/[_ ]+/g, "-"), el as HTMLElement);
+    });
+
+  // Intercept anchor clicks
+  container.querySelectorAll("a[href^='#']").forEach((link) => {
+    const rawHref = link.getAttribute("href") ?? "";
+    if (!rawHref.startsWith("#")) return;
+
+    const fragment = rawHref.slice(1).toLowerCase().replace(/[_ ]+/g, "-");
+    const target = slugMap.get(fragment);
+    if (!target) return;
+
+    link.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
+}
+
+export function initWikiInteractive(container: HTMLElement, pageSlug = "") {
   initWikiTabbers(container);
   initTooltips(container);
+  initAnchorScroll(container, pageSlug);
 }
