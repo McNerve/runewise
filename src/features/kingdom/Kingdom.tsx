@@ -198,7 +198,7 @@ export default function Kingdom() {
               max={MAX_WORKERS}
               value={row.workers}
               onChange={(e) => setWorkers(i, Number(e.target.value))}
-              className="flex-1 accent-[var(--accent)]"
+              className="flex-1"
             />
             <input
               type="number"
