@@ -44,6 +44,31 @@ Post-v1.6 sweep across all 40 views in 9 families. See `.claude/v16-audit.md`.
 
 - Added TempleOSRS and Star Miners to the Data Sources list.
 
+### Visual foundation
+
+- **Accent shift to rune/magic gold** (`#d4a574`). Replaces Tailwind blue-500 as the primary accent across nav, focus rings, active tabs, stat emphasis. Blue moves to `--color-info` for links and utility states; success/danger/warning unchanged.
+- **Feature accent system collapsed** from ~38 distinct hues in `src/lib/featureAccent.ts` to one accent family with three strengths (STRONG / MID / SOFT). Headline destinations use STRONG, mid-tier tools MID, meta/settings SOFT. The Clue Helper tier palette remains the one intentional exception.
+- **Surface hierarchy swap**. Cards/panels default to `bg-tertiary`. `bg-secondary` is reserved for elevated surfaces (active nav, tooltips, hover states). Makes panels feel grounded instead of ghostly.
+- **Type scale** added to Tailwind v4 `@theme` in `src/index.css`: `text-kicker/label/ui/base/h4/h3/hero`. Migrated headline sizing on Home, Profile, DPS Calc, Star Helper, Boss Guides, Market, Money Making.
+
+### OSRS-inspired iconography
+
+- Entire sidebar redesigned with custom OSRS-authentic SVG silhouettes replacing generic 2-stroke line icons. 30+ distinct glyphs including Lumbridge keep (Home), Slayer helmet (Slayer Helper), crossed scimitars (DPS Calc), skill cape (Skill Calc), rune tablet (Spells), clue scroll (Clue Helper), shooting star (Stars), GE booth (Market), farming seedlings (Timers), boss skull (Boss Guides), raid pillars (Raids), checkmark list (Progress). Every glyph is `currentColor`-based so the feature accent still tints them.
+- Fixed swapped `NAV_ICONS` entries in `src/lib/sprites.ts`: Slayer and Bosses were pointing to each other's icons.
+
+### Data coverage
+
+- **Combat Tasks** now attempts to load the full 637-task set from the OSRS Wiki `combat_achievement` bucket via `fetchAllCombatTasks()` in `src/lib/api/combatTasks.ts` (24h cache, IndexedDB persistence). Wiki data is merged with the hardcoded subset so boss-workspace links are preserved. Falls back gracefully to the curated sample with a visible "wiki unavailable" warning when the query fails or returns empty.
+- **Boss Rankings** now shows all 69 tracked bosses instead of only the 31 with curated drop data. Bosses without drop-table data render with em-dash placeholders and are pinned below those with GP/hr data.
+- **Alch Profits 200-item hard cap removed** — now paginated at 50/page with prev/next controls and "Page N of M" indicator. Filter/sort changes reset to page 1.
+
+### Polish
+
+- **Tab warm-switch bug** fixed across Money Making, Profile, Progress, Loot, Market, Skill Calc. Previously the `params.tab` was only read on mount — hash-based redirects like `#profit-hub` → `#money-making?tab=rankings` wouldn't switch the active tab if the component was already rendered. Added `useEffect` sync hooks everywhere the pattern occurred.
+- **Tier palette propagation** — canonical OSRS palette (Easy green / Medium yellow / Hard red / Elite purple / Master orange / Grandmaster amber) now applies consistently in Combat Tasks, Quest Tracker, Diary Tracker. Clue Helper already had it; the rest caught up.
+- **Empty-state warmth**: Home now always renders the "Recent" section with a hint when empty. Hiscores Lookup shows recent player chips. Wiki shows recent article chips. Recipe Calculator surfaces 10 popular recipes (Shark, Saradomin brew, Super combat potion, Rune platebody, Ranarr, Magic logs, Yew longbow, Dragonstone, Prayer potion, Anglerfish) before search.
+- **Collection Log drill-in** — category clicks now scroll the items panel into view on narrow viewports.
+
 ## [1.6.0] - 2026-04-17
 
 ### Pet Calculator — full redesign
