@@ -54,6 +54,7 @@ export default function DryCalculator({ hiscores }: Props) {
               </div>
               <button
                 onClick={() => { setSelectedDrop(null); setRate(512); setKills(0); setKcAutoFilled(false); }}
+                aria-label="Clear selected drop"
                 className="text-xs text-text-secondary/50 hover:text-text-primary transition-colors cursor-pointer"
               >
                 ×

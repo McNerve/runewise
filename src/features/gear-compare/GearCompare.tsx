@@ -196,6 +196,7 @@ export default function GearCompare() {
               <div key={`${item.name}-${i}`} className="bg-bg-tertiary rounded-lg p-3 relative">
                 <button
                   onClick={() => setSelected((prev) => prev.filter((_, j) => j !== i))}
+                  aria-label={`Remove ${item.name} from comparison`}
                   className="absolute top-1.5 right-1.5 text-text-secondary/40 hover:text-text-primary text-xs"
                 >
                   ✕

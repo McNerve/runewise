@@ -421,6 +421,7 @@ export default function ShootingStars() {
                     <h3 className="text-sm font-semibold">{selectedStar.calledLocation}</h3>
                     <button
                       onClick={() => { userDismissedRef.current = true; setSelectedStar(null); }}
+                      aria-label="Dismiss star detail"
                       className="text-text-secondary hover:text-text-primary text-sm"
                     >
                       ✕
