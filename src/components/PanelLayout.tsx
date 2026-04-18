@@ -106,7 +106,7 @@ export default function PanelLayout({ renderView, currentView }: PanelLayoutProp
                 >
                   {["overview", "skill-calc", "combat-calc", "dry-calc", "ge", "item-db",
                     "xp-table", "drops", "tracker", "bosses", "quests", "diaries", "slayer",
-                    "news", "price-charts", "alch-calc", "dps-calc", "watchlist", "boss-loot",
+                    "news", "alch-calc", "dps-calc", "watchlist", "boss-loot",
                     "timers", "clue-helper", "combat-tasks", "money-making", "pet-calc", "stars",
                   ].map((v) => (
                     <option key={v} value={v}>{v.replace(/-/g, " ")}</option>
