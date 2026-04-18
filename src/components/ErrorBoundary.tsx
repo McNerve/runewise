@@ -39,8 +39,8 @@ export default class ErrorBoundary extends Component<
             RuneWise hit an unexpected problem
           </h2>
           <p className="mt-3 text-sm leading-6 text-text-secondary">
-            This view crashed while rendering. Your saved data is still intact, and a
-            reload should get you moving again while we keep hardening V5.
+            This view crashed while rendering. Your saved data is still intact —
+            reload should get you moving again.
           </p>
           <button
             type="button"
