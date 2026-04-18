@@ -31,7 +31,7 @@ import {
 } from "../../lib/data/boss-drops";
 import { openExternal } from "../../lib/openExternal";
 import { formatGp } from "../../lib/format";
-import SourceAttribution from "../../components/SourceAttribution";
+import FreshnessStrip from "../../components/FreshnessStrip";
 import { useNavigation } from "../../lib/NavigationContext";
 import WikiImage from "../../components/WikiImage";
 import StructuredSection from "./StructuredSection";
@@ -180,6 +180,7 @@ export default function BossGuide({ hiscores }: Props) {
   const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
   const [itemMap, setItemMap] = useState<Map<string, number>>(new Map());
   const [iconMap, setIconMap] = useState<Map<string, string>>(new Map());
+  const [_fetchKey, setFetchKey] = useState(0);
   const activeRequest = useRef(0);
   const contentRef = useRef<HTMLDivElement>(null);
   const guideContentRef = useRef<HTMLDivElement>(null);
@@ -568,9 +569,12 @@ export default function BossGuide({ hiscores }: Props) {
                         {guide.summary}
                       </p>
                     ) : null}
-                    <SourceAttribution
-                      source="OSRS Wiki"
-                      fetchedAt={guide?.fetchedAt ?? null}
+                    <FreshnessStrip
+                      updatedAt={guide?.fetchedAt ? new Date(guide.fetchedAt) : null}
+                      onRefresh={() => {
+                        if (selectedBoss) void selectBoss(selectedBoss);
+                        setFetchKey((k) => k + 1);
+                      }}
                       cacheLabel="1 hour"
                     />
                   </div>
