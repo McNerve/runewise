@@ -3,45 +3,49 @@ import {
   COMBAT_TASKS,
   COMBAT_TIERS,
   COMBAT_TIER_COUNTS,
-  type CombatTask,
   type CombatTier,
 } from "../../lib/data/combat-achievements";
-import { fetchAllCombatTasks, type WikiCombatTask } from "../../lib/api/combatTasks";
+import {
+  fetchAllCombatTasks,
+  tierCounts as computeTierCounts,
+  type WikiCombatTask,
+} from "../../lib/api/combatTasks";
 import { useNavigation } from "../../lib/NavigationContext";
 import { findBossByName } from "../../lib/data/bosses";
 import EmptyState from "../../components/EmptyState";
 import { loadJSON, saveJSON } from "../../lib/localStorage";
-import { TIER_COLORS, type Tier } from "../../components/primitives";
+
+const TIER_COLORS: Record<CombatTier, { tab: string; badge: string }> = {
+  Easy: {
+    tab: "bg-success/20 text-success",
+    badge: "bg-success/15 text-success",
+  },
+  Medium: {
+    tab: "bg-blue-500/20 text-blue-400",
+    badge: "bg-blue-500/15 text-blue-400",
+  },
+  Hard: {
+    tab: "bg-danger/20 text-danger",
+    badge: "bg-danger/15 text-danger",
+  },
+  Elite: {
+    tab: "bg-purple-500/20 text-purple-400",
+    badge: "bg-purple-500/15 text-purple-400",
+  },
+  Master: {
+    tab: "bg-orange-500/20 text-orange-400",
+    badge: "bg-orange-500/15 text-orange-400",
+  },
+  Grandmaster: {
+    tab: "bg-yellow-500/20 text-yellow-300",
+    badge: "bg-yellow-500/15 text-yellow-300",
+  },
+};
 
 const TIER_INACTIVE =
-  "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary";
+  "bg-bg-secondary text-text-secondary hover:bg-bg-tertiary";
 
 const COMPLETED_KEY = "runewise_completed_combat_tasks";
-
-/**
- * Merge wiki data with hardcoded tasks: wiki covers all 637 tasks, hardcoded
- * entries hold boss-workspace link targets. We key by case-insensitive name.
- */
-function mergeTasks(
-  wiki: WikiCombatTask[],
-  hardcoded: CombatTask[]
-): CombatTask[] {
-  const hardcodedByName = new Map<string, CombatTask>();
-  for (const task of hardcoded) {
-    hardcodedByName.set(task.name.toLowerCase(), task);
-  }
-
-  return wiki.map((w) => {
-    const hc = hardcodedByName.get(w.name.toLowerCase());
-    // Prefer hardcoded boss mapping (which aligns with BOSSES registry) when available
-    return {
-      name: w.name,
-      tier: w.tier,
-      boss: hc?.boss ?? w.boss,
-      description: w.description || hc?.description || "",
-    };
-  });
-}
 
 export default function CombatTasks() {
   const { params, navigate } = useNavigation();
@@ -51,26 +55,17 @@ export default function CombatTasks() {
     () => new Set(loadJSON<string[]>(COMPLETED_KEY, []))
   );
   const [hideCompleted, setHideCompleted] = useState(false);
-  const [wikiTasks, setWikiTasks] = useState<CombatTask[] | null>(null);
-  const [wikiLoading, setWikiLoading] = useState(true);
+  const [wikiTasks, setWikiTasks] = useState<WikiCombatTask[] | null>(null);
   const [wikiFailed, setWikiFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     fetchAllCombatTasks()
       .then((tasks) => {
-        if (cancelled) return;
-        if (tasks.length === 0) {
-          setWikiFailed(true);
-        } else {
-          setWikiTasks(mergeTasks(tasks, COMBAT_TASKS));
-        }
-        setWikiLoading(false);
+        if (!cancelled) setWikiTasks(tasks);
       })
       .catch(() => {
-        if (cancelled) return;
-        setWikiFailed(true);
-        setWikiLoading(false);
+        if (!cancelled) setWikiFailed(true);
       });
     return () => {
       cancelled = true;
@@ -87,25 +82,15 @@ export default function CombatTasks() {
     });
   }
 
-  const activeTasks: CombatTask[] = wikiTasks ?? COMBAT_TASKS;
-  const usingWiki = wikiTasks !== null;
-
-  const tierCountsActual = useMemo(() => {
-    const counts: Record<CombatTier, number> = {
-      Easy: 0,
-      Medium: 0,
-      Hard: 0,
-      Elite: 0,
-      Master: 0,
-      Grandmaster: 0,
-    };
-    for (const t of activeTasks) counts[t.tier]++;
-    return counts;
-  }, [activeTasks]);
-
-  const totalTasks = usingWiki
-    ? activeTasks.length
-    : Object.values(COMBAT_TIER_COUNTS).reduce((sum, n) => sum + n, 0);
+  const activeTasks = wikiTasks ?? COMBAT_TASKS.map((t) => ({ ...t, type: "" }));
+  const liveTierCounts = useMemo(
+    () => (wikiTasks ? computeTierCounts(wikiTasks) : COMBAT_TIER_COUNTS),
+    [wikiTasks]
+  );
+  const totalTasks = useMemo(
+    () => Object.values(liveTierCounts).reduce((sum, n) => sum + n, 0),
+    [liveTierCounts]
+  );
 
   const tierTasks = useMemo(() => {
     let tasks = activeTasks.filter((t) => t.tier === selectedTier);
@@ -139,10 +124,6 @@ export default function CombatTasks() {
     return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
   }, [tierTasks]);
 
-  const tierTotalForSelected = usingWiki
-    ? tierCountsActual[selectedTier]
-    : COMBAT_TIER_COUNTS[selectedTier];
-
   return (
     <div className="max-w-4xl">
       <div className="mb-4">
@@ -155,37 +136,31 @@ export default function CombatTasks() {
           official API.
         </p>
         <p className="mt-2 text-xs text-text-secondary">
-          {wikiLoading
-            ? "Loading full task list from the OSRS Wiki…"
-            : usingWiki
-              ? `${totalTasks} tasks loaded from the OSRS Wiki across 6 tiers.`
-              : `Showing ${totalTasks} curated tasks — wiki unavailable.`}
+          {wikiTasks
+            ? `${totalTasks} tasks loaded from the OSRS Wiki.`
+            : wikiFailed
+              ? `Showing ${totalTasks} curated tasks — wiki unavailable.`
+              : `Loading tasks from the OSRS Wiki…`}
         </p>
-        {wikiFailed && !usingWiki && (
-          <p className="mt-1 text-xs text-warning">
-            Could not reach the OSRS Wiki. Falling back to the curated sample.
-          </p>
-        )}
       </div>
 
       {/* Tier tabs */}
       <div className="flex gap-1.5 mb-4 flex-wrap">
         {COMBAT_TIERS.map((tier) => {
           const isActive = selectedTier === tier;
-          const colors = TIER_COLORS[tier as Tier];
-          const count = usingWiki
-            ? tierCountsActual[tier]
-            : COMBAT_TIER_COUNTS[tier];
+          const colors = TIER_COLORS[tier];
           return (
             <button
               key={tier}
               onClick={() => setSelectedTier(tier)}
               className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
-                isActive ? colors.badge : TIER_INACTIVE
+                isActive ? colors.tab : TIER_INACTIVE
               }`}
             >
               {tier}
-              <span className="ml-1.5 opacity-60">{count}</span>
+              <span className="ml-1.5 opacity-60">
+                {liveTierCounts[tier]}
+              </span>
             </button>
           );
         })}
@@ -198,7 +173,7 @@ export default function CombatTasks() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search tasks, bosses..."
-          className="flex-1 bg-bg-tertiary border border-border rounded px-3 py-1.5 text-sm"
+          className="flex-1 bg-bg-secondary border border-border rounded px-3 py-1.5 text-sm"
         />
         <label className="flex items-center gap-1.5 text-xs text-text-secondary cursor-pointer shrink-0">
           <input
@@ -214,12 +189,15 @@ export default function CombatTasks() {
       {/* Task count for current tier */}
       <div className="section-kicker mb-3 flex items-center gap-2">
         <span>
-          Showing {tierTasks.length} of {tierTotalForSelected}{" "}
+          Showing {tierTasks.length} of {liveTierCounts[selectedTier]}{" "}
           {selectedTier} tasks
+          {!wikiTasks && tierTasks.length < liveTierCounts[selectedTier] && !search && !hideCompleted && (
+            <span className="opacity-50"> (representative sample)</span>
+          )}
         </span>
         {tierCompletedCount > 0 && (
           <span className="text-success opacity-70">
-            · {tierCompletedCount}/{tierTotalForSelected} completed
+            · {tierCompletedCount}/{liveTierCounts[selectedTier]} completed
           </span>
         )}
       </div>
@@ -230,7 +208,7 @@ export default function CombatTasks() {
           <div key={boss}>
             <div className="mb-2 flex flex-wrap items-center gap-2">
               <span
-                className={`text-[10px] px-1.5 py-0.5 rounded ${TIER_COLORS[selectedTier as Tier].badge}`}
+                className={`text-[10px] px-1.5 py-0.5 rounded ${TIER_COLORS[selectedTier].badge}`}
               >
                 {boss}
               </span>
@@ -261,7 +239,7 @@ export default function CombatTasks() {
               {tasks.map((task) => (
                 <div
                   key={task.name}
-                  className={`bg-bg-tertiary rounded-lg px-4 py-2.5 hover:bg-bg-secondary transition-colors ${
+                  className={`bg-bg-secondary rounded-lg px-4 py-2.5 hover:bg-bg-tertiary transition-colors ${
                     completedTasks.has(task.name) ? "opacity-60" : ""
                   }`}
                 >
@@ -274,15 +252,13 @@ export default function CombatTasks() {
                           : "border-border hover:border-accent"
                       }`}
                     >
-                      {completedTasks.has(task.name) && "\u2713"}
+                      {completedTasks.has(task.name) && "✓"}
                     </button>
                     <div className="flex-1">
                       <span className="text-sm font-medium">{task.name}</span>
-                      {task.description && (
-                        <p className="text-xs text-text-secondary mt-0.5">
-                          {task.description}
-                        </p>
-                      )}
+                      <p className="text-xs text-text-secondary mt-0.5">
+                        {task.description}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -292,7 +268,7 @@ export default function CombatTasks() {
         ))}
       </div>
 
-      {groupedByBoss.length === 0 && !wikiLoading && (
+      {groupedByBoss.length === 0 && (
         <EmptyState
           title="No tasks found"
           description={search ? `No tasks match "${search}"` : `No ${selectedTier} tasks available`}

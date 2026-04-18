@@ -1,115 +1,125 @@
 import { bucketQueryAll } from "./bucket";
 import { getCached, setCache } from "./cache";
-import type { CombatTier } from "../data/combat-achievements";
+import {
+  COMBAT_TASKS,
+  type CombatTask,
+  type CombatTier,
+} from "../data/combat-achievements";
 
 const CACHE_KEY = "wiki-combat-tasks:v1";
 const CACHE_TTL = 24 * 60 * 60 * 1000;
 
-// OSRS Wiki `combat_achievement` bucket fields
-const COMBAT_TASK_FIELDS = [
-  "page_name",
-  "name",
-  "tier",
-  "monster",
-  "description",
-  "type",
-] as const;
+const TASK_FIELDS = ["name", "monster", "task", "tier", "type"] as const;
 
-interface RawBucketCombatTask {
+interface RawCombatTask {
   [key: string]: unknown;
-  page_name?: string;
-  name?: string | string[];
-  tier?: string | string[];
-  monster?: string | string[];
-  description?: string | string[];
-  type?: string | string[];
+  name?: string;
+  monster?: string;
+  task?: string;
+  tier?: string;
+  type?: string;
 }
 
-export interface WikiCombatTask {
-  name: string;
-  tier: CombatTier;
-  boss: string;
-  description: string;
-  type: string;
-}
-
-const VALID_TIERS: readonly CombatTier[] = [
+const VALID_TIERS: ReadonlySet<CombatTier> = new Set([
   "Easy",
   "Medium",
   "Hard",
   "Elite",
   "Master",
   "Grandmaster",
-];
+]);
 
-function normalizeTier(raw: string | undefined): CombatTier | null {
-  if (!raw) return null;
-  const lower = raw.toLowerCase();
-  for (const tier of VALID_TIERS) {
-    if (tier.toLowerCase() === lower) return tier;
-  }
-  return null;
+export interface WikiCombatTask extends CombatTask {
+  type: string;
 }
 
-function first(v: string | string[] | undefined): string {
-  if (!v) return "";
-  return Array.isArray(v) ? (v[0] ?? "") : v;
-}
+function toTask(raw: RawCombatTask): WikiCombatTask | null {
+  const name = (raw.name ?? "").trim();
+  if (!name) return null;
 
-function toWikiCombatTask(raw: RawBucketCombatTask): WikiCombatTask | null {
-  const name = first(raw.name) || raw.page_name || "";
-  const tier = normalizeTier(first(raw.tier));
-  const boss = first(raw.monster);
-  const description = first(raw.description);
-  const type = first(raw.type);
+  const tier = (raw.tier ?? "").trim();
+  if (!VALID_TIERS.has(tier as CombatTier)) return null;
 
-  if (!name || !tier) return null;
+  const boss = (raw.monster ?? "").trim() || "Other";
+  const description = (raw.task ?? "").trim();
+  const type = (raw.type ?? "").trim();
 
   return {
-    name: name.trim(),
-    tier,
-    boss: boss.trim() || "Misc",
-    description: description.trim(),
-    type: type.trim(),
+    name,
+    tier: tier as CombatTier,
+    boss,
+    description,
+    type,
   };
 }
 
-let tasksPromise: Promise<WikiCombatTask[]> | null = null;
+/**
+ * Merge hardcoded curated tasks with wiki-sourced tasks.
+ * Wiki data is authoritative; curated tasks supply boss-mapping hints
+ * (same-name tasks) for entries the wiki flags as "Other" or a less-specific
+ * monster label. For now we de-dupe on task name (case-insensitive).
+ */
+export function mergeTasks(
+  wikiTasks: WikiCombatTask[],
+  curated: CombatTask[]
+): WikiCombatTask[] {
+  const byKey = new Map<string, WikiCombatTask>();
+  for (const t of wikiTasks) {
+    byKey.set(t.name.toLowerCase(), t);
+  }
+  for (const c of curated) {
+    const key = c.name.toLowerCase();
+    if (!byKey.has(key)) {
+      byKey.set(key, { ...c, type: "" });
+    }
+  }
+  return [...byKey.values()];
+}
+
+let inflight: Promise<WikiCombatTask[]> | null = null;
 
 export async function fetchAllCombatTasks(): Promise<WikiCombatTask[]> {
-  const cached = getCached<WikiCombatTask[]>(CACHE_KEY, CACHE_TTL, { persist: true });
-  if (cached) return cached;
+  const cached = getCached<WikiCombatTask[]>(CACHE_KEY, CACHE_TTL, {
+    persist: true,
+  });
+  if (cached && cached.length > 0) return cached;
 
-  if (!tasksPromise) {
-    tasksPromise = bucketQueryAll<RawBucketCombatTask>(
-      "combat_achievement",
-      [...COMBAT_TASK_FIELDS]
-    )
+  if (!inflight) {
+    inflight = bucketQueryAll<RawCombatTask>("combat_achievement", [
+      ...TASK_FIELDS,
+    ])
       .then((raw) => {
-        const tasks = raw
-          .map(toWikiCombatTask)
+        const wiki = raw
+          .map(toTask)
           .filter((t): t is WikiCombatTask => t !== null);
-
-        // De-dupe by name (wiki occasionally has per-page duplicates)
-        const seen = new Set<string>();
-        const unique: WikiCombatTask[] = [];
-        for (const t of tasks) {
-          const key = t.name.toLowerCase();
-          if (seen.has(key)) continue;
-          seen.add(key);
-          unique.push(t);
+        const merged = mergeTasks(wiki, COMBAT_TASKS);
+        if (merged.length > 0) {
+          setCache(CACHE_KEY, merged, { persist: true });
         }
-
-        if (unique.length > 0) setCache(CACHE_KEY, unique, { persist: true });
-        tasksPromise = null;
-        return unique;
+        inflight = null;
+        return merged;
       })
       .catch((err: unknown) => {
-        tasksPromise = null;
+        inflight = null;
         console.error("[RuneWise] Failed to fetch combat tasks:", err);
         throw err;
       });
   }
 
-  return tasksPromise;
+  return inflight;
+}
+
+export function tierCounts(
+  tasks: WikiCombatTask[]
+): Record<CombatTier, number> {
+  const counts: Record<CombatTier, number> = {
+    Easy: 0,
+    Medium: 0,
+    Hard: 0,
+    Elite: 0,
+    Master: 0,
+    Grandmaster: 0,
+  };
+  for (const t of tasks) counts[t.tier] += 1;
+  return counts;
 }
