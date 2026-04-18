@@ -29,6 +29,33 @@ import {
   BOSS_DROP_TABLES,
   type BossDropTable,
 } from "../../lib/data/boss-drops";
+
+// Weakness → DPS Calc combat style mapping
+const WEAKNESS_STYLE_MAP: Record<string, string> = {
+  stab: "melee",
+  slash: "melee",
+  crush: "melee",
+  melee: "melee",
+  ranged: "ranged",
+  range: "ranged",
+  magic: "magic",
+  mage: "magic",
+};
+
+function weaknessToStyle(weakness: string): string {
+  return WEAKNESS_STYLE_MAP[weakness.toLowerCase()] ?? "melee";
+}
+
+/** Attempt to extract weakness from description prose as fallback */
+function extractWeaknessFromSummary(summary: string | undefined): string | null {
+  if (!summary) return null;
+  const m = summary.match(/weak(?:\s+against|\s+to|ness:?)\s+([a-z]+)/i);
+  return m ? m[1] : null;
+}
+
+function normalizeBossSlug(name: string): string {
+  return name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+}
 import { openExternal } from "../../lib/openExternal";
 import { formatGp } from "../../lib/format";
 import SourceAttribution from "../../components/SourceAttribution";
@@ -316,11 +343,26 @@ export default function BossGuide({ hiscores }: Props) {
     return { perKill, perHour };
   }, [lootRows]);
 
+  // Raid bosses have structured loot even without a static BossDropTable entry.
+  // Known raid category counts: Uniques + Common = 2.
+  const RAID_DROP_CATEGORY_COUNTS: Record<string, number> = {
+    "Tombs of Amascut": 2,
+    "Tombs of Amascut: Expert Mode": 2,
+    "Theatre of Blood": 2,
+    "Theatre of Blood: Hard Mode": 2,
+    "Chambers of Xeric": 2,
+    "Chambers of Xeric: Challenge Mode": 2,
+  };
+
   const dropCategoryCount = useMemo(() => {
     if (dropCategories.length > 0) return dropCategories.length;
-    if (!bossLootTable) return null;
-    return new Set(bossLootTable.drops.map((drop) => drop.category)).size;
-  }, [bossLootTable, dropCategories]);
+    if (bossLootTable) return new Set(bossLootTable.drops.map((drop) => drop.category)).size;
+    if (selectedBoss && RAID_DROP_CATEGORY_COUNTS[selectedBoss.name] != null) {
+      return RAID_DROP_CATEGORY_COUNTS[selectedBoss.name];
+    }
+    return null;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bossLootTable, dropCategories, selectedBoss]);
 
   useEffect(() => {
     let cancelled = false;
@@ -548,10 +590,40 @@ export default function BossGuide({ hiscores }: Props) {
                         </span>
                       ) : null}
                       {bossKc != null ? (
-                        <span className="rounded-full border border-success/20 bg-success/10 px-3 py-1 text-success">
+                        <button
+                          type="button"
+                          title="Open Dry Calculator with this boss and KC prefilled"
+                          onClick={() =>
+                            navigate("dry-calc", {
+                              boss: selectedBoss.name,
+                              kc: String(bossKc),
+                            })
+                          }
+                          className="rounded-full border border-success/20 bg-success/10 px-3 py-1 text-success transition hover:bg-success/20 cursor-pointer"
+                        >
                           Your KC {bossKc.toLocaleString()}
-                        </span>
+                        </button>
                       ) : null}
+                      {(() => {
+                        const weakness: string | undefined = selectedBoss.weakness ?? (extractWeaknessFromSummary(guide?.summary ?? undefined) ?? undefined);
+                        if (!weakness) return null;
+                        const style = weaknessToStyle(weakness);
+                        return (
+                          <button
+                            type="button"
+                            title={`Open DPS Calculator — ${weakness} style`}
+                            onClick={() =>
+                              navigate("dps-calc", {
+                                monster: selectedBoss.name,
+                                style,
+                              })
+                            }
+                            className="rounded-full border border-warning/25 bg-warning/10 px-3 py-1 text-warning transition hover:bg-warning/20 cursor-pointer"
+                          >
+                            Weak: {weakness.charAt(0).toUpperCase() + weakness.slice(1)}
+                          </button>
+                        );
+                      })()}
                       {selectedBoss.location ? (
                         <a
                           href={`https://oldschool.runescape.wiki/w/${selectedBoss.location.replace(/ /g, "_")}`}
@@ -662,7 +734,9 @@ export default function BossGuide({ hiscores }: Props) {
                       ? "Embedded loot groups from the OSRS Wiki."
                       : bossLootTable
                         ? "Curated loot groups from RuneWise data."
-                        : "No structured loot groups available yet."}
+                        : dropCategoryCount != null
+                          ? "Known raid loot groups (Uniques + Common)."
+                          : "No structured loot groups available yet."}
                   </div>
                 </div>
                 <div className="rounded-xl border border-border/60 bg-bg-primary/45 px-4 py-3">
@@ -680,11 +754,26 @@ export default function BossGuide({ hiscores }: Props) {
                   <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
                     Top Drop
                   </div>
-                  <div className="mt-1 text-lg font-semibold text-text-primary">
-                    {topDrops[0]?.gePrice != null ? formatGp(topDrops[0].gePrice) : "\u2014"}
-                  </div>
-                  <div className="mt-1 truncate text-xs text-text-secondary">
-                    {topDrops[0]?.drop.name ?? "Waiting on loot data"}
+                  {topDrops[0] ? (
+                    <>
+                      <div className="mt-1 truncate text-sm font-semibold text-text-primary">
+                        {topDrops[0].drop.name}
+                      </div>
+                      <div className="mt-0.5 text-xs text-success">
+                        {topDrops[0].gePrice != null
+                          ? formatGp(topDrops[0].gePrice)
+                          : topDrops[0].drop.price || "\u2014"}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="mt-1 text-lg font-semibold text-text-primary">{"\u2014"}</div>
+                  )}
+                  <div className="mt-1 text-[11px] text-text-secondary/50">
+                    {topDrops[0]?.drop.name
+                      ? topDrops[0].gePrice != null
+                        ? "Top drop value"
+                        : "No price data"
+                      : "Waiting on loot data"}
                   </div>
                 </div>
               </div>
@@ -736,7 +825,7 @@ export default function BossGuide({ hiscores }: Props) {
                       <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-bg-tertiary/60 text-[10px] font-medium text-text-secondary/60 group-hover:text-text-primary">
                         {index + 1}
                       </span>
-                      <span className="truncate">{section.title}</span>
+                      <span className="line-clamp-2 leading-snug">{section.title}</span>
                     </button>
                   ))}
                 </div>
@@ -752,7 +841,7 @@ export default function BossGuide({ hiscores }: Props) {
                     <h4 className="mb-4 text-base font-semibold tracking-tight text-text-primary">
                       {section.title}
                     </h4>
-                    <StructuredSection title={section.title} html={section.html} />
+                    <StructuredSection title={section.title} html={section.html} bossSlug={normalizeBossSlug(selectedBoss.name)} />
                     <div
                       className={`article-content text-sm leading-7 text-text-secondary ${guideSectionClassName(section.title)}`.trim()}
                       dangerouslySetInnerHTML={{ __html: section.html }}
