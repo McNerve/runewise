@@ -66,7 +66,7 @@ interface CategoryStatus {
   patchTypes: number;
 }
 
-function FarmOverview({ timers, now }: { timers: Timer[]; now: number }) {
+function FarmOverview({ timers, now, onGoToTimers }: { timers: Timer[]; now: number; onGoToTimers: () => void }) {
   const categories = useMemo<CategoryStatus[]>(() => {
     return PATCH_CATEGORIES.map((cat) => {
       const catTimers = timers.filter((t) => {
@@ -101,10 +101,18 @@ function FarmOverview({ timers, now }: { timers: Timer[]; now: number }) {
   return (
     <div>
       {activeCategories.length === 0 ? (
-        <EmptyState
-          title="No active timers"
-          description="Start a timer from the Timers tab to see your farm run overview here."
-        />
+        <div className="text-center py-12">
+          <div className="text-sm text-text-secondary mb-1">Your farm run at a glance</div>
+          <p className="text-xs text-text-secondary/60 mb-4 max-w-sm mx-auto">
+            Overview summarises every category you have growing &mdash; ready counts, next harvest, and idle patches. Start a timer to fill it in.
+          </p>
+          <button
+            onClick={onGoToTimers}
+            className="px-3 py-1.5 text-xs font-medium bg-accent text-white rounded-lg hover:bg-accent-hover transition-colors"
+          >
+            Go to Timers
+          </button>
+        </div>
       ) : (
         <>
           <div className="section-kicker mb-3">
@@ -355,7 +363,7 @@ export default function FarmTimers() {
           <FarmProfit />
         </Suspense>
       ) : tab === "overview" ? (
-        <FarmOverview timers={timers} now={now} />
+        <FarmOverview timers={timers} now={now} onGoToTimers={() => setTab("timers")} />
       ) : (
         <>
           <div className="section-kicker mb-2">Quick Presets</div>

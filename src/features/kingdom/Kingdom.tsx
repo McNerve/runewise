@@ -240,6 +240,9 @@ export default function Kingdom() {
           <div className="text-sm font-semibold tabular-nums mt-0.5 text-danger">
             -{formatGp(DAILY_UPKEEP)}
           </div>
+          <div className="text-[10px] text-text-secondary/50 mt-0.5 leading-tight">
+            Daily coffer cost at 10 workers
+          </div>
         </div>
         <div className="bg-bg-tertiary rounded-lg px-3 py-2">
           <div className="text-[11px] text-text-secondary uppercase tracking-wider">
