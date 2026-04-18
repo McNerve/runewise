@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useSettings } from "../../hooks/useSettings";
 import { DEFAULT_KEYBINDS, type KeybindMap } from "../../lib/settings";
 import { isTauri, isMac } from "../../lib/env";
+import { ONBOARDING_KEY } from "../onboarding/constants";
 import { setUpdateMode, getUpdateMode, type UpdateMode } from "../../lib/updateBus";
 import { sendNotification, onNotificationDenied } from "../../lib/notify";
 
@@ -556,6 +557,24 @@ export default function Settings() {
           </div>
 
           <UpdateModeSelect />
+
+          <div className="flex items-center justify-between gap-4 pt-3 border-t border-border/30">
+            <div>
+              <span className="text-sm font-medium text-text-primary">Welcome tour</span>
+              <p className="mt-0.5 text-xs text-text-secondary/70">
+                Re-run the setup wizard to configure your RSN and notifications.
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                localStorage.removeItem(ONBOARDING_KEY);
+                window.location.reload();
+              }}
+              className="rounded-lg border border-border bg-bg-tertiary px-3 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:border-accent/40 transition-colors"
+            >
+              Restart tour
+            </button>
+          </div>
 
           <div className="flex items-center justify-between gap-4 pt-3 border-t border-border/30">
             <div>
