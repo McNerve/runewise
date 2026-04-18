@@ -449,7 +449,7 @@ export default function Settings() {
         </div>
       </SettingsCard>
 
-      {/* Notifications */}
+      {/* Notifications — the richer <NotificationsCard/> already has all 4 toggles (price/farming/stars/milestones) + test button */}
       <NotificationsCard />
 
       {/* Keyboard Shortcuts */}
