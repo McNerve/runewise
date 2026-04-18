@@ -241,7 +241,8 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
           <div className="text-[10px] uppercase tracking-wider text-text-secondary/50 mb-2">Recently Obtained</div>
           <div className="flex gap-2 overflow-x-auto pb-2">
             {recentItems.map((item) => {
-              const name = resolveName(item);
+              // Prefer schema-resolved name (matches what works in the category grid)
+              const name = itemNames.get(item.id) ?? resolveName(item);
               const date = item.obtained_at ? new Date(item.obtained_at + " UTC") : null;
               return (
                 <div
