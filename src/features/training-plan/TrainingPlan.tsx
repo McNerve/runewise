@@ -36,6 +36,93 @@ interface Props {
   hiscores: HiscoreData | null;
 }
 
+interface LevelInputProps {
+  value: number;
+  min: number;
+  max: number;
+  hasGap: boolean;
+  onCommit: (value: number) => void;
+}
+
+function LevelInput({ value, min, max, hasGap, onCommit }: LevelInputProps) {
+  const [draft, setDraft] = useState(String(value));
+  const [syncedValue, setSyncedValue] = useState(value);
+
+  // Sync draft when parent pushes a new value (e.g. a preset button).
+  if (value !== syncedValue) {
+    setSyncedValue(value);
+    setDraft(String(value));
+  }
+
+  const commit = (raw: string) => {
+    const parsed = Number(raw);
+    const next = Number.isFinite(parsed)
+      ? Math.min(max, Math.max(min, Math.round(parsed)))
+      : min;
+    setDraft(String(next));
+    if (next !== value) onCommit(next);
+  };
+
+  const step = (delta: number) => {
+    const base = Number(draft);
+    const from = Number.isFinite(base) ? base : value;
+    const next = Math.min(max, Math.max(min, Math.round(from) + delta));
+    setDraft(String(next));
+    if (next !== value) onCommit(next);
+  };
+
+  return (
+    <div
+      className={`flex items-center shrink-0 rounded border bg-bg-tertiary ${
+        hasGap ? "border-accent/30" : "border-border"
+      }`}
+    >
+      <input
+        type="text"
+        inputMode="numeric"
+        pattern="[0-9]*"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value.replace(/[^0-9]/g, ""))}
+        onBlur={(e) => commit(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            commit((e.target as HTMLInputElement).value);
+            (e.target as HTMLInputElement).blur();
+          } else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            step(1);
+          } else if (e.key === "ArrowDown") {
+            e.preventDefault();
+            step(-1);
+          }
+        }}
+        className="w-8 bg-transparent px-1 py-0.5 text-xs text-center tabular-nums outline-none"
+        aria-label="Target level"
+      />
+      <div className="flex flex-col border-l border-border/60">
+        <button
+          type="button"
+          tabIndex={-1}
+          aria-label="Increase target level"
+          onClick={() => step(1)}
+          className="px-1 leading-none text-[9px] text-text-secondary hover:text-accent hover:bg-bg-secondary transition-colors"
+        >
+          ▲
+        </button>
+        <button
+          type="button"
+          tabIndex={-1}
+          aria-label="Decrease target level"
+          onClick={() => step(-1)}
+          className="px-1 leading-none text-[9px] text-text-secondary hover:text-accent hover:bg-bg-secondary transition-colors border-t border-border/60"
+        >
+          ▼
+        </button>
+      </div>
+    </div>
+  );
+}
+
 const PREFERENCES: { id: TrainingPreference; label: string; desc: string }[] = [
   { id: "fastest", label: "Fastest XP", desc: "Maximizes XP/hr regardless of effort" },
   { id: "afk", label: "AFK Priority", desc: "Prefers low-intensity methods" },
@@ -163,15 +250,12 @@ export default function TrainingPlan({ hiscores }: Props) {
                 {current}
               </span>
               <span className="text-text-secondary/30 text-xs shrink-0">&rarr;</span>
-              <input
-                type="number"
+              <LevelInput
+                value={target}
                 min={current}
                 max={126}
-                value={target}
-                onChange={(e) => setTarget(skill, Math.min(126, Math.max(current, Number(e.target.value))))}
-                className={`w-10 shrink-0 bg-bg-tertiary border rounded px-1 py-0.5 text-xs text-center tabular-nums ${
-                  hasGap ? "border-accent/30" : "border-border"
-                }`}
+                hasGap={hasGap}
+                onCommit={(v) => setTarget(skill, v)}
               />
             </div>
           );

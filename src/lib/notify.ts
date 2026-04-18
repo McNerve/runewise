@@ -70,13 +70,14 @@ export async function sendNotification(title: string, body: string): Promise<boo
 
   if (isTauri) {
     try {
-      const { sendNotification: tauriNotify } = await import(
-        "@tauri-apps/plugin-notification"
-      );
-      await tauriNotify({ title, body });
+      // The plugin's JS `sendNotification` just calls `new window.Notification()`,
+      // which is unreliable in WKWebView on macOS. Invoke the Rust command directly
+      // so the OS notification center actually receives it.
+      const { invoke } = await import("@tauri-apps/api/core");
+      await invoke("plugin:notification|notify", { options: { title, body } });
       return true;
     } catch {
-      // Fallback to browser API
+      // Fall through to browser API
     }
   }
 
