@@ -1,11 +1,10 @@
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
-use std::sync::{LazyLock, Mutex};
+use std::sync::LazyLock;
 use std::time::Duration;
 use serde::Serialize;
 use serde_json::Value;
-use discord_rich_presence::{DiscordIpc, DiscordIpcClient, activity};
 
 static HTTP_CLIENT: LazyLock<reqwest::Client> = LazyLock::new(|| {
     reqwest::Client::builder()
@@ -50,13 +49,6 @@ struct LootEntry {
     kills: i64,
     drops: Vec<LootDrop>,
 }
-
-// Discord application ID — register your own at https://discord.com/developers/applications
-// Replace this placeholder before shipping to end users.
-const DISCORD_APP_ID: &str = "PLACEHOLDER_DISCORD_APP_ID";
-
-static DISCORD_CLIENT: LazyLock<Mutex<Option<DiscordIpcClient>>> =
-    LazyLock::new(|| Mutex::new(None));
 
 const ALLOWED_HOSTS: &[&str] = &[
     "secure.runescape.com",
@@ -333,44 +325,6 @@ fn runelite_read_loot_tracker(profile_id: String) -> Result<Vec<LootEntry>, Stri
     Ok(entries)
 }
 
-/// Initialize Discord Rich Presence. Must be called once before update_discord_presence.
-#[tauri::command]
-fn init_discord_presence() -> Result<(), String> {
-    let mut guard = DISCORD_CLIENT.lock().map_err(|e| e.to_string())?;
-    if guard.is_some() {
-        return Ok(());
-    }
-    let mut client = DiscordIpcClient::new(DISCORD_APP_ID).map_err(|e| e.to_string())?;
-    client.connect().map_err(|e| e.to_string())?;
-    *guard = Some(client);
-    Ok(())
-}
-
-/// Update Discord Rich Presence activity.
-#[tauri::command]
-fn update_discord_presence(activity_label: String, details: String) -> Result<(), String> {
-    let mut guard = DISCORD_CLIENT.lock().map_err(|e| e.to_string())?;
-    let Some(client) = guard.as_mut() else {
-        return Err("Discord client not initialized".to_string());
-    };
-    let payload = activity::Activity::new()
-        .state(&activity_label)
-        .details(&details);
-    client.set_activity(payload).map_err(|e| e.to_string())?;
-    Ok(())
-}
-
-/// Clear Discord Rich Presence activity.
-#[tauri::command]
-fn clear_discord_presence() -> Result<(), String> {
-    let mut guard = DISCORD_CLIENT.lock().map_err(|e| e.to_string())?;
-    let Some(client) = guard.as_mut() else {
-        return Ok(());
-    };
-    client.clear_activity().map_err(|e| e.to_string())?;
-    Ok(())
-}
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     use tauri::{Emitter, Manager, WindowEvent};
@@ -388,9 +342,6 @@ pub fn run() {
             runelite_status,
             runelite_read_profiles,
             runelite_read_loot_tracker,
-            init_discord_presence,
-            update_discord_presence,
-            clear_discord_presence,
         ])
         .setup(|app| {
             if cfg!(debug_assertions) {

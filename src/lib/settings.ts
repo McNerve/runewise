@@ -14,7 +14,6 @@ export interface AppSettings {
   sidebar: { collapsed: boolean; pinned: string[] };
   ironmanMode: boolean;
   closeToTray: boolean;
-  discordRpc: boolean;
 }
 
 // Safe Cmd/Ctrl keybinds — avoids system shortcuts (C/X/V/Z/A/S/Q/W/F/R/N/P/O/H/L)
@@ -54,7 +53,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
   sidebar: { collapsed: false, pinned: [] },
   ironmanMode: false,
   closeToTray: false,
-  discordRpc: false,
 };
 
 export function loadSettings(): AppSettings {
@@ -68,7 +66,6 @@ export function loadSettings(): AppSettings {
     keybindsEnabled: saved.keybindsEnabled ?? true,
     ironmanMode: saved.ironmanMode ?? false,
     closeToTray: saved.closeToTray ?? false,
-    discordRpc: saved.discordRpc ?? false,
   };
 }
 
