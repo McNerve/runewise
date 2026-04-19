@@ -206,8 +206,11 @@ export default function SearchDialog({ onClose }: SearchDialogProps) {
                       data-search-item
                       onClick={() => select(item)}
                       onMouseEnter={() => setSelectedIndex(flatIndex)}
-                      className={`flex w-full items-center gap-3 px-4 py-2 text-left transition-colors ${
-                        isSelected ? "bg-accent/10" : "hover:bg-bg-tertiary/50"
+                      title={`Open ${item.name}`}
+                      className={`flex w-full items-center gap-3 px-4 py-2 text-left transition-colors border-l-2 ${
+                        isSelected
+                          ? "bg-accent/10 border-l-accent"
+                          : "border-l-transparent hover:bg-bg-tertiary/40"
                       }`}
                     >
                       {item.icon ? (
@@ -252,8 +255,11 @@ export default function SearchDialog({ onClose }: SearchDialogProps) {
                       data-search-item
                       onClick={() => select(item)}
                       onMouseEnter={() => setSelectedIndex(index)}
-                      className={`flex w-full items-center gap-3 px-4 py-2 text-left transition-colors ${
-                        selectedIndex === index ? "bg-accent/10" : "hover:bg-bg-tertiary/50"
+                      title={`Open ${item.name}`}
+                      className={`flex w-full items-center gap-3 px-4 py-2 text-left transition-colors border-l-2 ${
+                        selectedIndex === index
+                          ? "bg-accent/10 border-l-accent"
+                          : "border-l-transparent hover:bg-bg-tertiary/40"
                       }`}
                     >
                       {item.icon ? (
