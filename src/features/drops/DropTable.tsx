@@ -7,6 +7,7 @@ import { useDebounce } from "../../hooks/useDebounce";
 import { useNavigation } from "../../lib/NavigationContext";
 import WikiImage from "../../components/WikiImage";
 import { findBossByName } from "../../lib/data/bosses";
+import { TableSkeleton } from "../../components/Skeleton";
 
 function RarityBar({ rarity }: { rarity: string }) {
   // Match patterns like "1/128", "~1/115", "~8/115"
@@ -183,9 +184,7 @@ export default function DropTable() {
         )}
       </div>
 
-      {loading && (
-        <p className="text-sm text-text-secondary">Loading drop table...</p>
-      )}
+      {loading && <TableSkeleton rows={8} cols={4} />}
 
       {selectedMonster && !loading && categories.length === 0 && (
         <p className="text-sm text-text-secondary">

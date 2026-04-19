@@ -36,12 +36,12 @@ export default function SkillCalculator({ hiscores }: Props) {
   const { params, navigate } = useNavigation();
   const { mapping, prices, fetchIfNeeded } = useGEData();
   const [skillTab, setSkillTab] = useState<SkillTab>(() => params.tab === "plan" ? "plan" : "calculator");
-  const normalizeSkill = (name: string | undefined): string => {
-    if (!name) return "Attack";
+  const normalizeSkill = (name: string | undefined): string | null => {
+    if (!name) return null;
     const match = SKILLS.find((s) => s.toLowerCase() === name.toLowerCase());
-    return match ?? "Attack";
+    return match ?? null;
   };
-  const [selectedSkill, setSelectedSkill] = useState<string>(normalizeSkill(params.skill));
+  const [selectedSkill, setSelectedSkill] = useState<string | null>(normalizeSkill(params.skill));
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- sync tab from nav params
@@ -71,10 +71,11 @@ export default function SkillCalculator({ hiscores }: Props) {
       (s) => s.name.toLowerCase() === skill.toLowerCase()
     )?.level ?? null;
 
-  const currentLevel = getLevel(selectedSkill);
+  const currentLevel = selectedSkill ? getLevel(selectedSkill) : null;
 
   // When skill changes: load XP from hiscores + restore or default target
   useEffect(() => {
+    if (!selectedSkill) return;
     if (hiscores) {
       const xp = getSkillXp(hiscores, selectedSkill);
       // eslint-disable-next-line react-hooks/set-state-in-effect -- sync from external hiscores data
@@ -93,9 +94,10 @@ export default function SkillCalculator({ hiscores }: Props) {
 
   // Load wiki recipes for selected skill
   useEffect(() => {
-    let cancelled = false;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- clear stale recipes when skill changes
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- clear stale recipes when skill changes or clears
     setWikiRecipes([]);
+    if (!selectedSkill) return;
+    let cancelled = false;
     fetchRecipesForSkill(selectedSkill).then((recipes) => {
       if (!cancelled) setWikiRecipes(recipes);
     });
@@ -105,14 +107,14 @@ export default function SkillCalculator({ hiscores }: Props) {
   const handleTargetChange = (value: number) => {
     const clamped = Math.max(2, Math.min(99, value));
     setTargetLevel(clamped);
-    customTargets.current.set(selectedSkill, clamped);
+    if (selectedSkill) customTargets.current.set(selectedSkill, clamped);
   };
 
   const [intensityFilter, setIntensityFilter] = useState<string>("All");
 
   const targetXp = xpForLevel(targetLevel);
   const xpNeeded = Math.max(0, targetXp - currentXp);
-  const allMethods = TRAINING_METHODS[selectedSkill] ?? [];
+  const allMethods = selectedSkill ? (TRAINING_METHODS[selectedSkill] ?? []) : [];
   const methods = intensityFilter === "All"
     ? allMethods
     : allMethods.filter((m) => m.intensity?.toLowerCase() === intensityFilter.toLowerCase());
@@ -199,6 +201,11 @@ export default function SkillCalculator({ hiscores }: Props) {
         })}
       </div>
 
+      {!selectedSkill ? (
+        <div className="bg-bg-tertiary rounded-lg p-8 text-center text-sm text-text-secondary">
+          Pick a skill above to start calculating.
+        </div>
+      ) : (
       <div className="bg-bg-tertiary rounded-lg p-4 space-y-4">
         <div className="flex items-center justify-between border-b border-border pb-3 -mx-4 px-4 -mt-4 pt-4 mb-1">
           <div className="flex items-center gap-2">
@@ -307,6 +314,7 @@ export default function SkillCalculator({ hiscores }: Props) {
           )}
         </div>
       </div>
+      )}
 
       {/* Training Methods */}
       {allMethods.length > 0 && xpNeeded > 0 && (
@@ -378,7 +386,7 @@ export default function SkillCalculator({ hiscores }: Props) {
                         <td className="px-4 py-1.5 font-medium">
                           <span className="flex items-center gap-2">
                             <img
-                              src={method.itemName ? itemIcon(method.itemName) : SKILL_ICONS[selectedSkill]}
+                              src={method.itemName ? itemIcon(method.itemName) : (selectedSkill ? SKILL_ICONS[selectedSkill] : "")}
                               alt=""
                               className="w-4 h-4 shrink-0"
                               onError={(e) => { e.currentTarget.style.display = "none"; }}

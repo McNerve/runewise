@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "check:map-version": "node scripts/check-map-version.mjs"
   },
   "dependencies": {
     "@radix-ui/react-tooltip": "^1.2.8",

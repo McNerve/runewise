@@ -1,6 +1,14 @@
 import DOMPurify from "dompurify";
 import { isTauri } from "../env";
 
+// Any anchor leaving the app gets noopener/noreferrer so the external page
+// can't reach back through window.opener or sniff the referrer.
+DOMPurify.addHook("afterSanitizeAttributes", (node) => {
+  if (node instanceof Element && node.tagName === "A" && node.hasAttribute("target")) {
+    node.setAttribute("rel", "noopener noreferrer");
+  }
+});
+
 export const WIKI_API = isTauri
   ? "https://oldschool.runescape.wiki/api.php"
   : "/api/wiki-content";

@@ -6,6 +6,7 @@ import { formatGp } from "../../lib/format";
 import { useNavigation } from "../../lib/NavigationContext";
 import { itemIcon } from "../../lib/sprites";
 import WikiImage from "../../components/WikiImage";
+import EmptyState from "../../components/EmptyState";
 import { parseThresholdInput } from "./helpers";
 
 function ThresholdCell({
@@ -154,10 +155,10 @@ export default function Watchlist() {
       </div>
 
       {items.length === 0 ? (
-        <div className="py-12 text-center text-text-secondary">
-          <p className="text-sm">No items on your watchlist yet.</p>
-          <p className="text-xs mt-1">Search above to add items and set price alerts.</p>
-        </div>
+        <EmptyState
+          title="No items on your watchlist yet"
+          description="Search above to add items and set price alerts."
+        />
       ) : (
         <div className="overflow-hidden">
           <table className="w-full text-sm">

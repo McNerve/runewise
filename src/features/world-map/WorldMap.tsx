@@ -233,8 +233,12 @@ export default function WorldMap() {
         onMouseLeave={onMouseUp}
       >
         {loading && (
-          <div className="absolute inset-0 flex items-center justify-center z-10">
-            <div className="text-sm text-text-secondary animate-pulse">Loading world map...</div>
+          <div
+            aria-busy="true"
+            aria-label="Loading world map"
+            className="absolute inset-0 flex items-center justify-center z-10"
+          >
+            <div className="text-sm text-text-secondary animate-pulse">Loading world map…</div>
           </div>
         )}
         <div

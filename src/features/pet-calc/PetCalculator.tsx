@@ -586,6 +586,9 @@ export default function PetCalculator({ hiscores, rsn }: Props) {
                     {!countTouched && actionCount > 0 && (
                       <span className="text-accent/80 text-[10px]">auto-filled from hiscores</span>
                     )}
+                    {!countTouched && actionCount === 0 && hiscores && (
+                      <span className="text-text-secondary/50 text-[10px]">enter manually — not on hiscores</span>
+                    )}
                   </label>
                   <input
                     type="number"
