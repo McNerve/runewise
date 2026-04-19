@@ -345,10 +345,11 @@ export default function PetCalculator({ hiscores, rsn }: Props) {
               key={cat.id}
               onClick={() => setCategory(cat.id)}
               aria-pressed={category === cat.id}
-              className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
+              title={`Filter to ${cat.label} pets`}
+              className={`home-tile px-2.5 py-1 rounded text-xs font-medium border ${
                 category === cat.id
-                  ? "bg-accent text-on-accent"
-                  : "text-text-secondary hover:bg-bg-secondary"
+                  ? "bg-accent text-on-accent border-accent"
+                  : "text-text-secondary border-transparent"
               }`}
             >
               {cat.label}
@@ -456,10 +457,10 @@ export default function PetCalculator({ hiscores, rsn }: Props) {
               <button
                 onClick={() => toggleOwned(selected.name)}
                 title={manualOwned.has(selected.name) ? "Mark as not owned" : "Mark as owned"}
-                className={`shrink-0 px-2 py-1 rounded text-xs font-medium transition-colors ${
+                className={`home-tile shrink-0 px-2 py-1 rounded text-xs font-medium border ${
                   manualOwned.has(selected.name)
-                    ? "bg-success/15 text-success hover:bg-success/25"
-                    : "bg-bg-tertiary text-text-secondary hover:bg-bg-tertiary/70"
+                    ? "bg-success/15 text-success border-success/40"
+                    : "bg-bg-tertiary text-text-secondary border-transparent"
                 }`}
               >
                 {manualOwned.has(selected.name) ? "✓ Owned" : "Mark owned"}
@@ -498,10 +499,11 @@ export default function PetCalculator({ hiscores, rsn }: Props) {
                         key={action.name}
                         onClick={() => { setSelectedAction(action); setCountTouched(false); }}
                         aria-pressed={isSelected}
-                        className={`w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded text-xs transition-colors text-left ${
+                        title={`Use ${action.name} as the training method`}
+                        className={`home-tile w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded text-xs text-left border ${
                           isSelected
-                            ? "bg-accent/15 ring-1 ring-accent/50 text-text-primary"
-                            : "bg-bg-tertiary/40 hover:bg-bg-secondary text-text-secondary"
+                            ? "bg-accent/15 ring-1 ring-accent/50 text-text-primary border-transparent"
+                            : "bg-bg-tertiary/40 text-text-secondary border-transparent"
                         }`}
                       >
                         <span className="truncate flex items-center gap-1">

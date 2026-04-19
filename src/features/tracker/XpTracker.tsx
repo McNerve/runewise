@@ -175,7 +175,8 @@ function CompetitionsView({ competitions }: { competitions: WomPlayerCompetition
             href={`https://wiseoldman.net/competitions/${comp.id}`}
             target="_blank"
             rel="noopener noreferrer"
-            className={`block bg-bg-tertiary rounded-lg px-4 py-3 border-l-2 transition-colors hover:bg-bg-secondary ${
+            title={`Open ${comp.title ?? "competition"} on Wise Old Man ↗`}
+            className={`home-tile block bg-bg-tertiary rounded-lg px-4 py-3 border-l-2 ${
               isActive ? "border-success" : "border-border/30 opacity-50"
             }`}
           >
@@ -500,11 +501,8 @@ export default function XpTracker({ rsn }: Props) {
                 key={p.id}
                 onClick={() => setPeriod(p.id)}
                 aria-pressed={period === p.id}
-                className={`relative rounded-xl border px-3.5 py-2 text-left transition ${
-                  period === p.id
-                    ? "border-accent/50 bg-accent/10"
-                    : "border-border bg-bg-primary/50 text-text-secondary hover:bg-bg-primary/70"
-                }`}
+                title={`Show XP gains for ${p.label.toLowerCase()}`}
+                className={`tab-pill ${period === p.id ? "tab-pill--active" : "tab-pill--inactive"}`}
               >
                 {period === p.id && <div className="absolute -bottom-px left-3 right-3 h-0.5 rounded-full bg-accent" />}
                 <div className={`text-xs font-semibold ${period === p.id ? "text-accent" : ""}`}>{p.label}</div>

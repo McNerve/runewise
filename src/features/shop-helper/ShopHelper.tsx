@@ -194,10 +194,11 @@ export default function ShopHelper() {
               <button
                 key={f}
                 onClick={() => setCurrencyFilter(f)}
-                className={`px-2.5 py-1 rounded-lg text-xs transition-colors ${
+                title={f === "all" ? "All currencies" : f === "Coins" ? "Only shops that buy with coins" : "Only special-currency shops"}
+                className={`home-tile px-2.5 py-1 rounded-lg text-xs border ${
                   currencyFilter === f
-                    ? "bg-accent/15 text-accent ring-1 ring-accent/40"
-                    : "bg-bg-tertiary/50 text-text-secondary hover:bg-bg-secondary"
+                    ? "bg-accent/15 text-accent ring-1 ring-accent/40 border-transparent"
+                    : "bg-bg-tertiary/50 text-text-secondary border-transparent"
                 }`}
               >
                 {f === "all" ? "All" : f === "Coins" ? "Coins" : "Special"}
@@ -208,10 +209,11 @@ export default function ShopHelper() {
               <button
                 key={f}
                 onClick={() => setMembersFilter(f)}
-                className={`px-2.5 py-1 rounded-lg text-xs transition-colors ${
+                title={f === "all" ? "Both F2P and P2P shops" : f === "f2p" ? "F2P shops only" : "Members shops only"}
+                className={`home-tile px-2.5 py-1 rounded-lg text-xs border ${
                   membersFilter === f
-                    ? "bg-accent/15 text-accent ring-1 ring-accent/40"
-                    : "bg-bg-tertiary/50 text-text-secondary hover:bg-bg-secondary"
+                    ? "bg-accent/15 text-accent ring-1 ring-accent/40 border-transparent"
+                    : "bg-bg-tertiary/50 text-text-secondary border-transparent"
                 }`}
               >
                 {f === "all" ? "Both" : f === "f2p" ? "F2P" : "P2P"}
@@ -239,10 +241,11 @@ export default function ShopHelper() {
                 <button
                   key={shop.name}
                   onClick={() => { setSelectedShop(shop); setSortKey("name"); setSortAsc(true); }}
-                  className={`w-full text-left rounded-lg px-3 py-2 text-sm transition-colors ${
+                  title={`Open ${shop.name}`}
+                  className={`home-tile w-full text-left rounded-lg px-3 py-2 text-sm border ${
                     selectedShop?.name === shop.name
-                      ? "bg-accent/10 ring-1 ring-accent/30"
-                      : "hover:bg-bg-tertiary/50"
+                      ? "bg-accent/10 ring-1 ring-accent/30 border-transparent"
+                      : "border-transparent"
                   }`}
                 >
                   <div className="flex items-center gap-2">

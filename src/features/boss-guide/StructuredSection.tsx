@@ -110,14 +110,14 @@ function extractSlotLabel(cell: HTMLTableCellElement): string {
 function parseSkillItems(
   doc: Document,
   title: string
-): Array<SuggestedSkill | { fallback: string; icon: string | null }> {
+): Array<(SuggestedSkill & { icon?: string | null }) | { fallback: string; icon: string | null }> {
   return Array.from(doc.querySelectorAll("li, p"))
     .map((node) => {
       const text = normalizeText(node.textContent ?? "");
       const icon = node.querySelector("img")?.getAttribute("src") ?? null;
       if (!text || text.toLowerCase() === title.trim().toLowerCase()) return null;
       const parsed = parseSuggestedSkill(text);
-      if (parsed) return parsed;
+      if (parsed) return { ...parsed, icon };
       // Keep items with icons (skill icons) even if parsing fails
       if (icon || text.length <= 80) return { fallback: text, icon };
       return null;
@@ -325,7 +325,7 @@ function RawHtmlFallback({
 function SkillTile({
   item,
 }: {
-  item: SuggestedSkill | { fallback: string; icon: string | null };
+  item: (SuggestedSkill & { icon?: string | null }) | { fallback: string; icon: string | null };
 }) {
   if ("fallback" in item) {
     return (
@@ -351,17 +351,26 @@ function SkillTile({
       title={tooltip}
       className="flex items-start gap-2.5 rounded-lg border border-border/50 bg-bg-primary/40 px-3 py-2"
     >
-      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-bg-primary/60 text-[9px] font-semibold text-accent">
-        {s.level}
-      </div>
-      <div className="min-w-0">
-        <div className="text-sm font-medium leading-5 text-text-primary">
-          {primaryText}
+      {s.icon ? (
+        <WikiImage
+          src={s.icon}
+          alt={s.skill || ""}
+          className="h-6 w-6 shrink-0 rounded-md bg-bg-primary/60 object-contain p-0.5"
+          fallback={String(s.level)}
+        />
+      ) : (
+        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-bg-primary/60 text-[9px] font-semibold text-accent">
+          {s.level}
+        </div>
+      )}
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 text-sm font-medium leading-5 text-text-primary">
+          <span>{primaryText}</span>
           {s.boostAllowed && (
-            <span className="ml-1 text-[10px] text-accent/70">(boostable)</span>
+            <span className="text-[10px] font-normal text-accent/70">(boostable)</span>
           )}
           {s.optional && (
-            <span className="ml-1 text-[10px] text-text-secondary/60">(optional)</span>
+            <span className="text-[10px] font-normal text-text-secondary/60">(optional)</span>
           )}
         </div>
         {s.qualifier && (

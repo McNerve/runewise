@@ -75,11 +75,8 @@ export default function Tabs<Id extends string>({
               tabIndex={active ? 0 : -1}
               onClick={() => onChange(item.id)}
               onKeyDown={(e) => handleKeyDown(e, i)}
-              className={`relative rounded-xl border px-3.5 py-2 text-left transition ${
-                active
-                  ? "border-accent/50 bg-accent/10"
-                  : "border-border bg-bg-primary/50 text-text-secondary hover:bg-bg-primary/70"
-              }`}
+              title={item.description ?? item.label}
+              className={`tab-pill ${active ? "tab-pill--active" : "tab-pill--inactive"}`}
             >
               {active && (
                 <div className="absolute -bottom-px left-3 right-3 h-0.5 rounded-full bg-accent" />
@@ -130,10 +127,11 @@ export default function Tabs<Id extends string>({
             tabIndex={active ? 0 : -1}
             onClick={() => onChange(item.id)}
             onKeyDown={(e) => handleKeyDown(e, i)}
-            className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
+            title={item.label}
+            className={`home-tile relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap border ${
               active
-                ? "text-accent bg-accent/10"
-                : "text-text-secondary hover:text-text-primary hover:bg-bg-secondary/50"
+                ? "text-accent bg-accent/10 border-accent/40"
+                : "text-text-secondary border-transparent"
             }`}
           >
             {active && (

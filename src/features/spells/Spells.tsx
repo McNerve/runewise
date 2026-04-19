@@ -207,11 +207,8 @@ export default function Spells() {
             key={book.id}
             onClick={() => { setActiveBook(book.id); setQuery(""); }}
             aria-pressed={activeBook === book.id}
-            className={`relative rounded-xl border px-3.5 py-2 text-left transition ${
-              activeBook === book.id
-                ? BOOK_ACCENT[book.id]
-                : "border-border bg-bg-primary/50 text-text-secondary hover:bg-bg-primary/70"
-            }`}
+            title={`Open ${book.label} spellbook`}
+            className={`tab-pill ${activeBook === book.id ? `tab-pill--active ${BOOK_ACCENT[book.id]}` : "tab-pill--inactive"}`}
           >
             {activeBook === book.id && (
               <div className="absolute -bottom-px left-3 right-3 h-0.5 rounded-full bg-current opacity-60" />

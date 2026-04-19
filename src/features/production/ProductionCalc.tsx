@@ -204,7 +204,8 @@ export default function ProductionCalc() {
             <button
               key={`${r.name}-${r.skill}-${r.levelReq}`}
               onClick={() => handleSelect(r)}
-              className="w-full text-left px-3 py-2 hover:bg-bg-secondary transition-colors flex items-center gap-2 border-b border-border/30 last:border-0"
+              title={`Select ${r.name} recipe`}
+              className="home-tile w-full text-left px-3 py-2 flex items-center gap-2 border border-transparent border-b-border/30 last:border-b-0 first:rounded-t last:rounded-b"
             >
               <img
                 src={itemIcon(r.name)}
@@ -411,10 +412,11 @@ export default function ProductionCalc() {
                     key={q}
                     onClick={() => setQuantity(q)}
                     aria-pressed={quantity === q}
-                    className={`px-2 py-1 rounded text-xs transition-colors ${
+                    title={`Set quantity to ${q.toLocaleString()}`}
+                    className={`home-tile px-2 py-1 rounded text-xs border ${
                       quantity === q
-                        ? "bg-accent text-on-accent"
-                        : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
+                        ? "bg-accent text-on-accent border-accent"
+                        : "bg-bg-tertiary text-text-secondary border-transparent"
                     }`}
                   >
                     {q.toLocaleString()}

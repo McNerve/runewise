@@ -247,10 +247,11 @@ export default function PlayerLookup() {
                 key={m.id}
                 onClick={() => setMode(m.id)}
                 aria-pressed={mode === m.id}
-                className={`px-4 py-1.5 rounded text-sm font-medium transition-colors ${
+                title={m.id === "lookup" ? "Look up a single player" : "Compare two players side by side"}
+                className={`home-tile px-4 py-1.5 rounded text-sm font-medium border ${
                   mode === m.id
-                    ? "bg-accent text-on-accent"
-                    : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
+                    ? "bg-accent text-on-accent border-accent"
+                    : "bg-bg-tertiary text-text-secondary border-transparent"
                 }`}
               >
                 {m.label}
@@ -280,7 +281,7 @@ export default function PlayerLookup() {
               <button
                 type="submit"
                 disabled={loading}
-                className="rounded-xl bg-accent px-4 py-3 text-sm font-medium text-on-accent transition hover:bg-accent-hover disabled:opacity-50"
+                className="home-tile rounded-xl bg-accent px-4 py-3 text-sm font-medium text-on-accent border border-accent disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? "Looking up..." : "Lookup player"}
               </button>
@@ -299,7 +300,8 @@ export default function PlayerLookup() {
                       setQuery(p.name);
                       void handleLookup(p.name);
                     }}
-                    className="rounded-full border border-border/60 bg-bg-secondary/50 px-3 py-1 text-xs text-text-secondary transition hover:border-accent/40 hover:text-text-primary"
+                    title={`Look up ${p.name}`}
+                    className="home-tile rounded-full border border-border/60 bg-bg-secondary/50 px-3 py-1 text-xs text-text-secondary"
                   >
                     {p.name}
                   </button>
@@ -385,7 +387,7 @@ export default function PlayerLookup() {
                 disabled={
                   compareLoading || !leftQuery.trim() || !rightQuery.trim()
                 }
-                className="rounded-xl bg-accent px-4 py-3 text-sm font-medium text-on-accent transition hover:bg-accent-hover disabled:opacity-50"
+                className="home-tile rounded-xl bg-accent px-4 py-3 text-sm font-medium text-on-accent border border-accent disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {compareLoading ? "Comparing..." : "Compare"}
               </button>

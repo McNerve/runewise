@@ -130,12 +130,11 @@ export default function ClueHelper() {
             <button
               key={t}
               onClick={() => setTierFilter(t)}
-              className={`relative rounded-xl border px-3.5 py-2 text-xs font-semibold transition ${
+              title={isAll ? "Show all clue tiers" : `Filter to ${t} clues`}
+              className={`tab-pill text-xs font-semibold ${
                 active
-                  ? tierColor
-                    ? `${TIER_COLORS[tierColor].activeBorder} ${TIER_COLORS[tierColor].activeBg} ${TIER_COLORS[tierColor].text}`
-                    : "border-accent/50 bg-accent/10 text-accent"
-                  : "border-border bg-bg-primary/50 text-text-secondary hover:border-border hover:bg-bg-primary/70"
+                  ? `tab-pill--active ${tierColor ? `${TIER_COLORS[tierColor].activeBorder} ${TIER_COLORS[tierColor].activeBg} ${TIER_COLORS[tierColor].text}` : ""}`
+                  : "tab-pill--inactive"
               }`}
             >
               {active && (
@@ -155,10 +154,11 @@ export default function ClueHelper() {
           <button
             key={t}
             onClick={() => setTypeFilter(t)}
-            className={`px-2.5 py-1 rounded-lg border text-xs transition-colors ${
+            title={`Filter clues by ${t}`}
+            className={`home-tile px-2.5 py-1 rounded-lg border text-xs ${
               typeFilter === t
                 ? "border-accent/50 bg-accent/10 text-accent"
-                : "border-border bg-bg-primary/50 text-text-secondary hover:bg-bg-primary/70"
+                : "border-border bg-bg-primary/50 text-text-secondary"
             }`}
           >
             {t}

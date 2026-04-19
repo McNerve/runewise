@@ -164,10 +164,11 @@ export default function GearCompare() {
               setQuery("");
             }}
             aria-pressed={selectedSlot === slot}
-            className={`px-2.5 py-1 rounded text-xs transition-colors ${
+            title={`Compare ${SLOT_LABELS[slot]} items`}
+            className={`home-tile px-2.5 py-1 rounded text-xs border ${
               selectedSlot === slot
-                ? "bg-accent/20 text-accent border border-accent/30"
-                : "bg-bg-tertiary text-text-secondary border border-transparent hover:border-border"
+                ? "bg-accent/20 text-accent border-accent/30"
+                : "bg-bg-tertiary text-text-secondary border-transparent"
             }`}
           >
             {SLOT_LABELS[slot]}

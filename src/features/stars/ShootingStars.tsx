@@ -408,8 +408,9 @@ export default function ShootingStars() {
         <button
           onClick={() => setTab("live")}
           aria-pressed={tab === "live"}
-          className={`px-3 py-1.5 rounded text-xs transition-colors ${
-            tab === "live" ? "bg-accent text-on-accent" : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
+          title="Live shooting-star alerts pulled every 30s"
+          className={`home-tile px-3 py-1.5 rounded text-xs border ${
+            tab === "live" ? "bg-accent text-on-accent border-accent" : "bg-bg-tertiary text-text-secondary border-transparent"
           }`}
         >
           Live Tracker
@@ -417,8 +418,9 @@ export default function ShootingStars() {
         <button
           onClick={() => setTab("reference")}
           aria-pressed={tab === "reference"}
-          className={`px-3 py-1.5 rounded text-xs transition-colors ${
-            tab === "reference" ? "bg-accent text-on-accent" : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
+          title="Star tier reference and meteorite info"
+          className={`home-tile px-3 py-1.5 rounded text-xs border ${
+            tab === "reference" ? "bg-accent text-on-accent border-accent" : "bg-bg-tertiary text-text-secondary border-transparent"
           }`}
         >
           Reference

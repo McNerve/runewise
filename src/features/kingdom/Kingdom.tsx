@@ -148,15 +148,17 @@ export default function Kingdom() {
         <button
           onClick={optimize}
           aria-pressed={isOptimal}
-          className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
-            isOptimal ? "bg-accent text-on-accent" : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
+          title="Auto-allocate workers for max GP/day"
+          className={`home-tile px-3 py-1.5 rounded text-xs font-medium border ${
+            isOptimal ? "bg-accent text-on-accent border-accent" : "bg-bg-tertiary text-text-secondary border-transparent"
           }`}
         >
           Optimal
         </button>
         <button
           onClick={resetAll}
-          className="px-3 py-1.5 rounded text-xs font-medium bg-bg-tertiary text-text-secondary hover:bg-bg-secondary transition-colors"
+          title="Clear all worker allocations"
+          className="home-tile px-3 py-1.5 rounded text-xs font-medium bg-bg-tertiary text-text-secondary border border-transparent"
         >
           Reset
         </button>

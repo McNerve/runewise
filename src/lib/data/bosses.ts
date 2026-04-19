@@ -8,6 +8,12 @@ export interface BossInfo {
   weakness?: string;
   hiscoresName?: string;
   location?: string;
+  /**
+   * Override for the wiki bucket `page_name` used when fetching drops.
+   * Set when the canonical drop-source page name differs from the display
+   * `name` (e.g. "Hueycoatl" displayed but drops live under "The Hueycoatl").
+   */
+  dropsName?: string;
 }
 
 export const BOSSES: BossInfo[] = [
@@ -50,7 +56,7 @@ export const BOSSES: BossInfo[] = [
   { name: "Vorkath", wikiPage: "Vorkath", category: "Other", combatLevel: 732, hitpoints: 750, location: "Ungael", weakness: "Ranged" },
   { name: "Zulrah", wikiPage: "Zulrah", category: "Other", combatLevel: 725, hitpoints: 500, location: "Zul-Andra" },
   { name: "Corporeal Beast", wikiPage: "Corporeal_Beast", category: "Other", combatLevel: 785, hitpoints: 2000, location: "Corporeal Beast's Lair", weakness: "Stab" },
-  { name: "Nightmare", wikiPage: "The_Nightmare", category: "Other", hiscoresName: "The Nightmare", combatLevel: 814, hitpoints: 2400, location: "Sisterhood Sanctuary", weakness: "Magic" },
+  { name: "Nightmare", wikiPage: "The_Nightmare", category: "Other", hiscoresName: "The Nightmare", combatLevel: 814, hitpoints: 2400, location: "Sisterhood Sanctuary", weakness: "Magic", dropsName: "The Nightmare" },
   { name: "Phosani's Nightmare", wikiPage: "Phosani%27s_Nightmare", category: "Other", combatLevel: 814, hitpoints: 2400, location: "Sisterhood Sanctuary", weakness: "Magic" },
   { name: "Phantom Muspah", wikiPage: "Phantom_Muspah", category: "Other", combatLevel: 608, hitpoints: 750, location: "Ghorrock Prison", weakness: "Ranged" },
   { name: "Duke Sucellus", wikiPage: "Duke_Sucellus", category: "Other", combatLevel: 548, hitpoints: 640, location: "Ancient Vault", weakness: "Crush" },
@@ -86,11 +92,11 @@ export const BOSSES: BossInfo[] = [
 
   // Varlamore
   { name: "Amoxliatl", wikiPage: "Amoxliatl", category: "Varlamore", combatLevel: 285, hitpoints: 520, location: "Varlamore", weakness: "Ranged" },
-  { name: "Hueycoatl", wikiPage: "Hueycoatl", category: "Varlamore", combatLevel: 400, hitpoints: 750, location: "Varlamore", weakness: "Ranged" },
+  { name: "Hueycoatl", wikiPage: "Hueycoatl", category: "Varlamore", combatLevel: 400, hitpoints: 750, location: "Varlamore", weakness: "Ranged", dropsName: "The Hueycoatl" },
   { name: "Sol Heredit", wikiPage: "Fortis_Colosseum", category: "Varlamore", hiscoresName: "The Fortis Colosseum", location: "Fortis Colosseum" },
 
   // Hiscores-tracked
-  { name: "Lunar Chests", wikiPage: "Moons_of_Peril", category: "Other", location: "Perilous Moons" },
+  { name: "Lunar Chests", wikiPage: "Moons_of_Peril", category: "Other", location: "Perilous Moons", dropsName: "Lunar Chest" },
   { name: "Yama", wikiPage: "Yama", category: "Other" },
   { name: "The Royal Titans", wikiPage: "The_Royal_Titans", category: "Other" },
 ];

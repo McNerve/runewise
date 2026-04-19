@@ -248,7 +248,7 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
               return (
                 <div
                   key={`recent-${item.id}-${item.obtained_at}`}
-                  className="flex flex-col items-center gap-1.5 min-w-[110px] max-w-[110px] p-2.5 rounded-lg bg-bg-secondary/30 hover:bg-bg-secondary/50 transition-colors cursor-pointer"
+                  className="home-tile flex flex-col items-center gap-1.5 min-w-[110px] max-w-[110px] p-2.5 rounded-lg border border-transparent bg-bg-secondary/30"
                   onClick={() => navigate("wiki", { query: name })}
                 >
                   <div className="relative">
@@ -289,10 +289,11 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
               key={tab}
               onClick={() => { setActiveTab(tab); setSelectedCategory(null); }}
               aria-pressed={isActive}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
+              title={`Filter to ${tab.charAt(0).toUpperCase() + tab.slice(1)} category`}
+              className={`home-tile flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap border ${
                 isActive
-                  ? "bg-accent text-on-accent"
-                  : "text-text-secondary hover:bg-bg-secondary/50"
+                  ? "bg-accent text-on-accent border-accent"
+                  : "text-text-secondary border-transparent"
               }`}
             >
               {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -581,14 +582,15 @@ export default function CollectionLog({ rsn }: Props) {
             in RuneLite and open your Collection Log in-game. Your data will be sent to Temple
             automatically.
           </p>
-          <div className="flex gap-3 pt-1">
+          <div className="flex gap-2 pt-1">
             <a
               href="https://templeosrs.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs text-accent hover:text-accent-hover"
+              title="Open TempleOSRS plugin info"
+              className="home-tile rounded-md border border-border/60 bg-bg-tertiary/40 px-2.5 py-1 text-xs font-medium text-accent"
             >
-              templeosrs.com
+              templeosrs.com ↗
             </a>
             <button
               onClick={() => {
@@ -615,7 +617,8 @@ export default function CollectionLog({ rsn }: Props) {
                     setTempleLoading(false);
                   });
               }}
-              className="text-xs text-accent hover:text-accent-hover"
+              title="Re-fetch your TempleOSRS collection log"
+              className="home-tile rounded-md border border-border/60 bg-bg-tertiary/40 px-2.5 py-1 text-xs font-medium text-accent"
             >
               Check Again
             </button>

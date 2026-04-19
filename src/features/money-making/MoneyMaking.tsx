@@ -146,7 +146,8 @@ export default function MoneyMaking({ hiscores }: Props) {
       {mainTab === "methods" && (
         <button
           onClick={() => navigate("market", { tab: "alch" })}
-          className="w-full mb-4 flex items-center justify-between gap-3 px-4 py-2.5 rounded-lg bg-bg-secondary/60 hover:bg-bg-secondary border border-border/60 hover:border-accent/40 transition-colors text-left group"
+          title="Open Items workspace with the alch profits calculator"
+          className="home-tile w-full mb-4 flex items-center justify-between gap-3 px-4 py-2.5 rounded-lg bg-bg-secondary/60 border border-border/60 text-left group"
         >
           <div className="flex items-center gap-3">
             <img src={`${WIKI_IMG}/High_Level_Alchemy.png`} alt="" className="w-4 h-4" onError={(e) => { e.currentTarget.style.display = "none"; }} />
@@ -362,7 +363,7 @@ export default function MoneyMaking({ hiscores }: Props) {
           })().map((method) => (
               <div
                 key={method.name}
-                className="py-3 px-3 rounded-lg hover:bg-bg-secondary/50 transition-colors"
+                className="home-tile py-3 px-3 rounded-lg border border-transparent"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">

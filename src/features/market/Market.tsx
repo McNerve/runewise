@@ -193,10 +193,11 @@ function MarketDetail({
               key={p}
               onClick={() => setPeriod(p)}
               aria-pressed={period === p}
-              className={`px-2 py-1 text-[10px] font-medium rounded-md transition-colors ${
+              title={`Show last ${p} of price data`}
+              className={`px-2 py-1 text-[10px] font-medium rounded-md transition-colors cursor-pointer ${
                 period === p
                   ? "bg-accent text-on-accent"
-                  : "text-text-secondary hover:text-text-primary"
+                  : "text-text-secondary hover:text-text-primary hover:bg-bg-secondary/60"
               }`}
             >
               {p}
@@ -207,10 +208,11 @@ function MarketDetail({
           <button
             onClick={() => setChartMode("line")}
             aria-pressed={chartMode === "line"}
-            className={`px-2 py-1 text-[10px] font-medium rounded-md transition-colors ${
+            title="Switch to line chart"
+            className={`px-2 py-1 text-[10px] font-medium rounded-md transition-colors cursor-pointer ${
               chartMode === "line"
                 ? "bg-accent text-on-accent"
-                : "text-text-secondary hover:text-text-primary"
+                : "text-text-secondary hover:text-text-primary hover:bg-bg-secondary/60"
             }`}
           >
             Line
@@ -218,10 +220,11 @@ function MarketDetail({
           <button
             onClick={() => setChartMode("candlestick")}
             aria-pressed={chartMode === "candlestick"}
-            className={`px-2 py-1 text-[10px] font-medium rounded-md transition-colors ${
+            title="Switch to candlestick chart"
+            className={`px-2 py-1 text-[10px] font-medium rounded-md transition-colors cursor-pointer ${
               chartMode === "candlestick"
                 ? "bg-accent text-on-accent"
-                : "text-text-secondary hover:text-text-primary"
+                : "text-text-secondary hover:text-text-primary hover:bg-bg-secondary/60"
             }`}
           >
             Candle

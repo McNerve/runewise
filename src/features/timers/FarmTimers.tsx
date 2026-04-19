@@ -109,7 +109,7 @@ function FarmOverview({ timers, now, onGoToTimers }: { timers: Timer[]; now: num
           </p>
           <button
             onClick={onGoToTimers}
-            className="px-3 py-1.5 text-xs font-medium bg-accent text-on-accent rounded-lg hover:bg-accent-hover transition-colors"
+            className="home-tile px-3 py-1.5 text-xs font-medium bg-accent text-on-accent border border-accent rounded-lg"
           >
             Go to Timers
           </button>
@@ -346,10 +346,11 @@ export default function FarmTimers() {
             key={t.id}
             onClick={() => setTab(t.id)}
             aria-pressed={tab === t.id}
-            className={`px-4 py-1.5 rounded text-sm font-medium transition-colors ${
+            title={`Switch to ${t.label}`}
+            className={`home-tile px-4 py-1.5 rounded text-sm font-medium border ${
               tab === t.id
-                ? "bg-accent text-on-accent"
-                : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
+                ? "bg-accent text-on-accent border-accent"
+                : "bg-bg-tertiary text-text-secondary border-transparent"
             }`}
           >
             {t.label}
@@ -389,7 +390,8 @@ export default function FarmTimers() {
                     addPreset(preset.patches);
                   }
                 }}
-                className="px-3 py-1.5 text-xs font-medium bg-bg-tertiary border border-border rounded-lg hover:bg-bg-secondary transition-colors"
+                title={`Start ${preset.name} preset`}
+                className="home-tile px-3 py-1.5 text-xs font-medium bg-bg-tertiary border border-border rounded-lg"
               >
                 {preset.name}
               </button>
