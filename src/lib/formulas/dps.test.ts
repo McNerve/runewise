@@ -8,6 +8,8 @@ import {
   calculateDps,
   applyModifiers,
   DPS_MODIFIERS,
+  dragonClawsExpectedDamage,
+  calculateSpecDps,
 } from "./dps";
 
 describe("dps formulas", () => {
@@ -232,6 +234,47 @@ describe("dps formulas", () => {
       });
 
       expect(withMod.attackRoll).toBeGreaterThan(without.attackRoll);
+    });
+  });
+
+  describe("dragonClawsExpectedDamage", () => {
+    it("at 100% accuracy totals ~1.5× max hit", () => {
+      const m = 48;
+      const total = dragonClawsExpectedDamage(m, 1.0);
+      expect(total).toBeGreaterThan(m * 1.4);
+      expect(total).toBeLessThan(m * 1.6);
+    });
+
+    it("at 0% accuracy deals 1 damage", () => {
+      expect(dragonClawsExpectedDamage(48, 0)).toBeCloseTo(1, 5);
+    });
+
+    it("monotonic in accuracy", () => {
+      const m = 48;
+      const low = dragonClawsExpectedDamage(m, 0.3);
+      const mid = dragonClawsExpectedDamage(m, 0.6);
+      const high = dragonClawsExpectedDamage(m, 0.9);
+      expect(mid).toBeGreaterThan(low);
+      expect(high).toBeGreaterThan(mid);
+    });
+  });
+
+  describe("calculateSpecDps", () => {
+    const baseInput = {
+      attackLevel: 99, strengthLevel: 99, rangedLevel: 1, magicLevel: 1,
+      attackBonus: 100, strengthBonus: 120,
+      prayerAttackMult: 1.2, prayerStrengthMult: 1.23,
+      stanceAttackBonus: 3, stanceStrengthBonus: 3,
+      attackSpeed: 4, combatStyle: "melee" as const,
+      targetDefLevel: 200, targetDefBonus: 50, targetHp: 500,
+      specAccuracyMult: 1.0, specDamageMult: 1.0,
+      specHits: 4, specGuaranteedHit: false, specSpeed: 4,
+    };
+
+    it("cascade path yields lower DPS than naive 4×hit at similar accuracy", () => {
+      const cascade = calculateSpecDps({ ...baseInput, specCascadeType: "dragon_claws" });
+      const naive = calculateSpecDps(baseInput);
+      expect(cascade.specDps).toBeLessThan(naive.specDps);
     });
   });
 });

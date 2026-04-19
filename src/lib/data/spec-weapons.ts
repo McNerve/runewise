@@ -9,6 +9,8 @@ export interface SpecWeapon {
   hits: number;
   guaranteedHit: boolean;
   notes: string;
+  // When set, DPS uses a bespoke cascade formula instead of (accuracy × maxHit/2 × hits).
+  cascadeType?: "dragon_claws";
 }
 
 export const SPEC_WEAPONS: SpecWeapon[] = [
@@ -23,7 +25,8 @@ export const SPEC_WEAPONS: SpecWeapon[] = [
     damageMult: 1.0,
     hits: 4,
     guaranteedHit: false,
-    notes: "4-hit cascade. Expected total ~3× max hit at high accuracy.",
+    cascadeType: "dragon_claws",
+    notes: "4-hit cascade. Landing the first roll deals max/2..max-1; subsequent landed rolls take shrinking sub-ranges.",
   },
   {
     id: "dragon_dagger",

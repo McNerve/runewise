@@ -349,7 +349,12 @@ const WIKI_MAP_TILES: Record<string, string> = {
   "hunter guild": "0_22_48",
 };
 
-const WIKI_MAP_BASE = "https://maps.runescape.wiki/osrs/versions/2026-03-04_a/tiles/rendered/0/2";
+// OSRS wiki publishes map tiles under versioned folders. When a new base map
+// ships, this folder 404s. WikiImage falls back to a text badge on failure,
+// so the app still works — but thumbnails vanish until this is bumped.
+// Run `npm run check:map-version` to detect a stale version.
+export const STAR_MAP_VERSION = "2026-03-04_a";
+const WIKI_MAP_BASE = `https://maps.runescape.wiki/osrs/versions/${STAR_MAP_VERSION}/tiles/rendered/0/2`;
 
 function getWikiMapTile(locationName: string): string | null {
   const lower = normalizeStarLocation(locationName);

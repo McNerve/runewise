@@ -84,6 +84,7 @@ export default function PanelLayout({ renderView, currentView }: PanelLayoutProp
         {panels.length < 3 && (
           <button
             onClick={addPanel}
+            aria-label="Add split panel"
             className="text-[10px] px-2 py-0.5 rounded bg-bg-tertiary text-text-secondary hover:text-text-primary transition-colors"
           >
             + Split

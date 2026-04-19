@@ -169,6 +169,8 @@ export default function DiaryTracker({ hiscores }: Props) {
                   onClick={() =>
                     setExpandedTier(isExpanded ? null : tier.tier)
                   }
+                  aria-expanded={isExpanded}
+                  aria-label={`${isExpanded ? "Collapse" : "Expand"} ${tier.tier} tier`}
                   className="w-full text-left px-4 py-3 flex items-center justify-between hover:bg-bg-secondary transition-colors"
                 >
                   <div className="flex items-center gap-3">

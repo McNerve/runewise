@@ -321,6 +321,34 @@ export interface SpecDpsInput extends DpsInput {
   specHits: number;
   specGuaranteedHit: boolean;
   specSpeed: number;
+  specCascadeType?: "dragon_claws";
+}
+
+// Dragon claws' Slice and Dice rolls accuracy four times. The first successful
+// roll deals damage in [maxHit/2, maxHit-1]; any later rolls that connect take
+// progressively smaller ranges ([maxHit/4..maxHit/2-1], [maxHit/8..maxHit/4-1],
+// [maxHit/8+1..maxHit/4]). If all four miss, the spec deals 1 damage.
+export function dragonClawsExpectedDamage(maxHit: number, accuracy: number): number {
+  const m = maxHit;
+  const ranges: [number, number][] = [
+    [Math.floor(m / 2), m - 1],
+    [Math.floor(m / 4), Math.floor(m / 2) - 1],
+    [Math.floor(m / 8), Math.floor(m / 4) - 1],
+    [Math.floor(m / 8) + 1, Math.floor(m / 4)],
+  ];
+  const expected = ([lo, hi]: [number, number]) => Math.max(0, (lo + hi) / 2);
+
+  let total = 0;
+  for (let k = 0; k < 4; k++) {
+    const pFirst = Math.pow(1 - accuracy, k) * accuracy;
+    let conditional = expected(ranges[0]);
+    for (let i = k + 1; i < 4; i++) {
+      conditional += accuracy * expected(ranges[i - k]);
+    }
+    total += pFirst * conditional;
+  }
+  total += Math.pow(1 - accuracy, 4) * 1;
+  return total;
 }
 
 export function calculateSpecDps(input: SpecDpsInput) {
@@ -330,9 +358,21 @@ export function calculateSpecDps(input: SpecDpsInput) {
   const specAccuracy = input.specGuaranteedHit
     ? 1.0
     : hitChance(specAttackRoll, base.defenseRoll);
-  const specDpsPerHit = dps(specMaxHit, specAccuracy, input.specSpeed);
-  const specTotalDps = specDpsPerHit * input.specHits;
-  const specTotalMaxHit = specMaxHit * input.specHits;
+
+  let specTotalDamage: number;
+  let specTotalMaxHit: number;
+  if (input.specCascadeType === "dragon_claws") {
+    specTotalDamage = dragonClawsExpectedDamage(specMaxHit, specAccuracy);
+    // Theoretical max: first roll top + next three landing top slots.
+    specTotalMaxHit = (specMaxHit - 1)
+      + Math.max(0, Math.floor(specMaxHit / 2) - 1)
+      + Math.max(0, Math.floor(specMaxHit / 4) - 1)
+      + Math.floor(specMaxHit / 4);
+  } else {
+    specTotalDamage = specAccuracy * (specMaxHit / 2) * input.specHits;
+    specTotalMaxHit = specMaxHit * input.specHits;
+  }
+  const specTotalDps = specTotalDamage / (input.specSpeed * 0.6);
 
   return {
     ...base,

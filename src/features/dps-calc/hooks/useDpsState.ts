@@ -540,6 +540,7 @@ export function useDpsState({ hiscores }: Props) {
       specHits: selectedSpec.hits,
       specGuaranteedHit: selectedSpec.guaranteedHit,
       specSpeed: effectiveAttackSpeed,
+      specCascadeType: selectedSpec.cascadeType,
     });
   }, [selectedSpec, attackLevel, strengthLevel, rangedLevel, magicLevel, effectiveAttackBonus, effectiveStrengthBonus, prayerAttackMult, prayerStrengthMult, stanceAttackBonus, stanceStrengthBonus, effectiveAttackSpeed, combatStyle, targetDefLevel, targetDefBonus, targetHp, selectedMonster?.magicLevel, modifierList, defReductions]);
 

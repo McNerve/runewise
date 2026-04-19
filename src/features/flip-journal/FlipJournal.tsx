@@ -3,6 +3,7 @@ import { loadJSON, saveJSON } from "../../lib/localStorage";
 import { formatGp } from "../../lib/format";
 import { searchItems, type ItemMapping } from "../../lib/api/ge";
 import Chart from "../../components/Chart";
+import EmptyState from "../../components/EmptyState";
 import type { LineData, Time } from "lightweight-charts";
 
 const STORAGE_KEY = "runewise_flip_journal";
@@ -290,9 +291,10 @@ function JournalTable({ entries, onEdit, onDelete, onClose }: JournalTableProps)
 
   if (sorted.length === 0) {
     return (
-      <div className="text-center text-sm text-text-secondary/50 py-8">
-        No flips logged yet. Add one above.
-      </div>
+      <EmptyState
+        title="No flips logged yet"
+        description="Add one above to start tracking your GE activity."
+      />
     );
   }
 
