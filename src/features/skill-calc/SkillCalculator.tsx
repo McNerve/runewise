@@ -389,7 +389,7 @@ export default function SkillCalculator({ hiscores }: Props) {
                         <td className="px-4 py-1.5 font-medium">
                           <span className="flex items-center gap-2">
                             <img
-                              src={method.itemName ? itemIcon(method.itemName) : SKILL_ICONS[selectedSkill]}
+                              src={method.itemName ? itemIcon(method.itemName) : (selectedSkill ? SKILL_ICONS[selectedSkill] : "")}
                               alt=""
                               className="w-4 h-4 shrink-0"
                               onError={(e) => { e.currentTarget.style.display = "none"; }}
