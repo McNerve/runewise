@@ -137,7 +137,8 @@ function UpdateButton() {
         </div>
         <button
           onClick={installUpdate}
-          className="bg-success hover:bg-success/80 text-white text-xs px-3 py-1.5 rounded font-medium transition-colors"
+          title="Install the downloaded update and restart"
+          className="home-tile bg-success border border-success text-white text-xs px-3 py-1.5 rounded font-medium"
         >
           Update Now
         </button>
@@ -149,8 +150,9 @@ function UpdateButton() {
     <div className="flex items-center gap-3">
       <button
         onClick={() => checkForUpdates(false)}
+        title="Check the release server for a newer version"
         disabled={status === "checking" || status === "downloading"}
-        className="bg-accent hover:bg-accent-hover text-on-accent text-xs px-3 py-1.5 rounded transition-colors disabled:opacity-50"
+        className="home-tile bg-accent border border-accent text-on-accent text-xs px-3 py-1.5 rounded disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {status === "idle" && "Check for Updates"}
         {status === "checking" && "Checking..."}
@@ -199,7 +201,8 @@ function KeybindRecorder({
   ) : (
     <button
       onClick={() => setRecording(true)}
-      className="text-xs border border-border bg-bg-tertiary/80 text-text-primary px-2 py-1 rounded hover:bg-bg-secondary transition-colors min-w-[80px]"
+      title="Click then press a new key combination"
+      className="home-tile text-xs border border-border bg-bg-tertiary/80 text-text-primary px-2 py-1 rounded min-w-[80px]"
     >
       {mod}
       {(value ?? "").toUpperCase()}
@@ -221,14 +224,17 @@ function ToggleSwitch({
       role="switch"
       aria-checked={checked}
       aria-label={label}
+      title={`${label} \u2014 ${checked ? "on" : "off"} (click to toggle)`}
       onClick={onChange}
-      className={`relative h-5 w-10 rounded-full transition-colors shrink-0 ${
-        checked ? "bg-accent" : "bg-bg-tertiary"
+      className={`group relative h-5 w-10 cursor-pointer rounded-full border shrink-0 transition-all duration-200 hover:shadow-[0_0_0_3px_color-mix(in_srgb,var(--color-accent)_18%,transparent)] ${
+        checked
+          ? "bg-accent border-accent"
+          : "bg-bg-tertiary border-border hover:border-accent/40"
       }`}
     >
       <span
-        className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white transition-transform ${
-          checked ? "translate-x-5" : ""
+        className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-all duration-200 ease-out group-active:w-5 ${
+          checked ? "left-[1.25rem] group-active:left-[1rem]" : "left-0.5"
         }`}
       />
     </button>
@@ -345,7 +351,8 @@ function NotificationsCard() {
       <div className="mt-5 pt-4 border-t border-border/30 flex items-center gap-3">
         <button
           onClick={fireTest}
-          className="rounded-lg border border-border bg-bg-tertiary px-3 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:border-accent/40 transition-colors"
+          title="Send a test desktop notification"
+          className="home-tile rounded-lg border border-border bg-bg-tertiary px-3 py-1.5 text-xs text-text-secondary"
         >
           {testStatus === "idle" && "Test notification"}
           {testStatus === "sent" && "Sent ✓"}
@@ -402,10 +409,11 @@ export default function Settings() {
                     key={option.key}
                     type="button"
                     onClick={() => update({ theme: option.key })}
-                    className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm transition-colors ${
+                    title={`Use ${option.label} theme`}
+                    className={`home-tile inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm ${
                       active
                         ? "border-accent/35 bg-accent/11 text-text-primary"
-                        : "border-border bg-bg-tertiary/45 text-text-secondary hover:bg-bg-tertiary/65 hover:text-text-primary"
+                        : "border-border bg-bg-tertiary/45 text-text-secondary"
                     }`}
                   >
                     <span
@@ -518,7 +526,8 @@ export default function Settings() {
           </p>
           <button
             onClick={resetKeybinds}
-            className="rounded-lg border border-border bg-bg-tertiary px-3 py-1 text-xs text-text-secondary hover:text-text-primary hover:border-accent/40 transition-colors"
+            title="Restore the default keyboard shortcuts"
+            className="home-tile rounded-lg border border-border bg-bg-tertiary px-3 py-1 text-xs text-text-secondary"
           >
             Reset to Defaults
           </button>
@@ -574,7 +583,8 @@ export default function Settings() {
                 localStorage.removeItem(ONBOARDING_KEY);
                 window.location.reload();
               }}
-              className="rounded-lg border border-border bg-bg-tertiary px-3 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:border-accent/40 transition-colors"
+              title="Re-open the first-run setup wizard"
+              className="home-tile rounded-lg border border-border bg-bg-tertiary px-3 py-1.5 text-xs text-text-secondary"
             >
               Restart tour
             </button>
@@ -594,7 +604,8 @@ export default function Settings() {
                 alert(`Cleared ${keys.length} cached entries. Reload the page to fetch fresh data.`);
                 window.location.reload();
               }}
-              className="rounded-lg bg-bg-tertiary px-3 py-1.5 text-xs text-text-secondary transition-colors hover:text-text-primary"
+              title="Drop all cached API responses and reload"
+              className="home-tile rounded-lg border border-transparent bg-bg-tertiary px-3 py-1.5 text-xs text-text-secondary"
             >
               Clear Cache
             </button>
@@ -611,7 +622,8 @@ export default function Settings() {
               onClick={() => {
                 if (confirm("Reset all settings to defaults?")) resetAll();
               }}
-              className="rounded-lg bg-danger/10 px-3 py-1.5 text-xs text-danger transition-colors hover:text-danger/80"
+              title="Reset preferences, theme choices, and shortcuts to defaults"
+              className="home-tile rounded-lg border border-danger/20 bg-danger/10 px-3 py-1.5 text-xs text-danger"
             >
               Reset
             </button>
