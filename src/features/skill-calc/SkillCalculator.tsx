@@ -94,13 +94,10 @@ export default function SkillCalculator({ hiscores }: Props) {
 
   // Load wiki recipes for selected skill
   useEffect(() => {
-    if (!selectedSkill) {
-      setWikiRecipes([]);
-      return;
-    }
-    let cancelled = false;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- clear stale recipes when skill changes
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- clear stale recipes when skill changes or clears
     setWikiRecipes([]);
+    if (!selectedSkill) return;
+    let cancelled = false;
     fetchRecipesForSkill(selectedSkill).then((recipes) => {
       if (!cancelled) setWikiRecipes(recipes);
     });
