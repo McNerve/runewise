@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import * as Tooltip from "@radix-ui/react-tooltip";
 import {
   BOSS_CATEGORIES,
   BOSSES,
@@ -111,32 +112,32 @@ function BossActionIcon({
   onClick?: () => void;
   href?: string;
 }) {
-  const className =
-    "flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-bg-primary/50 text-base text-text-secondary transition hover:border-accent/40 hover:bg-bg-primary/80 hover:text-text-primary";
-  if (href) {
-    return (
-      <a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label={label}
-        title={label}
-        className={className}
-      >
-        {icon}
-      </a>
-    );
-  }
-  return (
-    <button
-      type="button"
-      onClick={onClick}
+  const className = "boss-action-icon";
+  const trigger = href ? (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
       aria-label={label}
-      title={label}
       className={className}
     >
       {icon}
+    </a>
+  ) : (
+    <button type="button" onClick={onClick} aria-label={label} className={className}>
+      {icon}
     </button>
+  );
+  return (
+    <Tooltip.Root delayDuration={150}>
+      <Tooltip.Trigger asChild>{trigger}</Tooltip.Trigger>
+      <Tooltip.Portal>
+        <Tooltip.Content className="tooltip-content" side="bottom" sideOffset={6}>
+          {label}
+          <Tooltip.Arrow className="fill-bg-tertiary" />
+        </Tooltip.Content>
+      </Tooltip.Portal>
+    </Tooltip.Root>
   );
 }
 
@@ -418,17 +419,18 @@ export default function BossGuide({ hiscores }: Props) {
       (t) => normalizeBossLookup(t.bossName) === normalizeBossLookup(boss.name)
     );
     try {
+      const dropsName = boss.dropsName ?? boss.name;
       const [nextGuide, nextDrops, nextWikiDrops] = await Promise.all([
         fetchBossGuideDocument(boss.wikiPage),
         fetchDropTable(boss.name).catch(() => ({ categories: [] })),
-        fetchDropsForMonster(boss.name).then((t) => t.drops).catch(() => [] as WikiDrop[]),
+        fetchDropsForMonster(dropsName).then((t) => t.drops).catch(() => [] as WikiDrop[]),
       ]);
       if (requestId === activeRequest.current) {
         setGuide(nextGuide);
         setDropCategories(nextDrops.categories);
         setWikiDrops(nextWikiDrops);
         if (!hasStaticDrops && nextWikiDrops.length === 0) {
-          fetchBossDropsFromWiki(boss.name)
+          fetchBossDropsFromWiki(dropsName)
             .then((rows) => {
               if (requestId === activeRequest.current) setBucketFallbackDrops(rows);
             })
@@ -680,66 +682,59 @@ export default function BossGuide({ hiscores }: Props) {
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-3 xl:items-end">
-                  <div className="flex flex-wrap items-stretch gap-2 xl:justify-end">
-                    {BOSS_WORKSPACE_TABS.map((tab) => (
-                      <button
-                        key={tab.id}
-                        type="button"
-                        aria-pressed={activeTab === tab.id}
-                        onClick={() => setActiveTab(tab.id)}
-                        className={`relative rounded-xl border px-3.5 py-2 text-left transition ${
-                          activeTab === tab.id
-                            ? "border-accent/50 bg-accent/10"
-                            : "border-border bg-bg-primary/50 text-text-secondary hover:border-border hover:bg-bg-primary/70"
-                        }`}
-                      >
-                        {activeTab === tab.id && (
-                          <div className="absolute -bottom-px left-3 right-3 h-0.5 rounded-full bg-accent" />
-                        )}
-                        <div className={`text-xs font-semibold ${activeTab === tab.id ? "text-accent" : ""}`}>
-                          {tab.label}
-                        </div>
-                        <div className={`hidden sm:block text-[11px] ${activeTab === tab.id ? "text-accent/60" : "text-text-secondary/60"}`}>
-                          {tab.description}
-                        </div>
-                      </button>
-                    ))}
-                    <div
-                      className="mx-1 hidden self-stretch w-px bg-border/60 sm:block"
-                      aria-hidden="true"
+                <div className="flex shrink-0 items-center gap-2 self-start">
+                  <BossActionIcon
+                    label="Profit Calculator"
+                    icon="💰"
+                    onClick={() =>
+                      navigate("loot", {
+                        boss: bossLootTable?.bossName ?? selectedBoss.name,
+                        tab: "profit",
+                      })
+                    }
+                  />
+                  <BossActionIcon
+                    label="DPS Calculator"
+                    icon="⚔️"
+                    onClick={() => navigate("dps-calc", { monster: selectedBoss.name })}
+                  />
+                  {selectedBoss.category === "Raids" && (
+                    <BossActionIcon
+                      label="Raid Rooms"
+                      icon="🏛️"
+                      onClick={() => navigate("raids")}
                     />
-                    <div className="flex items-center gap-2">
-                      <BossActionIcon
-                        label="Profit Calculator"
-                        icon="💰"
-                        onClick={() =>
-                          navigate("loot", {
-                            boss: bossLootTable?.bossName ?? selectedBoss.name,
-                            tab: "profit",
-                          })
-                        }
-                      />
-                      <BossActionIcon
-                        label="DPS Calculator"
-                        icon="⚔️"
-                        onClick={() => navigate("dps-calc", { monster: selectedBoss.name })}
-                      />
-                      {selectedBoss.category === "Raids" && (
-                        <BossActionIcon
-                          label="Raid Rooms"
-                          icon="🏛️"
-                          onClick={() => navigate("raids")}
-                        />
-                      )}
-                      <BossActionIcon
-                        label="Open OSRS Wiki"
-                        icon="🔗"
-                        href={`https://oldschool.runescape.wiki/w/${selectedBoss.wikiPage}`}
-                      />
-                    </div>
-                  </div>
+                  )}
+                  <BossActionIcon
+                    label="Open OSRS Wiki"
+                    icon="🔗"
+                    href={`https://oldschool.runescape.wiki/w/${selectedBoss.wikiPage}`}
+                  />
                 </div>
+              </div>
+
+              <div className="mt-4 flex items-stretch gap-2 overflow-x-auto pb-1 sidebar-scroll">
+                {BOSS_WORKSPACE_TABS.map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    aria-pressed={activeTab === tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`tab-pill ${
+                      activeTab === tab.id ? "tab-pill--active" : "tab-pill--inactive"
+                    }`}
+                  >
+                    {activeTab === tab.id && (
+                      <div className="absolute -bottom-px left-3 right-3 h-0.5 rounded-full bg-accent" />
+                    )}
+                    <div className={`text-xs font-semibold ${activeTab === tab.id ? "text-accent" : ""}`}>
+                      {tab.label}
+                    </div>
+                    <div className={`hidden sm:block text-[11px] ${activeTab === tab.id ? "text-accent/60" : "text-text-secondary/60"}`}>
+                      {tab.description}
+                    </div>
+                  </button>
+                ))}
               </div>
 
               <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -853,7 +848,12 @@ export default function BossGuide({ hiscores }: Props) {
                   Guide Sections
                 </div>
                 <div className="space-y-0.5">
-                  {guide.sections.map((section, index) => (
+                  {(() => {
+                    let h2Counter = 0;
+                    return guide.sections.map((section) => {
+                      if (section.level === 2) h2Counter += 1;
+                      const h2Number = h2Counter;
+                      return (
                     <button
                       key={section.id}
                       type="button"
@@ -866,7 +866,7 @@ export default function BossGuide({ hiscores }: Props) {
                     >
                       {section.level === 2 ? (
                         <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-bg-tertiary/60 text-[10px] font-medium text-text-secondary/60 group-hover:text-text-primary">
-                          {index + 1}
+                          {h2Number}
                         </span>
                       ) : (
                         <span className="w-1 h-1 shrink-0 rounded-full bg-text-secondary/30 group-hover:bg-accent/50" />
@@ -881,7 +881,9 @@ export default function BossGuide({ hiscores }: Props) {
                         {section.title}
                       </span>
                     </button>
-                  ))}
+                      );
+                    });
+                  })()}
                 </div>
               </aside>
 

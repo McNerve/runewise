@@ -353,7 +353,8 @@ export default function Home({ hiscores }: HomeProps) {
                 <button
                   type="button"
                   onClick={() => navigate("overview")}
-                  className="rounded-lg border border-accent/25 bg-accent/10 px-3 py-1.5 text-xs font-medium text-accent hover:border-accent/45 transition-colors"
+                  title="Open full profile"
+                  className="home-tile rounded-lg border border-accent/25 bg-accent/10 px-3 py-1.5 text-xs font-medium text-accent"
                 >
                   Full Profile
                 </button>
@@ -390,7 +391,8 @@ export default function Home({ hiscores }: HomeProps) {
                       handleTogglePin(tool.id);
                     }}
                     aria-label={`${tool.label}${tool.pinned ? " (pinned)" : ""}`}
-                    className={`relative flex flex-col items-center gap-1.5 rounded-lg border px-2 py-3 transition hover:bg-bg-secondary/50 hover:border-border/60 ${
+                    title={`Open ${tool.label}${tool.pinned ? " · pinned" : " · right-click to pin"}`}
+                    className={`home-tile relative flex flex-col items-center gap-1.5 rounded-lg border px-2 py-3 ${
                       tool.pinned ? "border-accent/40" : "border-border/30"
                     }`}
                   >
@@ -427,7 +429,8 @@ export default function Home({ hiscores }: HomeProps) {
                   key={entity.id}
                   type="button"
                   onClick={() => navigate(entity.view, entity.params)}
-                  className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-left transition hover:bg-bg-secondary/50"
+                  title={`Open ${entity.name}`}
+                  className="home-tile flex items-center gap-2.5 rounded-lg border border-transparent px-3 py-2 text-left"
                 >
                   <WikiImage src={entity.icon ?? NAV_ICONS.wiki} alt="" className="h-5 w-5 shrink-0" fallback={entity.name[0]} />
                   <div className="min-w-0 flex-1">
@@ -510,7 +513,7 @@ export default function Home({ hiscores }: HomeProps) {
                   <button
                     type="button"
                     onClick={() => navigate("timers")}
-                    className="flex items-center gap-2.5 w-full rounded-lg px-2 py-2 text-left transition hover:bg-bg-secondary/50"
+                    className="home-tile flex items-center gap-2.5 w-full rounded-lg border border-transparent px-2 py-2 text-left"
                   >
                     <ShellIcon view="timers" className="h-4 w-4 shrink-0 text-accent" />
                     <div className="min-w-0 flex-1">
@@ -526,7 +529,7 @@ export default function Home({ hiscores }: HomeProps) {
                   <button
                     type="button"
                     onClick={() => navigate("stars")}
-                    className="flex items-center gap-2.5 w-full rounded-lg px-2 py-2 text-left transition hover:bg-bg-secondary/50"
+                    className="home-tile flex items-center gap-2.5 w-full rounded-lg border border-transparent px-2 py-2 text-left"
                   >
                     <ShellIcon view="stars" className="h-4 w-4 shrink-0 text-accent" />
                     <div className="min-w-0 flex-1">

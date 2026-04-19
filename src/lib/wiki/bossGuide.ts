@@ -266,6 +266,18 @@ function cleanSectionHtml(
     link.replaceWith(fragment);
   });
 
+  // Wrap wiki tables in a horizontal-scroll container so multi-column tables
+  // (e.g. Location info, drop tables, attack tables) can overflow gracefully
+  // instead of squeezing cells until headers and content visually overlap.
+  content.querySelectorAll("table").forEach((table) => {
+    if (table.parentElement?.classList.contains("wiki-table-scroll")) return;
+    if (table.classList.contains("equipment")) return;
+    const wrapper = doc.createElement("div");
+    wrapper.className = "wiki-table-scroll";
+    table.replaceWith(wrapper);
+    wrapper.appendChild(table);
+  });
+
   normalizeGalleries(content);
 
   content.querySelectorAll("img[alt]").forEach((img) => {
@@ -318,8 +330,8 @@ function cleanSectionHtml(
 
 async function fetchWikiSections(wikiPage: string): Promise<WikiSection[]> {
   return fetchJson<WikiSection[]>({
-    url: `${WIKI_API}?action=parse&page=${wikiPage}&prop=sections&format=json`,
-    cacheKey: `boss-guide-sections:v3:${wikiPage}`,
+    url: `${WIKI_API}?action=parse&page=${wikiPage}&prop=sections&format=json&redirects=1`,
+    cacheKey: `boss-guide-sections:v4:${wikiPage}`,
     ttlMs: GUIDE_TTL,
     transform: (json) =>
       typeof json === "object" &&
@@ -339,7 +351,7 @@ async function fetchSectionHtml(
   sectionNumber: string
 ): Promise<string> {
   return fetchJson<string>({
-    url: `${WIKI_API}?action=parse&page=${wikiPage}&prop=text&section=${sectionNumber}&format=json`,
+    url: `${WIKI_API}?action=parse&page=${wikiPage}&prop=text&section=${sectionNumber}&format=json&redirects=1`,
     dedupeKey: `boss-guide:${wikiPage}:${sectionNumber}`,
     transform: (json) =>
       ((json as WikiTextResponse).parse?.text?.["*"] ?? "").trim(),
@@ -348,7 +360,7 @@ async function fetchSectionHtml(
 
 async function fetchFullHtml(wikiPage: string): Promise<string> {
   return fetchJson<string>({
-    url: `${WIKI_API}?action=parse&page=${wikiPage}&prop=text&format=json`,
+    url: `${WIKI_API}?action=parse&page=${wikiPage}&prop=text&format=json&redirects=1`,
     dedupeKey: `boss-guide-full:${wikiPage}`,
     transform: (json) =>
       ((json as WikiTextResponse).parse?.text?.["*"] ?? "").trim(),
@@ -488,7 +500,7 @@ function disambiguateTitle(
 export async function fetchBossGuideDocument(
   wikiPage: string
 ): Promise<BossGuideDocument> {
-  const cacheKey = `boss-guide:v6:${wikiPage}`;
+  const cacheKey = `boss-guide:v8:${wikiPage}`;
   const cached = getCached<BossGuideDocument>(cacheKey, GUIDE_TTL);
   if (cached) return cached;
 
@@ -567,6 +579,17 @@ export async function fetchBossGuideDocument(
   const normalizedSections: NormalizedSection[] = rawSections.filter(
     (s): s is NormalizedSection => s !== null
   );
+
+  // Ensure section ids are unique (wiki pages occasionally have repeated H2
+  // titles like "Strategy" or "Equipment"). Append a counter suffix on
+  // collision so React keys and scroll-target ids stay distinct.
+  const seenIds = new Map<string, number>();
+  for (const s of normalizedSections) {
+    const baseId = s.id;
+    const count = (seenIds.get(baseId) ?? 0) + 1;
+    seenIds.set(baseId, count);
+    if (count > 1) s.id = `${baseId}-${count}`;
+  }
 
   // Second dedup pass: if same title appears multiple times, disambiguate H3 using parent context
   const titleCounts = new Map<string, number>();

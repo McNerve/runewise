@@ -296,11 +296,8 @@ export default function SlayerHelper() {
             key={master.name}
             onClick={() => setSelectedMaster(master)}
             aria-pressed={selectedMaster.name === master.name}
-            className={`relative rounded-xl border px-3.5 py-2 text-left transition ${
-              selectedMaster.name === master.name
-                ? "border-accent/50 bg-accent/10"
-                : "border-border bg-bg-primary/50 text-text-secondary hover:bg-bg-primary/70"
-            }`}
+            title={`Use ${master.name} (${master.tasks.length} tasks)`}
+            className={`tab-pill ${selectedMaster.name === master.name ? "tab-pill--active" : "tab-pill--inactive"}`}
           >
             {selectedMaster.name === master.name && (
               <div className="absolute -bottom-px left-3 right-3 h-0.5 rounded-full bg-accent" />
@@ -366,11 +363,8 @@ export default function SlayerHelper() {
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             aria-pressed={activeTab === tab.id}
-            className={`relative rounded-xl border px-3.5 py-2 text-left transition ${
-              activeTab === tab.id
-                ? "border-accent/50 bg-accent/10"
-                : "border-border bg-bg-primary/50 text-text-secondary hover:bg-bg-primary/70"
-            }`}
+            title={tab.description}
+            className={`tab-pill ${activeTab === tab.id ? "tab-pill--active" : "tab-pill--inactive"}`}
           >
             {activeTab === tab.id && (
               <div className="absolute -bottom-px left-3 right-3 h-0.5 rounded-full bg-accent" />

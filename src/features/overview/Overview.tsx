@@ -208,7 +208,7 @@ export default function Overview({ hiscores, rsn, lastFetched = null, onRefresh 
             onClick={() => navigate("clue-helper")}
           />
         )}
-        {colosseumGlory != null && (
+        {colosseumGlory != null && colosseumGlory > 0 && (
           <StatCard
             label="Colosseum Glory"
             icon={<WikiImage src={itemIcon("Dizana's quiver (uncharged)")} alt="" className="w-5 h-5 opacity-50" fallback="Q" />}
@@ -252,7 +252,8 @@ export default function Overview({ hiscores, rsn, lastFetched = null, onRefresh 
       {/* CTA: deep-link to Progress page */}
       <button
         onClick={() => navigate("progress")}
-        className="w-full mb-5 flex items-center justify-between gap-3 px-4 py-3 rounded-lg bg-bg-secondary/60 hover:bg-bg-secondary border border-border/60 hover:border-accent/40 transition-colors text-left group"
+        title="Open Progress: quests, diaries, combat tasks"
+        className="home-tile w-full mb-5 flex items-center justify-between gap-3 px-4 py-3 rounded-lg bg-bg-secondary/60 border border-border/60 text-left group"
       >
         <div className="flex items-center gap-3">
           <img src={`${WIKI_IMG}/Quest_point_icon.png`} alt="" className="w-5 h-5" onError={(e) => { e.currentTarget.style.display = "none"; }} />
@@ -289,7 +290,8 @@ export default function Overview({ hiscores, rsn, lastFetched = null, onRefresh 
             <button
               key={skillName}
               onClick={() => navigate("skill-calc", { skill: skillName })}
-              className="group bg-bg-secondary rounded px-3 py-2 flex items-center justify-between hover:bg-bg-tertiary hover:border-accent/20 border border-transparent transition-all cursor-pointer text-left"
+              title={`Open ${skillName} calculator (level ${skill.level})`}
+              className="home-tile group bg-bg-secondary rounded px-3 py-2 flex items-center justify-between border border-transparent text-left"
             >
               <div className="flex items-center gap-2">
                 <WikiImage src={SKILL_ICONS[skillName]} alt="" className="w-4 h-4" fallback={skillName[0]} />
@@ -413,7 +415,8 @@ export default function Overview({ hiscores, rsn, lastFetched = null, onRefresh 
                       sessionStorage.setItem("runewise_pending_kc", JSON.stringify({ boss: boss.name, kc: boss.score }));
                       navigate("bosses", { boss: boss.name });
                     }}
-                    className="bg-bg-secondary rounded px-2 py-2 hover:bg-bg-tertiary transition-colors flex items-center gap-2"
+                    title={`Open ${boss.name} guide (${boss.score.toLocaleString()} KC)`}
+                    className="home-tile bg-bg-secondary rounded border border-transparent px-2 py-2 flex items-center gap-2"
                   >
                     <div className="w-6 h-6 shrink-0 relative">
                       <img

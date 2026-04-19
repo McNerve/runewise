@@ -132,10 +132,11 @@ export default function SkillCalculator({ hiscores }: Props) {
             key={tab.id}
             onClick={() => setSkillTab(tab.id)}
             aria-pressed={skillTab === tab.id}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+            title={`Switch to ${tab.label}`}
+            className={`home-tile flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border ${
               skillTab === tab.id
-                ? "bg-accent text-on-accent"
-                : "text-text-secondary hover:bg-bg-secondary/50"
+                ? "bg-accent text-on-accent border-accent"
+                : "text-text-secondary border-transparent"
             }`}
           >
             <img src={tab.icon} alt="" className="w-4 h-4" onError={(e) => { e.currentTarget.style.display = "none"; }} />
@@ -171,10 +172,11 @@ export default function SkillCalculator({ hiscores }: Props) {
               key={skill}
               onClick={() => setSelectedSkill(skill)}
               aria-pressed={selectedSkill === skill}
-              className={`px-2 py-1.5 rounded text-xs transition-colors relative flex items-center gap-1.5 ${
+              title={`Calculate ${skill} (level ${level ?? "?"})`}
+              className={`home-tile px-2 py-1.5 rounded text-xs relative flex items-center gap-1.5 border ${
                 selectedSkill === skill
-                  ? "bg-accent text-on-accent"
-                  : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
+                  ? "bg-accent text-on-accent border-accent"
+                  : "bg-bg-tertiary text-text-secondary border-transparent"
               }`}
             >
               <img src={SKILL_ICONS[skill]} alt="" className="w-4 h-4" />
@@ -254,10 +256,11 @@ export default function SkillCalculator({ hiscores }: Props) {
                 <button
                   onClick={() => handleTargetChange(currentLevel + 1)}
                   aria-pressed={targetLevel === currentLevel + 1}
-                  className={`px-2 py-1 rounded text-xs transition-colors ${
+                  title="Set target to next level"
+                  className={`home-tile px-2 py-1 rounded text-xs border ${
                     targetLevel === currentLevel + 1
-                      ? "bg-accent text-on-accent"
-                      : "bg-bg-tertiary text-text-secondary hover:bg-bg-tertiary/80"
+                      ? "bg-accent text-on-accent border-accent"
+                      : "bg-bg-tertiary text-text-secondary border-transparent"
                   }`}
                 >
                   +1
@@ -266,10 +269,11 @@ export default function SkillCalculator({ hiscores }: Props) {
               <button
                 onClick={() => handleTargetChange(99)}
                 aria-pressed={targetLevel === 99}
-                className={`px-2 py-1 rounded text-xs transition-colors ${
+                title="Set target to 99"
+                className={`home-tile px-2 py-1 rounded text-xs border ${
                   targetLevel === 99
-                    ? "bg-accent text-on-accent"
-                    : "bg-bg-tertiary text-text-secondary hover:bg-bg-tertiary/80"
+                    ? "bg-accent text-on-accent border-accent"
+                    : "bg-bg-tertiary text-text-secondary border-transparent"
                 }`}
               >
                 99
@@ -317,10 +321,11 @@ export default function SkillCalculator({ hiscores }: Props) {
                   key={f}
                   onClick={() => setIntensityFilter(f)}
                   aria-pressed={intensityFilter === f}
-                  className={`px-2.5 py-1 rounded-full text-xs transition-colors ${
+                  title={f === "All" ? "Show all training methods" : `Filter to ${f}-attention methods`}
+                  className={`home-tile px-2.5 py-1 rounded-full text-xs border ${
                     intensityFilter === f
-                      ? "bg-accent text-on-accent"
-                      : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
+                      ? "bg-accent text-on-accent border-accent"
+                      : "bg-bg-tertiary text-text-secondary border-transparent"
                   }`}
                 >
                   {f}

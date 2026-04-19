@@ -145,10 +145,11 @@ export default function StatsPanel({ state }: StatsPanelProps) {
                       key={m}
                       onClick={() => setBonusMode(m)}
                       aria-pressed={bonusMode === m}
-                      className={`px-2 py-0.5 rounded text-[10px] capitalize transition-colors ${
+                      title={m === "equipment" ? "Compute bonuses from equipped gear" : "Enter bonuses manually"}
+                      className={`home-tile px-2 py-0.5 rounded text-[10px] capitalize border ${
                         bonusMode === m
-                          ? "bg-accent text-on-accent"
-                          : "bg-bg-tertiary text-text-secondary hover:bg-bg-secondary"
+                          ? "bg-accent text-on-accent border-accent"
+                          : "bg-bg-tertiary text-text-secondary border-transparent"
                       }`}
                     >
                       {m}
@@ -291,10 +292,10 @@ export default function StatsPanel({ state }: StatsPanelProps) {
                     onClick={() => setPrayerIdx(i)}
                     aria-pressed={isActive}
                     title={`${p.name}${p.level ? ` (Lvl ${p.level})` : ""}${p.attackMult > 1 ? ` +${Math.round((p.attackMult - 1) * 100)}% atk` : ""}${p.strengthMult > 1 ? ` +${Math.round((p.strengthMult - 1) * 100)}% str` : ""}`}
-                    className={`w-10 h-10 rounded-lg flex flex-col items-center justify-center transition-all ${
+                    className={`home-tile w-10 h-10 rounded-lg flex flex-col items-center justify-center ${
                       isActive
-                        ? "bg-accent/20 ring-2 ring-accent scale-105"
-                        : "bg-bg-tertiary/40 hover:bg-bg-secondary border border-border/20"
+                        ? "bg-accent/20 ring-2 ring-accent scale-105 border-transparent"
+                        : "bg-bg-tertiary/40 border border-border/20"
                     }`}
                   >
                     {p.icon ? (
@@ -355,10 +356,10 @@ export default function StatsPanel({ state }: StatsPanelProps) {
                     onClick={() => setStanceIdx(i)}
                     aria-pressed={isActive}
                     title={`${s.name} \u2014 ${s.style} (${s.attackType})${bonusParts.length ? ` \u00b7 ${bonusParts.join(", ")}` : ""}`}
-                    className={`px-2.5 py-2 rounded-lg text-left text-xs transition-all ${
+                    className={`home-tile px-2.5 py-2 rounded-lg text-left text-xs ${
                       isActive
-                        ? "bg-accent/15 ring-1 ring-accent/50 text-text-primary"
-                        : "bg-bg-tertiary/40 text-text-secondary hover:bg-bg-secondary border border-border/20"
+                        ? "bg-accent/15 ring-1 ring-accent/50 text-text-primary border-transparent"
+                        : "bg-bg-tertiary/40 text-text-secondary border border-border/20"
                     }`}
                   >
                     <div className="font-medium truncate">{s.name}</div>

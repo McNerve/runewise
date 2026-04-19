@@ -219,7 +219,7 @@ function EntryForm({ initial, onSubmit, onCancel }: EntryFormProps) {
         <button
           type="submit"
           disabled={!valid}
-          className="px-4 py-1.5 text-sm font-medium bg-accent text-on-accent rounded-lg hover:bg-accent-hover transition-colors disabled:opacity-40"
+          className="home-tile px-4 py-1.5 text-sm font-medium bg-accent text-on-accent border border-accent rounded-lg disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {initial ? "Update" : "Add Flip"}
         </button>
@@ -411,7 +411,7 @@ function CloseModal({ entry, onConfirm, onCancel }: {
           <button
             disabled={!sellPrice || Number(sellPrice) <= 0}
             onClick={() => onConfirm(Number(sellPrice))}
-            className="px-4 py-1.5 text-sm font-medium bg-accent text-on-accent rounded-lg hover:bg-accent-hover transition-colors disabled:opacity-40"
+            className="home-tile px-4 py-1.5 text-sm font-medium bg-accent text-on-accent border border-accent rounded-lg disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Close flip
           </button>

@@ -229,7 +229,8 @@ function DropTablesTab({
               <button
                 key={name}
                 onClick={() => selectMonster(name)}
-                className="w-full text-left px-4 py-2 text-sm hover:bg-bg-secondary transition-colors"
+                title={`Show ${name} drops`}
+                className="home-tile w-full text-left px-4 py-2 text-sm border border-transparent"
               >
                 {name}
               </button>
@@ -774,11 +775,8 @@ export default function Loot() {
             type="button"
             aria-pressed={tab === t.id}
             onClick={() => setTab(t.id)}
-            className={`relative rounded-xl border px-3.5 py-2 text-left transition ${
-              tab === t.id
-                ? "border-accent/50 bg-accent/10"
-                : "border-border bg-bg-primary/50 text-text-secondary hover:border-border hover:bg-bg-primary/70"
-            }`}
+            title={t.description}
+            className={`tab-pill ${tab === t.id ? "tab-pill--active" : "tab-pill--inactive"}`}
           >
             {tab === t.id && (
               <div className="absolute -bottom-px left-3 right-3 h-0.5 rounded-full bg-accent" />

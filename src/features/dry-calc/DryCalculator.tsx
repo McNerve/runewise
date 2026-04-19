@@ -211,10 +211,11 @@ export default function DryCalculator({ hiscores }: Props) {
         <div className="bg-bg-tertiary rounded-lg p-3 overflow-y-auto max-h-[500px]">
           <button
             onClick={() => { setSelectedDrop(null); setRate(512); setKills(0); setKcAutoFilled(false); }}
-            className={`w-full mb-3 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+            title="Reset to manually entered rate and KC"
+            className={`home-tile w-full mb-3 px-3 py-2 rounded-lg text-xs font-medium border ${
               !selectedDrop
-                ? "bg-accent text-on-accent"
-                : "bg-bg-tertiary text-text-secondary hover:bg-bg-tertiary/80"
+                ? "bg-accent text-on-accent border-accent"
+                : "bg-bg-tertiary text-text-secondary border-transparent"
             }`}
           >
             Manual Input
@@ -224,10 +225,11 @@ export default function DryCalculator({ hiscores }: Props) {
             <button
               onClick={() => setSelectedCategory("All")}
               aria-pressed={selectedCategory === "All"}
-              className={`px-2 py-0.5 rounded text-xs ${
+              title="Popular drop presets across all categories"
+              className={`home-tile px-2 py-0.5 rounded text-xs border ${
                 selectedCategory === "All"
-                  ? "bg-accent text-on-accent"
-                  : "bg-bg-tertiary text-text-secondary"
+                  ? "bg-accent text-on-accent border-accent"
+                  : "bg-bg-tertiary text-text-secondary border-transparent"
               }`}
             >
               Popular
@@ -237,10 +239,11 @@ export default function DryCalculator({ hiscores }: Props) {
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
                 aria-pressed={selectedCategory === cat}
-                className={`px-2 py-0.5 rounded text-xs ${
+                title={`Filter to ${cat} drops`}
+                className={`home-tile px-2 py-0.5 rounded text-xs border ${
                   selectedCategory === cat
-                    ? "bg-accent text-on-accent"
-                    : "bg-bg-tertiary text-text-secondary"
+                    ? "bg-accent text-on-accent border-accent"
+                    : "bg-bg-tertiary text-text-secondary border-transparent"
                 }`}
               >
                 {cat}
@@ -253,10 +256,11 @@ export default function DryCalculator({ hiscores }: Props) {
               <button
                 key={`${drop.item}-${drop.source}-${i}`}
                 onClick={() => selectDrop(drop)}
-                className={`w-full text-left flex items-center gap-2 px-2 py-1.5 rounded text-xs transition-colors ${
+                title={`Apply ${drop.item} drop rate (1/${Math.round(drop.rate).toLocaleString()})`}
+                className={`home-tile w-full text-left flex items-center gap-2 px-2 py-1.5 rounded text-xs border ${
                   selectedDrop === drop
-                    ? "bg-accent/15 text-accent"
-                    : "hover:bg-bg-secondary text-text-secondary"
+                    ? "bg-accent/15 text-accent border-accent/40"
+                    : "text-text-secondary border-transparent"
                 }`}
               >
                 <img

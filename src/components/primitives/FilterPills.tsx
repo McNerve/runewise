@@ -40,10 +40,11 @@ export default function FilterPills<Id extends string>({
             type="button"
             aria-pressed={active}
             onClick={() => onChange(item.id)}
-            className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs transition-colors ${
+            title={item.label}
+            className={`home-tile inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs ${
               active
                 ? "border-accent/50 bg-accent/10 text-accent"
-                : "border-border bg-bg-primary/50 text-text-secondary hover:bg-bg-primary/70"
+                : "border-border bg-bg-primary/50 text-text-secondary"
             }`}
           >
             {typeof item.icon === "string" ? (

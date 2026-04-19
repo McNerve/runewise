@@ -208,11 +208,8 @@ export default function Raids() {
             key={t.id}
             onClick={() => { setTab(t.id); setExpandedRoom(null); }}
             aria-pressed={tab === t.id}
-            className={`relative rounded-xl border px-4 py-2 text-sm font-medium transition ${
-              tab === t.id
-                ? "border-accent/50 bg-accent/10 text-accent"
-                : "border-border bg-bg-primary/50 text-text-secondary hover:bg-bg-primary/70"
-            }`}
+            title={`Open ${t.label}`}
+            className={`tab-pill ${tab === t.id ? "tab-pill--active" : "tab-pill--inactive"} text-sm font-medium`}
           >
             {tab === t.id && (
               <div className="absolute -bottom-px left-3 right-3 h-0.5 rounded-full bg-accent" />
