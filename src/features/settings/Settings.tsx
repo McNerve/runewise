@@ -224,14 +224,17 @@ function ToggleSwitch({
       role="switch"
       aria-checked={checked}
       aria-label={label}
+      title={`${label} \u2014 ${checked ? "on" : "off"} (click to toggle)`}
       onClick={onChange}
-      className={`relative h-5 w-10 rounded-full transition-colors shrink-0 ${
-        checked ? "bg-accent" : "bg-bg-tertiary"
+      className={`group relative h-5 w-10 cursor-pointer rounded-full border shrink-0 transition-all duration-200 hover:shadow-[0_0_0_3px_color-mix(in_srgb,var(--color-accent)_18%,transparent)] ${
+        checked
+          ? "bg-accent border-accent"
+          : "bg-bg-tertiary border-border hover:border-accent/40"
       }`}
     >
       <span
-        className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white transition-transform ${
-          checked ? "translate-x-5" : ""
+        className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-all duration-200 ease-out group-active:w-5 ${
+          checked ? "left-[1.25rem] group-active:left-[1rem]" : "left-0.5"
         }`}
       />
     </button>
