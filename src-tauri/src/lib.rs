@@ -1,10 +1,18 @@
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
-use std::sync::LazyLock;
+use std::sync::{LazyLock, Mutex};
 use std::time::Duration;
 use serde::Serialize;
 use serde_json::Value;
+
+/// Rust-side mirror of the frontend `closeToTray` setting. We keep it in app
+/// state so the `CloseRequested` handler can decide synchronously whether to
+/// hide or exit — no event roundtrip, no race window for the frontend listener
+/// to attach, no lost signals on fast quits.
+struct AppState {
+    close_to_tray: Mutex<bool>,
+}
 
 static HTTP_CLIENT: LazyLock<reqwest::Client> = LazyLock::new(|| {
     reqwest::Client::builder()
@@ -325,9 +333,16 @@ fn runelite_read_loot_tracker(profile_id: String) -> Result<Vec<LootEntry>, Stri
     Ok(entries)
 }
 
+#[tauri::command]
+fn set_close_to_tray(state: tauri::State<'_, AppState>, enabled: bool) {
+    if let Ok(mut guard) = state.close_to_tray.lock() {
+        *guard = enabled;
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    use tauri::{Emitter, Manager, WindowEvent};
+    use tauri::{include_image, Manager, WindowEvent};
     use tauri::tray::{TrayIconBuilder, TrayIconEvent};
     use tauri::menu::{Menu, MenuItem};
 
@@ -337,11 +352,13 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_fs::init())
+        .manage(AppState { close_to_tray: Mutex::new(false) })
         .invoke_handler(tauri::generate_handler![
             proxy_fetch,
             runelite_status,
             runelite_read_profiles,
             runelite_read_loot_tracker,
+            set_close_to_tray,
         ])
         .setup(|app| {
             if cfg!(debug_assertions) {
@@ -358,10 +375,21 @@ pub fn run() {
             let quit_item = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&show_item, &star_item, &quit_item])?;
 
-            let _tray = TrayIconBuilder::new()
-                .icon(app.default_window_icon().cloned().unwrap())
+            // Monochrome template tray icon so macOS tints it like every other
+            // native menu bar app (follows system appearance; white on dark
+            // menu bar, black on light). include_image! decodes the PNG at
+            // compile time via tauri-macros — no runtime feature flags needed.
+            let tray_icon = include_image!("icons/tray-icon.png");
+
+            let mut tray_builder = TrayIconBuilder::new()
+                .icon(tray_icon)
                 .tooltip("RuneWise")
-                .menu(&menu)
+                .menu(&menu);
+            #[cfg(target_os = "macos")]
+            {
+                tray_builder = tray_builder.icon_as_template(true);
+            }
+            let _tray = tray_builder
                 .on_tray_icon_event(|tray, event| {
                     if let TrayIconEvent::Click { .. } = event {
                         let app = tray.app_handle();
@@ -403,12 +431,24 @@ pub fn run() {
             if window.label() != "main" {
                 return;
             }
-            // Read close-to-tray preference from localStorage via JS is complex from Rust;
-            // instead emit an event so the frontend can intercept and hide instead of close.
             if let WindowEvent::CloseRequested { api, .. } = event {
-                // Prevent default close — frontend handles via "runewise:close-requested" event
-                api.prevent_close();
-                let _ = window.emit("runewise:close-requested", ());
+                // Decide synchronously from Rust state — the frontend keeps
+                // this in sync via `set_close_to_tray` whenever the setting
+                // toggles, so there's no listener race / dropped event path.
+                let app = window.app_handle();
+                let state = app.state::<AppState>();
+                let close_to_tray = state
+                    .close_to_tray
+                    .lock()
+                    .map(|g| *g)
+                    .unwrap_or(false);
+                if close_to_tray {
+                    api.prevent_close();
+                    let _ = window.hide();
+                }
+                // Else let the default close happen — on macOS that hides the
+                // window but keeps the process alive via the tray, which is
+                // fine; Cmd+Q or tray → Quit exits fully.
             }
         })
         .run(tauri::generate_context!())
