@@ -4,7 +4,12 @@ import { DEFAULT_KEYBINDS, type KeybindMap } from "../../lib/settings";
 import { isTauri, isMac } from "../../lib/env";
 import { ONBOARDING_KEY } from "../onboarding/constants";
 import { setUpdateMode, getUpdateMode, type UpdateMode } from "../../lib/updateBus";
-import { sendNotification, onNotificationDenied } from "../../lib/notify";
+import {
+  sendNotification,
+  onNotificationDenied,
+  getLastNotifyError,
+  resetNotificationPermissionCache,
+} from "../../lib/notify";
 
 declare const __APP_VERSION__: string;
 
@@ -292,19 +297,29 @@ function NotificationsCard() {
   const { settings, update } = useSettings();
   const [denied, setDenied] = useState(false);
   const [testStatus, setTestStatus] = useState<"idle" | "sent" | "denied">("idle");
+  const [testError, setTestError] = useState<string | null>(null);
 
   useEffect(() => {
     return onNotificationDenied(() => setDenied(true));
   }, []);
 
   const fireTest = async () => {
+    // Clear cached permission state so the user can retry after toggling
+    // their System Settings without having to relaunch the app.
+    resetNotificationPermissionCache();
+    setTestError(null);
     try {
       const sent = await sendNotification("RuneWise test", "Notifications are working");
       setTestStatus(sent ? "sent" : "denied");
-    } catch {
+      if (!sent) setTestError(getLastNotifyError());
+    } catch (err) {
       setTestStatus("denied");
+      setTestError(err instanceof Error ? err.message : String(err));
     }
-    setTimeout(() => setTestStatus("idle"), 3000);
+    setTimeout(() => {
+      setTestStatus("idle");
+      setTestError(null);
+    }, 6000);
   };
 
   const notifs = settings.notifications;
@@ -348,7 +363,7 @@ function NotificationsCard() {
         ))}
       </div>
 
-      <div className="mt-5 pt-4 border-t border-border/30 flex items-center gap-3">
+      <div className="mt-5 pt-4 border-t border-border/30 flex items-center gap-3 flex-wrap">
         <button
           onClick={fireTest}
           title="Send a test desktop notification"
@@ -356,10 +371,15 @@ function NotificationsCard() {
         >
           {testStatus === "idle" && "Test notification"}
           {testStatus === "sent" && "Sent ✓"}
-          {testStatus === "denied" && "Permission denied"}
+          {testStatus === "denied" && "Failed ✗"}
         </button>
         {!isTauri && (
           <span className="text-xs text-text-secondary/50">Browser mode — using web Notification API</span>
+        )}
+        {testError && (
+          <span className="text-[11px] text-danger/80 font-mono break-all" title={testError}>
+            {testError}
+          </span>
         )}
       </div>
     </div>

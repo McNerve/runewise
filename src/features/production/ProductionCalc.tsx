@@ -200,9 +200,9 @@ export default function ProductionCalc() {
       {/* Results dropdown */}
       {!selected && results.length > 0 && (
         <div className="border border-border rounded bg-bg-tertiary max-h-72 overflow-y-auto mb-4">
-          {results.map((r) => (
+          {results.map((r, i) => (
             <button
-              key={`${r.name}-${r.skill}-${r.levelReq}`}
+              key={`${r.name}-${r.skill}-${r.levelReq}-${i}`}
               onClick={() => handleSelect(r)}
               title={`Select ${r.name} recipe`}
               className="home-tile w-full text-left px-3 py-2 flex items-center gap-2 border border-transparent border-b-border/30 last:border-b-0 first:rounded-t last:rounded-b"

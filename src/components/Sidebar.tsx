@@ -68,7 +68,7 @@ const Sidebar = memo(function Sidebar({ currentView, onNavigate, rsn = "" }: Sid
       className={`sidebar-shell ${collapsed ? "w-16" : "w-56"} flex flex-col overflow-hidden border-r border-border transition-all duration-200`}
     >
       <div
-        className={`${collapsed ? "px-3 py-3 justify-center" : "px-4 py-3"} flex items-center border-b border-border/80`}
+        className={`h-16 ${collapsed ? "px-3 justify-center" : "px-4"} flex items-center border-b border-border/80`}
       >
         {!collapsed && (
           <div className="flex-1 min-w-0">

@@ -520,7 +520,7 @@ export default function FlipJournal() {
         </div>
       )}
 
-      <StatsStrip entries={entries} />
+      {entries.length > 0 && <StatsStrip entries={entries} />}
 
       <div className="bg-bg-secondary/30 border border-border rounded-xl p-4">
         <JournalTable
