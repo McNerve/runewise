@@ -405,8 +405,8 @@ export default function QuestMap() {
               <div>
                 <div className="text-[10px] uppercase tracking-wider text-text-secondary/50 mb-1.5">Skill Requirements</div>
                 <div className="flex flex-wrap gap-1.5">
-                  {selectedNode.quest.skillRequirements.map((r) => (
-                    <span key={r.skill} className="bg-bg-secondary text-xs px-2 py-0.5 rounded">
+                  {selectedNode.quest.skillRequirements.map((r, ri) => (
+                    <span key={`${r.skill}-${r.level}-${ri}`} className="bg-bg-secondary text-xs px-2 py-0.5 rounded">
                       {r.skill} {r.level}{r.boostable ? "*" : ""}
                     </span>
                   ))}

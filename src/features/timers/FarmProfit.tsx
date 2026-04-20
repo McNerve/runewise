@@ -122,9 +122,9 @@ export default function FarmProfit() {
             </tr>
           </thead>
           <tbody>
-            {crops.map((crop) => (
+            {crops.map((crop, i) => (
               <tr
-                key={crop.name}
+                key={`${crop.name}-${crop.seedName}-${i}`}
                 className="border-b border-border/50 hover:bg-bg-secondary transition-colors"
               >
                 <td className="px-4 py-1.5">

@@ -40,8 +40,8 @@ const PlayerBar = memo(function PlayerBar({
   };
 
   return (
-    <div className="topbar-shell border-b border-border px-4 py-2.5 shrink-0">
-      <div className="flex items-center justify-between gap-4">
+    <div className="topbar-shell border-b border-border h-16 flex items-center px-4 shrink-0">
+      <div className="flex items-center justify-between gap-4 w-full">
         {/* Left: nav + title */}
         <div className="flex items-center gap-3 min-w-0">
           {canGoBack && (

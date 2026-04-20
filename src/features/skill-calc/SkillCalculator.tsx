@@ -112,8 +112,15 @@ export default function SkillCalculator({ hiscores }: Props) {
 
   const [intensityFilter, setIntensityFilter] = useState<string>("All");
 
-  const targetXp = xpForLevel(targetLevel);
+  const [chaseMaxXp, setChaseMaxXp] = useState(false);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset 200M chase when switching skills
+    setChaseMaxXp(false);
+  }, [selectedSkill]);
+  const baseTargetXp = xpForLevel(targetLevel);
+  const targetXp = chaseMaxXp ? 200_000_000 : baseTargetXp;
   const xpNeeded = Math.max(0, targetXp - currentXp);
+  const isMaxed = currentLevel !== null && currentLevel >= 99;
   const allMethods = selectedSkill ? (TRAINING_METHODS[selectedSkill] ?? []) : [];
   const methods = intensityFilter === "All"
     ? allMethods
@@ -310,6 +317,25 @@ export default function SkillCalculator({ hiscores }: Props) {
                   width: `${Math.min(100, (currentXp / targetXp) * 100)}%`,
                 }}
               />
+            </div>
+          )}
+          {isMaxed && (
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#d4a017]/25 bg-[#d4a017]/5 px-3 py-2 text-xs">
+              <span className="text-[#d4a017]/80">
+                {chaseMaxXp ? "Working toward 200M XP." : "You're at 99. Keep pushing?"}
+              </span>
+              <button
+                type="button"
+                onClick={() => setChaseMaxXp((v) => !v)}
+                aria-pressed={chaseMaxXp}
+                className={`rounded px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                  chaseMaxXp
+                    ? "bg-[#d4a017] text-bg-primary"
+                    : "border border-[#d4a017]/30 text-[#d4a017] hover:bg-[#d4a017]/10"
+                }`}
+              >
+                {chaseMaxXp ? "Back to level target" : "Chase 200M XP"}
+              </button>
             </div>
           )}
         </div>

@@ -215,7 +215,7 @@ export default function DiaryTracker({ hiscores }: Props) {
                       </span>
                     </div>
                     <div className="flex flex-wrap gap-2 mb-3">
-                      {tier.requirements.map((req) => {
+                      {tier.requirements.map((req, reqIdx) => {
                         const skill = hiscores?.skills.find(
                           (s) =>
                             s.name.toLowerCase() === req.skill.toLowerCase()
@@ -225,7 +225,7 @@ export default function DiaryTracker({ hiscores }: Props) {
 
                         return (
                           <div
-                            key={req.skill}
+                            key={`${req.skill}-${req.level}-${reqIdx}`}
                             className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded ${
                               isMet
                                 ? "bg-success/10 text-success"

@@ -26,11 +26,13 @@ import {
   fetchWomRecords,
   fetchWomNameChanges,
   fetchWomCompetitions,
+  fetchWomSnapshotTimeline,
   type WomGains,
   type WomAchievement,
   type WomRecord,
   type WomNameChange,
   type WomPlayerCompetition,
+  type WomSnapshot,
   type GainsPeriod,
 } from "../../lib/api/wom";
 
@@ -238,11 +240,13 @@ const PERIOD_SECONDS: Record<GainsPeriod, number> = {
 };
 
 function XpOverTimeChart({
+  rsn,
   startXp,
   endXp,
   period,
   endTime,
 }: {
+  rsn: string;
   startXp: number;
   endXp: number;
   period: GainsPeriod;
@@ -250,6 +254,15 @@ function XpOverTimeChart({
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
+  const [timeline, setTimeline] = useState<WomSnapshot[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchWomSnapshotTimeline(rsn, period, "overall").then((points) => {
+      if (!cancelled) setTimeline(points);
+    });
+    return () => { cancelled = true; };
+  }, [rsn, period]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -293,10 +306,39 @@ function XpOverTimeChart({
 
     const endSec = Math.floor(endTime.getTime() / 1000);
     const startSec = endSec - PERIOD_SECONDS[period];
-    series.setData([
-      { time: startSec as Time, value: startXp },
-      { time: endSec as Time, value: endXp },
-    ]);
+    // Prefer real WOM snapshot timeline when we have ≥2 points; otherwise fall
+    // back to a straight line between start/end so the chart never disappears
+    // on new accounts with no snapshot history yet.
+    if (timeline.length >= 2) {
+      const points = timeline
+        .map((p) => ({
+          time: Math.floor(new Date(p.date).getTime() / 1000) as Time,
+          value: p.value,
+        }))
+        .sort((a, b) => (a.time as number) - (b.time as number));
+      // De-dup by time — lightweight-charts requires strictly ascending time keys.
+      const uniq: typeof points = [];
+      for (const p of points) {
+        if (!uniq.length || (p.time as number) > (uniq[uniq.length - 1].time as number)) {
+          uniq.push(p);
+        }
+      }
+      // Anchor the chart to the period's Start/Now labels so they agree with
+      // the caption below. WOM's oldest snapshot in a period is often *after*
+      // the period start and its newest is slightly before `now`.
+      if ((uniq[0].time as number) > startSec) {
+        uniq.unshift({ time: startSec as Time, value: startXp });
+      }
+      if ((uniq[uniq.length - 1].time as number) < endSec) {
+        uniq.push({ time: endSec as Time, value: endXp });
+      }
+      series.setData(uniq);
+    } else {
+      series.setData([
+        { time: startSec as Time, value: startXp },
+        { time: endSec as Time, value: endXp },
+      ]);
+    }
 
     chart.timeScale().fitContent();
     chartRef.current = chart;
@@ -313,7 +355,7 @@ function XpOverTimeChart({
       chart.remove();
       chartRef.current = null;
     };
-  }, [startXp, endXp, period, endTime]);
+  }, [startXp, endXp, period, endTime, timeline]);
 
   return <div ref={containerRef} className="w-full" />;
 }
@@ -523,6 +565,7 @@ export default function XpTracker({ rsn }: Props) {
               </h3>
               <div className="rounded-xl border border-border/60 bg-bg-secondary/30 p-3">
                 <XpOverTimeChart
+                  rsn={rsn}
                   startXp={overallXp.start}
                   endXp={overallXp.end}
                   period={period}

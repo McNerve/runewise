@@ -241,13 +241,13 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
         <div className="mb-6">
           <div className="text-[10px] uppercase tracking-wider text-text-secondary/50 mb-2">Recently Obtained</div>
           <div className="flex gap-2 overflow-x-auto pb-2">
-            {recentItems.map((item) => {
+            {recentItems.map((item, i) => {
               // Prefer schema-resolved name (matches what works in the category grid)
               const name = itemNames.get(item.id) ?? resolveName(item);
               const date = item.obtained_at ? new Date(item.obtained_at + " UTC") : null;
               return (
                 <div
-                  key={`recent-${item.id}-${item.obtained_at}`}
+                  key={`recent-${item.id}-${item.obtained_at}-${i}`}
                   className="home-tile flex flex-col items-center gap-1.5 min-w-[110px] max-w-[110px] p-2.5 rounded-lg border border-transparent bg-bg-secondary/30"
                   onClick={() => navigate("wiki", { query: name })}
                 >
@@ -398,12 +398,12 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
 
               {/* Items icon grid */}
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
-                {activeCatItems.map((item) => {
+                {activeCatItems.map((item, i) => {
                   const isObtained = item.count > 0;
                   const name = resolveName(item);
                   return (
                     <div
-                      key={item.id}
+                      key={`${item.id}-${i}`}
                       onClick={() => navigate("market", { query: name, select: "1" })}
                       className={`group flex flex-col items-center gap-1 p-2 rounded-lg transition-all cursor-pointer ${
                         isObtained

@@ -157,6 +157,34 @@ export async function fetchWomCompetitions(
   }
 }
 
+export interface WomSnapshot {
+  value: number;
+  rank: number;
+  date: string;
+}
+
+/**
+ * Fetch real snapshot timeline from Wise Old Man for the given skill/period.
+ * Returns chronological data points — the chart should prefer this over the
+ * 2-point straight-line fallback when available.
+ */
+export async function fetchWomSnapshotTimeline(
+  rsn: string,
+  period: GainsPeriod = "month",
+  metric = "overall"
+): Promise<WomSnapshot[]> {
+  try {
+    return await fetchJson<WomSnapshot[]>({
+      url: `${WOM_API}/players/${encodeURIComponent(rsn)}/snapshots/timeline?period=${period}&metric=${metric}`,
+      cacheKey: `wom-timeline:${rsn.toLowerCase()}:${period}:${metric}`,
+      ttlMs: GAINS_TTL,
+      transform: (json) => (Array.isArray(json) ? (json as WomSnapshot[]) : []),
+    });
+  } catch {
+    return [];
+  }
+}
+
 export async function fetchWomNameChanges(
   rsn: string
 ): Promise<WomNameChange[]> {

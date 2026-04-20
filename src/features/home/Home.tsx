@@ -535,7 +535,7 @@ export default function Home({ hiscores }: HomeProps) {
                     <div className="min-w-0 flex-1">
                       <div className="text-xs font-medium">Shooting Stars</div>
                       <div className="text-[10px] text-text-secondary/50">
-                        {liveStarCount} called in last 30m
+                        {liveStarCount === 1 ? "1 star live right now" : `${liveStarCount} stars live right now`}
                       </div>
                     </div>
                     <span className="inline-flex items-center justify-center rounded-full bg-accent/20 border border-accent/30 px-1.5 py-0.5 text-[10px] tabular-nums text-accent font-medium">{liveStarCount}</span>
