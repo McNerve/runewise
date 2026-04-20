@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!--
+      Ask macOS to deliver RuneWise notifications as persistent alerts by
+      default. Without this, NSUserNotification-backed deliveries (which is
+      what `tauri-plugin-notification` uses on macOS) can fall through to a
+      silent Notification Center drop on modern macOS — no banner, no sound.
+      The user can still override this in System Settings → Notifications.
+    -->
+    <key>NSUserNotificationAlertStyle</key>
+    <string>alert</string>
+</dict>
+</plist>
