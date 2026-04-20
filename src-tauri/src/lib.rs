@@ -343,7 +343,7 @@ fn set_close_to_tray(state: tauri::State<'_, AppState>, enabled: bool) {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     use tauri::{include_image, Manager, WindowEvent};
-    use tauri::tray::{TrayIconBuilder, TrayIconEvent};
+    use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
     use tauri::menu::{Menu, MenuItem};
 
     tauri::Builder::default()
@@ -381,23 +381,39 @@ pub fn run() {
             // compile time via tauri-macros — no runtime feature flags needed.
             let tray_icon = include_image!("icons/tray-icon.png");
 
+            // Standard macOS menu-bar UX: left click toggles the window,
+            // right click shows the context menu. `show_menu_on_left_click(false)`
+            // stops the menu from stealing the left click; Tauri still pops the
+            // menu on secondary click because `.menu(&menu)` is attached.
             let mut tray_builder = TrayIconBuilder::new()
                 .icon(tray_icon)
                 .tooltip("RuneWise")
-                .menu(&menu);
+                .menu(&menu)
+                .show_menu_on_left_click(false);
             #[cfg(target_os = "macos")]
             {
                 tray_builder = tray_builder.icon_as_template(true);
             }
             let _tray = tray_builder
                 .on_tray_icon_event(|tray, event| {
-                    if let TrayIconEvent::Click { .. } = event {
+                    // Fire on mouse-up for the left button only — matches the
+                    // timing users expect from AppKit menu bar items and avoids
+                    // double-firing against the Down event.
+                    if let TrayIconEvent::Click {
+                        button: MouseButton::Left,
+                        button_state: MouseButtonState::Up,
+                        ..
+                    } = event
+                    {
                         let app = tray.app_handle();
                         if let Some(window) = app.get_webview_window("main") {
-                            if window.is_visible().unwrap_or(false) {
+                            let visible = window.is_visible().unwrap_or(false);
+                            let focused = window.is_focused().unwrap_or(false);
+                            if visible && focused {
                                 let _ = window.hide();
                             } else {
                                 let _ = window.show();
+                                let _ = window.unminimize();
                                 let _ = window.set_focus();
                             }
                         }
@@ -451,6 +467,25 @@ pub fn run() {
                 // fine; Cmd+Q or tray → Quit exits fully.
             }
         })
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while running tauri application")
+        .run(|app_handle, event| {
+            // macOS: when every window is hidden (close-to-tray path), clicking
+            // the dock icon fires `applicationShouldHandleReopen:` with
+            // `hasVisibleWindows == false`. Without this handler the click is
+            // a no-op and the only way back in is the menu bar tray, which is
+            // surprising for an app that still shows in the dock.
+            #[cfg(target_os = "macos")]
+            if let tauri::RunEvent::Reopen { has_visible_windows, .. } = event {
+                if !has_visible_windows {
+                    if let Some(window) = app_handle.get_webview_window("main") {
+                        let _ = window.show();
+                        let _ = window.unminimize();
+                        let _ = window.set_focus();
+                    }
+                }
+            }
+            #[cfg(not(target_os = "macos"))]
+            let _ = (app_handle, event);
+        });
 }

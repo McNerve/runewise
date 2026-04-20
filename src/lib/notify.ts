@@ -118,8 +118,17 @@ export async function sendNotification(title: string, body: string): Promise<boo
       // The plugin's JS sendNotification() uses new window.Notification(),
       // which WKWebView on macOS silently drops. Always invoke the Rust
       // command so the OS notification center actually receives it.
+      //
+      // `sound: "NSUserNotificationDefaultSoundName"` is the magic string
+      // the macOS notification backend (mac-notification-sys) recognises as
+      // the default system alert sound. Any other value would be treated as
+      // a custom sound name and silently play nothing.
       await tauriInvoke("plugin:notification|notify", {
-        options: { title, body },
+        options: {
+          title,
+          body,
+          sound: "NSUserNotificationDefaultSoundName",
+        },
       });
       return true;
     } catch (err) {
