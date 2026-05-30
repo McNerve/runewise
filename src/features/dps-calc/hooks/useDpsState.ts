@@ -68,18 +68,30 @@ export function sumGearBonuses(gear: EquippedGear): {
   prayer: number;
 } {
   const items = Object.values(gear).filter(Boolean) as WikiEquipment[];
-  return {
-    attackStab: items.reduce((s, i) => s + i.attackStab, 0),
-    attackSlash: items.reduce((s, i) => s + i.attackSlash, 0),
-    attackCrush: items.reduce((s, i) => s + i.attackCrush, 0),
-    strengthBonus: items.reduce((s, i) => s + i.strengthBonus, 0),
+  const totals = {
+    attackStab: 0,
+    attackSlash: 0,
+    attackCrush: 0,
+    strengthBonus: 0,
     attackSpeed: 0,
-    rangedBonus: items.reduce((s, i) => s + i.attackRanged, 0),
-    rangedStrength: items.reduce((s, i) => s + i.rangedStrength, 0),
-    magicBonus: items.reduce((s, i) => s + i.attackMagic, 0),
-    magicDamage: items.reduce((s, i) => s + i.magicDamage, 0),
-    prayer: items.reduce((s, i) => s + i.prayerBonus, 0),
+    rangedBonus: 0,
+    rangedStrength: 0,
+    magicBonus: 0,
+    magicDamage: 0,
+    prayer: 0,
   };
+  for (const i of items) {
+    totals.attackStab += i.attackStab;
+    totals.attackSlash += i.attackSlash;
+    totals.attackCrush += i.attackCrush;
+    totals.strengthBonus += i.strengthBonus;
+    totals.rangedBonus += i.attackRanged;
+    totals.rangedStrength += i.rangedStrength;
+    totals.magicBonus += i.attackMagic;
+    totals.magicDamage += i.magicDamage;
+    totals.prayer += i.prayerBonus;
+  }
+  return totals;
 }
 
 // OSRS uses only the attack bonus matching the weapon's current attack type
@@ -122,7 +134,8 @@ const DEFAULT_SPEED: Record<CombatStyle, number> = {
 export function getDefBonus(m: WikiMonster, style: CombatStyle, meleeType?: string): number {
   if (style === "ranged") return m.defRanged;
   if (style === "magic") return m.defMagic;
-  // Melee uses the defence bonus matching the attacker's attack type.
+  // Melee uses the defence bonus matching the attacker's attack type;
+  // default to slash (the most common melee type) when unspecified.
   if (meleeType === "stab") return m.defStab;
   if (meleeType === "crush") return m.defCrush;
   return m.defSlash;

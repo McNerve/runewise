@@ -299,10 +299,10 @@ export function calculateDps(input: DpsInput) {
 
   // Tumeken's shadow triples the gear magic attack bonus and magic damage %
   // (the +64 base and spell base hit are untouched).
-  const hasShadow = input.combatStyle === "magic"
-    && (input.modifiers?.some((m) => m.id === "tumekens_shadow") ?? false);
-  const gearAttackBonus = hasShadow ? input.attackBonus * 3 : input.attackBonus;
-  const gearStrengthBonus = hasShadow ? input.strengthBonus * 3 : input.strengthBonus;
+  const shadowMult = input.combatStyle === "magic"
+    && input.modifiers?.some((m) => m.id === "tumekens_shadow") ? 3 : 1;
+  const gearAttackBonus = input.attackBonus * shadowMult;
+  const gearStrengthBonus = input.strengthBonus * shadowMult;
 
   // When a spell is selected, use spell base max hit + magic damage %
   // instead of level-based formula. strengthBonus holds magic damage % for magic style.
