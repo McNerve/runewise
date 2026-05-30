@@ -169,8 +169,11 @@ export const DPS_MODIFIERS: Record<string, DpsModifier> = {
   tumekens_shadow: {
     id: "tumekens_shadow",
     name: "Tumeken's shadow",
-    accuracyMult: 3.0,
-    damageMult: 3.0,
+    // Shadow triples the GEAR magic attack bonus and magic damage %, not the
+    // base attack-roll constant or the spell's base hit. That gear-only
+    // tripling is handled in calculateDps; the generic mult stays a no-op.
+    accuracyMult: 1.0,
+    damageMult: 1.0,
     condition: "magic",
   },
   virtus: {
@@ -294,12 +297,19 @@ export function calculateDps(input: DpsInput) {
     input.stanceStrengthBonus
   );
 
+  // Tumeken's shadow triples the gear magic attack bonus and magic damage %
+  // (the +64 base and spell base hit are untouched).
+  const hasShadow = input.combatStyle === "magic"
+    && (input.modifiers?.some((m) => m.id === "tumekens_shadow") ?? false);
+  const gearAttackBonus = hasShadow ? input.attackBonus * 3 : input.attackBonus;
+  const gearStrengthBonus = hasShadow ? input.strengthBonus * 3 : input.strengthBonus;
+
   // When a spell is selected, use spell base max hit + magic damage %
   // instead of level-based formula. strengthBonus holds magic damage % for magic style.
   let mh = input.spellBaseMaxHit != null
-    ? Math.floor(input.spellBaseMaxHit * (1 + input.strengthBonus / 100))
-    : maxHit(effStr, input.strengthBonus);
-  let ar = attackRoll(effAtk, input.attackBonus);
+    ? Math.floor(input.spellBaseMaxHit * (1 + gearStrengthBonus / 100))
+    : maxHit(effStr, gearStrengthBonus);
+  let ar = attackRoll(effAtk, gearAttackBonus);
 
   if (input.modifiers && input.modifiers.length > 0) {
     const { accuracyMult, damageMult } = applyModifiers(
@@ -356,10 +366,12 @@ export function dragonClawsExpectedDamage(maxHit: number, accuracy: number): num
 
   let total = 0;
   for (let k = 0; k < 4; k++) {
+    // Probability the first connecting roll is attack k (rolls 0..k-1 missed).
     const pFirst = Math.pow(1 - accuracy, k) * accuracy;
-    let conditional = expected(ranges[0]);
-    for (let i = k + 1; i < 4; i++) {
-      conditional += accuracy * expected(ranges[i - k]);
+    // Once a roll connects, the remaining hits are guaranteed: sum ranges[k..3].
+    let conditional = 0;
+    for (let i = k; i < 4; i++) {
+      conditional += expected(ranges[i]);
     }
     total += pFirst * conditional;
   }

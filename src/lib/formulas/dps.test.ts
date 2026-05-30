@@ -373,3 +373,47 @@ describe("poisonDps", () => {
     expect(poisonDps("venom")).toBeCloseTo(12 / 18, 6);
   });
 });
+
+describe("Tumeken's shadow triples only the gear bonus", () => {
+  // effAtk = effectiveLevel(99, 1.0, 3) = 110. Gear magic attack +173, magic dmg +25%, spell base 34.
+  // Shadow: attack roll = 110 * (3*173 + 64) = 110*583 = 64130 (NOT 110*(173+64)*3).
+  //         max hit = floor(34 * (1 + 3*25/100)) = floor(34*1.75) = 59 (NOT floor(34*1.25)*3 = 126).
+  const shadowInput = meleeInput({
+    combatStyle: "magic",
+    magicLevel: 99,
+    attackBonus: 173,
+    strengthBonus: 25,
+    stanceAttackBonus: 3,
+    spellBaseMaxHit: 34,
+    targetMagicLevel: 100,
+  });
+
+  it("triples the gear attack bonus and magic damage %, leaving the +64 base intact", () => {
+    const r = calculateDps({ ...shadowInput, modifiers: [DPS_MODIFIERS.tumekens_shadow] });
+    expect(r.attackRoll).toBe(64130);
+    expect(r.maxHit).toBe(59);
+  });
+
+  it("matches the un-tripled values when shadow is absent", () => {
+    const r = calculateDps(shadowInput);
+    expect(r.attackRoll).toBe(110 * (173 + 64));
+    expect(r.maxHit).toBe(42); // floor(34 * 1.25)
+  });
+});
+
+describe("dragonClawsExpectedDamage cascade", () => {
+  it("treats follow-up hits as guaranteed once any roll connects", () => {
+    // M=48, acc=0.7. Ranges expected: 35.5/17.5/8.5/9.5.
+    // Sum over first-connect index k of P(k) * sum(ranges[k..3]) + miss*1 = 58.48
+    expect(dragonClawsExpectedDamage(48, 0.7)).toBeCloseTo(58.48, 2);
+  });
+
+  it("equals the full guaranteed cascade at 100% accuracy", () => {
+    // acc=1 -> only k=0 term: 35.5+17.5+8.5+9.5 = 71
+    expect(dragonClawsExpectedDamage(48, 1)).toBeCloseTo(71, 5);
+  });
+
+  it("falls to ~1 damage when accuracy is 0", () => {
+    expect(dragonClawsExpectedDamage(48, 0)).toBeCloseTo(1, 5);
+  });
+});
