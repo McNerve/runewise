@@ -92,7 +92,7 @@ export default function RequirementsSection({ html, onQuestClick }: Props) {
     <ul className="space-y-1.5" role="list">
       {requirements.map((req, idx) => (
         <li
-          key={idx}
+          key={`${req.text ?? idx}-${idx}`}
           className="flex items-start gap-3 rounded-lg border border-border/40 bg-bg-primary/30 px-3 py-2.5"
         >
           {/* Bullet icon */}

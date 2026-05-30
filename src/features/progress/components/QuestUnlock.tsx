@@ -179,9 +179,9 @@ function QuestRow({
 
       {expanded && e.unmetSkills.length > 0 && (
         <div className="ml-6 mb-2 flex flex-wrap gap-1.5">
-          {e.unmetSkills.map((u) => (
+          {e.unmetSkills.map((u, ui) => (
             <div
-              key={u.skill}
+              key={`${u.skill}-${u.required}-${ui}`}
               className="flex items-center gap-1 px-2 py-0.5 rounded bg-bg-tertiary text-xs"
             >
               <img
@@ -200,9 +200,9 @@ function QuestRow({
 
       {expanded && e.unmetSkills.length === 0 && e.quest.skillRequirements.length > 0 && (
         <div className="ml-6 mb-2 flex flex-wrap gap-1.5">
-          {e.quest.skillRequirements.map((r) => (
+          {e.quest.skillRequirements.map((r, ri) => (
             <div
-              key={r.skill}
+              key={`${r.skill}-${r.level}-${ri}`}
               className="flex items-center gap-1 px-2 py-0.5 rounded bg-success/10 text-xs"
             >
               <img

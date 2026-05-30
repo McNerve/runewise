@@ -105,7 +105,9 @@ export async function fetchAllShops(): Promise<Shop[]> {
         const grouped = new Map<string, { items: RawStoreLine[]; meta: { members: boolean; location: string | null } }>();
 
         for (const row of raw) {
-          const shopName = row.sold_by ?? row.page_name;
+          // OSRS wiki shop names sometimes ship with a trailing period (e.g.
+          // "Aaron's Archery Appendages."). Strip it so the UI reads cleanly.
+          const shopName = (row.sold_by ?? row.page_name).replace(/\.\s*$/, "").trim();
           if (!grouped.has(shopName)) {
             const meta = parseJson(row.sold_item_json);
             grouped.set(shopName, { items: [], meta });

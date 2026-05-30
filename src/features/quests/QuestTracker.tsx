@@ -234,9 +234,9 @@ export default function QuestTracker({ hiscores }: Props) {
 
             {missing.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-2 ml-4">
-                {missing.map((m) => (
+                {missing.map((m, mi) => (
                   <div
-                    key={m.skill}
+                    key={`${m.skill}-${m.required}-${mi}`}
                     className="flex items-center gap-1 bg-danger/10 text-danger text-xs px-2 py-0.5 rounded"
                   >
                     <img
@@ -282,9 +282,9 @@ export default function QuestTracker({ hiscores }: Props) {
                   ))}
                   {hasRewards && (
                     <div className="flex flex-wrap gap-1.5 pt-1">
-                      {wiki.rewards.xp.map((r) => (
+                      {wiki.rewards.xp.map((r, ri) => (
                         <span
-                          key={r.skill}
+                          key={`${r.skill}-${r.amount}-${ri}`}
                           className="flex items-center gap-1 bg-accent/10 text-accent text-[10px] px-1.5 py-0.5 rounded"
                         >
                           {SKILL_ICONS[r.skill] && (

@@ -42,26 +42,15 @@ function AppContent() {
     }
   }, [hiscores.ironmanType]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Close-to-tray: listen for Rust close-requested event and hide instead of closing
+  // Close-to-tray: sync the setting into Rust state. Rust handles the close
+  // event synchronously with that state — no event listener roundtrip, no
+  // race between `listen()` registering and the first close click.
   useEffect(() => {
     if (!isTauri) return;
-    let unlisten: (() => void) | null = null;
-    import("@tauri-apps/api/event").then(({ listen }) => {
-      listen("runewise:close-requested", async () => {
-        const { settings: currentSettings } = await import("./lib/settings").then((m) => ({
-          settings: m.loadSettings(),
-        }));
-        if (currentSettings.closeToTray) {
-          const { getCurrentWindow } = await import("@tauri-apps/api/window");
-          await getCurrentWindow().hide();
-        } else {
-          const { exit } = await import("@tauri-apps/plugin-process");
-          await exit(0);
-        }
-      }).then((fn) => { unlisten = fn; });
+    import("@tauri-apps/api/core").then(({ invoke }) => {
+      void invoke("set_close_to_tray", { enabled: settings.closeToTray });
     });
-    return () => { unlisten?.(); };
-  }, []); // intentionally runs once — listener references stable Tauri API
+  }, [settings.closeToTray]);
 
   return (
     <>

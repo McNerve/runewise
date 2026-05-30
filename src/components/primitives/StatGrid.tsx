@@ -40,7 +40,7 @@ export function StatCard({
             onError={(e) => { e.currentTarget.style.display = "none"; }}
           />
         ) : icon}
-        <div className="section-kicker truncate">{label}</div>
+        <div className="section-kicker truncate" title={label}>{label}</div>
       </div>
       <div className={`mt-1 ${valueClass}`}>
         {value}

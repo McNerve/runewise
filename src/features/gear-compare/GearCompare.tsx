@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { Fragment, useState, useMemo } from "react";
 import {
   fetchAllEquipment,
   searchEquipment,
@@ -277,17 +277,17 @@ export default function GearCompare() {
               </tr>
             </thead>
             <tbody>
-              {collapsedRows.map(({ primary, variants }) => {
+              {collapsedRows.map(({ primary, variants }, rowIdx) => {
                 const isSelected = selected.some(
                   (s) => s.name === primary.name && s.version === primary.version
                 );
                 const hasVariants = variants.length > 0;
                 const variantKey = primary.name;
                 const isExpanded = expandedVariant === variantKey;
+                const rowKey = `${primary.name}:${primary.version ?? ""}:${rowIdx}`;
                 return (
-                  <>
+                  <Fragment key={rowKey}>
                   <tr
-                    key={`${primary.name}:${primary.version ?? ""}`}
                     onClick={() => toggleSelected(primary)}
                     className={`border-b border-border/30 cursor-pointer transition-colors ${
                       isSelected
@@ -327,9 +327,9 @@ export default function GearCompare() {
                       <StatCell key={col.key} value={primary[col.key] as number} />
                     ))}
                   </tr>
-                  {hasVariants && isExpanded && variants.map((v) => (
+                  {hasVariants && isExpanded && variants.map((v, vi) => (
                     <tr
-                      key={`variant:${v.name}:${v.version ?? ""}`}
+                      key={`variant:${v.name}:${v.version ?? ""}:${vi}`}
                       onClick={() => toggleSelected(v)}
                       className="border-b border-border/20 cursor-pointer bg-bg-primary/10 hover:bg-bg-secondary/40 transition-colors"
                     >
@@ -344,7 +344,7 @@ export default function GearCompare() {
                       ))}
                     </tr>
                   ))}
-                  </>
+                  </Fragment>
                 );
               })}
             </tbody>
