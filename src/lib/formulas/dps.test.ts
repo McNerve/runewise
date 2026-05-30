@@ -10,7 +10,36 @@ import {
   DPS_MODIFIERS,
   dragonClawsExpectedDamage,
   calculateSpecDps,
+  poisonDps,
+  coxScale,
+  coxHpScale,
+  toaDefenseScale,
+  toaHpScale,
+  type DpsInput,
 } from "./dps";
+
+// Base melee input used by the calculate* regression tests below. Expected
+// values are derived from the OSRS combat formulas, not copied from output.
+function meleeInput(overrides: Partial<DpsInput> = {}): DpsInput {
+  return {
+    attackLevel: 99,
+    strengthLevel: 99,
+    rangedLevel: 99,
+    magicLevel: 99,
+    attackBonus: 100,
+    strengthBonus: 100,
+    prayerAttackMult: 1.0,
+    prayerStrengthMult: 1.0,
+    stanceAttackBonus: 0,
+    stanceStrengthBonus: 0,
+    attackSpeed: 4,
+    combatStyle: "melee",
+    targetDefLevel: 100,
+    targetDefBonus: 0,
+    targetHp: 150,
+    ...overrides,
+  };
+}
 
 describe("dps formulas", () => {
   describe("effectiveLevel", () => {
@@ -168,16 +197,11 @@ describe("dps formulas", () => {
       expect(damageMult).toBeCloseTo((7 / 6) * 1.70, 4);
     });
 
-    it("salve amulet applies to all styles", () => {
-      for (const style of ["melee", "ranged", "magic"] as const) {
-        const { accuracyMult } = applyModifiers(
-          1,
-          1,
-          style,
-          [DPS_MODIFIERS.salve_ei]
-        );
-        expect(accuracyMult).toBeCloseTo(1.20, 4);
+    it("salve (ei) applies to melee/ranged at +20% and magic at +15%", () => {
+      for (const style of ["melee", "ranged"] as const) {
+        expect(applyModifiers(1, 1, style, [DPS_MODIFIERS.salve_ei]).accuracyMult).toBeCloseTo(1.20, 4);
       }
+      expect(applyModifiers(1, 1, "magic", [DPS_MODIFIERS.salve_ei]).accuracyMult).toBeCloseTo(1.15, 4);
     });
 
     it("dhcb only applies to ranged", () => {
@@ -276,5 +300,164 @@ describe("dps formulas", () => {
       const naive = calculateSpecDps(baseInput);
       expect(cascade.specDps).toBeLessThan(naive.specDps);
     });
+  });
+});
+
+describe("twisted bow scaling (regression: previously collapsed to 0)", () => {
+  // Expected values derived from the OSRS wiki formula with t = 3*magic/10:
+  //   acc% = 140 + floor((10t-10)/100) - floor((t-100)^2/100), clamped [0,140]
+  //   dmg% = 250 + floor((10t-14)/100) - floor((t-140)^2/100), clamped [0,250]
+  it("scales up with target magic level instead of going to zero", () => {
+    // magic 150: t=45 -> acc 140+4-30=114 ->1.14, dmg 250+4-90=164 ->1.64
+    const m150 = applyModifiers(1, 1, "ranged", [DPS_MODIFIERS.twisted_bow], 150);
+    expect(m150.accuracyMult).toBeCloseTo(1.14, 5);
+    expect(m150.damageMult).toBeCloseTo(1.64, 5);
+  });
+
+  it("caps accuracy at +40% near magic 250 (Olm/Vorkath range)", () => {
+    // magic 250: t=75 -> acc 140+7-6=141 -> capped 1.40, dmg 250+7-42=215 ->2.15
+    const m250 = applyModifiers(1, 1, "ranged", [DPS_MODIFIERS.twisted_bow], 250);
+    expect(m250.accuracyMult).toBeCloseTo(1.4, 5);
+    expect(m250.damageMult).toBeCloseTo(2.15, 5);
+  });
+
+  it("is never clamped to zero, and exceeds 1x accuracy for high-magic bosses", () => {
+    // The bug clamped both multipliers to exactly 0 above ~magic 80.
+    for (const magic of [100, 150, 190, 250]) {
+      const r = applyModifiers(1, 1, "ranged", [DPS_MODIFIERS.twisted_bow], magic);
+      expect(r.accuracyMult).toBeGreaterThan(0.5);
+      expect(r.damageMult).toBeGreaterThan(1);
+    }
+    // GWD-and-above magic levels get a real accuracy bonus.
+    for (const magic of [150, 190, 250]) {
+      expect(applyModifiers(1, 1, "ranged", [DPS_MODIFIERS.twisted_bow], magic).accuracyMult).toBeGreaterThan(1);
+    }
+  });
+});
+
+describe("salve amulet style restrictions", () => {
+  it("salve (e) boosts melee and ranged by 20%", () => {
+    expect(applyModifiers(1, 1, "melee", [DPS_MODIFIERS.salve_e]).damageMult).toBeCloseTo(1.2, 5);
+    expect(applyModifiers(1, 1, "ranged", [DPS_MODIFIERS.salve_e]).accuracyMult).toBeCloseTo(1.2, 5);
+  });
+
+  it("salve (e) does NOT boost magic", () => {
+    const r = applyModifiers(1, 1, "magic", [DPS_MODIFIERS.salve_e]);
+    expect(r.accuracyMult).toBe(1);
+    expect(r.damageMult).toBe(1);
+  });
+
+  it("salve (ei) gives magic +15%, melee/ranged +20%", () => {
+    expect(applyModifiers(1, 1, "magic", [DPS_MODIFIERS.salve_ei]).damageMult).toBeCloseTo(1.15, 5);
+    expect(applyModifiers(1, 1, "melee", [DPS_MODIFIERS.salve_ei]).damageMult).toBeCloseTo(1.2, 5);
+    expect(applyModifiers(1, 1, "ranged", [DPS_MODIFIERS.salve_ei]).damageMult).toBeCloseTo(1.2, 5);
+  });
+});
+
+describe("defReductions (DWH/BGS) reduce defence before the magic blend", () => {
+  it("reduces the raw defence level by 30% per stack for melee", () => {
+    // targetDefLevel 100, defBonus 0. 1 stack: floor(100*0.7)=70 -> (70+9)*64=5056.
+    const one = calculateDps(meleeInput({ targetDefLevel: 100, targetDefBonus: 0, defReductions: 1 }));
+    expect(one.defenseRoll).toBe(defenseRoll(70, 0));
+    // 2 stacks: floor(70*0.7)=49 -> (49+9)*64=3712.
+    const two = calculateDps(meleeInput({ targetDefLevel: 100, targetDefBonus: 0, defReductions: 2 }));
+    expect(two.defenseRoll).toBe(defenseRoll(49, 0));
+  });
+
+  it("for magic, reduces defence first then blends 70/30 with magic level", () => {
+    // reduced def = floor(100*0.7)=70; blend = floor(0.7*100 + 0.3*70) = 91 -> (91+9)*64=6400.
+    const r = calculateDps(meleeInput({
+      combatStyle: "magic",
+      targetDefLevel: 100,
+      targetMagicLevel: 100,
+      targetDefBonus: 0,
+      defReductions: 1,
+      spellBaseMaxHit: 30,
+    }));
+    expect(r.defenseRoll).toBe(defenseRoll(91, 0));
+  });
+});
+
+describe("raid scaling helpers", () => {
+  it("toaDefenseScale / toaHpScale scale by 1 + invocation/100", () => {
+    expect(toaDefenseScale(100, 300)).toBe(400);
+    expect(toaDefenseScale(100, 0)).toBe(100);
+    expect(toaHpScale(100, 150)).toBe(250);
+  });
+
+  it("coxHpScale / coxScale scale by 1 + 0.5*(party-1), CM adds 50%", () => {
+    expect(coxHpScale(100, 1)).toBe(100);
+    expect(coxHpScale(100, 3)).toBe(200);
+    expect(coxScale(200, 4, false)).toBe(500);
+    expect(coxScale(100, 2, true)).toBe(225);
+  });
+});
+
+describe("magic accuracy uses a 70/30 magic/defence blend", () => {
+  it("rolls against floor(0.7*magic + 0.3*defence), not raw defence", () => {
+    // target magic 52, defence 80 -> blended 60; defBonus 35 -> (60+9)*(35+64)=6831
+    const r = calculateDps(meleeInput({
+      combatStyle: "magic",
+      targetDefLevel: 80,
+      targetMagicLevel: 52,
+      targetDefBonus: 35,
+      spellBaseMaxHit: 30,
+    }));
+    expect(r.defenseRoll).toBe(defenseRoll(60, 35));
+    expect(r.defenseRoll).toBe(6831);
+    // sanity: not the raw-defence roll that the old code produced
+    expect(r.defenseRoll).not.toBe(defenseRoll(80, 35));
+  });
+});
+
+describe("poisonDps", () => {
+  it("returns the correct per-style averages", () => {
+    expect(poisonDps("none")).toBe(0);
+    expect(poisonDps("poison")).toBeCloseTo(4 / 18, 6);
+    expect(poisonDps("venom")).toBeCloseTo(12 / 18, 6);
+  });
+});
+
+describe("Tumeken's shadow triples only the gear bonus", () => {
+  // effAtk = effectiveLevel(99, 1.0, 3) = 110. Gear magic attack +173, magic dmg +25%, spell base 34.
+  // Shadow: attack roll = 110 * (3*173 + 64) = 110*583 = 64130 (NOT 110*(173+64)*3).
+  //         max hit = floor(34 * (1 + 3*25/100)) = floor(34*1.75) = 59 (NOT floor(34*1.25)*3 = 126).
+  const shadowInput = meleeInput({
+    combatStyle: "magic",
+    magicLevel: 99,
+    attackBonus: 173,
+    strengthBonus: 25,
+    stanceAttackBonus: 3,
+    spellBaseMaxHit: 34,
+    targetMagicLevel: 100,
+  });
+
+  it("triples the gear attack bonus and magic damage %, leaving the +64 base intact", () => {
+    const r = calculateDps({ ...shadowInput, modifiers: [DPS_MODIFIERS.tumekens_shadow] });
+    expect(r.attackRoll).toBe(64130);
+    expect(r.maxHit).toBe(59);
+  });
+
+  it("matches the un-tripled values when shadow is absent", () => {
+    const r = calculateDps(shadowInput);
+    expect(r.attackRoll).toBe(110 * (173 + 64));
+    expect(r.maxHit).toBe(42); // floor(34 * 1.25)
+  });
+});
+
+describe("dragonClawsExpectedDamage cascade", () => {
+  it("treats follow-up hits as guaranteed once any roll connects", () => {
+    // M=48, acc=0.7. Ranges expected: 35.5/17.5/8.5/9.5.
+    // Sum over first-connect index k of P(k) * sum(ranges[k..3]) + miss*1 = 58.48
+    expect(dragonClawsExpectedDamage(48, 0.7)).toBeCloseTo(58.48, 2);
+  });
+
+  it("equals the full guaranteed cascade at 100% accuracy", () => {
+    // acc=1 -> only k=0 term: 35.5+17.5+8.5+9.5 = 71
+    expect(dragonClawsExpectedDamage(48, 1)).toBeCloseTo(71, 5);
+  });
+
+  it("falls to ~1 damage when accuracy is 0", () => {
+    expect(dragonClawsExpectedDamage(48, 0)).toBeCloseTo(1, 5);
   });
 });

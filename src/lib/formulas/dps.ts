@@ -26,6 +26,9 @@ export interface DpsModifier {
   accuracyMult: number;
   damageMult: number;
   condition?: string;
+  // Per-combat-style multiplier overrides, e.g. the salve amulet boosts melee
+  // and ranged more than magic. Falls back to accuracyMult/damageMult.
+  styleOverrides?: Partial<Record<"melee" | "ranged" | "magic", { accuracyMult: number; damageMult: number }>>;
 }
 
 export const DPS_MODIFIERS: Record<string, DpsModifier> = {
@@ -75,12 +78,16 @@ export const DPS_MODIFIERS: Record<string, DpsModifier> = {
     name: "Salve amulet (e)",
     accuracyMult: 1.20,
     damageMult: 1.20,
+    // Only works for melee and ranged — no effect on magic.
+    styleOverrides: { magic: { accuracyMult: 1.0, damageMult: 1.0 } },
   },
   salve_ei: {
     id: "salve_ei",
     name: "Salve amulet (ei)",
     accuracyMult: 1.20,
     damageMult: 1.20,
+    // Magic gets +15% rather than the +20% melee/ranged receive.
+    styleOverrides: { magic: { accuracyMult: 1.15, damageMult: 1.15 } },
   },
   arclight: {
     id: "arclight",
@@ -162,8 +169,11 @@ export const DPS_MODIFIERS: Record<string, DpsModifier> = {
   tumekens_shadow: {
     id: "tumekens_shadow",
     name: "Tumeken's shadow",
-    accuracyMult: 3.0,
-    damageMult: 3.0,
+    // Shadow triples the GEAR magic attack bonus and magic damage %, not the
+    // base attack-roll constant or the spell's base hit. That gear-only
+    // tripling is handled in calculateDps; the generic mult stays a no-op.
+    accuracyMult: 1.0,
+    damageMult: 1.0,
     condition: "magic",
   },
   virtus: {
@@ -182,15 +192,19 @@ export const DPS_MODIFIERS: Record<string, DpsModifier> = {
   },
 };
 
+// OSRS Twisted bow scaling: t = 3 * magic / 10 is the key transform. The bonus
+// rises with the target's magic level and caps at +140% accuracy / +250% damage.
 function twistedBowAccuracy(targetMagicLevel: number): number {
   const magic = Math.min(targetMagicLevel, 250);
-  const bonus = 140 + Math.floor((10 * 3 * magic - 10) / 100) - Math.floor((Math.pow(3 * magic - 100, 2)) / 100);
+  const t = (3 * magic) / 10;
+  const bonus = 140 + Math.floor((10 * t - 10) / 100) - Math.floor(Math.pow(t - 100, 2) / 100);
   return Math.min(Math.max(bonus, 0), 140) / 100;
 }
 
 function twistedBowDamage(targetMagicLevel: number): number {
   const magic = Math.min(targetMagicLevel, 250);
-  const bonus = 250 + Math.floor((10 * 3 * magic - 14) / 100) - Math.floor((Math.pow(3 * magic - 140, 2)) / 100);
+  const t = (3 * magic) / 10;
+  const bonus = 250 + Math.floor((10 * t - 14) / 100) - Math.floor(Math.pow(t - 140, 2) / 100);
   return Math.min(Math.max(bonus, 0), 250) / 100;
 }
 
@@ -211,8 +225,9 @@ export function applyModifiers(
       accuracyMult *= twistedBowAccuracy(targetMagicLevel);
       damageMult *= twistedBowDamage(targetMagicLevel);
     } else {
-      accuracyMult *= mod.accuracyMult;
-      damageMult *= mod.damageMult;
+      const override = mod.styleOverrides?.[combatStyle];
+      accuracyMult *= override ? override.accuracyMult : mod.accuracyMult;
+      damageMult *= override ? override.damageMult : mod.damageMult;
     }
   }
 
@@ -282,12 +297,19 @@ export function calculateDps(input: DpsInput) {
     input.stanceStrengthBonus
   );
 
+  // Tumeken's shadow triples the gear magic attack bonus and magic damage %
+  // (the +64 base and spell base hit are untouched).
+  const shadowMult = input.combatStyle === "magic"
+    && input.modifiers?.some((m) => m.id === "tumekens_shadow") ? 3 : 1;
+  const gearAttackBonus = input.attackBonus * shadowMult;
+  const gearStrengthBonus = input.strengthBonus * shadowMult;
+
   // When a spell is selected, use spell base max hit + magic damage %
   // instead of level-based formula. strengthBonus holds magic damage % for magic style.
   let mh = input.spellBaseMaxHit != null
-    ? Math.floor(input.spellBaseMaxHit * (1 + input.strengthBonus / 100))
-    : maxHit(effStr, input.strengthBonus);
-  let ar = attackRoll(effAtk, input.attackBonus);
+    ? Math.floor(input.spellBaseMaxHit * (1 + gearStrengthBonus / 100))
+    : maxHit(effStr, gearStrengthBonus);
+  let ar = attackRoll(effAtk, gearAttackBonus);
 
   if (input.modifiers && input.modifiers.length > 0) {
     const { accuracyMult, damageMult } = applyModifiers(
@@ -301,12 +323,18 @@ export function calculateDps(input: DpsInput) {
     mh = Math.floor(mh * damageMult);
   }
 
-  let effectiveDefLevel = input.targetDefLevel;
+  // DWH/BGS specs reduce the target's Defence level — apply before any blend.
+  let reducedDefLevel = input.targetDefLevel;
   if (input.defReductions && input.defReductions > 0) {
     for (let i = 0; i < input.defReductions; i++) {
-      effectiveDefLevel = Math.floor(effectiveDefLevel * 0.7); // DWH: 30% reduction each
+      reducedDefLevel = Math.floor(reducedDefLevel * 0.7); // DWH: 30% reduction each
     }
   }
+  // Magic accuracy rolls against a blended defence level: 70% of the target's
+  // Magic level + 30% of its (reduced) Defence level, not the raw Defence level.
+  const effectiveDefLevel = input.combatStyle === "magic" && input.targetMagicLevel != null
+    ? Math.floor(input.targetMagicLevel * 0.7 + reducedDefLevel * 0.3)
+    : reducedDefLevel;
   const dr = defenseRoll(effectiveDefLevel, input.targetDefBonus);
   const acc = hitChance(ar, dr);
   const d = dps(mh, acc, input.attackSpeed);
@@ -340,10 +368,12 @@ export function dragonClawsExpectedDamage(maxHit: number, accuracy: number): num
 
   let total = 0;
   for (let k = 0; k < 4; k++) {
+    // Probability the first connecting roll is attack k (rolls 0..k-1 missed).
     const pFirst = Math.pow(1 - accuracy, k) * accuracy;
-    let conditional = expected(ranges[0]);
-    for (let i = k + 1; i < 4; i++) {
-      conditional += accuracy * expected(ranges[i - k]);
+    // Once a roll connects, the remaining hits are guaranteed: sum ranges[k..3].
+    let conditional = 0;
+    for (let i = k; i < 4; i++) {
+      conditional += expected(ranges[i]);
     }
     total += pFirst * conditional;
   }

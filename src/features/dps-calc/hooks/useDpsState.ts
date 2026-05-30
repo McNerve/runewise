@@ -7,6 +7,8 @@ import {
   toaDefenseScale,
   toaHpScale,
   coxHpScale,
+  coxScale,
+  poisonDps,
   compareDps,
   type DpsModifier,
   type DpsInput,
@@ -54,7 +56,9 @@ export interface GearLoadout {
 }
 
 export function sumGearBonuses(gear: EquippedGear): {
-  attackBonus: number;
+  attackStab: number;
+  attackSlash: number;
+  attackCrush: number;
   strengthBonus: number;
   attackSpeed: number;
   rangedBonus: number;
@@ -64,16 +68,41 @@ export function sumGearBonuses(gear: EquippedGear): {
   prayer: number;
 } {
   const items = Object.values(gear).filter(Boolean) as WikiEquipment[];
-  return {
-    attackBonus: items.reduce((s, i) => s + i.attackStab + i.attackSlash + i.attackCrush, 0),
-    strengthBonus: items.reduce((s, i) => s + i.strengthBonus, 0),
+  const totals = {
+    attackStab: 0,
+    attackSlash: 0,
+    attackCrush: 0,
+    strengthBonus: 0,
     attackSpeed: 0,
-    rangedBonus: items.reduce((s, i) => s + i.attackRanged, 0),
-    rangedStrength: items.reduce((s, i) => s + i.rangedStrength, 0),
-    magicBonus: items.reduce((s, i) => s + i.attackMagic, 0),
-    magicDamage: items.reduce((s, i) => s + i.magicDamage, 0),
-    prayer: items.reduce((s, i) => s + i.prayerBonus, 0),
+    rangedBonus: 0,
+    rangedStrength: 0,
+    magicBonus: 0,
+    magicDamage: 0,
+    prayer: 0,
   };
+  for (const i of items) {
+    totals.attackStab += i.attackStab;
+    totals.attackSlash += i.attackSlash;
+    totals.attackCrush += i.attackCrush;
+    totals.strengthBonus += i.strengthBonus;
+    totals.rangedBonus += i.attackRanged;
+    totals.rangedStrength += i.rangedStrength;
+    totals.magicBonus += i.attackMagic;
+    totals.magicDamage += i.magicDamage;
+    totals.prayer += i.prayerBonus;
+  }
+  return totals;
+}
+
+// OSRS uses only the attack bonus matching the weapon's current attack type
+// (stab/slash/crush), never the sum of all three.
+export function meleeAttackBonus(
+  b: { attackStab: number; attackSlash: number; attackCrush: number },
+  attackType: string
+): number {
+  if (attackType === "stab") return b.attackStab;
+  if (attackType === "crush") return b.attackCrush;
+  return b.attackSlash;
 }
 
 const LOADOUTS_KEY = "runewise_dps_loadouts";
@@ -102,10 +131,14 @@ const DEFAULT_SPEED: Record<CombatStyle, number> = {
   magic: 5,
 };
 
-function getDefBonus(m: WikiMonster, style: CombatStyle): number {
+export function getDefBonus(m: WikiMonster, style: CombatStyle, meleeType?: string): number {
   if (style === "ranged") return m.defRanged;
   if (style === "magic") return m.defMagic;
-  return Math.min(m.defStab, m.defSlash, m.defCrush);
+  // Melee uses the defence bonus matching the attacker's attack type;
+  // default to slash (the most common melee type) when unspecified.
+  if (meleeType === "stab") return m.defStab;
+  if (meleeType === "crush") return m.defCrush;
+  return m.defSlash;
 }
 
 function getSkillLevel(hiscores: HiscoreData | null, name: string): number {
@@ -289,14 +322,7 @@ export function useDpsState({ hiscores }: Props) {
     }
   }, [combatStyle]);
 
-  // Compute effective bonuses depending on mode
   const gearBonuses = useMemo(() => sumGearBonuses(equippedGear), [equippedGear]);
-  const effectiveAttackBonus = bonusMode === "equipment"
-    ? (combatStyle === "ranged" ? gearBonuses.rangedBonus : combatStyle === "magic" ? gearBonuses.magicBonus : gearBonuses.attackBonus)
-    : attackBonus;
-  const effectiveStrengthBonus = bonusMode === "equipment"
-    ? (combatStyle === "ranged" ? gearBonuses.rangedStrength : combatStyle === "magic" ? gearBonuses.magicDamage : gearBonuses.strengthBonus)
-    : strengthBonus;
 
   // Get weapon-specific stances from equipped weapon's combat_style
   const weaponItem = equippedGear["weapon"] ?? equippedGear["2h"] ?? null;
@@ -306,6 +332,14 @@ export function useDpsState({ hiscores }: Props) {
     ? weaponType.stances
     : GENERIC_STANCES[combatStyle];
   const stance = stances[stanceIdx] ?? stances[0];
+
+  // Compute effective bonuses depending on mode
+  const effectiveAttackBonus = bonusMode === "equipment"
+    ? (combatStyle === "ranged" ? gearBonuses.rangedBonus : combatStyle === "magic" ? gearBonuses.magicBonus : meleeAttackBonus(gearBonuses, stance.attackType))
+    : attackBonus;
+  const effectiveStrengthBonus = bonusMode === "equipment"
+    ? (combatStyle === "ranged" ? gearBonuses.rangedStrength : combatStyle === "magic" ? gearBonuses.magicDamage : gearBonuses.strengthBonus)
+    : strengthBonus;
 
   // Weapon attack speed
   const weaponSpeed = weaponItem?.attackSpeed ?? 0;
@@ -336,13 +370,15 @@ export function useDpsState({ hiscores }: Props) {
 
   const isCustom = !selectedMonster;
   const baseDefLevel = isCustom ? customDef.defLevel : selectedMonster.defenceLevel;
-  const targetDefBonus = isCustom ? customDef.defBonus : getDefBonus(selectedMonster, combatStyle);
+  const targetDefBonus = isCustom ? customDef.defBonus : getDefBonus(selectedMonster, combatStyle, stance.attackType);
   const baseHp = isCustom ? customDef.hp : selectedMonster.hitpoints;
 
   // Apply raid scaling
-  const targetDefLevel = toaInvocation > 0
-    ? toaDefenseScale(baseDefLevel, toaInvocation)
-    : baseDefLevel;
+  const targetDefLevel = coxPartySize > 1
+    ? coxScale(baseDefLevel, coxPartySize, false)
+    : toaInvocation > 0
+      ? toaDefenseScale(baseDefLevel, toaInvocation)
+      : baseDefLevel;
   const targetHp = coxPartySize > 1
     ? coxHpScale(baseHp, coxPartySize)
     : toaInvocation > 0
@@ -433,14 +469,14 @@ export function useDpsState({ hiscores }: Props) {
         attackSpeed: effectiveAttackSpeed,
         combatStyle,
         targetDefLevel: monster.defenceLevel,
-        targetDefBonus: getDefBonus(monster, combatStyle),
+        targetDefBonus: getDefBonus(monster, combatStyle, stance.attackType),
         targetHp: monster.hitpoints,
         targetMagicLevel: monster.magicLevel,
         modifiers: modifierList,
         defReductions,
       }),
     }));
-  }, [phaseMonsters, attackLevel, strengthLevel, rangedLevel, magicLevel, effectiveAttackBonus, effectiveStrengthBonus, prayerAttackMult, prayerStrengthMult, stanceAttackBonus, stanceStrengthBonus, effectiveAttackSpeed, combatStyle, modifierList, defReductions]);
+  }, [phaseMonsters, attackLevel, strengthLevel, rangedLevel, magicLevel, effectiveAttackBonus, effectiveStrengthBonus, prayerAttackMult, prayerStrengthMult, stanceAttackBonus, stanceStrengthBonus, stance.attackType, effectiveAttackSpeed, combatStyle, modifierList, defReductions]);
 
   // Loadout comparison
   const comparisonResult = useMemo(() => {
@@ -450,11 +486,11 @@ export function useDpsState({ hiscores }: Props) {
     const cmpPrayer = PRAYERS.filter((p) => p.style === compareLoadout.combatStyle)[compareLoadout.prayerIdx] ?? PRAYERS[0];
 
     let cmpAttackBonus = compareLoadout.attackBonus;
-    let cmpStrengthBonus = compareLoadout.attackBonus;
+    let cmpStrengthBonus = compareLoadout.strengthBonus;
     if (compareLoadout.gear) {
       const bonuses = sumGearBonuses(compareLoadout.gear as EquippedGear);
       if (compareLoadout.combatStyle === "melee") {
-        cmpAttackBonus = bonuses.attackBonus;
+        cmpAttackBonus = meleeAttackBonus(bonuses, cmpStance.attackType);
         cmpStrengthBonus = bonuses.strengthBonus;
       } else if (compareLoadout.combatStyle === "ranged") {
         cmpAttackBonus = bonuses.rangedBonus;
@@ -632,12 +668,7 @@ export function useDpsState({ hiscores }: Props) {
     });
   }, []);
 
-  // Inline until poisonDps is exported from formulas/dps.ts
-  const poisonDpsValue = useMemo(() => {
-    if (poisonType === "none") return 0;
-    if (poisonType === "poison") return 6 / (18);
-    return 8 / (18);
-  }, [poisonType]);
+  const poisonDpsValue = useMemo(() => poisonDps(poisonType), [poisonType]);
 
   const totalDps = result.dps + poisonDpsValue;
 
