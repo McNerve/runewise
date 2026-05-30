@@ -26,6 +26,9 @@ export interface DpsModifier {
   accuracyMult: number;
   damageMult: number;
   condition?: string;
+  // Per-combat-style multiplier overrides, e.g. the salve amulet boosts melee
+  // and ranged more than magic. Falls back to accuracyMult/damageMult.
+  styleOverrides?: Record<string, { accuracyMult: number; damageMult: number }>;
 }
 
 export const DPS_MODIFIERS: Record<string, DpsModifier> = {
@@ -75,12 +78,16 @@ export const DPS_MODIFIERS: Record<string, DpsModifier> = {
     name: "Salve amulet (e)",
     accuracyMult: 1.20,
     damageMult: 1.20,
+    // Only works for melee and ranged — no effect on magic.
+    styleOverrides: { magic: { accuracyMult: 1.0, damageMult: 1.0 } },
   },
   salve_ei: {
     id: "salve_ei",
     name: "Salve amulet (ei)",
     accuracyMult: 1.20,
     damageMult: 1.20,
+    // Magic gets +15% rather than the +20% melee/ranged receive.
+    styleOverrides: { magic: { accuracyMult: 1.15, damageMult: 1.15 } },
   },
   arclight: {
     id: "arclight",
@@ -182,15 +189,19 @@ export const DPS_MODIFIERS: Record<string, DpsModifier> = {
   },
 };
 
+// OSRS Twisted bow scaling: t = 3 * magic / 10 is the key transform. The bonus
+// rises with the target's magic level and caps at +140% accuracy / +250% damage.
 function twistedBowAccuracy(targetMagicLevel: number): number {
   const magic = Math.min(targetMagicLevel, 250);
-  const bonus = 140 + Math.floor((10 * 3 * magic - 10) / 100) - Math.floor((Math.pow(3 * magic - 100, 2)) / 100);
+  const t = (3 * magic) / 10;
+  const bonus = 140 + Math.floor((10 * t - 10) / 100) - Math.floor(Math.pow(t - 100, 2) / 100);
   return Math.min(Math.max(bonus, 0), 140) / 100;
 }
 
 function twistedBowDamage(targetMagicLevel: number): number {
   const magic = Math.min(targetMagicLevel, 250);
-  const bonus = 250 + Math.floor((10 * 3 * magic - 14) / 100) - Math.floor((Math.pow(3 * magic - 140, 2)) / 100);
+  const t = (3 * magic) / 10;
+  const bonus = 250 + Math.floor((10 * t - 14) / 100) - Math.floor(Math.pow(t - 140, 2) / 100);
   return Math.min(Math.max(bonus, 0), 250) / 100;
 }
 
@@ -211,8 +222,9 @@ export function applyModifiers(
       accuracyMult *= twistedBowAccuracy(targetMagicLevel);
       damageMult *= twistedBowDamage(targetMagicLevel);
     } else {
-      accuracyMult *= mod.accuracyMult;
-      damageMult *= mod.damageMult;
+      const override = mod.styleOverrides?.[combatStyle];
+      accuracyMult *= override ? override.accuracyMult : mod.accuracyMult;
+      damageMult *= override ? override.damageMult : mod.damageMult;
     }
   }
 
@@ -301,7 +313,11 @@ export function calculateDps(input: DpsInput) {
     mh = Math.floor(mh * damageMult);
   }
 
-  let effectiveDefLevel = input.targetDefLevel;
+  // Magic accuracy rolls against a blended defence level: 70% of the target's
+  // Magic level + 30% of its Defence level (not the raw Defence level).
+  let effectiveDefLevel = input.combatStyle === "magic" && input.targetMagicLevel != null
+    ? Math.floor(input.targetMagicLevel * 0.7 + input.targetDefLevel * 0.3)
+    : input.targetDefLevel;
   if (input.defReductions && input.defReductions > 0) {
     for (let i = 0; i < input.defReductions; i++) {
       effectiveDefLevel = Math.floor(effectiveDefLevel * 0.7); // DWH: 30% reduction each
