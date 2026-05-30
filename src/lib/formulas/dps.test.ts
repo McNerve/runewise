@@ -11,6 +11,10 @@ import {
   dragonClawsExpectedDamage,
   calculateSpecDps,
   poisonDps,
+  coxScale,
+  coxHpScale,
+  toaDefenseScale,
+  toaHpScale,
   type DpsInput,
 } from "./dps";
 
@@ -343,9 +347,49 @@ describe("salve amulet style restrictions", () => {
     expect(r.damageMult).toBe(1);
   });
 
-  it("salve (ei) gives magic +15%, melee +20%", () => {
+  it("salve (ei) gives magic +15%, melee/ranged +20%", () => {
     expect(applyModifiers(1, 1, "magic", [DPS_MODIFIERS.salve_ei]).damageMult).toBeCloseTo(1.15, 5);
     expect(applyModifiers(1, 1, "melee", [DPS_MODIFIERS.salve_ei]).damageMult).toBeCloseTo(1.2, 5);
+    expect(applyModifiers(1, 1, "ranged", [DPS_MODIFIERS.salve_ei]).damageMult).toBeCloseTo(1.2, 5);
+  });
+});
+
+describe("defReductions (DWH/BGS) reduce defence before the magic blend", () => {
+  it("reduces the raw defence level by 30% per stack for melee", () => {
+    // targetDefLevel 100, defBonus 0. 1 stack: floor(100*0.7)=70 -> (70+9)*64=5056.
+    const one = calculateDps(meleeInput({ targetDefLevel: 100, targetDefBonus: 0, defReductions: 1 }));
+    expect(one.defenseRoll).toBe(defenseRoll(70, 0));
+    // 2 stacks: floor(70*0.7)=49 -> (49+9)*64=3712.
+    const two = calculateDps(meleeInput({ targetDefLevel: 100, targetDefBonus: 0, defReductions: 2 }));
+    expect(two.defenseRoll).toBe(defenseRoll(49, 0));
+  });
+
+  it("for magic, reduces defence first then blends 70/30 with magic level", () => {
+    // reduced def = floor(100*0.7)=70; blend = floor(0.7*100 + 0.3*70) = 91 -> (91+9)*64=6400.
+    const r = calculateDps(meleeInput({
+      combatStyle: "magic",
+      targetDefLevel: 100,
+      targetMagicLevel: 100,
+      targetDefBonus: 0,
+      defReductions: 1,
+      spellBaseMaxHit: 30,
+    }));
+    expect(r.defenseRoll).toBe(defenseRoll(91, 0));
+  });
+});
+
+describe("raid scaling helpers", () => {
+  it("toaDefenseScale / toaHpScale scale by 1 + invocation/100", () => {
+    expect(toaDefenseScale(100, 300)).toBe(400);
+    expect(toaDefenseScale(100, 0)).toBe(100);
+    expect(toaHpScale(100, 150)).toBe(250);
+  });
+
+  it("coxHpScale / coxScale scale by 1 + 0.5*(party-1), CM adds 50%", () => {
+    expect(coxHpScale(100, 1)).toBe(100);
+    expect(coxHpScale(100, 3)).toBe(200);
+    expect(coxScale(200, 4, false)).toBe(500);
+    expect(coxScale(100, 2, true)).toBe(225);
   });
 });
 

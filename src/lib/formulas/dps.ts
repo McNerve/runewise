@@ -28,7 +28,7 @@ export interface DpsModifier {
   condition?: string;
   // Per-combat-style multiplier overrides, e.g. the salve amulet boosts melee
   // and ranged more than magic. Falls back to accuracyMult/damageMult.
-  styleOverrides?: Record<string, { accuracyMult: number; damageMult: number }>;
+  styleOverrides?: Partial<Record<"melee" | "ranged" | "magic", { accuracyMult: number; damageMult: number }>>;
 }
 
 export const DPS_MODIFIERS: Record<string, DpsModifier> = {
@@ -323,16 +323,18 @@ export function calculateDps(input: DpsInput) {
     mh = Math.floor(mh * damageMult);
   }
 
-  // Magic accuracy rolls against a blended defence level: 70% of the target's
-  // Magic level + 30% of its Defence level (not the raw Defence level).
-  let effectiveDefLevel = input.combatStyle === "magic" && input.targetMagicLevel != null
-    ? Math.floor(input.targetMagicLevel * 0.7 + input.targetDefLevel * 0.3)
-    : input.targetDefLevel;
+  // DWH/BGS specs reduce the target's Defence level — apply before any blend.
+  let reducedDefLevel = input.targetDefLevel;
   if (input.defReductions && input.defReductions > 0) {
     for (let i = 0; i < input.defReductions; i++) {
-      effectiveDefLevel = Math.floor(effectiveDefLevel * 0.7); // DWH: 30% reduction each
+      reducedDefLevel = Math.floor(reducedDefLevel * 0.7); // DWH: 30% reduction each
     }
   }
+  // Magic accuracy rolls against a blended defence level: 70% of the target's
+  // Magic level + 30% of its (reduced) Defence level, not the raw Defence level.
+  const effectiveDefLevel = input.combatStyle === "magic" && input.targetMagicLevel != null
+    ? Math.floor(input.targetMagicLevel * 0.7 + reducedDefLevel * 0.3)
+    : reducedDefLevel;
   const dr = defenseRoll(effectiveDefLevel, input.targetDefBonus);
   const acc = hitChance(ar, dr);
   const d = dps(mh, acc, input.attackSpeed);

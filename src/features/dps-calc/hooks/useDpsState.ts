@@ -469,14 +469,14 @@ export function useDpsState({ hiscores }: Props) {
         attackSpeed: effectiveAttackSpeed,
         combatStyle,
         targetDefLevel: monster.defenceLevel,
-        targetDefBonus: getDefBonus(monster, combatStyle),
+        targetDefBonus: getDefBonus(monster, combatStyle, stance.attackType),
         targetHp: monster.hitpoints,
         targetMagicLevel: monster.magicLevel,
         modifiers: modifierList,
         defReductions,
       }),
     }));
-  }, [phaseMonsters, attackLevel, strengthLevel, rangedLevel, magicLevel, effectiveAttackBonus, effectiveStrengthBonus, prayerAttackMult, prayerStrengthMult, stanceAttackBonus, stanceStrengthBonus, effectiveAttackSpeed, combatStyle, modifierList, defReductions]);
+  }, [phaseMonsters, attackLevel, strengthLevel, rangedLevel, magicLevel, effectiveAttackBonus, effectiveStrengthBonus, prayerAttackMult, prayerStrengthMult, stanceAttackBonus, stanceStrengthBonus, stance.attackType, effectiveAttackSpeed, combatStyle, modifierList, defReductions]);
 
   // Loadout comparison
   const comparisonResult = useMemo(() => {
