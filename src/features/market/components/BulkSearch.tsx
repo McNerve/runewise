@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import type { ItemMapping, ItemPrice } from "../../../lib/api/ge";
 import { formatGp } from "../../../lib/format";
+import { netMargin } from "../../../lib/tax";
 import { itemIcon } from "../../../lib/sprites";
 
 interface BulkSearchProps {
@@ -85,7 +86,7 @@ export default function BulkSearch({ mapping, prices }: BulkSearchProps) {
                 <th className="px-2 py-2 text-xs text-text-secondary font-normal">Item</th>
                 <th className="px-2 py-2 text-xs text-text-secondary font-normal text-right">Buy</th>
                 <th className="px-2 py-2 text-xs text-text-secondary font-normal text-right">Sell</th>
-                <th className="px-2 py-2 text-xs text-text-secondary font-normal text-right">Margin</th>
+                <th className="px-2 py-2 text-xs text-text-secondary font-normal text-right">Net Margin</th>
                 <th className="px-2 py-2 text-xs text-text-secondary font-normal text-right">High Alch</th>
               </tr>
             </thead>
@@ -93,7 +94,7 @@ export default function BulkSearch({ mapping, prices }: BulkSearchProps) {
               {results.map((r, i) => {
                 const margin =
                   r.price?.high != null && r.price?.low != null
-                    ? r.price.high - r.price.low
+                    ? netMargin(r.price.high, r.price.low)
                     : null;
                 return (
                   <tr

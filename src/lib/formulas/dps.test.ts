@@ -197,11 +197,10 @@ describe("dps formulas", () => {
       expect(damageMult).toBeCloseTo((7 / 6) * 1.70, 4);
     });
 
-    it("salve (ei) applies to melee/ranged at +20% and magic at +15%", () => {
-      for (const style of ["melee", "ranged"] as const) {
+    it("salve (ei) applies +20% to every style, magic included", () => {
+      for (const style of ["melee", "ranged", "magic"] as const) {
         expect(applyModifiers(1, 1, style, [DPS_MODIFIERS.salve_ei]).accuracyMult).toBeCloseTo(1.20, 4);
       }
-      expect(applyModifiers(1, 1, "magic", [DPS_MODIFIERS.salve_ei]).accuracyMult).toBeCloseTo(1.15, 4);
     });
 
     it("dhcb only applies to ranged", () => {
@@ -347,10 +346,30 @@ describe("salve amulet style restrictions", () => {
     expect(r.damageMult).toBe(1);
   });
 
-  it("salve (ei) gives magic +15%, melee/ranged +20%", () => {
-    expect(applyModifiers(1, 1, "magic", [DPS_MODIFIERS.salve_ei]).damageMult).toBeCloseTo(1.15, 5);
+  it("salve (ei) gives +20% in all styles, magic included", () => {
+    expect(applyModifiers(1, 1, "magic", [DPS_MODIFIERS.salve_ei]).damageMult).toBeCloseTo(1.2, 5);
     expect(applyModifiers(1, 1, "melee", [DPS_MODIFIERS.salve_ei]).damageMult).toBeCloseTo(1.2, 5);
     expect(applyModifiers(1, 1, "ranged", [DPS_MODIFIERS.salve_ei]).damageMult).toBeCloseTo(1.2, 5);
+  });
+
+  it("leaf-bladed battleaxe passive is damage-only", () => {
+    const r = applyModifiers(1, 1, "melee", [DPS_MODIFIERS.leaf_bladed]);
+    expect(r.accuracyMult).toBe(1);
+    expect(r.damageMult).toBeCloseTo(1.175, 5);
+  });
+});
+
+describe("twisted bow CoX magic clamp", () => {
+  it("clamps target magic at 250 outside CoX and 350 inside", () => {
+    const outside = applyModifiers(1, 1, "ranged", [DPS_MODIFIERS.twisted_bow], 350);
+    const at250 = applyModifiers(1, 1, "ranged", [DPS_MODIFIERS.twisted_bow], 250);
+    expect(outside.damageMult).toBeCloseTo(at250.damageMult, 5);
+
+    const inCox = applyModifiers(1, 1, "ranged", [DPS_MODIFIERS.twisted_bow], 350, 350);
+    // magic 350: t=105 -> dmg 250+10-12=248 -> 2.48, acc capped at 1.40
+    expect(inCox.damageMult).toBeCloseTo(2.48, 5);
+    expect(inCox.damageMult).toBeGreaterThan(at250.damageMult);
+    expect(inCox.accuracyMult).toBeCloseTo(1.4, 5);
   });
 });
 

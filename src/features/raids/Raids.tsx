@@ -224,7 +224,7 @@ export default function Raids() {
           <RaidContent
             rooms={COX_ROOMS}
             uniques={COX_UNIQUES}
-            lootDescription="CoX uses a points-based system. Each player earns points from damaging bosses and completing tasks. Unique drop chance scales with total team points. At 30,000 personal points, each unique has approximately a 1/34.5 chance to appear."
+            lootDescription="CoX uses a points-based system. Each player earns points from damaging bosses and completing tasks. Your chance of ANY unique is personal points / 867,500 — roughly 1/28.9 at 30,000 points — and the specific item is then rolled by table weight (e.g. Twisted bow is 2/69 of unique rolls)."
             expandedRoom={expandedRoom}
             onToggleRoom={(name) => setExpandedRoom(expandedRoom === name ? null : name)}
             onNavigateMarket={(name) => navigate("market", { query: name })}
@@ -245,7 +245,7 @@ export default function Raids() {
           <RaidContent
             rooms={TOB_ROOMS}
             uniques={TOB_UNIQUES}
-            lootDescription="ToB uses an MVP-based reward system. The player who deals the most damage across all rooms receives a weighted chance at unique drops. Each completion has approximately a 1/86 chance for a unique."
+            lootDescription="ToB rewards are contribution-based. At full performance the team has roughly an 11% (1/9.1) chance of a unique per completion — deaths reduce it — and the recipient is rolled by points contribution, so an even split in a team of N gives you about 1/(9.1 × N)."
             expandedRoom={expandedRoom}
             onToggleRoom={(name) => setExpandedRoom(expandedRoom === name ? null : name)}
             onNavigateMarket={(name) => navigate("market", { query: name })}
@@ -256,7 +256,7 @@ export default function Raids() {
             inputLabel="Team size"
             inputDefault={4}
             inputDescription="Players in team"
-            calculateRate={(teamSize) => 86 * Math.max(1, teamSize)}
+            calculateRate={(teamSize) => (100 / 11) * Math.max(1, teamSize)}
           />
         </>
       )}
@@ -265,7 +265,7 @@ export default function Raids() {
           <RaidContent
             rooms={TOA_ROOMS}
             uniques={TOA_UNIQUES}
-            lootDescription="ToA uses an invocation-based system. Higher invocation levels increase difficulty and unique drop rates. At 150 invocations, each unique has approximately a 1/48 chance. Expert mode (300+) significantly improves rates."
+            lootDescription="ToA uses an invocation-based system. Higher invocation levels increase difficulty and unique drop rates. At 150 invocations the chance of ANY unique is approximately 1/48; the specific item is then rolled by table weight (Tumeken's shadow is 1/24 of unique rolls). Expert mode (300+) significantly improves rates."
             expandedRoom={expandedRoom}
             onToggleRoom={(name) => setExpandedRoom(expandedRoom === name ? null : name)}
             onNavigateMarket={(name) => navigate("market", { query: name })}

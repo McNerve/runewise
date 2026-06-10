@@ -77,13 +77,24 @@ interface ProfitRow {
   evPerHr: number | null;
 }
 
+// Returns the effective rate denominator (one drop per N kills). Handles
+// "1/128", "3/128", and multi-roll forms like "2 × 1/128" or "2 x 1/128".
 function parseRate(rarity: string): number | null {
   const lower = rarity.toLowerCase();
   if (lower.includes("always")) return 1;
-  const match = lower.match(/1\s*\/\s*([\d.,]+)/);
+  const match = lower.match(/(?:(\d+)\s*[x×]\s*)?(\d[\d.,]*)\s*\/\s*([\d.,]+)/);
   if (!match) return null;
-  const parsed = Number(match[1].replace(/,/g, ""));
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+  const rolls = match[1] ? Number(match[1]) : 1;
+  const numerator = Number(match[2].replace(/,/g, ""));
+  const denominator = Number(match[3].replace(/,/g, ""));
+  if (
+    !Number.isFinite(rolls) || rolls <= 0 ||
+    !Number.isFinite(numerator) || numerator <= 0 ||
+    !Number.isFinite(denominator) || denominator <= 0
+  ) {
+    return null;
+  }
+  return denominator / (numerator * rolls);
 }
 
 function parseQuantity(quantity: string): number | null {

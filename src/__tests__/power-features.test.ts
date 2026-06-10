@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import type { GearLoadout } from "../features/dps-calc/hooks/useDpsState";
-import type { FlipEntry } from "../features/flip-journal/FlipJournal";
+import { flipProfit } from "../features/flip-journal/profit";
 
 vi.mock("../lib/api/ge", () => ({
   fetchMapping: vi.fn().mockResolvedValue([
@@ -90,83 +90,37 @@ describe("Loadout export/import round-trip", () => {
 });
 
 // ── 2. Flip Journal tax calculation ──────────────────────────────────────────
-
-function calcProfit(entry: FlipEntry): number | null {
-  if (entry.sellPrice == null) return null;
-  return Math.floor((entry.sellPrice - entry.buyPrice) * entry.qty * 0.99);
-}
+// Tests the REAL exported function: GE tax is 2% of the sale price per item
+// (floored, 5m cap, sub-50gp exempt), not a percentage of the margin.
 
 describe("Flip Journal profit calculation", () => {
-  it("applies 1% GE tax on sell", () => {
-    const entry: FlipEntry = {
-      id: "1",
-      itemId: 4151,
-      itemName: "Abyssal whip",
-      buyPrice: 2_000_000,
-      sellPrice: 2_100_000,
-      qty: 1,
-      boughtAt: new Date().toISOString(),
-      soldAt: new Date().toISOString(),
-    };
-    // (2.1M - 2M) * 1 * 0.99 = 99_000
-    expect(calcProfit(entry)).toBe(99_000);
+  it("applies 2% GE tax on the sell price", () => {
+    // tax = floor(2.1m × 0.02) = 42,000 → profit = 2.1m − 42k − 2m = 58,000
+    expect(flipProfit(2_000_000, 2_100_000, 1)).toBe(58_000);
   });
 
-  it("returns null for open flips (no sell price)", () => {
-    const entry: FlipEntry = {
-      id: "2",
-      itemId: 1,
-      itemName: "Coins",
-      buyPrice: 100,
-      qty: 10,
-      boughtAt: new Date().toISOString(),
-    };
-    expect(calcProfit(entry)).toBeNull();
+  it("flips the sign on thin-margin flips", () => {
+    // buy 10,000 / sell 10,100: tax 202 → −102 per unit, NOT +99
+    expect(flipProfit(10_000, 10_100, 1)).toBe(-102);
   });
 
   it("handles bulk flips with qty", () => {
-    const entry: FlipEntry = {
-      id: "3",
-      itemId: 995,
-      itemName: "Nature rune",
-      buyPrice: 200,
-      sellPrice: 210,
-      qty: 1000,
-      boughtAt: new Date().toISOString(),
-      soldAt: new Date().toISOString(),
-    };
-    // (210 - 200) * 1000 * 0.99 = 9900
-    expect(calcProfit(entry)).toBe(9_900);
+    // sell 210: tax floor(4.2) = 4 → (210 − 4 − 200) × 1000 = 6,000
+    expect(flipProfit(200, 210, 1000)).toBe(6_000);
   });
 
-  it("returns negative profit when sold below buy price", () => {
-    const entry: FlipEntry = {
-      id: "4",
-      itemId: 99,
-      itemName: "Dragon scimitar",
-      buyPrice: 100_000,
-      sellPrice: 90_000,
-      qty: 1,
-      boughtAt: new Date().toISOString(),
-      soldAt: new Date().toISOString(),
-    };
-    // (90k - 100k) * 1 * 0.99 = -9900
-    expect(calcProfit(entry)).toBe(-9_900);
+  it("exempts sub-50gp sales from tax", () => {
+    expect(flipProfit(30, 40, 100)).toBe(1_000);
   });
 
-  it("floors the result (no fractional gp)", () => {
-    const entry: FlipEntry = {
-      id: "5",
-      itemId: 500,
-      itemName: "Shark",
-      buyPrice: 700,
-      sellPrice: 701,
-      qty: 3,
-      boughtAt: new Date().toISOString(),
-      soldAt: new Date().toISOString(),
-    };
-    // (1) * 3 * 0.99 = 2.97 → floored to 2
-    expect(calcProfit(entry)).toBe(2);
+  it("caps tax at 5m per item", () => {
+    // sell 300m: tax capped at 5m → 300m − 5m − 290m = 5m
+    expect(flipProfit(290_000_000, 300_000_000, 1)).toBe(5_000_000);
+  });
+
+  it("does not soften losses (no tax rebate on a bad flip)", () => {
+    // tax = floor(90k × 0.02) = 1,800 → 90k − 1.8k − 100k = −11,800
+    expect(flipProfit(100_000, 90_000, 1)).toBe(-11_800);
   });
 });
 

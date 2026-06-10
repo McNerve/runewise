@@ -36,6 +36,23 @@ export type CombatStyle = "melee" | "ranged" | "magic";
 export type BonusMode = "equipment" | "manual";
 export type EquippedGear = Partial<Record<EquipmentSlot | "2h", WikiEquipment>>;
 
+// Modifiers that can't coexist in-game: slayer helm and salve never stack
+// (salve takes priority), and only one void set can be worn at a time.
+const EXCLUSIVE_MODIFIER_GROUPS: string[][] = [
+  ["slayer_helm", "salve_e", "salve_ei"],
+  ["void_melee", "void_ranged", "void_magic", "elite_void_ranged", "elite_void_magic"],
+];
+
+function addModifierExclusive(set: Set<string>, id: string): void {
+  for (const group of EXCLUSIVE_MODIFIER_GROUPS) {
+    if (!group.includes(id)) continue;
+    for (const other of group) {
+      if (other !== id) set.delete(other);
+    }
+  }
+  set.add(id);
+}
+
 export interface GearLoadout {
   name: string;
   combatStyle: CombatStyle;
@@ -296,7 +313,7 @@ export function useDpsState({ hiscores }: Props) {
     if (params.onTask !== "1") return;
     setActiveModifiers((prev) => {
       const next = new Set(prev);
-      next.add("slayer_helm");
+      addModifierExclusive(next, "slayer_helm");
       return next;
     });
   }, [params.onTask]);
@@ -423,6 +440,7 @@ export function useDpsState({ hiscores }: Props) {
         modifiers: modifierList,
         defReductions,
         spellBaseMaxHit: activeSpellBase,
+        coxScaling: coxPartySize > 1,
       }),
     [
       attackLevel,
@@ -442,6 +460,7 @@ export function useDpsState({ hiscores }: Props) {
       modifierList,
       defReductions,
       activeSpellBase,
+      coxPartySize,
     ]
   );
 
@@ -586,7 +605,7 @@ export function useDpsState({ hiscores }: Props) {
       if (next.has(id)) {
         next.delete(id);
       } else {
-        next.add(id);
+        addModifierExclusive(next, id);
       }
       return next;
     });

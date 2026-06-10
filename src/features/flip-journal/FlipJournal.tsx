@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback, useRef } from "react";
 import { loadJSON, saveJSON } from "../../lib/localStorage";
+import { flipProfit } from "./profit";
 import { formatGp } from "../../lib/format";
 import { searchItems, type ItemMapping } from "../../lib/api/ge";
 import Chart from "../../components/Chart";
@@ -22,7 +23,7 @@ export interface FlipEntry {
 
 function calcProfit(entry: FlipEntry): number | null {
   if (entry.sellPrice == null) return null;
-  return Math.floor((entry.sellPrice - entry.buyPrice) * entry.qty * 0.99);
+  return flipProfit(entry.buyPrice, entry.sellPrice, entry.qty);
 }
 
 function heldTime(entry: FlipEntry): string {
@@ -402,9 +403,9 @@ function CloseModal({ entry, onConfirm, onCancel }: {
         {sellPrice && (
           <div className="text-xs text-text-secondary mb-3">
             Profit: <span className={`font-medium ${
-              Math.floor((Number(sellPrice) - entry.buyPrice) * entry.qty * 0.99) >= 0 ? "text-success" : "text-danger"
+              flipProfit(entry.buyPrice, Number(sellPrice), entry.qty) >= 0 ? "text-success" : "text-danger"
             }`}>
-              {formatGp(Math.floor((Number(sellPrice) - entry.buyPrice) * entry.qty * 0.99))}
+              {formatGp(flipProfit(entry.buyPrice, Number(sellPrice), entry.qty))}
             </span>
           </div>
         )}

@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { formatGp } from "../../../lib/format";
+import { postTaxPrice } from "../../../lib/tax";
 import { itemIcon } from "../../../lib/sprites";
 import type { HerbloreRecipe } from "../../../lib/data/herblore-recipes";
 import type { CraftingRecipe } from "../../../lib/data/crafting-recipes";
@@ -47,14 +48,14 @@ export default function RecipeCostTable({
           if (herbPrice != null && secPrice != null) {
             costPerAction = herbPrice + secPrice;
           }
-          productValue = getPrice(prices, r.productId);
         } else {
           const matPrice = getPrice(prices, r.materialId);
           if (matPrice != null) {
             costPerAction = matPrice * r.materialQty;
           }
-          productValue = getPrice(prices, r.productId);
         }
+        const rawProductValue = getPrice(prices, r.productId);
+        productValue = rawProductValue != null ? postTaxPrice(rawProductValue) : null;
 
         const netCost =
           costPerAction != null

@@ -9,6 +9,8 @@ export interface RaidUnique {
   name: string;
   pointsRequired: string;
   rateDescription: string;
+  /** Share of the unique table (wiki weighting). 0 for pets — they roll separately. */
+  weight: number;
 }
 
 export const COX_ROOMS: RaidRoom[] = [
@@ -26,18 +28,21 @@ export const COX_ROOMS: RaidRoom[] = [
   { name: "Great Olm", type: "boss", mechanics: "Three-phase final boss. Head attacks with magic/ranged, left hand does crystal/lightning/swap, right hand does fire/acid/healing. Final phase: no hands, head only.", tips: "Melee hand runner controls position. Protect from Magic default, switch on ranged. Skip specials by DPSing hands fast. Final phase: prayer switching required." },
 ];
 
+// Weights are the OSRS Wiki unique-table weightings (out of 69 total).
+// The chance that ANY unique drops is personalPoints/867,500; a specific item
+// is then that chance × weight/69.
 export const COX_UNIQUES: RaidUnique[] = [
-  { name: "Twisted bow", pointsRequired: "~65,000", rateDescription: "1/34.5 per raid at 30K points (scales with team points)" },
-  { name: "Kodai insignia", pointsRequired: "~65,000", rateDescription: "1/34.5 per raid" },
-  { name: "Elder maul", pointsRequired: "~65,000", rateDescription: "1/34.5 per raid" },
-  { name: "Dragon claws", pointsRequired: "~65,000", rateDescription: "1/34.5 per raid" },
-  { name: "Ancestral hat", pointsRequired: "~65,000", rateDescription: "1/34.5 per raid" },
-  { name: "Ancestral robe top", pointsRequired: "~65,000", rateDescription: "1/34.5 per raid" },
-  { name: "Ancestral robe bottom", pointsRequired: "~65,000", rateDescription: "1/34.5 per raid" },
-  { name: "Dragon hunter crossbow", pointsRequired: "~65,000", rateDescription: "1/34.5 per raid" },
-  { name: "Dexterous prayer scroll", pointsRequired: "~65,000", rateDescription: "1/34.5 per raid" },
-  { name: "Arcane prayer scroll", pointsRequired: "~65,000", rateDescription: "1/34.5 per raid" },
-  { name: "Dinh's bulwark", pointsRequired: "~65,000", rateDescription: "1/34.5 per raid" },
-  { name: "Buckler", pointsRequired: "~65,000", rateDescription: "1/34.5 per raid" },
-  { name: "Olmlet", pointsRequired: "N/A", rateDescription: "1/53 upon receiving a unique (pet)" },
+  { name: "Twisted bow", pointsRequired: "~65,000", rateDescription: "2/69 of unique rolls", weight: 2 },
+  { name: "Kodai insignia", pointsRequired: "~65,000", rateDescription: "2/69 of unique rolls", weight: 2 },
+  { name: "Elder maul", pointsRequired: "~65,000", rateDescription: "2/69 of unique rolls", weight: 2 },
+  { name: "Dragon claws", pointsRequired: "~65,000", rateDescription: "3/69 of unique rolls", weight: 3 },
+  { name: "Ancestral hat", pointsRequired: "~65,000", rateDescription: "3/69 of unique rolls", weight: 3 },
+  { name: "Ancestral robe top", pointsRequired: "~65,000", rateDescription: "3/69 of unique rolls", weight: 3 },
+  { name: "Ancestral robe bottom", pointsRequired: "~65,000", rateDescription: "3/69 of unique rolls", weight: 3 },
+  { name: "Dragon hunter crossbow", pointsRequired: "~65,000", rateDescription: "4/69 of unique rolls", weight: 4 },
+  { name: "Dexterous prayer scroll", pointsRequired: "~65,000", rateDescription: "20/69 of unique rolls", weight: 20 },
+  { name: "Arcane prayer scroll", pointsRequired: "~65,000", rateDescription: "20/69 of unique rolls", weight: 20 },
+  { name: "Dinh's bulwark", pointsRequired: "~65,000", rateDescription: "3/69 of unique rolls", weight: 3 },
+  { name: "Twisted buckler", pointsRequired: "~65,000", rateDescription: "4/69 of unique rolls", weight: 4 },
+  { name: "Olmlet", pointsRequired: "N/A", rateDescription: "1/53 upon receiving a unique (pet)", weight: 0 },
 ];
