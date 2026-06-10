@@ -194,6 +194,21 @@ export const DPS_MODIFIERS: Record<string, DpsModifier> = {
   },
 };
 
+// Modifiers that can't coexist in-game: slayer helm and salve never stack
+// (salve takes priority), and only one void set can be worn at a time.
+export const EXCLUSIVE_MODIFIER_GROUPS: (keyof typeof DPS_MODIFIERS)[][] = [
+  ["slayer_helm", "salve_e", "salve_ei"],
+  ["void_melee", "void_ranged", "void_magic", "elite_void_ranged", "elite_void_magic"],
+];
+
+/** Adds a modifier id to the set, evicting members of its exclusivity group. */
+export function addModifierExclusive(set: Set<string>, id: string): void {
+  EXCLUSIVE_MODIFIER_GROUPS.find((group) => group.includes(id))?.forEach((member) => {
+    set.delete(member);
+  });
+  set.add(id);
+}
+
 // OSRS Twisted bow scaling: t = 3 * magic / 10 is the key transform. The bonus
 // rises with the target's magic level and caps at +140% accuracy / +250% damage.
 // The magic level itself is clamped at 250 — 350 inside CoX.

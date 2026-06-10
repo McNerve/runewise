@@ -13,7 +13,7 @@ import {
 import { useDebounce } from "../../hooks/useDebounce";
 import { useWatchlist } from "../../hooks/useWatchlist";
 import { formatGp, timeAgo } from "../../lib/format";
-import { netMargin } from "../../lib/tax";
+import { alchProfit, natureRunePrice } from "../../lib/alch";
 import FreshnessStrip from "../../components/FreshnessStrip";
 import { itemIcon, encodeIconFilename, WIKI_IMG } from "../../lib/sprites";
 import { useNavigation } from "../../lib/NavigationContext";
@@ -29,6 +29,7 @@ import {
   buildItemStats,
   filterByPeriod,
   itemToWikiUrl,
+  priceMargin,
   toCandlestickData,
   toLineData,
   toVolumeData,
@@ -435,14 +436,11 @@ export default function Market({
       ? !browseLoading
       : query.length >= 2 && !loading;
   const selectedPrice = selectedItem ? prices[String(selectedItem.id)] : undefined;
-  const natureRuneCost = prices["561"]?.high ?? 250;
+  const natureRuneCost = natureRunePrice(prices);
   const selectedWatched = selectedItem
     ? watchlistItems.some((item) => item.itemId === selectedItem.id)
     : false;
-  const selectedMargin =
-    selectedPrice?.high != null && selectedPrice?.low != null
-      ? netMargin(selectedPrice.high, selectedPrice.low)
-      : null;
+  const selectedMargin = priceMargin(selectedPrice);
   const selectedSummary = selectedItem
     ? [
         {
@@ -705,13 +703,10 @@ export default function Market({
               <tbody>
                 {displayItems.map((item) => {
                   const price = prices[String(item.id)];
-                  const itemMargin =
-                    price?.high != null && price?.low != null
-                      ? netMargin(price.high, price.low)
-                      : null;
-                  const alchProfit =
+                  const itemMargin = priceMargin(price);
+                  const itemAlchProfit =
                     item.highalch != null && price?.high != null
-                      ? item.highalch - price.high - natureRuneCost
+                      ? alchProfit(item.highalch, price.high, natureRuneCost)
                       : null;
                   return (
                     <tr
@@ -778,11 +773,11 @@ export default function Market({
                         {formatGp(item.highalch)}
                       </td>
                       <td className="px-4 py-2 text-right">
-                        {alchProfit == null || alchProfit < 0 ? (
+                        {itemAlchProfit == null || itemAlchProfit < 0 ? (
                           <span className="text-text-secondary/40">{"\u2014"}</span>
                         ) : (
-                          <span className={alchProfit >= 0 ? "text-success" : "text-danger"}>
-                            {alchProfit > 0 ? "+" : ""}{formatGp(alchProfit)}
+                          <span className={itemAlchProfit >= 0 ? "text-success" : "text-danger"}>
+                            {itemAlchProfit > 0 ? "+" : ""}{formatGp(itemAlchProfit)}
                           </span>
                         )}
                       </td>

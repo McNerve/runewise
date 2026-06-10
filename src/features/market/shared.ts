@@ -107,11 +107,15 @@ export function itemToWikiUrl(itemName: string) {
   return `https://oldschool.runescape.wiki/w/${encodeURIComponent(itemName.replace(/ /g, "_"))}`;
 }
 
+/** Tax-aware flip margin from a price pair, null when either side is missing. */
+export function priceMargin(price?: ItemPrice): number | null {
+  return price?.high != null && price?.low != null
+    ? netMargin(price.high, price.low)
+    : null;
+}
+
 export function buildItemStats(item: ItemMapping, price?: ItemPrice) {
-  const margin =
-    price?.high != null && price?.low != null
-      ? netMargin(price.high, price.low)
-      : null;
+  const margin = priceMargin(price);
 
   return [
     {

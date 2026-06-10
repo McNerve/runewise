@@ -40,7 +40,6 @@ export default function RecipeCostTable({
       .map((r) => {
         const actions = Math.ceil(xpNeeded / r.xp);
         let costPerAction: number | null = null;
-        let productValue: number | null = null;
 
         if (isHerblore(r)) {
           const herbPrice = getPrice(prices, r.herbId);
@@ -54,8 +53,8 @@ export default function RecipeCostTable({
             costPerAction = matPrice * r.materialQty;
           }
         }
-        const rawProductValue = getPrice(prices, r.productId);
-        productValue = rawProductValue != null ? postTaxPrice(rawProductValue) : null;
+        const productPrice = getPrice(prices, r.productId);
+        const productValue = productPrice != null ? postTaxPrice(productPrice) : null;
 
         const netCost =
           costPerAction != null

@@ -400,15 +400,16 @@ function CloseModal({ entry, onConfirm, onCancel }: {
           autoFocus
           className="w-full bg-bg-tertiary border border-border rounded-lg px-3 py-1.5 text-sm mb-3"
         />
-        {sellPrice && (
-          <div className="text-xs text-text-secondary mb-3">
-            Profit: <span className={`font-medium ${
-              flipProfit(entry.buyPrice, Number(sellPrice), entry.qty) >= 0 ? "text-success" : "text-danger"
-            }`}>
-              {formatGp(flipProfit(entry.buyPrice, Number(sellPrice), entry.qty))}
-            </span>
-          </div>
-        )}
+        {sellPrice && (() => {
+          const preview = flipProfit(entry.buyPrice, Number(sellPrice), entry.qty);
+          return (
+            <div className="text-xs text-text-secondary mb-3">
+              Profit: <span className={`font-medium ${preview >= 0 ? "text-success" : "text-danger"}`}>
+                {formatGp(preview)}
+              </span>
+            </div>
+          );
+        })()}
         <div className="flex gap-2 justify-end">
           <button onClick={onCancel} className="px-3 py-1.5 text-sm text-text-secondary hover:text-text-primary transition-colors">Cancel</button>
           <button

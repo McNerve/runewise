@@ -39,7 +39,7 @@ export default function RaidLootCalc({
     () => computeRaidEv(uniques, itemMap, prices, dropRate),
     [uniques, prices, itemMap, dropRate]
   );
-  const petItem = uniques.find((u) => u.pointsRequired === "N/A");
+  const petItem = uniques.find((u) => u.weight === 0);
 
   return (
     <div className="mt-4">

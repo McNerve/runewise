@@ -87,11 +87,7 @@ function parseRate(rarity: string): number | null {
   const rolls = match[1] ? Number(match[1]) : 1;
   const numerator = Number(match[2].replace(/,/g, ""));
   const denominator = Number(match[3].replace(/,/g, ""));
-  if (
-    !Number.isFinite(rolls) || rolls <= 0 ||
-    !Number.isFinite(numerator) || numerator <= 0 ||
-    !Number.isFinite(denominator) || denominator <= 0
-  ) {
+  if ([rolls, numerator, denominator].some((n) => !Number.isFinite(n) || n <= 0)) {
     return null;
   }
   return denominator / (numerator * rolls);

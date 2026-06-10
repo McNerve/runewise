@@ -71,22 +71,18 @@ export default function Kingdom() {
   }, [maxWorkers]);
 
   const toggleRoyalTrouble = useCallback(() => {
-    setRoyalTrouble((prev) => {
-      const next = !prev;
-      // Shrinking the workforce: trim allocations to fit the new budget.
-      const newMax = (next ? POST_RT : PRE_RT).workers;
-      setResources((rs) => {
-        let budget = newMax;
-        return rs.map((r) => {
-          const w = Math.min(r.workers, PER_RESOURCE_CAP, budget);
-          budget -= w;
-          return { ...r, workers: w };
-        });
-      });
-      return next;
+    const next = !royalTrouble;
+    // Shrinking the workforce: trim allocations to fit the new budget.
+    let budget = (next ? POST_RT : PRE_RT).workers;
+    const trimmed = resources.map((r) => {
+      const w = Math.min(r.workers, PER_RESOURCE_CAP, budget);
+      budget -= w;
+      return { ...r, workers: w };
     });
+    setRoyalTrouble(next);
+    setResources(trimmed);
     setIsOptimal(false);
-  }, []);
+  }, [royalTrouble, resources]);
 
   const rows = useMemo(() => {
     return resources.map((r) => {

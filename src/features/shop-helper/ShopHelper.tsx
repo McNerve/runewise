@@ -5,7 +5,7 @@ import { useGEData } from "../../hooks/useGEData";
 import { useDebounce } from "../../hooks/useDebounce";
 import { encodeIconFilename, WIKI_IMG, itemIcon, npcIcon } from "../../lib/sprites";
 import { formatGp } from "../../lib/format";
-import { postTaxPrice } from "../../lib/tax";
+import { netMargin } from "../../lib/tax";
 import WikiImage from "../../components/WikiImage";
 import ItemTooltip from "../../components/ItemTooltip";
 import { Skeleton } from "../../components/Skeleton";
@@ -329,7 +329,7 @@ export default function ShopHelper() {
                 const deals = sortedItems
                   .map((item) => {
                     const ge = getGEPrice(item.name, prices, nameToId);
-                    const saving = item.sellPrice != null && ge != null ? postTaxPrice(ge) - item.sellPrice : null;
+                    const saving = item.sellPrice != null && ge != null ? netMargin(ge, item.sellPrice) : null;
                     return { ...item, ge, saving };
                   })
                   .filter((d) => d.saving != null && d.saving > 0)
@@ -396,7 +396,7 @@ export default function ShopHelper() {
                   <tbody>
                     {sortedItems.map((item, i) => {
                       const gePrice = getGEPrice(item.name, prices, nameToId);
-                      const saving = item.sellPrice != null && gePrice != null ? postTaxPrice(gePrice) - item.sellPrice : null;
+                      const saving = item.sellPrice != null && gePrice != null ? netMargin(gePrice, item.sellPrice) : null;
                       return (
                         <tr
                           key={`${item.name}-${i}`}

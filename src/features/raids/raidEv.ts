@@ -22,15 +22,15 @@ export function computeRaidEv(
   prices: Record<string, ItemPrice>,
   dropRate: number
 ): { rows: RaidEvRow[]; totalEv: number } {
-  const tableUniques = uniques.filter((u) => u.pointsRequired !== "N/A");
+  const tableUniques = uniques.filter((u) => u.weight > 0);
   const totalWeight = tableUniques.reduce((sum, u) => sum + u.weight, 0);
 
   const rows = tableUniques.map((item) => {
     const id = itemMap.get(item.name.toLowerCase());
     const price = id ? prices[String(id)] : null;
     const gePrice = price?.high ?? price?.low ?? null;
-    const share = totalWeight > 0 ? item.weight / totalWeight : 0;
-    const itemRate = share > 0 && dropRate > 0 ? dropRate / share : null;
+    const itemRate =
+      dropRate > 0 ? dropRate / (item.weight / totalWeight) : null;
     const evPerRaid =
       gePrice != null && itemRate != null ? gePrice / itemRate : null;
     return { item, gePrice, itemRate, evPerRaid };
