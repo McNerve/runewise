@@ -21,6 +21,17 @@ import { fetchVolumes } from "../../lib/api/ge";
 import WikiSectionContent from "./components/WikiSectionContent";
 import WikiToc from "./components/WikiToc";
 import { extractTocEntries } from "./wikiLookupUtils";
+import {
+  loadPersistedHistory,
+  persistHistory,
+  visit,
+  goBack,
+  goForward,
+  canGoBack,
+  canGoForward,
+  currentPage,
+  type WikiHistory,
+} from "./wikiHistory";
 import { formatGp } from "../../lib/format";
 
 // Curated starting points for the empty state — pages players reach for most.
@@ -92,6 +103,22 @@ export default function WikiLookup() {
   const searchRef = useRef<HTMLDivElement>(null);
   const [geSnapshot, setGeSnapshot] = useState<GESnapshot | null>(null);
   const { mapping, prices, fetchIfNeeded } = useGEData();
+  // Reading history survives view switches via the module-level slot.
+  const [pageHistory, setPageHistory] = useState<WikiHistory>(() => {
+    const initial = loadPersistedHistory();
+    const initialPage = params.page?.trim();
+    const next = initialPage ? visit(initial, initialPage) : initial;
+    persistHistory(next);
+    return next;
+  });
+
+  function recordVisit(page: string) {
+    setPageHistory((h) => {
+      const next = visit(h, page);
+      persistHistory(next);
+      return next;
+    });
+  }
 
   // Fetch GE mapping on mount so it's ready for enrichment.
   useEffect(() => { fetchIfNeeded(); }, [fetchIfNeeded]);
@@ -234,6 +261,7 @@ export default function WikiLookup() {
         setLoadingDocument(true);
         setError(null);
         setSelectedPage(nextPage);
+        recordVisit(nextPage);
       })
       .catch(() => {
         if (!cancelled) {
@@ -293,11 +321,29 @@ export default function WikiLookup() {
     setResultsQuery("");
     setLoadingDocument(true);
     setError(null);
+    recordVisit(page);
     navigate("wiki", {
       page,
       query: page,
       ...(nextTrail.length > 0 ? { trail: nextTrail.join("|") } : {}),
     });
+  }
+
+  // Back/forward re-open pages from the history stack without re-recording
+  // them or growing the breadcrumb trail.
+  function navigateHistory(direction: "back" | "forward") {
+    const next = direction === "back" ? goBack(pageHistory) : goForward(pageHistory);
+    if (next === pageHistory) return;
+    const page = currentPage(next);
+    if (!page) return;
+    persistHistory(next);
+    setPageHistory(next);
+    setSelectedPage(page);
+    setQuery(page);
+    setDropdownOpen(false);
+    setLoadingDocument(true);
+    setError(null);
+    navigate("wiki", { page, query: page });
   }
 
   function resolveSubmittedPage() {
@@ -522,6 +568,28 @@ export default function WikiLookup() {
                     OSRS Wiki
                   </div>
                   <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-xs text-text-secondary/60">
+                    <span className="flex items-center gap-0.5">
+                      <button
+                        type="button"
+                        onClick={() => navigateHistory("back")}
+                        disabled={!canGoBack(pageHistory)}
+                        aria-label="Back to previous wiki page"
+                        title="Back"
+                        className="rounded-md border border-border/60 px-1.5 py-0.5 text-sm leading-none transition enabled:hover:border-accent/40 enabled:hover:text-text-primary disabled:opacity-30"
+                      >
+                        ‹
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => navigateHistory("forward")}
+                        disabled={!canGoForward(pageHistory)}
+                        aria-label="Forward to next wiki page"
+                        title="Forward"
+                        className="rounded-md border border-border/60 px-1.5 py-0.5 text-sm leading-none transition enabled:hover:border-accent/40 enabled:hover:text-text-primary disabled:opacity-30"
+                      >
+                        ›
+                      </button>
+                    </span>
                     <button
                       type="button"
                       onClick={() => navigate("home")}

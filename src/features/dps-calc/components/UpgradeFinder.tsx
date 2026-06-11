@@ -2,6 +2,8 @@ import { useMemo, useState } from "react";
 import { fetchAllEquipment, type WikiEquipment } from "../../../lib/api/equipment";
 import { itemIcon } from "../../../lib/sprites";
 import ItemTooltip from "../../../components/ItemTooltip";
+import { useGEData } from "../../../hooks/useGEData";
+import { formatGp } from "../../../lib/format";
 import { findUpgrades } from "../upgradeFinder";
 import type { DpsState, EquippedGear } from "../hooks/useDpsState";
 
@@ -28,15 +30,28 @@ export default function UpgradeFinder({ state }: UpgradeFinderProps) {
   const [equipment, setEquipment] = useState<WikiEquipment[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [showAllSlots, setShowAllSlots] = useState(false);
+  const { mapping, prices, fetchIfNeeded } = useGEData();
 
   const enable = () => {
     setEnabled(true);
+    void fetchIfNeeded();
     if (equipment) return;
     setLoading(true);
     fetchAllEquipment()
       .then(setEquipment)
       .finally(() => setLoading(false));
   };
+
+  // GE price by lowercase item name — untradeables simply won't match.
+  const priceByName = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const m of mapping) {
+      const entry = prices[String(m.id)];
+      const price = entry?.high ?? entry?.low;
+      if (price != null) map.set(m.name.toLowerCase(), price);
+    }
+    return map;
+  }, [mapping, prices]);
 
   const slotResults = useMemo(() => {
     if (!enabled || !equipment) return null;
@@ -105,7 +120,9 @@ export default function UpgradeFinder({ state }: UpgradeFinderProps) {
                   </span>
                 </div>
                 <div className="mt-1 space-y-1">
-                  {upgrades.map(({ item, dpsGain, dpsGainPct }) => (
+                  {upgrades.map(({ item, dpsGain, dpsGainPct }) => {
+                    const price = priceByName.get(item.name.toLowerCase());
+                    return (
                     <div
                       key={`${item.name}:${item.version ?? ""}`}
                       className="flex items-center gap-2 rounded-lg bg-bg-tertiary/40 border border-border/20 px-2 py-1.5"
@@ -124,6 +141,9 @@ export default function UpgradeFinder({ state }: UpgradeFinderProps) {
                           {item.version && (
                             <span className="text-text-secondary/50 ml-1 text-[10px]">({item.version})</span>
                           )}
+                          {price != null && (
+                            <span className="text-text-secondary/50 ml-1.5 text-[10px] tabular-nums">{formatGp(price)} gp</span>
+                          )}
                         </span>
                       </ItemTooltip>
                       <span className="shrink-0 text-[11px] tabular-nums text-success">
@@ -138,7 +158,8 @@ export default function UpgradeFinder({ state }: UpgradeFinderProps) {
                         Equip
                       </button>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             ))

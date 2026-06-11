@@ -42,10 +42,10 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
     poisonDpsValue,
     showBreakdown,
     setShowBreakdown,
-    loadouts,
-    compareLoadout,
-    setCompareLoadout,
-    comparisonResult,
+    arsenalResults,
+    applyLoadout,
+    activeLoadout,
+    setActiveLoadout,
   } = state;
 
   return (
@@ -304,63 +304,63 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
           </div>
         )}
 
-        {/* Loadout Comparison */}
-        {loadouts.length > 0 && (
-          <div className="mt-4">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="text-[10px] uppercase tracking-wider text-text-secondary/50">Compare vs</div>
-              <select
-                value={compareLoadout?.name ?? ""}
-                onChange={(e) => {
-                  const l = loadouts.find((lo) => lo.name === e.target.value) ?? null;
-                  setCompareLoadout(l);
-                }}
-                className="flex-1 bg-bg-tertiary border border-border rounded-lg px-2 py-1 text-xs"
-              >
-                <option value="">Select loadout...</option>
-                {loadouts.map((l) => (
-                  <option key={l.name} value={l.name}>{l.name} ({l.combatStyle})</option>
-                ))}
-              </select>
+        {/* Arsenal — every saved loadout vs this target */}
+        {arsenalResults.length > 0 && (
+          <div className="mt-4 rounded-lg border border-border/40 overflow-hidden">
+            <div className="px-3 py-2 text-[10px] uppercase tracking-wider text-text-secondary/50 border-b border-border/40">
+              Your Arsenal vs This Target
             </div>
-            {comparisonResult && compareLoadout && (
-              <div className="rounded-lg border border-border/40 bg-bg-tertiary/30 p-3">
-                <div className="grid grid-cols-3 gap-2 text-center text-sm">
-                  <div>
-                    <div className="text-text-secondary/50 text-[10px] mb-1">{compareLoadout.name}</div>
-                    <div className="font-bold tabular-nums">{comparisonResult.setup1.dps.toFixed(2)}</div>
-                    <div className="text-[10px] text-text-secondary">DPS</div>
-                  </div>
-                  <div>
-                    <div className="text-text-secondary/50 text-[10px] mb-1">Difference</div>
-                    <div className={`font-bold tabular-nums ${
-                      comparisonResult.dpsGain > 0 ? "text-success" :
-                      comparisonResult.dpsGain < 0 ? "text-danger" :
-                      "text-text-secondary"
-                    }`}>
-                      {comparisonResult.dpsGain > 0 ? "+" : ""}{comparisonResult.dpsGain.toFixed(2)}
-                    </div>
-                    <div className={`text-[10px] ${
-                      comparisonResult.dpsGainPct > 0 ? "text-success" :
-                      comparisonResult.dpsGainPct < 0 ? "text-danger" :
-                      "text-text-secondary"
-                    }`}>
-                      {comparisonResult.dpsGainPct > 0 ? "+" : ""}{comparisonResult.dpsGainPct.toFixed(1)}%
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-text-secondary/50 text-[10px] mb-1">Current</div>
-                    <div className="font-bold text-accent tabular-nums">{comparisonResult.setup2.dps.toFixed(2)}</div>
-                    <div className="text-[10px] text-text-secondary">DPS</div>
-                  </div>
-                </div>
-                {comparisonResult.ttkDiff !== 0 && isFinite(comparisonResult.ttkDiff) && (
-                  <div className={`mt-2 text-center text-[10px] ${comparisonResult.ttkDiff > 0 ? "text-success" : "text-danger"}`}>
-                    {comparisonResult.ttkDiff > 0 ? "Faster" : "Slower"} by {Math.abs(comparisonResult.ttkDiff).toFixed(1)}s
-                  </div>
-                )}
-              </div>
-            )}
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border/40 text-xs text-text-secondary">
+                  <th className="text-left px-3 py-1.5">Loadout</th>
+                  <th className="text-right px-3 py-1.5">Acc</th>
+                  <th className="text-right px-3 py-1.5">Max</th>
+                  <th className="text-right px-3 py-1.5">DPS</th>
+                  <th className="text-right px-3 py-1.5">vs Now</th>
+                  <th className="px-2 py-1.5" />
+                </tr>
+              </thead>
+              <tbody>
+                {arsenalResults.map(({ loadout, result: lr }) => {
+                  const accColor = lr.accuracy >= 0.8 ? "text-success" : lr.accuracy >= 0.5 ? "text-warning" : "text-danger";
+                  const delta = lr.dps - result.dps;
+                  const isActive = activeLoadout === loadout.name;
+                  return (
+                    <tr
+                      key={loadout.name}
+                      className={`border-b border-border/20 transition-colors ${
+                        isActive ? "bg-accent/5" : "even:bg-bg-primary/25"
+                      }`}
+                    >
+                      <td className="px-3 py-1.5">
+                        <span className="font-medium">{loadout.name}</span>
+                        <span className="ml-1.5 text-[10px] text-text-secondary/50 capitalize">{loadout.combatStyle}</span>
+                      </td>
+                      <td className={`px-3 py-1.5 text-right tabular-nums ${accColor}`}>{(lr.accuracy * 100).toFixed(0)}%</td>
+                      <td className="px-3 py-1.5 text-right tabular-nums text-text-secondary">{lr.maxHit}</td>
+                      <td className="px-3 py-1.5 text-right tabular-nums font-medium text-accent">{lr.dps.toFixed(2)}</td>
+                      <td className={`px-3 py-1.5 text-right tabular-nums text-xs ${
+                        delta > 0.005 ? "text-success" : delta < -0.005 ? "text-danger" : "text-text-secondary/50"
+                      }`}>
+                        {delta > 0 ? "+" : ""}{delta.toFixed(2)}
+                      </td>
+                      <td className="px-2 py-1.5 text-right">
+                        <button
+                          onClick={() => { applyLoadout(loadout); setActiveLoadout(loadout.name); }}
+                          className="text-[10px] px-2 py-0.5 bg-accent/10 text-accent rounded hover:bg-accent/20 transition-colors"
+                        >
+                          Load
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            <div className="px-3 py-1.5 text-[10px] text-text-secondary/40 border-t border-border/40">
+              Computed with your current levels against this target. Each loadout rolls its own style&apos;s defence.
+            </div>
           </div>
         )}
       </div>

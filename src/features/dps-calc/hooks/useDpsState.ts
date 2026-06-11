@@ -11,7 +11,6 @@ import {
   coxHpScale,
   coxScale,
   poisonDps,
-  compareDps,
   type DpsModifier,
   type DpsInput,
 } from "../../../lib/formulas/dps";
@@ -183,7 +182,6 @@ export function useDpsState({ hiscores }: Props) {
   const [loadoutName, setLoadoutName] = useState("");
   const [selectedSpec, setSelectedSpec] = useState<SpecWeapon | null>(null);
   const [selectedSpell, setSelectedSpell] = useState<CombatSpell | null>(null);
-  const [compareLoadout, setCompareLoadout] = useState<GearLoadout | null>(null);
   const pendingLoadout = useRef<GearLoadout | null>(null);
 
   // Gear selector state
@@ -485,74 +483,65 @@ export function useDpsState({ hiscores }: Props) {
     }));
   }, [phaseMonsters, attackLevel, strengthLevel, rangedLevel, magicLevel, effectiveAttackBonus, effectiveStrengthBonus, prayerAttackMult, prayerStrengthMult, stanceAttackBonus, stanceStrengthBonus, stance.attackType, effectiveAttackSpeed, combatStyle, modifierList, defReductions]);
 
-  // Loadout comparison
-  const comparisonResult = useMemo(() => {
-    if (!compareLoadout) return null;
-    const compareStances = GENERIC_STANCES[compareLoadout.combatStyle];
-    const cmpStance = compareStances[compareLoadout.stanceIdx] ?? compareStances[0];
-    const cmpPrayer = PRAYERS.filter((p) => p.style === compareLoadout.combatStyle)[compareLoadout.prayerIdx] ?? PRAYERS[0];
+  // Arsenal: every saved loadout computed against the current target at once.
+  // Each loadout rolls against the defence bonus matching its own combat style
+  // and stance — not the current setup's — so cross-style rows stay honest.
+  const arsenalResults = useMemo(() => {
+    if (loadouts.length === 0) return [];
+    return loadouts
+      .map((loadout) => {
+        const loadoutStances = GENERIC_STANCES[loadout.combatStyle];
+        const loadoutStance = loadoutStances[loadout.stanceIdx] ?? loadoutStances[0];
+        const loadoutPrayer =
+          PRAYERS.filter((p) => p.style === loadout.combatStyle)[loadout.prayerIdx] ?? PRAYERS[0];
 
-    let cmpAttackBonus = compareLoadout.attackBonus;
-    let cmpStrengthBonus = compareLoadout.strengthBonus;
-    if (compareLoadout.gear) {
-      const bonuses = sumGearBonuses(compareLoadout.gear as EquippedGear);
-      if (compareLoadout.combatStyle === "melee") {
-        cmpAttackBonus = meleeAttackBonus(bonuses, cmpStance.attackType);
-        cmpStrengthBonus = bonuses.strengthBonus;
-      } else if (compareLoadout.combatStyle === "ranged") {
-        cmpAttackBonus = bonuses.rangedBonus;
-        cmpStrengthBonus = bonuses.rangedStrength;
-      } else {
-        cmpAttackBonus = bonuses.magicBonus;
-        cmpStrengthBonus = bonuses.magicDamage;
-      }
-    }
+        let loadoutAttackBonus = loadout.attackBonus;
+        let loadoutStrengthBonus = loadout.strengthBonus;
+        if (loadout.gear) {
+          const bonuses = sumGearBonuses(loadout.gear as EquippedGear);
+          if (loadout.combatStyle === "melee") {
+            loadoutAttackBonus = meleeAttackBonus(bonuses, loadoutStance.attackType);
+            loadoutStrengthBonus = bonuses.strengthBonus;
+          } else if (loadout.combatStyle === "ranged") {
+            loadoutAttackBonus = bonuses.rangedBonus;
+            loadoutStrengthBonus = bonuses.rangedStrength;
+          } else {
+            loadoutAttackBonus = bonuses.magicBonus;
+            loadoutStrengthBonus = bonuses.magicDamage;
+          }
+        }
 
-    const cmpInput: DpsInput = {
-      attackLevel,
-      strengthLevel,
-      rangedLevel,
-      magicLevel,
-      attackBonus: cmpAttackBonus,
-      strengthBonus: cmpStrengthBonus,
-      prayerAttackMult: cmpPrayer.attackMult,
-      prayerStrengthMult: cmpPrayer.strengthMult,
-      stanceAttackBonus: cmpStance.attackBonus,
-      stanceStrengthBonus: cmpStance.strengthBonus,
-      attackSpeed: compareLoadout.attackSpeed,
-      combatStyle: compareLoadout.combatStyle,
-      targetDefLevel,
-      targetDefBonus,
-      targetHp,
-      targetMagicLevel: selectedMonster?.magicLevel,
-      modifiers: [...compareLoadout.modifiers].map((id) => DPS_MODIFIERS[id]).filter((m): m is DpsModifier => m != null),
-      defReductions,
-      tbowRaidCap,
-    };
-    const currentInput: DpsInput = {
-      attackLevel,
-      strengthLevel,
-      rangedLevel,
-      magicLevel,
-      attackBonus: effectiveAttackBonus,
-      strengthBonus: effectiveStrengthBonus,
-      prayerAttackMult,
-      prayerStrengthMult,
-      stanceAttackBonus,
-      stanceStrengthBonus,
-      attackSpeed: effectiveAttackSpeed,
-      combatStyle,
-      targetDefLevel,
-      targetDefBonus,
-      targetHp,
-      targetMagicLevel: selectedMonster?.magicLevel,
-      modifiers: modifierList,
-      defReductions,
-      spellBaseMaxHit: activeSpellBase,
-      tbowRaidCap,
-    };
-    return compareDps(cmpInput, currentInput);
-  }, [compareLoadout, attackLevel, strengthLevel, rangedLevel, magicLevel, effectiveAttackBonus, effectiveStrengthBonus, prayerAttackMult, prayerStrengthMult, stanceAttackBonus, stanceStrengthBonus, effectiveAttackSpeed, combatStyle, targetDefLevel, targetDefBonus, targetHp, selectedMonster?.magicLevel, modifierList, defReductions, activeSpellBase, tbowRaidCap]);
+        const loadoutDefBonus = isCustom
+          ? customDef.defBonus
+          : getDefBonus(selectedMonster, loadout.combatStyle, loadoutStance.attackType);
+
+        const input: DpsInput = {
+          attackLevel,
+          strengthLevel,
+          rangedLevel,
+          magicLevel,
+          attackBonus: loadoutAttackBonus,
+          strengthBonus: loadoutStrengthBonus,
+          prayerAttackMult: loadoutPrayer.attackMult,
+          prayerStrengthMult: loadoutPrayer.strengthMult,
+          stanceAttackBonus: loadoutStance.attackBonus,
+          stanceStrengthBonus: loadoutStance.strengthBonus,
+          attackSpeed: loadout.attackSpeed,
+          combatStyle: loadout.combatStyle,
+          targetDefLevel,
+          targetDefBonus: loadoutDefBonus,
+          targetHp,
+          targetMagicLevel: selectedMonster?.magicLevel,
+          modifiers: [...loadout.modifiers]
+            .map((id) => DPS_MODIFIERS[id])
+            .filter((m): m is DpsModifier => m != null),
+          defReductions,
+          tbowRaidCap,
+        };
+        return { loadout, result: calculateDps(input) };
+      })
+      .sort((a, b) => b.result.dps - a.result.dps);
+  }, [loadouts, attackLevel, strengthLevel, rangedLevel, magicLevel, isCustom, customDef.defBonus, selectedMonster, targetDefLevel, targetHp, defReductions, tbowRaidCap]);
 
   const specWeapons = useMemo(
     () => getSpecWeaponsForStyle(combatStyle),
@@ -801,9 +790,7 @@ export function useDpsState({ hiscores }: Props) {
     deleteLoadout,
     duplicateLoadout,
     importLoadouts,
-    compareLoadout,
-    setCompareLoadout,
-    comparisonResult,
+    arsenalResults,
     // Presets
     applyPreset,
     // Clear
