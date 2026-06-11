@@ -68,6 +68,11 @@ export function sumGearBonuses(gear: EquippedGear): {
   magicBonus: number;
   magicDamage: number;
   prayer: number;
+  defenceStab: number;
+  defenceSlash: number;
+  defenceCrush: number;
+  defenceMagic: number;
+  defenceRanged: number;
 } {
   const items = Object.values(gear).filter(Boolean) as WikiEquipment[];
   const totals = {
@@ -81,6 +86,11 @@ export function sumGearBonuses(gear: EquippedGear): {
     magicBonus: 0,
     magicDamage: 0,
     prayer: 0,
+    defenceStab: 0,
+    defenceSlash: 0,
+    defenceCrush: 0,
+    defenceMagic: 0,
+    defenceRanged: 0,
   };
   for (const i of items) {
     totals.attackStab += i.attackStab;
@@ -92,6 +102,11 @@ export function sumGearBonuses(gear: EquippedGear): {
     totals.magicBonus += i.attackMagic;
     totals.magicDamage += i.magicDamage;
     totals.prayer += i.prayerBonus;
+    totals.defenceStab += i.defenceStab;
+    totals.defenceSlash += i.defenceSlash;
+    totals.defenceCrush += i.defenceCrush;
+    totals.defenceMagic += i.defenceMagic;
+    totals.defenceRanged += i.defenceRanged;
   }
   return totals;
 }
@@ -168,6 +183,7 @@ export function useDpsState({ hiscores }: Props) {
   const [strengthLevel, setStrengthLevel] = useState(99);
   const [rangedLevel, setRangedLevel] = useState(99);
   const [magicLevel, setMagicLevel] = useState(99);
+  const [defenceLevel, setDefenceLevel] = useState(99);
   const [attackBonus, setAttackBonus] = useState(0);
   const [strengthBonus, setStrengthBonus] = useState(0);
   const [attackSpeed, setAttackSpeed] = useState(DEFAULT_SPEED.melee);
@@ -235,6 +251,7 @@ export function useDpsState({ hiscores }: Props) {
       setStrengthLevel(getSkillLevel(hiscores, "Strength"));
       setRangedLevel(getSkillLevel(hiscores, "Ranged"));
       setMagicLevel(getSkillLevel(hiscores, "Magic"));
+      setDefenceLevel(getSkillLevel(hiscores, "Defence"));
     }
   }, [hiscores]);
 
@@ -702,6 +719,8 @@ export function useDpsState({ hiscores }: Props) {
     setRangedLevel,
     magicLevel,
     setMagicLevel,
+    defenceLevel,
+    setDefenceLevel,
     // Bonuses
     attackBonus,
     setAttackBonus,

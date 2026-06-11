@@ -236,6 +236,11 @@ export default function StatsPanel({ state }: StatsPanelProps) {
                     </>
                   )}
                   <div>Prayer: <span className="text-accent">+{gearBonuses.prayer}</span></div>
+                  <div title="Defence bonuses: stab / slash / crush / magic / ranged">
+                    Def: <span className="text-text-secondary tabular-nums">
+                      {gearBonuses.defenceStab}/{gearBonuses.defenceSlash}/{gearBonuses.defenceCrush}/{gearBonuses.defenceMagic}/{gearBonuses.defenceRanged}
+                    </span>
+                  </div>
                 </div>
                 {bonusMode === "equipment" && weaponSpeed > 0 ? (
                   <div className="flex justify-between text-xs text-text-secondary mt-2">

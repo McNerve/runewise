@@ -3,6 +3,7 @@ import MonsterSearch from "./MonsterSearch";
 import DpsBreakdown from "./DpsBreakdown";
 import HitDistributionChart from "./HitDistributionChart";
 import { killTimeStats } from "../../../lib/formulas/hitDistribution";
+import { incomingDps } from "../../../lib/formulas/incomingDps";
 import type { DpsState } from "../hooks/useDpsState";
 
 interface ResultsPanelProps {
@@ -55,6 +56,11 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
     activeLoadout,
     setActiveLoadout,
     effectiveAttackSpeed,
+    gearBonuses,
+    defenceLevel,
+    magicLevel,
+    stance,
+    bonusMode,
   } = state;
 
   // Exact kill time from the damage distribution — overkill-aware, unlike
@@ -71,6 +77,27 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
       ),
     [phaseResults, effectiveAttackSpeed]
   );
+
+  // Sustain: what the monster does back. Gear defences only exist in
+  // equipment mode; manual mode has no defensive inputs to work from.
+  const sustain = useMemo(() => {
+    if (!selectedMonster || bonusMode !== "equipment") return null;
+    return incomingDps(selectedMonster, {
+      defenceLevel,
+      magicLevel,
+      defStab: gearBonuses.defenceStab,
+      defSlash: gearBonuses.defenceSlash,
+      defCrush: gearBonuses.defenceCrush,
+      defMagic: gearBonuses.defenceMagic,
+      defRanged: gearBonuses.defenceRanged,
+      stanceDefenceBonus: stance.defenceBonus,
+    });
+  }, [selectedMonster, bonusMode, defenceLevel, magicLevel, gearBonuses, stance.defenceBonus]);
+
+  const damagePerKill =
+    sustain && killStats && isFinite(killStats.expectedSeconds)
+      ? sustain.worst.dps * killStats.expectedSeconds
+      : null;
 
   return (
     <div className="lg:sticky lg:top-4 lg:self-start space-y-5">
@@ -403,6 +430,46 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
           </div>
         )}
       </div>
+
+      {/* Sustain — incoming damage */}
+      {sustain && (
+        <div className="rounded-xl border border-border/40 bg-bg-primary/20 p-4">
+          <div className="section-kicker mb-2">Sustain — Damage Taken</div>
+          <div className="space-y-1.5">
+            {sustain.threats.map((t) => (
+              <div key={t.attackType} className="flex items-center justify-between text-xs">
+                <span className="text-text-secondary capitalize">
+                  {t.style}
+                  <span className="text-text-secondary/40 ml-1">({(t.accuracy * 100).toFixed(0)}% vs you)</span>
+                </span>
+                <span className="tabular-nums font-medium text-warning">{t.dps.toFixed(2)} dmg/s</span>
+              </div>
+            ))}
+          </div>
+          {damagePerKill !== null && (
+            <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+              <div>
+                <div className="text-sm font-bold text-warning tabular-nums">{Math.round(damagePerKill)}</div>
+                <div className="text-[10px] text-text-secondary">Dmg / Kill</div>
+              </div>
+              <div>
+                <div className="text-sm font-bold text-text-primary tabular-nums">{Math.ceil(damagePerKill / 20)}</div>
+                <div className="text-[10px] text-text-secondary">Sharks / Kill</div>
+              </div>
+              <div>
+                <div className="text-sm font-bold text-text-primary tabular-nums">
+                  {Math.round((sustain.worst.dps * 3600) / 20)}
+                </div>
+                <div className="text-[10px] text-text-secondary">Sharks / Hour</div>
+              </div>
+            </div>
+          )}
+          <p className="mt-2 text-[10px] text-text-secondary/40">
+            Worst attack style, no protection prayers{sustain.assumedAttackSpeed ? ", assumed 4-tick attack speed" : ""}.
+            Sharks heal 20.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
