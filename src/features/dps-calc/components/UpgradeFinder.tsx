@@ -4,6 +4,7 @@ import { itemIcon } from "../../../lib/sprites";
 import ItemTooltip from "../../../components/ItemTooltip";
 import { useGEData } from "../../../hooks/useGEData";
 import { formatGp } from "../../../lib/format";
+import { Button, Card } from "../../../components/primitives";
 import { findUpgrades, rankUpgradesForDisplay, type UpgradeSort } from "../upgradeFinder";
 import type { DpsState, EquippedGear } from "../hooks/useDpsState";
 
@@ -80,58 +81,47 @@ export default function UpgradeFinder({ state }: UpgradeFinderProps) {
   const visibleSlots = showAllSlots ? withUpgrades : withUpgrades.slice(0, 4);
 
   return (
-    <div className="rounded-xl border border-border/40 bg-bg-primary/20 p-4">
-      <div className="flex items-center justify-between">
-        <div className="section-kicker">Upgrade Finder</div>
-        {enabled && (
+    <Card
+      kicker="Upgrade Finder"
+      action={
+        enabled ? (
           <div className="flex items-center gap-2">
             <div className="flex gap-1" role="group" aria-label="Upgrade sort order">
               {([["dps", "Top DPS"], ["value", "Best value"]] as const).map(([mode, label]) => (
-                <button
+                <Button
                   key={mode}
+                  size="xs"
+                  variant={sortMode === mode ? "primary" : "secondary"}
                   onClick={() => setSortMode(mode)}
                   aria-pressed={sortMode === mode}
-                  className={`px-2 py-0.5 rounded text-[10px] border transition-colors ${
-                    sortMode === mode
-                      ? "bg-accent text-on-accent border-accent"
-                      : "bg-bg-tertiary text-text-secondary border-transparent hover:text-text-primary"
-                  }`}
                 >
                   {label}
-                </button>
+                </Button>
               ))}
             </div>
-            <button
-              onClick={() => setEnabled(false)}
-              className="text-[10px] text-text-secondary/50 hover:text-text-primary transition-colors"
-            >
+            <Button size="xs" variant="ghost" onClick={() => setEnabled(false)}>
               Hide
-            </button>
+            </Button>
           </div>
-        )}
-      </div>
+        ) : undefined
+      }
+    >
 
       {!enabled ? (
         <div className="mt-2 flex items-center justify-between gap-3">
           <p className="text-xs text-text-secondary">
             Scan every item against this target and rank each slot by real DPS gained.
           </p>
-          <button
-            onClick={enable}
-            className="shrink-0 px-3 py-1.5 text-xs font-medium bg-accent text-on-accent rounded-lg hover:bg-accent-hover transition-colors"
-          >
+          <Button variant="primary" onClick={enable} className="shrink-0">
             Find upgrades
-          </button>
+          </Button>
         </div>
       ) : loadError ? (
         <div className="mt-3 flex items-center justify-between gap-3 text-xs text-text-secondary">
           <span>Couldn&apos;t load the equipment catalog. Check your connection.</span>
-          <button
-            onClick={enable}
-            className="shrink-0 px-2.5 py-1 text-[10px] bg-bg-tertiary border border-border rounded-lg hover:bg-bg-secondary transition-colors"
-          >
+          <Button size="xs" onClick={enable} className="shrink-0">
             Retry
-          </button>
+          </Button>
         </div>
       ) : loading || !slotResults ? (
         <div className="mt-3 space-y-2">
@@ -191,7 +181,8 @@ export default function UpgradeFinder({ state }: UpgradeFinderProps) {
                       <span className="shrink-0 text-[11px] tabular-nums text-success">
                         +{dpsGain.toFixed(2)} <span className="text-success/60">({dpsGainPct >= 0 ? "+" : ""}{dpsGainPct.toFixed(1)}%)</span>
                       </span>
-                      <button
+                      <Button
+                        size="xs"
                         onClick={() =>
                           setEquippedGear((prev: EquippedGear) => {
                             const next = { ...prev };
@@ -211,10 +202,10 @@ export default function UpgradeFinder({ state }: UpgradeFinderProps) {
                             return next;
                           })
                         }
-                        className="shrink-0 text-[10px] px-2 py-0.5 bg-accent/10 text-accent rounded hover:bg-accent/20 transition-colors"
+                        className="shrink-0 bg-accent/10 text-accent border-transparent hover:bg-accent/20 hover:text-accent"
                       >
                         Equip
-                      </button>
+                      </Button>
                     </div>
                     );
                   })}
@@ -224,12 +215,14 @@ export default function UpgradeFinder({ state }: UpgradeFinderProps) {
           )}
 
           {withUpgrades.length > 4 && (
-            <button
+            <Button
+              size="xs"
+              variant="ghost"
               onClick={() => setShowAllSlots((v) => !v)}
-              className="text-[10px] text-accent hover:text-accent-hover transition-colors"
+              className="text-accent hover:text-accent-hover"
             >
               {showAllSlots ? "Show fewer slots" : `Show ${withUpgrades.length - 4} more slots`}
-            </button>
+            </Button>
           )}
 
           {maxedSlots.length > 0 && withUpgrades.length > 0 && (
@@ -247,6 +240,6 @@ export default function UpgradeFinder({ state }: UpgradeFinderProps) {
           </p>
         </div>
       )}
-    </div>
+    </Card>
   );
 }

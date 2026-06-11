@@ -1,4 +1,7 @@
 import { useState, useRef } from "react";
+import { Copy, X } from "lucide-react";
+import { Button } from "../../../components/primitives";
+import StyleIcon from "./StyleIcon";
 import type { DpsState } from "../hooks/useDpsState";
 import type { GearLoadout } from "../hooks/useDpsState";
 import { MONSTERS } from "../../../lib/data/monsters";
@@ -18,12 +21,6 @@ function Toast({ message, onDone }: { message: string; onDone: () => void }) {
     </div>
   );
 }
-
-const STYLE_ICON: Record<string, string> = {
-  melee: "⚔️",
-  ranged: "🏹",
-  magic: "🔮",
-};
 
 function fmt(n: number) {
   if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
@@ -86,13 +83,13 @@ function SaveForm({
           aria-label="Loadout name"
           className="flex-1 bg-bg-tertiary border border-border rounded-lg px-3 py-1.5 text-sm"
         />
-        <button
+        <Button
+          variant="primary"
           onClick={() => loadoutName.trim() && setShowForm(true)}
           disabled={!loadoutName.trim()}
-          className="px-3 py-1.5 text-xs font-medium bg-accent text-on-accent rounded-lg hover:bg-accent-hover transition-colors disabled:opacity-40"
         >
           Save
-        </button>
+        </Button>
       </div>
     );
   }
@@ -133,18 +130,8 @@ function SaveForm({
         className="w-full bg-bg-tertiary border border-border rounded-lg px-3 py-1.5 text-xs resize-none"
       />
       <div className="flex gap-1.5 justify-end">
-        <button
-          onClick={() => setShowForm(false)}
-          className="px-3 py-1.5 text-xs text-text-secondary hover:text-text-primary transition-colors"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={handleSave}
-          className="px-3 py-1.5 text-xs font-medium bg-accent text-on-accent rounded-lg hover:bg-accent-hover transition-colors"
-        >
-          Confirm Save
-        </button>
+        <Button variant="ghost" onClick={() => setShowForm(false)}>Cancel</Button>
+        <Button variant="primary" onClick={handleSave}>Confirm Save</Button>
       </div>
     </div>
   );
@@ -203,18 +190,8 @@ function MyLoadoutsPanel({ state }: { state: DpsState }) {
         <div className="section-kicker">My Loadouts</div>
         <div className="flex gap-1.5">
           <input ref={fileRef} type="file" accept=".json" className="hidden" onChange={handleImport} />
-          <button
-            onClick={() => fileRef.current?.click()}
-            className="text-[10px] px-2 py-1 bg-bg-tertiary border border-border rounded-md hover:bg-bg-secondary transition-colors text-text-secondary hover:text-text-primary"
-          >
-            Import
-          </button>
-          <button
-            onClick={handleExport}
-            className="text-[10px] px-2 py-1 bg-bg-tertiary border border-border rounded-md hover:bg-bg-secondary transition-colors text-text-secondary hover:text-text-primary"
-          >
-            Export
-          </button>
+          <Button size="xs" onClick={() => fileRef.current?.click()}>Import</Button>
+          <Button size="xs" onClick={handleExport}>Export</Button>
         </div>
       </div>
       <div className="space-y-1.5">
@@ -226,7 +203,9 @@ function MyLoadoutsPanel({ state }: { state: DpsState }) {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5 flex-wrap">
                 <span className="text-sm font-medium text-text-primary truncate">{l.name}</span>
-                <span title={l.combatStyle}>{STYLE_ICON[l.combatStyle]}</span>
+                <span title={l.combatStyle} className="text-text-secondary/70">
+                  <StyleIcon style={l.combatStyle} className="h-3.5 w-3.5" />
+                </span>
                 {l.contentTag && (
                   <span className="text-[10px] px-1.5 py-0.5 bg-accent/15 text-accent rounded">
                     {l.contentTag}
@@ -245,26 +224,19 @@ function MyLoadoutsPanel({ state }: { state: DpsState }) {
               )}
             </div>
             <div className="flex gap-1 shrink-0">
-              <button
+              <Button
+                size="xs"
                 onClick={() => { applyLoadout(l); setActiveLoadout(l.name); }}
-                className="text-[10px] px-2 py-1 bg-accent/10 text-accent rounded hover:bg-accent/20 transition-colors"
+                className="bg-accent/10 text-accent border-transparent hover:bg-accent/20 hover:text-accent"
               >
                 Load
-              </button>
-              <button
-                onClick={() => duplicateLoadout(l.name)}
-                className="text-[10px] px-2 py-1 text-text-secondary/60 hover:text-text-primary rounded hover:bg-bg-secondary transition-colors"
-                title="Duplicate"
-              >
-                ⎘
-              </button>
-              <button
-                onClick={() => deleteLoadout(l.name)}
-                className="text-[10px] px-2 py-1 text-text-secondary/40 hover:text-danger rounded hover:bg-bg-secondary transition-colors"
-                title="Delete"
-              >
-                ×
-              </button>
+              </Button>
+              <Button size="xs" variant="ghost" onClick={() => duplicateLoadout(l.name)} title="Duplicate" aria-label={`Duplicate ${l.name}`}>
+                <Copy className="h-3 w-3" />
+              </Button>
+              <Button size="xs" variant="danger" onClick={() => deleteLoadout(l.name)} title="Delete" aria-label={`Delete ${l.name}`}>
+                <X className="h-3 w-3" />
+              </Button>
             </div>
           </div>
         ))}

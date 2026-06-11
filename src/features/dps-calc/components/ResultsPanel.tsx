@@ -4,6 +4,7 @@ import DpsBreakdown from "./DpsBreakdown";
 import HitDistributionChart from "./HitDistributionChart";
 import { killTimeStats } from "../../../lib/formulas/hitDistribution";
 import { incomingDps, type ProtectionPrayer } from "../../../lib/formulas/incomingDps";
+import { Button, Card } from "../../../components/primitives";
 import type { DpsState } from "../hooks/useDpsState";
 
 interface ResultsPanelProps {
@@ -103,8 +104,7 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
   return (
     <div className="lg:sticky lg:top-4 lg:self-start space-y-5">
       {/* Target */}
-      <div className="rounded-xl border border-border/40 bg-bg-primary/20 p-4">
-        <div className="section-kicker mb-2">Target</div>
+      <Card kicker="Target">
         <MonsterSearch
           monsters={wikiMonsters}
           selected={selectedMonster}
@@ -198,11 +198,10 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
             </>
           )}
         </div>
-      </div>
+      </Card>
 
       {/* Spec Weapon */}
-      <div className="rounded-xl border border-border/40 bg-bg-primary/20 p-4">
-        <div className="section-kicker mb-2">Special Attack</div>
+      <Card kicker="Special Attack">
         <select
           value={selectedSpec?.id ?? ""}
           onChange={(e) => {
@@ -246,12 +245,12 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
             <div className="mt-1.5 text-[10px] text-text-secondary/40 text-center">{selectedSpec.notes}</div>
           </div>
         )}
-      </div>
+      </Card>
 
       {/* Results */}
-      <div className="rounded-xl border border-border/40 bg-bg-primary/20 p-4">
-        <div className="flex items-center justify-between mb-2">
-          <div className="section-kicker">Results</div>
+      <Card
+        kicker="Results"
+        action={
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
               <label className="text-[10px] uppercase tracking-wider text-text-secondary/50">Poison</label>
@@ -265,14 +264,12 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
                 <option value="venom">Venom</option>
               </select>
             </div>
-            <button
-              onClick={() => setShowBreakdown((p) => !p)}
-              className="text-xs text-text-secondary hover:text-accent transition-colors"
-            >
+            <Button variant="ghost" size="xs" onClick={() => setShowBreakdown((p) => !p)}>
               {showBreakdown ? "Hide" : "Show"} breakdown
-            </button>
+            </Button>
           </div>
-        </div>
+        }
+      >
         <DpsBreakdown
           maxHit={result.maxHit}
           accuracy={result.accuracy}
@@ -413,12 +410,13 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
                         {delta > 0 ? "+" : ""}{delta.toFixed(2)}
                       </td>
                       <td className="px-2 py-1.5 text-right">
-                        <button
+                        <Button
+                          size="xs"
                           onClick={() => { applyLoadout(loadout); setActiveLoadout(loadout.name); }}
-                          className="text-[10px] px-2 py-0.5 bg-accent/10 text-accent rounded hover:bg-accent/20 transition-colors"
+                          className="bg-accent/10 text-accent border-transparent hover:bg-accent/20 hover:text-accent"
                         >
                           Load
-                        </button>
+                        </Button>
                       </td>
                     </tr>
                   );
@@ -430,13 +428,13 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
             </div>
           </div>
         )}
-      </div>
+      </Card>
 
       {/* Sustain — incoming damage */}
       {sustain && (
-        <div className="rounded-xl border border-border/40 bg-bg-primary/20 p-4">
-          <div className="flex items-center justify-between mb-2">
-            <div className="section-kicker">Sustain — Damage Taken</div>
+        <Card
+          kicker="Sustain — Damage Taken"
+          action={
             <select
               value={protection}
               onChange={(e) => setProtection(e.target.value as ProtectionPrayer)}
@@ -448,7 +446,8 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
               <option value="ranged">Protect from Missiles</option>
               <option value="magic">Protect from Magic</option>
             </select>
-          </div>
+          }
+        >
           <div className="space-y-1.5">
             {sustain.threats.map((t) => (
               <div key={t.attackType} className="flex items-center justify-between text-xs">
@@ -486,7 +485,7 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
             Worst unprayed style{sustain.assumedAttackSpeed ? ", assumed 4-tick attack speed" : ""}.
             Sharks heal 20. Some boss attacks pierce overhead prayers.
           </p>
-        </div>
+        </Card>
       )}
     </div>
   );

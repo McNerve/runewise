@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useDebounce } from "../../hooks/useDebounce";
 import {
   classifyWikiPage,
@@ -610,20 +611,20 @@ export default function WikiLookup() {
                         onClick={() => navigateHistory("back")}
                         disabled={!canGoBack(pageHistory)}
                         aria-label="Back to previous wiki page"
-                        title="Back"
-                        className="rounded-md border border-border/60 px-1.5 py-0.5 text-sm leading-none transition enabled:hover:border-accent/40 enabled:hover:text-text-primary disabled:opacity-30"
+                        title="Back (Alt+←)"
+                        className="rounded-md border border-border/60 p-1 transition enabled:hover:border-accent/40 enabled:hover:text-text-primary disabled:opacity-30"
                       >
-                        ‹
+                        <ChevronLeft className="h-3.5 w-3.5" />
                       </button>
                       <button
                         type="button"
                         onClick={() => navigateHistory("forward")}
                         disabled={!canGoForward(pageHistory)}
                         aria-label="Forward to next wiki page"
-                        title="Forward"
-                        className="rounded-md border border-border/60 px-1.5 py-0.5 text-sm leading-none transition enabled:hover:border-accent/40 enabled:hover:text-text-primary disabled:opacity-30"
+                        title="Forward (Alt+→)"
+                        className="rounded-md border border-border/60 p-1 transition enabled:hover:border-accent/40 enabled:hover:text-text-primary disabled:opacity-30"
                       >
-                        ›
+                        <ChevronRight className="h-3.5 w-3.5" />
                       </button>
                     </span>
                     <button

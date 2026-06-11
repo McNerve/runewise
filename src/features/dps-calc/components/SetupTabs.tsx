@@ -1,12 +1,7 @@
+import StyleIcon from "./StyleIcon";
 import type { DpsState } from "../hooks/useDpsState";
 
 const TAB_LABELS = ["A", "B", "C"];
-
-const STYLE_ICON: Record<string, string> = {
-  melee: "⚔️",
-  ranged: "🏹",
-  magic: "🔮",
-};
 
 /** Setup tabs — full calculator configurations switched in place, with each
  * inactive tab's DPS computed live against the current target. */
@@ -38,7 +33,7 @@ export default function SetupTabs({ state }: { state: DpsState }) {
             }`}
           >
             <span className="font-semibold">{label}</span>
-            {style && <span className="ml-1">{STYLE_ICON[style]}</span>}
+            {style && <StyleIcon style={style} className="ml-1 inline h-3 w-3 opacity-70" />}
             {tabResult ? (
               <span className={`ml-1.5 tabular-nums ${isActive ? "text-accent" : "text-text-secondary/70"}`}>
                 {tabResult.dps.toFixed(1)}

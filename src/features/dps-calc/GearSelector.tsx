@@ -5,6 +5,7 @@ import {
   type WikiEquipment,
   type EquipmentSlot,
 } from "../../lib/api/equipment";
+import { X } from "lucide-react";
 import { itemIcon } from "../../lib/sprites";
 import ItemTooltip from "../../components/ItemTooltip";
 import { knownWeaponSpeed } from "../../lib/data/weapon-speeds";
@@ -65,9 +66,9 @@ export default function GearSelector({ slot, onSelect, onClose, combatStyle = "m
           <button
             onClick={onClose}
             aria-label="Close gear selector"
-            className="text-text-secondary hover:text-text-primary transition-colors text-lg leading-none"
+            className="rounded-md p-1 text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary"
           >
-            ×
+            <X className="h-4 w-4" />
           </button>
         </div>
 
