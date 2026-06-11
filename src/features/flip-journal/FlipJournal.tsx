@@ -510,7 +510,7 @@ export default function FlipJournal() {
       <div className="flex items-center justify-between">
         <h2 className="text-h3 font-semibold">GE Flip Journal</h2>
         <Button
-          variant="primary"
+          variant={showForm ? "secondary" : "primary"}
           size="md"
           onClick={() => { setShowForm((v) => !v); setEditing(null); }}
         >
