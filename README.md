@@ -120,7 +120,7 @@ Every number you need to run the game.
 </tr>
 <tr>
 <td><b>DPS Calculator</b></td>
-<td>3,172 monsters · 16 modifiers · phase bosses · spec attacks · spell selection · loadout snapshots · hit distribution chart · per-slot upgrade finder · arsenal-vs-target comparison</td>
+<td>3,172 monsters · 16 modifiers · phase bosses · spec attacks · spell selection · loadouts & arsenal comparison · exact overkill-aware TTK · hit distribution chart · weapon + armour upgrade finder with GE prices · sustain (damage taken) panel</td>
 </tr>
 <tr>
 <td><b>Training Plan</b></td>
