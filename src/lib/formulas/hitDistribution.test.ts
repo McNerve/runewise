@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { hitDistribution } from "./hitDistribution";
+import { hitDistribution, killTimeStats } from "./hitDistribution";
 
 describe("hitDistribution", () => {
   it("sums to 1", () => {
@@ -50,5 +50,57 @@ describe("hitDistribution", () => {
     expect(hitDistribution(10, 1).medianHit).toBe(5);
     // low accuracy: zero bucket alone exceeds 0.5
     expect(hitDistribution(10, 0.3).medianHit).toBe(0);
+  });
+});
+
+describe("killTimeStats", () => {
+  it("matches the geometric case: max 1, hp 1, accuracy 1", () => {
+    // Each attack kills with probability 1/2 → expected 2 attacks,
+    // median 1 (P=0.5), p90 at n=4 (1 - (1/2)^4 = 0.9375).
+    const stats = killTimeStats(1, 1, 1, 4)!;
+    expect(stats.expectedAttacks).toBeCloseTo(2, 10);
+    expect(stats.expectedSeconds).toBeCloseTo(2 * 4 * 0.6, 10);
+    expect(stats.medianAttacks).toBe(1);
+    expect(stats.p90Attacks).toBe(4);
+  });
+
+  it("matches the per-attack kill chance for max 2, hp 1", () => {
+    // Kill chance per attack = 2/3 → expected 1.5 attacks, p90 at n=3.
+    const stats = killTimeStats(2, 1, 1, 4)!;
+    expect(stats.expectedAttacks).toBeCloseTo(1.5, 10);
+    expect(stats.medianAttacks).toBe(1);
+    expect(stats.p90Attacks).toBe(3);
+  });
+
+  it("chains expectations across hp states: max 1, hp 2", () => {
+    // Two successes needed, each geometric with p=1/2 → expected 4 attacks.
+    const stats = killTimeStats(1, 1, 2, 4)!;
+    expect(stats.expectedAttacks).toBeCloseTo(4, 10);
+  });
+
+  it("is never faster than the naive hp / dps estimate", () => {
+    // Overkill wastes damage, so true expected time >= naive time.
+    for (const [maxHit, acc, hp] of [
+      [47, 0.73, 250],
+      [12, 0.4, 30],
+      [80, 0.95, 100],
+    ] as const) {
+      const stats = killTimeStats(maxHit, acc, hp, 4)!;
+      const naiveDps = (maxHit * acc) / (2 * 4 * 0.6);
+      expect(stats.expectedSeconds).toBeGreaterThanOrEqual(hp / naiveDps - 1e-9);
+    }
+  });
+
+  it("returns null when a kill is impossible", () => {
+    expect(killTimeStats(0, 1, 100, 4)).toBeNull();
+    expect(killTimeStats(50, 0, 100, 4)).toBeNull();
+  });
+
+  it("orders percentiles sensibly", () => {
+    const stats = killTimeStats(30, 0.6, 200, 5)!;
+    expect(stats.medianAttacks).not.toBeNull();
+    expect(stats.p90Attacks).not.toBeNull();
+    expect(stats.p90Attacks!).toBeGreaterThanOrEqual(stats.medianAttacks!);
+    expect(stats.expectedAttacks).toBeGreaterThan(0);
   });
 });

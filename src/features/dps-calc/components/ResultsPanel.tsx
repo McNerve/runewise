@@ -1,10 +1,18 @@
+import { useMemo } from "react";
 import MonsterSearch from "./MonsterSearch";
 import DpsBreakdown from "./DpsBreakdown";
 import HitDistributionChart from "./HitDistributionChart";
+import { killTimeStats } from "../../../lib/formulas/hitDistribution";
 import type { DpsState } from "../hooks/useDpsState";
 
 interface ResultsPanelProps {
   state: DpsState;
+}
+
+function formatSeconds(seconds: number): string {
+  if (!isFinite(seconds)) return "--";
+  if (seconds < 60) return `${seconds.toFixed(1)}s`;
+  return `${Math.floor(seconds / 60)}m ${Math.round(seconds % 60)}s`;
 }
 
 export default function ResultsPanel({ state }: ResultsPanelProps) {
@@ -46,7 +54,23 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
     applyLoadout,
     activeLoadout,
     setActiveLoadout,
+    effectiveAttackSpeed,
   } = state;
+
+  // Exact kill time from the damage distribution — overkill-aware, unlike
+  // the hp / dps figure inside `result.ttk`.
+  const killStats = useMemo(
+    () => killTimeStats(result.maxHit, result.accuracy, targetHp, effectiveAttackSpeed),
+    [result.maxHit, result.accuracy, targetHp, effectiveAttackSpeed]
+  );
+
+  const phaseKillTimes = useMemo(
+    () =>
+      phaseResults.map(({ monster, result: pr }) =>
+        killTimeStats(pr.maxHit, pr.accuracy, monster.hitpoints, effectiveAttackSpeed)
+      ),
+    [phaseResults, effectiveAttackSpeed]
+  );
 
   return (
     <div className="lg:sticky lg:top-4 lg:self-start space-y-5">
@@ -225,11 +249,23 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
           maxHit={result.maxHit}
           accuracy={result.accuracy}
           dps={result.dps}
-          ttk={result.ttk}
+          ttk={killStats?.expectedSeconds ?? result.ttk}
           attackRoll={result.attackRoll}
           defenseRoll={result.defenseRoll}
           showDetails={showBreakdown}
         />
+        {killStats && (
+          <div className="mt-2 text-[10px] text-text-secondary tabular-nums">
+            ≈{killStats.expectedAttacks.toFixed(1)} hits to kill
+            {killStats.medianSeconds !== null && (
+              <> · 50% by <span className="text-text-primary">{formatSeconds(killStats.medianSeconds)}</span></>
+            )}
+            {killStats.p90Seconds !== null && (
+              <> · 90% by <span className="text-text-primary">{formatSeconds(killStats.p90Seconds)}</span></>
+            )}
+            <span className="text-text-secondary/40"> · overkill-aware</span>
+          </div>
+        )}
         <div className="mt-4">
           <HitDistributionChart maxHit={result.maxHit} accuracy={result.accuracy} />
         </div>
@@ -262,8 +298,9 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
                 </tr>
               </thead>
               <tbody>
-                {phaseResults.map(({ phase, monster, result: pr }) => {
+                {phaseResults.map(({ phase, monster, result: pr }, phaseIdx) => {
                   const accColor = pr.accuracy >= 0.8 ? "text-success" : pr.accuracy >= 0.5 ? "text-warning" : "text-danger";
+                  const phaseTtk = phaseKillTimes[phaseIdx]?.expectedSeconds ?? pr.ttk;
                   return (
                     <tr
                       key={phase.version}
@@ -279,7 +316,7 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
                       <td className="px-3 py-1.5 text-right tabular-nums text-accent">{pr.maxHit}</td>
                       <td className="px-3 py-1.5 text-right tabular-nums font-medium text-accent">{pr.dps.toFixed(2)}</td>
                       <td className="px-3 py-1.5 text-right tabular-nums text-text-secondary">
-                        {pr.ttk < 60 ? `${pr.ttk.toFixed(1)}s` : `${Math.floor(pr.ttk / 60)}m ${Math.round(pr.ttk % 60)}s`}
+                        {formatSeconds(phaseTtk)}
                       </td>
                     </tr>
                   );
@@ -293,10 +330,12 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
                   <td className="px-3 py-1.5" />
                   <td className="px-3 py-1.5" />
                   <td className="px-3 py-1.5 text-right tabular-nums font-medium text-text-primary">
-                    {(() => {
-                      const totalTtk = phaseResults.reduce((sum, p) => sum + p.result.ttk, 0);
-                      return totalTtk < 60 ? `${totalTtk.toFixed(1)}s` : `${Math.floor(totalTtk / 60)}m ${Math.round(totalTtk % 60)}s`;
-                    })()}
+                    {formatSeconds(
+                      phaseResults.reduce(
+                        (sum, p, i) => sum + (phaseKillTimes[i]?.expectedSeconds ?? p.result.ttk),
+                        0
+                      )
+                    )}
                   </td>
                 </tr>
               </tbody>

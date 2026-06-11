@@ -329,6 +329,19 @@ export default function WikiLookup() {
     });
   }
 
+  // Alt+←/→ mirror the on-screen back/forward buttons. The handler lives in
+  // a ref so the listener registers once without stale closures.
+  const historyKeyHandler = useRef<(direction: "back" | "forward") => void>(() => {});
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (!e.altKey || (e.key !== "ArrowLeft" && e.key !== "ArrowRight")) return;
+      e.preventDefault();
+      historyKeyHandler.current(e.key === "ArrowLeft" ? "back" : "forward");
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
   // Back/forward re-open pages from the history stack without re-recording
   // them or growing the breadcrumb trail.
   function navigateHistory(direction: "back" | "forward") {
@@ -345,6 +358,9 @@ export default function WikiLookup() {
     setError(null);
     navigate("wiki", { page, query: page });
   }
+  useEffect(() => {
+    historyKeyHandler.current = navigateHistory;
+  });
 
   function resolveSubmittedPage() {
     const trimmed = query.trim();
