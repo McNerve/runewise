@@ -350,7 +350,7 @@ export default function GearCompare() {
             </tbody>
           </table>
           <div className="text-xs text-text-secondary/40 mt-2 text-right">
-            {collapsedRows.length} item{collapsedRows.length !== filtered.length ? ` (${filtered.length} total, variants collapsed)` : ""} · Click rows to compare (max 3)
+            {collapsedRows.length} item{collapsedRows.length === 1 ? "" : "s"}{collapsedRows.length !== filtered.length ? ` (${filtered.length} total, variants collapsed)` : ""} · Click rows to compare (max 3)
           </div>
         </div>
       )}

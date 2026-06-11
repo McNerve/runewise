@@ -237,6 +237,17 @@ http
         const q = url.searchParams.get("query") ?? "";
         if (q.includes("infobox_bonuses")) return json(res, { bucket: EQUIPMENT });
         if (q.includes("infobox_monster")) return json(res, { bucket: MONSTERS });
+        if (q.includes('bucket("dropsline")')) {
+          const dj = (rarity, qty, value) => JSON.stringify({ Rarity: rarity, Quantity: qty, "Drop Value": String(value) });
+          return json(res, { bucket: [
+            { page_name: "Vorkath", page_name_sub: "", item_name: "Superior dragon bones", drop_json: dj("Always", "2", "36468"), rare_drop_table: "false" },
+            { page_name: "Vorkath", page_name_sub: "", item_name: "Blue dragonhide", drop_json: dj("Always", "2", "3500"), rare_drop_table: "false" },
+            { page_name: "Vorkath", page_name_sub: "", item_name: "Dragon bolts", drop_json: dj("1/10", "20-50", "9800"), rare_drop_table: "false" },
+            { page_name: "Vorkath", page_name_sub: "", item_name: "Dragonbone necklace", drop_json: dj("1/1,000", "1", "180000"), rare_drop_table: "false" },
+            { page_name: "Vorkath", page_name_sub: "", item_name: "Vorki", drop_json: dj("1/3,000", "1", "0"), rare_drop_table: "false" },
+            { page_name: "Vorkath", page_name_sub: "", item_name: "Draconic visage", drop_json: dj("1/5,000", "1", "4182220"), rare_drop_table: "false" },
+          ]});
+        }
         return json(res, { bucket: [] });
       }
       if (action === "opensearch") {
