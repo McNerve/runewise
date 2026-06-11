@@ -4,6 +4,7 @@ import { DEFAULT_KEYBINDS, type KeybindMap } from "../../lib/settings";
 import { isTauri, isMac } from "../../lib/env";
 import { ONBOARDING_KEY } from "../onboarding/constants";
 import { setUpdateMode, getUpdateMode, type UpdateMode } from "../../lib/updateBus";
+import { Button } from "../../components/primitives";
 import {
   sendNotification,
   onNotificationDenied,
@@ -153,18 +154,19 @@ function UpdateButton() {
 
   return (
     <div className="flex items-center gap-3">
-      <button
+      <Button
+        variant="primary"
         onClick={() => checkForUpdates(false)}
         title="Check the release server for a newer version"
         disabled={status === "checking" || status === "downloading"}
-        className="home-tile bg-accent border border-accent text-on-accent text-xs px-3 py-1.5 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+        className="home-tile"
       >
         {status === "idle" && "Check for Updates"}
         {status === "checking" && "Checking..."}
         {status === "downloading" && "Installing..."}
         {status === "current" && "Up to date ✓"}
         {status === "error" && "Check failed"}
-      </button>
+      </Button>
       {status === "downloading" && (
         <div className="w-20 h-1.5 bg-bg-tertiary rounded-full overflow-hidden">
           <div className="h-full bg-accent rounded-full animate-pulse" style={{ width: "60%" }} />

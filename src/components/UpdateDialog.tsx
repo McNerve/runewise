@@ -5,6 +5,7 @@ import { openExternal } from "../lib/openExternal";
 import { onOpenUpdate, getUpdateMode, emitUpdateAvailable } from "../lib/updateBus";
 import UpdateStageHero from "./UpdateStageHero";
 import { VersionChevron, ChangelogView, CheckCircle } from "./UpdateDialogHelpers";
+import { Button } from "./primitives";
 
 declare const __APP_VERSION__: string;
 
@@ -225,12 +226,9 @@ export default function UpdateDialog() {
                 )}
 
                 <div className="flex flex-col gap-2">
-                  <button
-                    onClick={startDownload}
-                    className="w-full py-2.5 rounded-lg bg-accent hover:bg-accent-hover text-on-accent font-medium text-sm transition-colors"
-                  >
+                  <Button variant="primary" size="md" onClick={startDownload} className="w-full">
                     Download
-                  </button>
+                  </Button>
                   <button
                     onClick={remindLater}
                     className="w-full py-2 rounded-lg border border-border text-text-secondary hover:text-text-primary text-sm transition-colors"
@@ -318,12 +316,9 @@ export default function UpdateDialog() {
                   Downloaded successfully.
                 </p>
 
-                <button
-                  onClick={installAndRelaunch}
-                  className="px-8 py-2.5 rounded-lg bg-accent hover:bg-accent-hover text-on-accent font-medium text-sm transition-colors"
-                >
+                <Button variant="primary" size="md" onClick={installAndRelaunch} className="px-8">
                   Install and Relaunch
-                </button>
+                </Button>
                 <button
                   onClick={() => openExternal(releaseNotesUrl)}
                   className="mt-2 text-xs text-text-secondary/50 hover:text-accent transition-colors"
@@ -352,12 +347,9 @@ export default function UpdateDialog() {
                 </p>
 
                 <div className="flex flex-col gap-2 w-full">
-                  <button
-                    onClick={retryDownload}
-                    className="w-full py-2.5 rounded-lg bg-accent hover:bg-accent-hover text-on-accent text-sm font-medium transition-colors"
-                  >
+                  <Button variant="primary" size="md" onClick={retryDownload} className="w-full">
                     Try again
-                  </button>
+                  </Button>
                   <div className="flex gap-2">
                     <a
                       href="https://github.com/McNerve/runewise/releases/latest"
@@ -367,12 +359,9 @@ export default function UpdateDialog() {
                     >
                       Download from GitHub
                     </a>
-                    <button
-                      onClick={() => setStage("hidden")}
-                      className="flex-1 py-2 rounded-lg bg-bg-tertiary border border-border text-text-secondary hover:text-text-primary text-sm transition-colors"
-                    >
+                    <Button size="md" onClick={() => setStage("hidden")} className="flex-1">
                       Dismiss
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </motion.div>

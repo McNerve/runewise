@@ -120,7 +120,7 @@ Every number you need to run the game.
 </tr>
 <tr>
 <td><b>DPS Calculator</b></td>
-<td>3,172 monsters · 16 modifiers · phase bosses · spec attacks · spell selection · loadout snapshots</td>
+<td>3,172 monsters · 16 modifiers · phase bosses · spec attacks · spell selection · loadouts & arsenal comparison · exact overkill-aware TTK · hit distribution chart · weapon + armour upgrade finder with GE prices · sustain (damage taken) panel</td>
 </tr>
 <tr>
 <td><b>Training Plan</b></td>
@@ -197,7 +197,7 @@ Real-time game events in one place.
 - **Shooting Stars** — live tracker from the Star Miners crowdsource API with tier, world, time remaining, teleport suggestions, and opt-in native spawn alerts
 - **World Map** — 114+ hand-placed POIs (farming, fairy rings, slayer, altars, teleports) with cursor-anchored zoom
 - **OSRS News** — shipped, upcoming, and proposed updates in one feed
-- **Wiki Lookup** — search any wiki page with live GE price enrichment and in-page table of contents
+- **Wiki Lookup** — search any wiki page, rendered in full with a sticky scrollspy table of contents and live GE price enrichment
 
 ![Shooting Stars](docs/screenshots/stars.png)
 

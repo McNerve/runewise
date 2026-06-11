@@ -40,7 +40,14 @@ export function StatCard({
             onError={(e) => { e.currentTarget.style.display = "none"; }}
           />
         ) : icon}
-        <div className="section-kicker truncate" title={label}>{label}</div>
+        {/* Tighter tracking than section-kicker — narrow cards must fit
+            labels like "Time to Kill" without truncating. */}
+        <div
+          className="truncate text-[9px] font-medium uppercase tracking-[0.05em] text-text-secondary/60"
+          title={label}
+        >
+          {label}
+        </div>
       </div>
       <div className={`mt-1 ${valueClass}`}>
         {value}
@@ -51,7 +58,7 @@ export function StatCard({
     </>
   );
 
-  const baseStyle = "rounded-xl border border-border/60 bg-bg-primary/45 px-4 py-3";
+  const baseStyle = "rounded-xl border border-border/60 bg-bg-primary/45 px-3 py-3";
 
   if (onClick) {
     return (

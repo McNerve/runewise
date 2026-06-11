@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useDebounce } from "../../hooks/useDebounce";
 import {
   classifyWikiPage,
   fetchWikiLookupDocument,
   resolveWikiPageFromHref,
   searchWikiPages,
+  searchWikiPagesRich,
   type WikiEntityKind,
   type WikiLookupDocument,
+  type WikiSearchResult,
 } from "../../lib/wiki/lookup";
 import SourceAttribution from "../../components/SourceAttribution";
 import { Skeleton } from "../../components/Skeleton";
@@ -19,7 +22,32 @@ import {
 import { useGEData } from "../../hooks/useGEData";
 import { fetchVolumes } from "../../lib/api/ge";
 import WikiSectionContent from "./components/WikiSectionContent";
+import WikiToc from "./components/WikiToc";
+import { extractTocEntries } from "./wikiLookupUtils";
+import {
+  loadPersistedHistory,
+  persistHistory,
+  visit,
+  goBack,
+  goForward,
+  canGoBack,
+  canGoForward,
+  currentPage,
+  type WikiHistory,
+} from "./wikiHistory";
 import { formatGp } from "../../lib/format";
+
+// Curated starting points for the empty state — pages players reach for most.
+const POPULAR_PAGES = [
+  "Money making guide",
+  "Optimal quest guide",
+  "Achievement Diary",
+  "Combat Achievements",
+  "Slayer",
+  "Grand Exchange",
+  "Wilderness",
+  "Free-to-play",
+];
 
 const COLLAPSED_SECTIONS = [
   "used in recommended equipment",
@@ -66,7 +94,7 @@ export default function WikiLookup() {
   const { params, navigate } = useNavigation();
   const [query, setQuery] = useState(params.query ?? "");
   const debouncedQuery = useDebounce(query, 180);
-  const [results, setResults] = useState<string[]>([]);
+  const [results, setResults] = useState<WikiSearchResult[]>([]);
   const [resultsQuery, setResultsQuery] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [selectedPage, setSelectedPage] = useState(params.page ?? "");
@@ -78,6 +106,22 @@ export default function WikiLookup() {
   const searchRef = useRef<HTMLDivElement>(null);
   const [geSnapshot, setGeSnapshot] = useState<GESnapshot | null>(null);
   const { mapping, prices, fetchIfNeeded } = useGEData();
+  // Reading history survives view switches via the module-level slot.
+  const [pageHistory, setPageHistory] = useState<WikiHistory>(() => {
+    const initial = loadPersistedHistory();
+    const initialPage = params.page?.trim();
+    const next = initialPage ? visit(initial, initialPage) : initial;
+    persistHistory(next);
+    return next;
+  });
+
+  function recordVisit(page: string) {
+    setPageHistory((h) => {
+      const next = visit(h, page);
+      persistHistory(next);
+      return next;
+    });
+  }
 
   // Fetch GE mapping on mount so it's ready for enrichment.
   useEffect(() => { fetchIfNeeded(); }, [fetchIfNeeded]);
@@ -183,7 +227,7 @@ export default function WikiLookup() {
     if (debouncedQuery.trim().length < 2) return;
 
     let cancelled = false;
-    searchWikiPages(debouncedQuery)
+    searchWikiPagesRich(debouncedQuery)
       .then((pages) => {
         if (!cancelled) {
           setResults(pages);
@@ -220,6 +264,7 @@ export default function WikiLookup() {
         setLoadingDocument(true);
         setError(null);
         setSelectedPage(nextPage);
+        recordVisit(nextPage);
       })
       .catch(() => {
         if (!cancelled) {
@@ -279,6 +324,7 @@ export default function WikiLookup() {
     setResultsQuery("");
     setLoadingDocument(true);
     setError(null);
+    recordVisit(page);
     navigate("wiki", {
       page,
       query: page,
@@ -286,14 +332,47 @@ export default function WikiLookup() {
     });
   }
 
+  // Alt+←/→ mirror the on-screen back/forward buttons. The handler lives in
+  // a ref so the listener registers once without stale closures.
+  const historyKeyHandler = useRef<(direction: "back" | "forward") => void>(() => {});
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (!e.altKey || (e.key !== "ArrowLeft" && e.key !== "ArrowRight")) return;
+      e.preventDefault();
+      historyKeyHandler.current(e.key === "ArrowLeft" ? "back" : "forward");
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  // Back/forward re-open pages from the history stack without re-recording
+  // them or growing the breadcrumb trail.
+  function navigateHistory(direction: "back" | "forward") {
+    const next = direction === "back" ? goBack(pageHistory) : goForward(pageHistory);
+    if (next === pageHistory) return;
+    const page = currentPage(next);
+    if (!page) return;
+    persistHistory(next);
+    setPageHistory(next);
+    setSelectedPage(page);
+    setQuery(page);
+    setDropdownOpen(false);
+    setLoadingDocument(true);
+    setError(null);
+    navigate("wiki", { page, query: page });
+  }
+  useEffect(() => {
+    historyKeyHandler.current = navigateHistory;
+  });
+
   function resolveSubmittedPage() {
     const trimmed = query.trim();
     if (!trimmed) return null;
 
     const exactVisibleMatch = visibleResults.find(
-      (page) => page.toLowerCase() === trimmed.toLowerCase()
+      (page) => page.title.toLowerCase() === trimmed.toLowerCase()
     );
-    if (exactVisibleMatch) return exactVisibleMatch;
+    if (exactVisibleMatch) return exactVisibleMatch.title;
 
     if (document?.title && document.title.toLowerCase() === trimmed.toLowerCase()) {
       return document.title;
@@ -349,6 +428,11 @@ export default function WikiLookup() {
     [document]
   );
 
+  const tocEntries = useMemo(
+    () => (document ? extractTocEntries(document.sections) : []),
+    [document]
+  );
+
   return (
     <div className="space-y-5">
       <section>
@@ -394,18 +478,36 @@ export default function WikiLookup() {
                 ) : visibleResults.length > 0 ? (
                   visibleResults.map((page) => (
                     <button
-                      key={page}
+                      key={page.title}
                       type="button"
-                      onClick={() => openPage(page)}
-                      className={`flex w-full items-center justify-between px-4 py-3 text-left text-sm transition ${
-                        selectedPage === page
+                      onClick={() => openPage(page.title)}
+                      className={`flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-sm transition ${
+                        selectedPage === page.title
                           ? "bg-accent/10 text-text-primary"
                           : "text-text-secondary hover:bg-bg-tertiary/80 hover:text-text-primary"
                       }`}
                     >
-                      <span className="truncate">{page}</span>
-                      {selectedPage === page ? (
-                        <span className="text-[10px] uppercase tracking-[0.18em] text-accent">
+                      <span className="flex min-w-0 items-center gap-2.5">
+                        {page.thumbnail ? (
+                          <img
+                            src={page.thumbnail}
+                            alt=""
+                            loading="lazy"
+                            className="h-8 w-8 shrink-0 rounded-md object-contain bg-bg-tertiary/40"
+                            onError={(e) => { e.currentTarget.style.display = "none"; }}
+                          />
+                        ) : null}
+                        <span className="min-w-0">
+                          <span className="block truncate">{page.title}</span>
+                          {page.snippet ? (
+                            <span className="mt-0.5 block truncate text-xs text-text-secondary/55">
+                              {page.snippet}
+                            </span>
+                          ) : null}
+                        </span>
+                      </span>
+                      {selectedPage === page.title ? (
+                        <span className="shrink-0 text-[10px] uppercase tracking-[0.18em] text-accent">
                           Open
                         </span>
                       ) : null}
@@ -474,6 +576,21 @@ export default function WikiLookup() {
               ))}
             </div>
           )}
+          <div className="flex flex-wrap items-center justify-center gap-1.5">
+            <span className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
+              Popular
+            </span>
+            {POPULAR_PAGES.map((page) => (
+              <button
+                key={page}
+                type="button"
+                onClick={() => openPage(page)}
+                className="rounded-full border border-border/60 bg-bg-secondary/50 px-3 py-1 text-xs text-text-secondary transition hover:border-accent/40 hover:text-text-primary"
+              >
+                {page}
+              </button>
+            ))}
+          </div>
         </div>
       ) : null}
 
@@ -488,6 +605,28 @@ export default function WikiLookup() {
                     OSRS Wiki
                   </div>
                   <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-xs text-text-secondary/60">
+                    <span className="flex items-center gap-0.5">
+                      <button
+                        type="button"
+                        onClick={() => navigateHistory("back")}
+                        disabled={!canGoBack(pageHistory)}
+                        aria-label="Back to previous wiki page"
+                        title="Back (Alt+←)"
+                        className="rounded-md border border-border/60 p-1 transition enabled:hover:border-accent/40 enabled:hover:text-text-primary disabled:opacity-30"
+                      >
+                        <ChevronLeft className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => navigateHistory("forward")}
+                        disabled={!canGoForward(pageHistory)}
+                        aria-label="Forward to next wiki page"
+                        title="Forward (Alt+→)"
+                        className="rounded-md border border-border/60 p-1 transition enabled:hover:border-accent/40 enabled:hover:text-text-primary disabled:opacity-30"
+                      >
+                        <ChevronRight className="h-3.5 w-3.5" />
+                      </button>
+                    </span>
                     <button
                       type="button"
                       onClick={() => navigate("home")}
@@ -589,7 +728,7 @@ export default function WikiLookup() {
               const extra = sectionExtraClasses(section.title);
               const collapsed = shouldCollapse(section.title);
               return collapsed ? (
-                <details key={section.id} className="article-content-collapse">
+                <details key={section.id} id={section.id} className="article-content-collapse scroll-mt-4">
                   <summary className="mb-4 text-lg font-semibold tracking-tight cursor-pointer text-text-primary hover:text-accent transition-colors">
                     {section.title}
                   </summary>
@@ -600,7 +739,7 @@ export default function WikiLookup() {
                   />
                 </details>
               ) : (
-                <section key={section.id}>
+                <section key={section.id} id={section.id} className="scroll-mt-4">
                   <h4 className="mb-4 text-lg font-semibold tracking-tight">{section.title}</h4>
                   <WikiSectionContent
                     html={section.html}
@@ -612,7 +751,8 @@ export default function WikiLookup() {
             })}
           </section>
 
-          <aside className="space-y-4">
+          <aside className="space-y-6 xl:sticky xl:top-2 xl:self-start xl:max-h-[calc(100vh-8rem)] xl:overflow-y-auto">
+            <WikiToc entries={tocEntries} contentRef={contentRef} />
             <section>
               <div className="text-[10px] uppercase tracking-[0.2em] text-text-secondary/45">
                 Snapshot

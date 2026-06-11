@@ -21,6 +21,7 @@
   --color-warning: #eab308;
   --color-danger: #ef4444;
   /* Type scale (v1.6). Apply via text-kicker … text-hero utilities. */
+  --text-2xs: 10px;
   --text-kicker: 11px;
   --text-label: 13px;
   --text-ui: 14px;

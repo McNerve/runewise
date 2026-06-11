@@ -176,7 +176,7 @@ function isExcludedVersion(version: string | null): boolean {
   return EXCLUDED_VERSIONS.some((v) => lower.includes(v));
 }
 
-function dedupeEquipment(items: WikiEquipment[]): WikiEquipment[] {
+export function dedupeEquipment(items: WikiEquipment[]): WikiEquipment[] {
   const bestByName = new Map<string, WikiEquipment>();
   for (const item of items) {
     if (isExcludedVersion(item.version)) continue;

@@ -7,7 +7,7 @@ import { getFeatureAccent } from "../../lib/featureAccent";
 import { useNavigation, type View } from "../../lib/NavigationContext";
 import WikiImage from "../../components/WikiImage";
 import ShellIcon from "../../components/ShellIcon";
-import { StatGrid, StatCard } from "../../components/primitives";
+import { Button, StatGrid, StatCard } from "../../components/primitives";
 import { useSettings } from "../../hooks/useSettings";
 import { loadRecentEntities } from "../../lib/recentEntities";
 import { formatGp } from "../../lib/format";
@@ -300,16 +300,15 @@ export default function Home({ hiscores }: HomeProps) {
                     All tools work without an RSN too — just start exploring.
                   </p>
                   <div className="flex gap-2 mt-3">
-                    <button
-                      type="button"
+                    <Button
+                      variant="primary"
                       onClick={() => {
                         const input = document.querySelector<HTMLInputElement>('.topbar-shell input[type="text"]');
                         if (input) { input.focus(); input.select(); }
                       }}
-                      className="rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-on-accent hover:bg-accent-hover transition-colors"
                     >
                       Set Your RSN
-                    </button>
+                    </Button>
                     <button
                       type="button"
                       onClick={(e) => {

@@ -5,8 +5,10 @@ import {
   type WikiEquipment,
   type EquipmentSlot,
 } from "../../lib/api/equipment";
+import { X } from "lucide-react";
 import { itemIcon } from "../../lib/sprites";
 import ItemTooltip from "../../components/ItemTooltip";
+import { knownWeaponSpeed } from "../../lib/data/weapon-speeds";
 
 interface Props {
   slot: EquipmentSlot | "2h";
@@ -64,9 +66,9 @@ export default function GearSelector({ slot, onSelect, onClose, combatStyle = "m
           <button
             onClick={onClose}
             aria-label="Close gear selector"
-            className="text-text-secondary hover:text-text-primary transition-colors text-lg leading-none"
+            className="rounded-md p-1 text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary"
           >
-            ×
+            <X className="h-4 w-4" />
           </button>
         </div>
 
@@ -133,7 +135,11 @@ export default function GearSelector({ slot, onSelect, onClose, combatStyle = "m
                       {item.rangedStrength !== 0 && `RStr ${item.rangedStrength > 0 ? "+" : ""}${item.rangedStrength} `}
                       {item.attackMagic !== 0 && `Mag ${item.attackMagic > 0 ? "+" : ""}${item.attackMagic} `}
                       {item.magicDamage !== 0 && `MDmg ${item.magicDamage > 0 ? "+" : ""}${item.magicDamage}% `}
-                      {item.prayerBonus !== 0 && `Pray ${item.prayerBonus > 0 ? "+" : ""}${item.prayerBonus}`}
+                      {item.prayerBonus !== 0 && `Pray ${item.prayerBonus > 0 ? "+" : ""}${item.prayerBonus} `}
+                      {(slot === "weapon" || slot === "2h") && (() => {
+                        const speed = item.attackSpeed || knownWeaponSpeed(item.name);
+                        return speed ? `Spd ${speed}t` : null;
+                      })()}
                     </div>
                   </div>
                 </button>

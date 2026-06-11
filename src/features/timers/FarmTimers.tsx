@@ -5,6 +5,7 @@ import { sendNotification } from "../../lib/notify";
 import { useSettings } from "../../hooks/useSettings";
 import { WIKI_IMG } from "../../lib/sprites";
 import EmptyState from "../../components/EmptyState";
+import { Button } from "../../components/primitives";
 
 // Categories where selecting a specific crop variety matters for timers
 const CONFIGURABLE_CATEGORIES = new Set(["Herbs", "Flowers", "Allotments", "Bushes", "Cactus", "Trees", "Fruit Trees", "Hardwood", "Special", "Birdhouse"]);
@@ -107,12 +108,9 @@ function FarmOverview({ timers, now, onGoToTimers }: { timers: Timer[]; now: num
           <p className="text-xs text-text-secondary/60 mb-4 max-w-sm mx-auto">
             Overview summarises every category you have growing &mdash; ready counts, next harvest, and idle patches. Start a timer to fill it in.
           </p>
-          <button
-            onClick={onGoToTimers}
-            className="home-tile px-3 py-1.5 text-xs font-medium bg-accent text-on-accent border border-accent rounded-lg"
-          >
+          <Button variant="primary" onClick={onGoToTimers} className="home-tile">
             Go to Timers
-          </button>
+          </Button>
         </div>
       ) : (
         <>
@@ -439,15 +437,16 @@ export default function FarmTimers() {
                   </div>
                 ))}
               </div>
-              <button
+              <Button
+                variant="primary"
                 onClick={() => {
                   addPreset(configuringPreset.slots.map((s) => s.selectedPatch));
                   setConfiguringPreset(null);
                 }}
-                className="w-full py-1.5 text-xs font-medium bg-accent text-on-accent rounded-lg hover:bg-accent-hover transition-colors"
+                className="w-full"
               >
                 Start {configuringPreset.slots.length} Timers
-              </button>
+              </Button>
             </div>
           )}
 
@@ -463,12 +462,9 @@ export default function FarmTimers() {
                 </option>
               ))}
             </select>
-            <button
-              onClick={() => addTimer(selectedPatch)}
-              className="px-4 py-2 text-sm font-medium bg-accent text-on-accent rounded-lg hover:bg-accent-hover transition-colors"
-            >
+            <Button variant="primary" size="md" onClick={() => addTimer(selectedPatch)}>
               Start Timer
-            </button>
+            </Button>
           </div>
 
           {readyCount > 0 && (

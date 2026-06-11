@@ -3,6 +3,8 @@ import { useDpsState } from "./hooks/useDpsState";
 import LoadoutManager from "./components/LoadoutManager";
 import StatsPanel from "./components/StatsPanel";
 import ResultsPanel from "./components/ResultsPanel";
+import UpgradeFinder from "./components/UpgradeFinder";
+import SetupTabs from "./components/SetupTabs";
 import { FilterPills } from "../../components/primitives";
 
 interface Props {
@@ -14,8 +16,9 @@ export default function DpsCalculator({ hiscores }: Props) {
 
   return (
     <div className="max-w-5xl">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
         <h2 className="text-h3 font-semibold">DPS Calculator</h2>
+        <SetupTabs state={state} />
         <FilterPills
           ariaLabel="Combat style"
           activeKey={state.combatStyle}
@@ -34,6 +37,7 @@ export default function DpsCalculator({ hiscores }: Props) {
         <div className="space-y-5">
           <LoadoutManager state={state} />
           <StatsPanel state={state} />
+          <UpgradeFinder state={state} />
         </div>
         {/* ====== END LEFT COLUMN ====== */}
 

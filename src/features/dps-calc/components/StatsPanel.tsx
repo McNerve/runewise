@@ -1,6 +1,7 @@
 import { type EquipmentSlot } from "../../../lib/api/equipment";
 import { type WikiEquipment } from "../../../lib/api/equipment";
 import { WIKI_IMG, itemIcon } from "../../../lib/sprites";
+import { Card } from "../../../components/primitives";
 import GearSelector from "../GearSelector";
 import ModifierToggles from "./ModifierToggles";
 import type { DpsState, EquippedGear } from "../hooks/useDpsState";
@@ -103,7 +104,7 @@ export default function StatsPanel({ state }: StatsPanelProps) {
   return (
     <div className="space-y-5">
       {/* Stats + Equipment side by side */}
-      <div className="rounded-xl border border-border/40 bg-bg-primary/20 p-4">
+      <Card>
         <div className="grid grid-cols-2 gap-5">
           <div>
             <div className="section-kicker mb-2">Player Stats</div>
@@ -236,6 +237,11 @@ export default function StatsPanel({ state }: StatsPanelProps) {
                     </>
                   )}
                   <div>Prayer: <span className="text-accent">+{gearBonuses.prayer}</span></div>
+                  <div title="Defence bonuses: stab / slash / crush / magic / ranged">
+                    Def: <span className="text-text-secondary tabular-nums">
+                      {gearBonuses.defenceStab}/{gearBonuses.defenceSlash}/{gearBonuses.defenceCrush}/{gearBonuses.defenceMagic}/{gearBonuses.defenceRanged}
+                    </span>
+                  </div>
                 </div>
                 {bonusMode === "equipment" && weaponSpeed > 0 ? (
                   <div className="flex justify-between text-xs text-text-secondary mt-2">
@@ -255,7 +261,7 @@ export default function StatsPanel({ state }: StatsPanelProps) {
             )}
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* Gear selector modal */}
       {openSlot !== null && (
@@ -279,7 +285,7 @@ export default function StatsPanel({ state }: StatsPanelProps) {
       )}
 
       {/* Prayer + Stance */}
-      <div className="rounded-xl border border-border/40 bg-bg-primary/20 p-4">
+      <Card>
         <div className="grid grid-cols-2 gap-5">
           <div>
             <div className="section-kicker mb-2">Prayer</div>
@@ -386,7 +392,7 @@ export default function StatsPanel({ state }: StatsPanelProps) {
             )}
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* Spell Selection (magic only) */}
       {combatStyle === "magic" && (
@@ -436,14 +442,13 @@ export default function StatsPanel({ state }: StatsPanelProps) {
       )}
 
       {/* Modifiers */}
-      <div>
-        <div className="section-kicker mb-2">Modifiers</div>
+      <Card kicker="Modifiers">
         <ModifierToggles
           activeIds={activeModifiers}
           onToggle={toggleModifier}
           combatStyle={combatStyle}
         />
-      </div>
+      </Card>
     </div>
   );
 }

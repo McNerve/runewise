@@ -23,11 +23,12 @@ export interface TocEntry {
 }
 
 export function extractTocEntries(sections: WikiLookupDocument["sections"]): TocEntry[] {
-  return sections.map((s) => ({
-    id: s.id,
-    text: s.title,
-    level: 2 as const,
-  }));
+  return sections.flatMap((s): TocEntry[] => [
+    { id: s.id, text: s.title, level: 2 },
+    ...(s.subsections ?? []).map(
+      (sub): TocEntry => ({ id: sub.id, text: sub.title, level: 3 })
+    ),
+  ]);
 }
 
 // Task 6: Upgrade snapshot image URL

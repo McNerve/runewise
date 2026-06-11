@@ -79,6 +79,26 @@ describe("extractTocEntries", () => {
     const ids = extractTocEntries(sections).map((e) => e.id);
     expect(ids).toEqual(["a", "b", "c"]);
   });
+
+  it("nests subsections as level-3 entries after their parent", () => {
+    const sections = [
+      {
+        ...makeSection("strategy", "Strategy"),
+        subsections: [
+          { id: "strategy-melee", title: "Melee" },
+          { id: "strategy-ranged", title: "Ranged" },
+        ],
+      },
+      makeSection("drops", "Drops"),
+    ];
+    const entries = extractTocEntries(sections);
+    expect(entries).toEqual([
+      { id: "strategy", text: "Strategy", level: 2 },
+      { id: "strategy-melee", text: "Melee", level: 3 },
+      { id: "strategy-ranged", text: "Ranged", level: 3 },
+      { id: "drops", text: "Drops", level: 2 },
+    ]);
+  });
 });
 
 describe("upgradeImageUrl", () => {
