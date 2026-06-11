@@ -30,6 +30,7 @@ export default function UpgradeFinder({ state }: UpgradeFinderProps) {
   const [enabled, setEnabled] = useState(false);
   const [equipment, setEquipment] = useState<WikiEquipment[] | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const [showAllSlots, setShowAllSlots] = useState(false);
   const [sortMode, setSortMode] = useState<UpgradeSort>("dps");
   const { mapping, prices, fetchIfNeeded } = useGEData();
@@ -39,8 +40,10 @@ export default function UpgradeFinder({ state }: UpgradeFinderProps) {
     void fetchIfNeeded();
     if (equipment) return;
     setLoading(true);
+    setLoadError(false);
     fetchAllEquipment()
       .then(setEquipment)
+      .catch(() => setLoadError(true))
       .finally(() => setLoading(false));
   };
 
@@ -118,6 +121,16 @@ export default function UpgradeFinder({ state }: UpgradeFinderProps) {
             className="shrink-0 px-3 py-1.5 text-xs font-medium bg-accent text-on-accent rounded-lg hover:bg-accent-hover transition-colors"
           >
             Find upgrades
+          </button>
+        </div>
+      ) : loadError ? (
+        <div className="mt-3 flex items-center justify-between gap-3 text-xs text-text-secondary">
+          <span>Couldn&apos;t load the equipment catalog. Check your connection.</span>
+          <button
+            onClick={enable}
+            className="shrink-0 px-2.5 py-1 text-[10px] bg-bg-tertiary border border-border rounded-lg hover:bg-bg-secondary transition-colors"
+          >
+            Retry
           </button>
         </div>
       ) : loading || !slotResults ? (

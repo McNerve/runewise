@@ -49,7 +49,7 @@ export default memo(function DpsBreakdown({
         <StatCard label="Max Hit" value={maxHit} />
         <StatCard label="Accuracy" value={`${accPct}%`} accent={accColor} />
         <StatCard label="DPS" value={dps.toFixed(2)} accent="text-accent" />
-        <StatCard label="Time to Kill" value={formatTtk(ttk)} />
+        <StatCard label="Kill Time" value={formatTtk(ttk)} title="Expected time to kill" />
       </StatGrid>
 
       {/* Accuracy bar */}

@@ -201,7 +201,7 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
       </div>
 
       {/* Spec Weapon */}
-      <div>
+      <div className="rounded-xl border border-border/40 bg-bg-primary/20 p-4">
         <div className="section-kicker mb-2">Special Attack</div>
         <select
           value={selectedSpec?.id ?? ""}
