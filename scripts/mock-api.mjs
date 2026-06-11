@@ -111,9 +111,22 @@ ${PARA("Kill the zombified spawn before it reaches you or take 60+ damage.")}
 <tr><td><a href="/w/Vorkath%27s_head">Vorkath's head</a></td><td>1</td><td>1/50</td><td>N/A</td></tr></table>
 </div>`;
 
+const TORVA_BODY = `
+<div class="mw-parser-output">
+<table class="infobox infobox-item">
+<caption>Torva platebody</caption>
+${infoboxRow("Released", "26 January 2022 (Update)")}
+${infoboxRow("Members", "Yes")}
+${infoboxRow("Equipable", "Yes")}
+${infoboxRow("Strength bonus", "+6")}
+</table>
+${PARA('The <b>Torva platebody</b> is an ancient warrior’s chestplate obtained from <a href="/w/Nex">Nex</a>, requiring 80 Defence to equip. It is the best-in-slot strength-boosting body.')}
+</div>`;
+
 const PAGES = {
   "demonic quill": { title: "Demonic quill", html: DEMONIC_QUILL },
   "abyssal whip": { title: "Abyssal whip", html: ABYSSAL_WHIP },
+  "torva platebody": { title: "Torva platebody", html: TORVA_BODY },
   vorkath: { title: "Vorkath", html: VORKATH },
 };
 
@@ -200,6 +213,11 @@ http
       });
     }
 
+    // Ironman-variant lookups must miss or the app flags the player ironman.
+    if (p.startsWith("/api/hiscores-")) {
+      res.writeHead(404, { "Content-Type": "application/json" });
+      return res.end("{}");
+    }
     if (p.startsWith("/api/hiscores")) return json(res, hiscores);
 
     if (p.startsWith("/api/wiki-content")) {
