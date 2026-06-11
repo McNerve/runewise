@@ -5,8 +5,10 @@ import {
   fetchWikiLookupDocument,
   resolveWikiPageFromHref,
   searchWikiPages,
+  searchWikiPagesRich,
   type WikiEntityKind,
   type WikiLookupDocument,
+  type WikiSearchResult,
 } from "../../lib/wiki/lookup";
 import SourceAttribution from "../../components/SourceAttribution";
 import { Skeleton } from "../../components/Skeleton";
@@ -91,7 +93,7 @@ export default function WikiLookup() {
   const { params, navigate } = useNavigation();
   const [query, setQuery] = useState(params.query ?? "");
   const debouncedQuery = useDebounce(query, 180);
-  const [results, setResults] = useState<string[]>([]);
+  const [results, setResults] = useState<WikiSearchResult[]>([]);
   const [resultsQuery, setResultsQuery] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [selectedPage, setSelectedPage] = useState(params.page ?? "");
@@ -224,7 +226,7 @@ export default function WikiLookup() {
     if (debouncedQuery.trim().length < 2) return;
 
     let cancelled = false;
-    searchWikiPages(debouncedQuery)
+    searchWikiPagesRich(debouncedQuery)
       .then((pages) => {
         if (!cancelled) {
           setResults(pages);
@@ -367,9 +369,9 @@ export default function WikiLookup() {
     if (!trimmed) return null;
 
     const exactVisibleMatch = visibleResults.find(
-      (page) => page.toLowerCase() === trimmed.toLowerCase()
+      (page) => page.title.toLowerCase() === trimmed.toLowerCase()
     );
-    if (exactVisibleMatch) return exactVisibleMatch;
+    if (exactVisibleMatch) return exactVisibleMatch.title;
 
     if (document?.title && document.title.toLowerCase() === trimmed.toLowerCase()) {
       return document.title;
@@ -475,18 +477,25 @@ export default function WikiLookup() {
                 ) : visibleResults.length > 0 ? (
                   visibleResults.map((page) => (
                     <button
-                      key={page}
+                      key={page.title}
                       type="button"
-                      onClick={() => openPage(page)}
-                      className={`flex w-full items-center justify-between px-4 py-3 text-left text-sm transition ${
-                        selectedPage === page
+                      onClick={() => openPage(page.title)}
+                      className={`flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-sm transition ${
+                        selectedPage === page.title
                           ? "bg-accent/10 text-text-primary"
                           : "text-text-secondary hover:bg-bg-tertiary/80 hover:text-text-primary"
                       }`}
                     >
-                      <span className="truncate">{page}</span>
-                      {selectedPage === page ? (
-                        <span className="text-[10px] uppercase tracking-[0.18em] text-accent">
+                      <span className="min-w-0">
+                        <span className="block truncate">{page.title}</span>
+                        {page.snippet ? (
+                          <span className="mt-0.5 block truncate text-xs text-text-secondary/55">
+                            {page.snippet}
+                          </span>
+                        ) : null}
+                      </span>
+                      {selectedPage === page.title ? (
+                        <span className="shrink-0 text-[10px] uppercase tracking-[0.18em] text-accent">
                           Open
                         </span>
                       ) : null}

@@ -261,6 +261,55 @@ export function parseSections(rawHtml: string): WikiLookupSection[] {
   return sections.slice(0, MAX_SECTIONS);
 }
 
+export interface WikiSearchResult {
+  title: string;
+  snippet: string | null;
+}
+
+// MediaWiki search snippets arrive as HTML with <span class="searchmatch">
+// highlights; reduce them to plain text for safe rendering.
+function snippetToText(html: string): string {
+  const text = new DOMParser().parseFromString(html, "text/html").body.textContent ?? "";
+  return text.replace(/\s+/g, " ").trim();
+}
+
+/**
+ * Title + snippet search via list=search. Falls back to plain opensearch
+ * titles if the response shape ever surprises us — search must never break.
+ */
+export async function searchWikiPagesRich(query: string): Promise<WikiSearchResult[]> {
+  if (query.trim().length < 2) return [];
+  try {
+    return await fetchJson<WikiSearchResult[]>({
+      url: `${WIKI_API}?action=query&list=search&srsearch=${encodeURIComponent(query)}&srlimit=10&format=json`,
+      cacheKey: `wiki-lookup-rich-search:${query.toLowerCase()}`,
+      ttlMs: LOOKUP_TTL,
+      transform: (json) => {
+        const search = (json as { query?: { search?: unknown } })?.query?.search;
+        if (!Array.isArray(search)) throw new Error("Unexpected wiki search response");
+        return search
+          .filter(
+            (entry): entry is { title: string; snippet?: unknown } =>
+              typeof entry === "object" &&
+              entry !== null &&
+              typeof (entry as { title?: unknown }).title === "string"
+          )
+          .filter((entry) => !entry.title.includes("/") && !entry.title.startsWith("File:"))
+          .map((entry) => ({
+            title: entry.title,
+            snippet:
+              typeof entry.snippet === "string" && entry.snippet.trim()
+                ? snippetToText(entry.snippet)
+                : null,
+          }));
+      },
+    });
+  } catch {
+    const titles = await searchWikiPages(query);
+    return titles.map((title) => ({ title, snippet: null }));
+  }
+}
+
 export async function searchWikiPages(query: string): Promise<string[]> {
   if (query.trim().length < 2) return [];
 
