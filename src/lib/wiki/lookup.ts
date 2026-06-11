@@ -117,8 +117,13 @@ function parseLead(rawHtml: string, title: string) {
       null;
 
     infobox.querySelectorAll("tr").forEach((row) => {
+      // Wiki-internal rows (item IDs etc.) are hidden on the wiki; skip them.
+      if (row.classList.contains("advanced-data")) return;
       const header = row.querySelector("th");
       const value = row.querySelector("td");
+      // <br>-separated values ("Kourend<br>Tirannwn") need a separator or
+      // textContent fuses them into one word.
+      value?.querySelectorAll("br").forEach((br) => br.replaceWith(", "));
       const label = cleanValue(header?.textContent ?? "");
       const text = cleanValue(value?.textContent ?? "");
       if (label && text && text !== label) {
@@ -342,6 +347,50 @@ export async function searchWikiPagesRich(query: string): Promise<WikiSearchResu
   }
 }
 
+export interface WikiPageSummary {
+  title: string;
+  summary: string | null;
+  image: string | null;
+  fields: Array<{ label: string; value: string }>;
+}
+
+/**
+ * Lightweight page preview (lead section only) for wiki-style hover popups:
+ * thumbnail, first paragraph, and the top infobox facts.
+ */
+export async function fetchWikiSummary(page: string): Promise<WikiPageSummary | null> {
+  const cacheKey = `wiki-summary:v1:${page.toLowerCase()}`;
+  const cached = getCached<WikiPageSummary>(cacheKey, 24 * 60 * 60 * 1000);
+  if (cached) return cached;
+
+  try {
+    const result = await fetchJson<{ html: string; title: string }>({
+      url: `${WIKI_API}?action=parse&page=${encodeURIComponent(page)}&prop=text&section=0&${WIKI_PARSE_FLAGS}`,
+      dedupeKey: `wiki-summary:${page}`,
+      transform: (json) => {
+        const parsed = json as WikiTextResponse & { parse?: { title?: string } };
+        return {
+          html: (parsed.parse?.text?.["*"] ?? "").trim(),
+          title: parsed.parse?.title ?? page,
+        };
+      },
+    });
+    if (!result.html) return null;
+
+    const lead = parseLead(result.html, result.title);
+    const summary: WikiPageSummary = {
+      title: result.title,
+      summary: lead.summary,
+      image: lead.infoboxImage,
+      fields: lead.infoboxFields.slice(0, 4),
+    };
+    setCache(cacheKey, summary);
+    return summary;
+  } catch {
+    return null;
+  }
+}
+
 export async function searchWikiPages(query: string): Promise<string[]> {
   if (query.trim().length < 2) return [];
 
@@ -382,7 +431,7 @@ async function fetchWikiHtmlFull(page: string): Promise<WikiFullParseResult> {
 export async function fetchWikiLookupDocument(
   page: string
 ): Promise<WikiLookupDocument> {
-  const cacheKey = `wiki-lookup:v6:${page}`;
+  const cacheKey = `wiki-lookup:v7:${page}`;
   const cached = getCached<WikiLookupDocument>(cacheKey, LOOKUP_TTL);
   if (cached) return cached;
 

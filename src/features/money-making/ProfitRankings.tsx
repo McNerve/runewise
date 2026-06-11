@@ -119,7 +119,8 @@ export default function ProfitRankings() {
       <h2 className="text-2xl font-semibold tracking-tight mb-1">Profit Rankings</h2>
       <p className="text-xs text-text-secondary/60 mb-5">
         All GP-earning activities ranked by hourly profit. Boss loot uses live
-        GE prices.
+        GE prices with the kill-rate assumption shown per row — figures are
+        long-run expected values at efficient rates, not guarantees.
       </p>
 
       {!pricesLoaded && (
