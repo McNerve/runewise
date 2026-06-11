@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { findUpgrades } from "./upgradeFinder";
-import type { DpsInput } from "../../lib/formulas/dps";
+import { calculateDps, DPS_MODIFIERS, type DpsInput } from "../../lib/formulas/dps";
 import type { WikiEquipment, EquipmentSlot } from "../../lib/api/equipment";
 import type { EquippedGear } from "./hooks/useDpsState";
 
@@ -104,16 +104,110 @@ describe("findUpgrades", () => {
     expect(results.find((r) => r.slot === "shield")).toBeUndefined();
   });
 
-  it("never scans the weapon slots", () => {
-    const weapon = item("Abyssal whip", "weapon", { attackSlash: 82, strengthBonus: 82 });
-    const results = findUpgrades({
-      baseInput,
-      gear: {},
-      equipment: [weapon],
-      combatStyle: "melee",
-      meleeAttackType: "slash",
+  describe("weapon scan", () => {
+    it("only ranks weapons with verified speeds", () => {
+      const whip = item("Abyssal whip", "weapon", { attackSlash: 82, strengthBonus: 82 });
+      const mystery = item("Mystery blade", "weapon", { attackSlash: 999, strengthBonus: 999 });
+      const results = findUpgrades({
+        baseInput,
+        gear: {},
+        equipment: [whip, mystery],
+        combatStyle: "melee",
+        meleeAttackType: "slash",
+      });
+      const weapon = results.find((r) => r.slot === "weapon");
+      expect(weapon!.upgrades.map((u) => u.item.name)).toEqual(["Abyssal whip"]);
     });
-    expect(results.some((r) => r.slot === "weapon" || r.slot === "2h")).toBe(false);
+
+    it("uses the candidate's verified speed plus the stance speed modifier", () => {
+      const blowpipe = item("Toxic blowpipe", "weapon", { attackRanged: 30, rangedStrength: 20 });
+      const rangedInput = { ...baseInput, combatStyle: "ranged" as const, attackBonus: 0, strengthBonus: 0 };
+      const results = findUpgrades({
+        baseInput: rangedInput,
+        gear: {},
+        equipment: [blowpipe],
+        combatStyle: "ranged",
+        meleeAttackType: "slash",
+        stanceSpeedMod: -1, // rapid
+      });
+      const upgrade = results.find((r) => r.slot === "weapon")!.upgrades[0];
+      // Blowpipe is 3t, rapid makes it 2t.
+      const expected = calculateDps({
+        ...rangedInput,
+        attackBonus: 30,
+        strengthBonus: 20,
+        attackSpeed: 2,
+      }).dps;
+      expect(upgrade.dps).toBeCloseTo(expected, 10);
+    });
+
+    it("charges a 2h candidate for the lost shield bonuses", () => {
+      const sword = item("Rune scimitar", "weapon", { attackSlash: 45, strengthBonus: 44 });
+      const defender = item("Dragon defender", "shield", { attackSlash: 25, strengthBonus: 6 });
+      const gs = item("Bandos godsword", "2h", { attackSlash: 132, strengthBonus: 132 });
+      // baseInput bonuses represent sword + defender.
+      const input = { ...baseInput, attackBonus: 70, strengthBonus: 50, attackSpeed: 4 };
+      const results = findUpgrades({
+        baseInput: input,
+        gear: { weapon: sword, shield: defender },
+        equipment: [sword, defender, gs],
+        combatStyle: "melee",
+        meleeAttackType: "slash",
+      });
+      const upgrade = results
+        .find((r) => r.slot === "weapon")!
+        .upgrades.find((u) => u.item.name === "Bandos godsword");
+      const expected = calculateDps({
+        ...input,
+        attackBonus: 70 + 132 - 45 - 25,
+        strengthBonus: 50 + 132 - 44 - 6,
+        attackSpeed: 6, // godsword family speed
+      }).dps;
+      expect(upgrade).toBeDefined();
+      expect(upgrade!.dps).toBeCloseTo(expected, 10);
+    });
+
+    it("strips weapon-bound modifiers from other candidates but keeps them on their weapon", () => {
+      const tbow = item("Twisted bow", "2h", { attackRanged: 70, rangedStrength: 20 });
+      const msb = item("Magic shortbow", "2h", { attackRanged: 69, rangedStrength: 0 });
+      const rangedInput: DpsInput = {
+        ...baseInput,
+        combatStyle: "ranged",
+        attackBonus: 0,
+        strengthBonus: 0,
+        targetMagicLevel: 250,
+        modifiers: [DPS_MODIFIERS.twisted_bow],
+      };
+      const results = findUpgrades({
+        baseInput: rangedInput,
+        gear: {},
+        equipment: [tbow, msb],
+        combatStyle: "ranged",
+        meleeAttackType: "slash",
+        // Allow negative gains so the stripped (weaker) candidate stays visible.
+        minGain: -Infinity,
+      });
+      const upgrades = results.find((r) => r.slot === "weapon")!.upgrades;
+      const tbowUp = upgrades.find((u) => u.item.name === "Twisted bow")!;
+      const msbUp = upgrades.find((u) => u.item.name === "Magic shortbow")!;
+
+      const tbowExpected = calculateDps({
+        ...rangedInput,
+        attackBonus: 70,
+        strengthBonus: 20,
+        attackSpeed: 5,
+        modifiers: [DPS_MODIFIERS.twisted_bow],
+      }).dps;
+      const msbExpected = calculateDps({
+        ...rangedInput,
+        attackBonus: 69,
+        strengthBonus: 0,
+        attackSpeed: 4,
+        modifiers: [],
+      }).dps;
+      expect(tbowUp.dps).toBeCloseTo(tbowExpected, 10);
+      expect(msbUp.dps).toBeCloseTo(msbExpected, 10);
+    });
   });
 
   it("uses ranged bonuses for the ranged style", () => {

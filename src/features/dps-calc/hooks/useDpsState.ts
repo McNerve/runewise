@@ -23,6 +23,7 @@ import { type WikiEquipment, type EquipmentSlot } from "../../../lib/api/equipme
 import { loadJSON, saveJSON } from "../../../lib/localStorage";
 import { useNavigation } from "../../../lib/NavigationContext";
 import { getWeaponType, type WeaponStance } from "../../../lib/data/weapon-stances";
+import { knownWeaponSpeed } from "../../../lib/data/weapon-speeds";
 import { GEAR_PRESETS, type GearPreset } from "../../../lib/data/gear-presets";
 import { getPhaseBoss, type BossPhase } from "../../../lib/data/boss-phases";
 import { getSpecWeaponsForStyle, type SpecWeapon } from "../../../lib/data/spec-weapons";
@@ -341,8 +342,11 @@ export function useDpsState({ hiscores }: Props) {
     ? (combatStyle === "ranged" ? gearBonuses.rangedStrength : combatStyle === "magic" ? gearBonuses.magicDamage : gearBonuses.strengthBonus)
     : strengthBonus;
 
-  // Weapon attack speed
-  const weaponSpeed = weaponItem?.attackSpeed ?? 0;
+  // Weapon attack speed: the bucket field when present (currently always 0),
+  // else the curated verified-speed table, else 0 → manual speed input.
+  const weaponSpeed = weaponItem
+    ? weaponItem.attackSpeed || knownWeaponSpeed(weaponItem.name) || 0
+    : 0;
   const effectiveAttackSpeed = bonusMode === "equipment" && weaponSpeed > 0
     ? weaponSpeed + (stance.speedMod ?? 0)
     : attackSpeed;

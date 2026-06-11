@@ -12,6 +12,7 @@ interface UpgradeFinderProps {
 }
 
 const SLOT_LABELS: Record<string, string> = {
+  weapon: "Weapon",
   head: "Head",
   cape: "Cape",
   neck: "Neck",
@@ -61,8 +62,9 @@ export default function UpgradeFinder({ state }: UpgradeFinderProps) {
       equipment,
       combatStyle,
       meleeAttackType: stance.attackType,
+      stanceSpeedMod: stance.speedMod,
     });
-  }, [enabled, equipment, dpsInput, equippedGear, combatStyle, stance.attackType]);
+  }, [enabled, equipment, dpsInput, equippedGear, combatStyle, stance.attackType, stance.speedMod]);
 
   if (bonusMode !== "equipment") return null;
 
@@ -151,7 +153,23 @@ export default function UpgradeFinder({ state }: UpgradeFinderProps) {
                       </span>
                       <button
                         onClick={() =>
-                          setEquippedGear((prev: EquippedGear) => ({ ...prev, [slot]: item }))
+                          setEquippedGear((prev: EquippedGear) => {
+                            const next = { ...prev };
+                            if (slot === "weapon") {
+                              // Weapon candidates may be 1h or 2h; a 2h evicts the shield.
+                              delete next.weapon;
+                              delete next["2h"];
+                              if (item.slot === "2h") {
+                                delete next.shield;
+                                next["2h"] = item;
+                              } else {
+                                next.weapon = item;
+                              }
+                            } else {
+                              next[slot] = item;
+                            }
+                            return next;
+                          })
                         }
                         className="shrink-0 text-[10px] px-2 py-0.5 bg-accent/10 text-accent rounded hover:bg-accent/20 transition-colors"
                       >
@@ -182,8 +200,10 @@ export default function UpgradeFinder({ state }: UpgradeFinderProps) {
           )}
 
           <p className="text-[10px] text-text-secondary/40">
-            Ranked against the current target with your stance, prayer, and modifiers held fixed.
-            Weapons are excluded — attack speeds differ between weapons.
+            Ranked against the current target with your stance and prayer held fixed. Only
+            weapons with verified attack speeds are ranked; weapon-bound passives (Twisted bow,
+            dragonbane, …) follow the candidate, not your toggles. A 2h candidate gives up your
+            shield; a 1h replacing a 2h is ranked without one.
           </p>
         </div>
       )}
