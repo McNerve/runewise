@@ -105,6 +105,12 @@ function parseLead(rawHtml: string, title: string) {
   const infoboxFields: Array<{ label: string; value: string }> = [];
 
   if (infobox) {
+    // Switch infoboxes carry every version's value with inactive ones hidden
+    // via inline display:none — drop them before extracting fields, or
+    // values concatenate ("725725725").
+    infobox
+      .querySelectorAll('[style*="display:none"], [style*="display: none"]')
+      .forEach((el) => el.remove());
     normalizeImages(infobox);
 
     const heading =
@@ -134,8 +140,13 @@ function parseLead(rawHtml: string, title: string) {
     infobox.remove();
   }
 
+  // Remove float/infobox furniture from the lead — but keep content tables.
+  // Quest pages put their entire requirements table (.questdetails) in the
+  // lead; deleting every <table> threw that content away.
   content
-    .querySelectorAll("table, .thumb, .infobox-buttons, .hatnote, .infobox-switch-resources, .navigation-not-searchable")
+    .querySelectorAll(
+      "table.infobox:not(.infobox-bonuses), table[style*='float'], .thumb, .infobox-buttons, .hatnote, .infobox-switch-resources, .navigation-not-searchable, .infobox-bonuses-image"
+    )
     .forEach((element) => element.remove());
 
   // Truncate at first section heading — only keep lead content
@@ -171,6 +182,7 @@ function parseLead(rawHtml: string, title: string) {
   });
 
   const relatedPages = collectRelatedPages(content, title).slice(0, 12);
+  transformTabbers(content, doc);
   stripUnsafeNodes(content);
 
   return {
@@ -182,6 +194,34 @@ function parseLead(rawHtml: string, title: string) {
     totalInfoboxFields: infoboxFields.length,
     relatedPages,
   };
+}
+
+// Wiki tabbers depend on the wiki's JS to switch panels. Convert them to
+// native <details>/<summary> at parse time — interactive without any script,
+// and immune to React re-renders (the previous runtime DOM patching raced
+// rendering and tab content could vanish entirely).
+function transformTabbers(root: Element, doc: Document): void {
+  root.querySelectorAll(".tabber").forEach((tabber) => {
+    const tabs = Array.from(tabber.querySelectorAll(":scope > .tabbertab"));
+    if (tabs.length === 0) {
+      tabber.remove();
+      return;
+    }
+    const replacement = doc.createElement("div");
+    replacement.className = "wiki-tabs";
+    tabs.forEach((tab, i) => {
+      const details = doc.createElement("details");
+      details.className = "wiki-tab";
+      if (i === 0) details.setAttribute("open", "");
+      const summary = doc.createElement("summary");
+      summary.textContent =
+        tab.getAttribute("data-title") || tab.getAttribute("title") || `Option ${i + 1}`;
+      details.appendChild(summary);
+      while (tab.firstChild) details.appendChild(tab.firstChild);
+      replacement.appendChild(details);
+    });
+    tabber.replaceWith(replacement);
+  });
 }
 
 // Subsection headings (h3) are demoted to h4 — the only heading tag the
@@ -245,6 +285,7 @@ export function parseSections(rawHtml: string): WikiLookupSection[] {
     const container = doc.createElement("div");
     nodes.forEach((node) => container.appendChild(node));
     const subsections = demoteSubheadings(container, id, doc);
+    transformTabbers(container, doc);
     stripUnsafeNodes(container);
 
     const html = sanitizeHtml(container);
@@ -431,7 +472,7 @@ async function fetchWikiHtmlFull(page: string): Promise<WikiFullParseResult> {
 export async function fetchWikiLookupDocument(
   page: string
 ): Promise<WikiLookupDocument> {
-  const cacheKey = `wiki-lookup:v7:${page}`;
+  const cacheKey = `wiki-lookup:v8:${page}`;
   const cached = getCached<WikiLookupDocument>(cacheKey, LOOKUP_TTL);
   if (cached) return cached;
 

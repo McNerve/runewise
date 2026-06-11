@@ -249,14 +249,86 @@ body {
   margin-bottom: 0.9rem;
 }
 
+/* Tailwind preflight zeroes list styles — restore real bullets/numbering so
+   quest walkthroughs and requirement trees read as lists. */
 .article-content ul,
 .article-content ol {
   padding-left: 1.5rem;
   margin-bottom: 0.75rem;
 }
 
+.article-content ul {
+  list-style-type: disc;
+}
+
+.article-content ol {
+  list-style-type: decimal;
+}
+
+.article-content ul ul,
+.article-content ol ul {
+  list-style-type: circle;
+  margin-bottom: 0;
+}
+
+.article-content ol ol {
+  list-style-type: lower-alpha;
+  margin-bottom: 0;
+}
+
 .article-content li {
   margin-bottom: 0.25rem;
+}
+
+/* Subsection headings (h3 demoted to h4 by the parser) need real presence —
+   they were rendering at body-text size. */
+.article-content h4 {
+  color: var(--color-text-primary);
+  font-size: 15px;
+  font-weight: 600;
+  margin-top: 1.1rem;
+  margin-bottom: 0.4rem;
+  letter-spacing: -0.01em;
+}
+
+/* Tabbers converted to native details panels at parse time. */
+.article-content .wiki-tabs {
+  margin-bottom: 0.9rem;
+  border: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.article-content .wiki-tab > summary {
+  cursor: pointer;
+  padding: 0.5rem 0.85rem;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  background: color-mix(in srgb, var(--color-bg-secondary) 35%, transparent);
+  transition: color 0.15s;
+}
+
+.article-content .wiki-tab > summary:hover {
+  color: var(--color-text-primary);
+}
+
+.article-content .wiki-tab[open] > summary {
+  color: var(--color-accent);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent);
+}
+
+.article-content .wiki-tab + .wiki-tab {
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent);
+}
+
+.article-content .wiki-tab > :not(summary) {
+  margin-left: 0.85rem;
+  margin-right: 0.85rem;
+}
+
+.article-content .wiki-tab > p:first-of-type {
+  margin-top: 0.6rem;
 }
 
 .article-content {
@@ -1551,4 +1623,25 @@ input[type="range"]::-moz-range-thumb {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Wiki drop-table rarity tints (lighttable rows carry table-bg-* classes). */
+.article-content tr.table-bg-green td {
+  background: color-mix(in srgb, var(--color-success) 9%, transparent);
+}
+
+.article-content tr.table-bg-yellow td {
+  background: color-mix(in srgb, var(--color-warning) 9%, transparent);
+}
+
+.article-content tr.table-bg-orange td {
+  background: color-mix(in srgb, #f97316 10%, transparent);
+}
+
+.article-content tr.table-bg-red td {
+  background: color-mix(in srgb, var(--color-danger) 10%, transparent);
+}
+
+.article-content tr.table-bg-blue td {
+  background: color-mix(in srgb, var(--color-info) 9%, transparent);
 }

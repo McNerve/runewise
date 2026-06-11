@@ -46,6 +46,7 @@ const SANITIZE_TAGS = [
 
 const SANITIZE_ATTRS = [
   "id",
+  "open",
   "src",
   "alt",
   "loading",
@@ -213,6 +214,14 @@ export function normalizeGalleries(root: Element): void {
 
 export function stripUnsafeNodes(root: Element): void {
   root.querySelectorAll(UNSAFE_SELECTORS).forEach((el) => el.remove());
+
+  // The wiki hides inactive switch-infobox variants and similar alternates
+  // with inline display:none, relying on its JS to reveal one. Our sanitizer
+  // strips style attributes, so without this removal every hidden variant
+  // renders stacked ("725725725" combat levels, duplicated images).
+  root
+    .querySelectorAll('[style*="display:none"], [style*="display: none"]')
+    .forEach((el) => el.remove());
 
   root.querySelectorAll("*").forEach((el) => {
     for (const attr of [...el.attributes]) {
