@@ -77,3 +77,34 @@ describe("parseSections", () => {
     expect(parseSections(html)[0].title).toBe("Strategy");
   });
 });
+
+describe("hidden-variant and tabber handling", () => {
+  it("drops display:none switch variants from section content", () => {
+    const html = page(`
+      <div class="mw-heading2"><h2>Forms</h2></div>
+      <p>The serpentine form attacks with <span>ranged</span><span style="display:none">magic</span><span style="display: none">melee</span> and this padding makes it long enough.</p>
+    `);
+    const [section] = parseSections(html);
+    expect(section.html).toContain("ranged");
+    expect(section.html).not.toContain("magic");
+    expect(section.html).not.toContain("melee");
+  });
+
+  it("converts tabbers into open/closed details panels", () => {
+    const html = page(`
+      <div class="mw-heading2"><h2>Strategy</h2></div>
+      <div class="tabber">
+        <div class="tabbertab" title="Melee"><p>Use a hasta with full obsidian armour for the bonus.</p></div>
+        <div class="tabbertab" title="Ranged"><p>The blowpipe with dragon darts is the best choice here.</p></div>
+      </div>
+    `);
+    const [section] = parseSections(html);
+    expect(section.html).toContain("<details");
+    expect(section.html).toContain("<summary>Melee</summary>");
+    expect(section.html).toContain("<summary>Ranged</summary>");
+    expect(section.html).toContain("blowpipe");
+    expect(section.html).not.toContain("tabbertab");
+    // Only the first panel starts open.
+    expect(section.html.match(/<details[^>]*open/g)).toHaveLength(1);
+  });
+});

@@ -5,6 +5,7 @@
  * Test player: Raxor.
  */
 import http from "node:http";
+import { QA_PAGES } from "./mock-wiki-pages.mjs";
 
 const PORT = 5198;
 
@@ -128,6 +129,7 @@ const PAGES = {
   "abyssal whip": { title: "Abyssal whip", html: ABYSSAL_WHIP },
   "torva platebody": { title: "Torva platebody", html: TORVA_BODY },
   vorkath: { title: "Vorkath", html: VORKATH },
+  ...QA_PAGES,
 };
 
 // ---------- Bucket data (equipment + monsters) ----------
@@ -250,7 +252,26 @@ http
         const page = (url.searchParams.get("page") ?? "").replace(/_/g, " ").toLowerCase();
         const hit = PAGES[page];
         if (!hit) return json(res, { error: { info: "missing page" } });
-        if (url.searchParams.get("prop") === "sections") return json(res, { parse: { sections: [] } });
+        const marks = [...hit.html.matchAll(/<div class="mw-heading([23])"><h[23]>(.*?)<\/h[23]>/g)]
+          .map((m, i) => ({ number: String(i + 1), line: m[2], level: m[1], index: m.index }));
+        if (url.searchParams.get("prop") === "sections") {
+          return json(res, { parse: { sections: marks.map(({ number, line, level }) => ({ number, line, level })) } });
+        }
+        const sectionParam = url.searchParams.get("section");
+        if (sectionParam !== null) {
+          const n = Number(sectionParam);
+          let slice;
+          if (n === 0) {
+            slice = marks.length ? hit.html.slice(0, marks[0].index) : hit.html;
+          } else {
+            const cur = marks[n - 1];
+            if (!cur) return json(res, { parse: { title: hit.title, text: { "*": "" } } });
+            const next = marks.slice(n).find((m) => m.level <= cur.level);
+            slice = hit.html.slice(cur.index, next ? next.index : undefined);
+          }
+          if (!slice.includes("mw-parser-output")) slice = `<div class="mw-parser-output">${slice}</div>`;
+          return json(res, { parse: { title: hit.title, text: { "*": slice } } });
+        }
         return json(res, { parse: { title: hit.title, text: { "*": hit.html } } });
       }
       return json(res, {});
