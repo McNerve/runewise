@@ -559,6 +559,15 @@ export default function CollectionLog({ rsn }: Props) {
         Live collection log synced from TempleOSRS. Click any item to look it up on the wiki.
       </p>
 
+      {!rsn && (
+        <div className="py-16 text-center space-y-2">
+          <p className="text-sm font-medium text-text-primary">Set your RSN to load your collection log</p>
+          <p className="text-xs text-text-secondary">
+            Enter your RuneScape name in the bar above — your log syncs from TempleOSRS, no login needed.
+          </p>
+        </div>
+      )}
+
       {templeLoading && (
         <div className="mb-4 space-y-2">
           <div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4" />
