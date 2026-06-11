@@ -17,7 +17,7 @@ export const TOA_ROOMS: RaidRoom[] = [
 // is that chance × weight/24.
 export const TOA_UNIQUES: RaidUnique[] = [
   { name: "Osmumten's fang", pointsRequired: "Invocation-based", rateDescription: "7/24 of unique rolls", weight: 7 },
-  { name: "Tumeken's shadow", pointsRequired: "Invocation-based", rateDescription: "1/24 of unique rolls (rarest drop)", weight: 1 },
+  { name: "Tumeken's shadow", geName: "Tumeken's shadow (uncharged)", pointsRequired: "Invocation-based", rateDescription: "1/24 of unique rolls (rarest drop)", weight: 1 },
   { name: "Lightbearer", pointsRequired: "Invocation-based", rateDescription: "7/24 of unique rolls", weight: 7 },
   { name: "Masori mask", pointsRequired: "Invocation-based", rateDescription: "2/24 of unique rolls", weight: 2 },
   { name: "Masori body", pointsRequired: "Invocation-based", rateDescription: "2/24 of unique rolls", weight: 2 },

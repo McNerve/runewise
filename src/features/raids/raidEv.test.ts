@@ -35,6 +35,7 @@ describe("computeRaidEv", () => {
   it("excludes the pet from the table and EV", () => {
     const prices = priceMap(COX_UNIQUES.map((_, i) => [i + 1, 1_000_000]));
     const { rows } = computeRaidEv(COX_UNIQUES, itemMap, prices, dropRate);
+    expect(rows).toHaveLength(12);
     expect(rows.some((r) => r.item.name === "Olmlet")).toBe(false);
   });
 
@@ -42,7 +43,16 @@ describe("computeRaidEv", () => {
     const prices = priceMap([[1, 1_000_000]]); // only Twisted bow priced
     const { rows, totalEv } = computeRaidEv(COX_UNIQUES, itemMap, prices, dropRate);
     expect(rows.filter((r) => r.evPerRaid != null)).toHaveLength(1);
-    expect(totalEv).toBeGreaterThan(0);
-    expect(Number.isFinite(totalEv)).toBe(true);
+    // No renormalization over priced-only items: total is exactly tbow's EV.
+    expect(totalEv).toBeCloseTo(1_000_000 / (28.9 * 34.5), 0);
+  });
+
+  it("resolves GE prices via geName for untradeable charged variants", () => {
+    const uniques = [
+      { name: "Scythe of vitur", geName: "Scythe of vitur (uncharged)", pointsRequired: "x", rateDescription: "", weight: 1 },
+    ];
+    const map = new Map([["scythe of vitur (uncharged)", 42]]);
+    const { rows } = computeRaidEv(uniques, map, priceMap([[42, 500_000_000]]), 10);
+    expect(rows[0]!.gePrice).toBe(500_000_000);
   });
 });

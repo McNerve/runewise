@@ -5,7 +5,10 @@ on:
     branches: [main]
   push:
     branches: [main]
-    tags: ["v*"]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   check:

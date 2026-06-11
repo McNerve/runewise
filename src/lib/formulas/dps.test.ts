@@ -7,6 +7,9 @@ import {
   hitChance,
   calculateDps,
   applyModifiers,
+  addModifierExclusive,
+  sanitizeModifierSet,
+  EXCLUSIVE_MODIFIER_GROUPS,
   DPS_MODIFIERS,
   dragonClawsExpectedDamage,
   calculateSpecDps,
@@ -356,6 +359,50 @@ describe("salve amulet style restrictions", () => {
     const r = applyModifiers(1, 1, "melee", [DPS_MODIFIERS.leaf_bladed]);
     expect(r.accuracyMult).toBe(1);
     expect(r.damageMult).toBeCloseTo(1.175, 5);
+  });
+});
+
+describe("slayer helm style overrides", () => {
+  it("gives melee 7/6 and ranged/magic a flat 15%", () => {
+    expect(applyModifiers(1, 1, "melee", [DPS_MODIFIERS.slayer_helm]).accuracyMult).toBeCloseTo(7 / 6, 5);
+    for (const style of ["ranged", "magic"] as const) {
+      const r = applyModifiers(1, 1, style, [DPS_MODIFIERS.slayer_helm]);
+      expect(r.accuracyMult).toBeCloseTo(1.15, 5);
+      expect(r.damageMult).toBeCloseTo(1.15, 5);
+    }
+  });
+});
+
+describe("addModifierExclusive", () => {
+  it("evicts salve variants when slayer helm is added (and vice versa)", () => {
+    const s = new Set(["salve_ei", "arclight"]);
+    addModifierExclusive(s, "slayer_helm");
+    expect(s).toEqual(new Set(["arclight", "slayer_helm"]));
+    addModifierExclusive(s, "salve_e");
+    expect(s).toEqual(new Set(["arclight", "salve_e"]));
+  });
+
+  it("allows only one void set at a time", () => {
+    const s = new Set(["void_melee"]);
+    addModifierExclusive(s, "elite_void_ranged");
+    expect(s).toEqual(new Set(["elite_void_ranged"]));
+  });
+
+  it("leaves non-group modifiers untouched", () => {
+    const s = new Set(["dhcb"]);
+    addModifierExclusive(s, "twisted_bow");
+    expect(s).toEqual(new Set(["dhcb", "twisted_bow"]));
+  });
+
+  it("sanitizeModifierSet collapses illegal saved combos", () => {
+    expect(sanitizeModifierSet(["slayer_helm", "salve_ei", "void_melee", "elite_void_magic"]))
+      .toEqual(new Set(["salve_ei", "elite_void_magic"]));
+  });
+
+  it("every group member is a real modifier id", () => {
+    for (const group of EXCLUSIVE_MODIFIER_GROUPS) {
+      for (const id of group) expect(DPS_MODIFIERS[id]).toBeDefined();
+    }
   });
 });
 

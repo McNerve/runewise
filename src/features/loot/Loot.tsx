@@ -5,6 +5,7 @@ import type { ItemPrice, ItemMapping } from "../../lib/api/ge";
 import { useGEData } from "../../hooks/useGEData";
 import { formatGp } from "../../lib/format";
 import { itemIcon } from "../../lib/sprites";
+import { parseRate } from "./parseRate";
 import { useDebounce } from "../../hooks/useDebounce";
 import { useNavigation, type View } from "../../lib/NavigationContext";
 import WikiImage from "../../components/WikiImage";
@@ -75,22 +76,6 @@ interface ProfitRow {
   gePrice: number | null;
   evPerKill: number | null;
   evPerHr: number | null;
-}
-
-// Returns the effective rate denominator (one drop per N kills). Handles
-// "1/128", "3/128", and multi-roll forms like "2 × 1/128" or "2 x 1/128".
-function parseRate(rarity: string): number | null {
-  const lower = rarity.toLowerCase();
-  if (lower.includes("always")) return 1;
-  const match = lower.match(/(?:(\d+)\s*[x×]\s*)?(\d[\d.,]*)\s*\/\s*([\d.,]+)/);
-  if (!match) return null;
-  const rolls = match[1] ? Number(match[1]) : 1;
-  const numerator = Number(match[2].replace(/,/g, ""));
-  const denominator = Number(match[3].replace(/,/g, ""));
-  if ([rolls, numerator, denominator].some((n) => !Number.isFinite(n) || n <= 0)) {
-    return null;
-  }
-  return denominator / (numerator * rolls);
 }
 
 function parseQuantity(quantity: string): number | null {

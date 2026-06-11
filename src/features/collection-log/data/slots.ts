@@ -21,7 +21,7 @@ export const COLLECTION_CATEGORIES: CollectionCategory[] = [
       "Twisted bow", "Elder maul", "Kodai insignia", "Dragon claws",
       "Ancestral hat", "Ancestral robe top", "Ancestral robe bottom",
       "Dragon hunter crossbow", "Dexterous prayer scroll", "Arcane prayer scroll",
-      "Dinh's bulwark", "Buckler", "Olmlet",
+      "Dinh's bulwark", "Twisted buckler", "Olmlet",
     ],
   },
   {

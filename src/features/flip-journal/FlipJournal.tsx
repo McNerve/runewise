@@ -413,7 +413,7 @@ function CloseModal({ entry, onConfirm, onCancel }: {
         <div className="flex gap-2 justify-end">
           <button onClick={onCancel} className="px-3 py-1.5 text-sm text-text-secondary hover:text-text-primary transition-colors">Cancel</button>
           <button
-            disabled={!sellPrice || Number(sellPrice) <= 0}
+            disabled={!Number.isFinite(Number(sellPrice)) || Number(sellPrice) <= 0}
             onClick={() => onConfirm(Number(sellPrice))}
             className="home-tile px-4 py-1.5 text-sm font-medium bg-accent text-on-accent border border-accent rounded-lg disabled:opacity-40 disabled:cursor-not-allowed"
           >

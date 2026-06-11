@@ -13,9 +13,9 @@ export const TOB_ROOMS: RaidRoom[] = [
 // team's chance of any unique is ~11% (1/9.1) at full performance, reduced by
 // deaths, and the roll is distributed by points contribution.
 export const TOB_UNIQUES: RaidUnique[] = [
-  { name: "Scythe of vitur", pointsRequired: "Contribution-based", rateDescription: "1/19 of unique rolls", weight: 1 },
+  { name: "Scythe of vitur", geName: "Scythe of vitur (uncharged)", pointsRequired: "Contribution-based", rateDescription: "1/19 of unique rolls", weight: 1 },
   { name: "Ghrazi rapier", pointsRequired: "Contribution-based", rateDescription: "2/19 of unique rolls", weight: 2 },
-  { name: "Sanguinesti staff", pointsRequired: "Contribution-based", rateDescription: "2/19 of unique rolls", weight: 2 },
+  { name: "Sanguinesti staff", geName: "Sanguinesti staff (uncharged)", pointsRequired: "Contribution-based", rateDescription: "2/19 of unique rolls", weight: 2 },
   { name: "Justiciar faceguard", pointsRequired: "Contribution-based", rateDescription: "2/19 of unique rolls", weight: 2 },
   { name: "Justiciar chestguard", pointsRequired: "Contribution-based", rateDescription: "2/19 of unique rolls", weight: 2 },
   { name: "Justiciar legguards", pointsRequired: "Contribution-based", rateDescription: "2/19 of unique rolls", weight: 2 },

@@ -23,7 +23,7 @@ export default function RaidLootCalc({
   calculateRate,
 }: RaidLootCalcProps) {
   const [inputValue, setInputValue] = useState(inputDefault);
-  const { mapping, prices, fetchIfNeeded } = useGEData();
+  const { mapping, prices, pricesLoaded, fetchIfNeeded } = useGEData();
 
   useEffect(() => { fetchIfNeeded(); }, [fetchIfNeeded]);
 
@@ -52,7 +52,7 @@ export default function RaidLootCalc({
           min={1}
           max={10000}
           value={inputValue}
-          onChange={(e) => setInputValue(Math.max(1, Number(e.target.value)))}
+          onChange={(e) => setInputValue(Math.min(10000, Math.max(1, Number(e.target.value) || 1)))}
           className="w-24 px-2 py-1.5 rounded-lg bg-bg-tertiary border border-border text-sm tabular-nums focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
         />
         <span className="text-[10px] text-text-secondary/50">{inputDescription}</span>
@@ -63,7 +63,7 @@ export default function RaidLootCalc({
           <div>
             <div className="text-xs text-text-secondary">Expected value per {raidName}</div>
             <div className="text-2xl font-bold text-success tabular-nums">
-              {formatGp(Math.round(totalEvPerRaid))}
+              {pricesLoaded ? formatGp(Math.round(totalEvPerRaid)) : "—"}
             </div>
           </div>
           <div className="text-right">

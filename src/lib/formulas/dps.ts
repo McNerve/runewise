@@ -18,7 +18,7 @@ export interface DpsInput {
   modifiers?: DpsModifier[];
   defReductions?: number; // number of successful DWH/BGS specs (each reduces def by 30%)
   spellBaseMaxHit?: number; // when set, overrides level-based max hit with spell-based formula
-  coxScaling?: boolean; // CoX raises the twisted bow's target-magic clamp from 250 to 350
+  tbowRaidCap?: boolean; // CoX and ToA raise the twisted bow's target-magic clamp from 250 to 350
 }
 
 export interface DpsModifier {
@@ -71,8 +71,13 @@ export const DPS_MODIFIERS: Record<string, DpsModifier> = {
   slayer_helm: {
     id: "slayer_helm",
     name: "Slayer helm (i)",
+    // On task: melee gets 7/6 (16.67%), ranged and magic get a flat 15%.
     accuracyMult: 7 / 6,
     damageMult: 7 / 6,
+    styleOverrides: {
+      ranged: { accuracyMult: 1.15, damageMult: 1.15 },
+      magic: { accuracyMult: 1.15, damageMult: 1.15 },
+    },
   },
   salve_e: {
     id: "salve_e",
@@ -209,6 +214,13 @@ export function addModifierExclusive(set: Set<string>, id: string): void {
   set.add(id);
 }
 
+/** Builds a modifier set that respects exclusivity — for restoring saved/imported loadouts. */
+export function sanitizeModifierSet(ids: Iterable<string>): Set<string> {
+  const set = new Set<string>();
+  for (const id of ids) addModifierExclusive(set, id);
+  return set;
+}
+
 // OSRS Twisted bow scaling: t = 3 * magic / 10 is the key transform. The bonus
 // rises with the target's magic level and caps at +140% accuracy / +250% damage.
 // The magic level itself is clamped at 250 — 350 inside CoX.
@@ -337,7 +349,7 @@ export function calculateDps(input: DpsInput) {
       input.combatStyle,
       input.modifiers,
       input.targetMagicLevel,
-      input.coxScaling ? 350 : 250
+      input.tbowRaidCap ? 350 : 250
     );
     ar = Math.floor(ar * accuracyMult);
     mh = Math.floor(mh * damageMult);

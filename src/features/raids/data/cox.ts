@@ -11,6 +11,8 @@ export interface RaidUnique {
   rateDescription: string;
   /** Share of the unique table (wiki weighting). 0 for pets — they roll separately. */
   weight: number;
+  /** Tradeable GE listing name when it differs from the display name (e.g. "(uncharged)" variants). */
+  geName?: string;
 }
 
 export const COX_ROOMS: RaidRoom[] = [

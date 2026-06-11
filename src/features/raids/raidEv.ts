@@ -26,7 +26,7 @@ export function computeRaidEv(
   const totalWeight = tableUniques.reduce((sum, u) => sum + u.weight, 0);
 
   const rows = tableUniques.map((item) => {
-    const id = itemMap.get(item.name.toLowerCase());
+    const id = itemMap.get((item.geName ?? item.name).toLowerCase());
     const price = id ? prices[String(id)] : null;
     const gePrice = price?.high ?? price?.low ?? null;
     const itemRate =
