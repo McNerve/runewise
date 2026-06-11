@@ -109,6 +109,94 @@ describe("meleeAttackBonus selects by attack type", () => {
   });
 });
 
+describe("applyLoadout across combat styles (regression: gear was dropped)", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it("restores gear, bonus mode, and modifiers when the style differs", () => {
+    const { result } = renderHook(() => useDpsState({ hiscores: null }));
+    const bow = gearItem({ name: "Twisted bow", slot: "2h" as const, attackRanged: 70 });
+
+    act(() => {
+      result.current.applyLoadout({
+        name: "Tbow setup",
+        combatStyle: "ranged",
+        stanceIdx: 1,
+        prayerIdx: 0,
+        attackBonus: 0,
+        strengthBonus: 0,
+        attackSpeed: 5,
+        modifiers: ["twisted_bow"],
+        bonusMode: "equipment",
+        gear: { "2h": bow },
+      });
+    });
+
+    expect(result.current.combatStyle).toBe("ranged");
+    expect(result.current.bonusMode).toBe("equipment");
+    expect(result.current.equippedGear["2h"]?.name).toBe("Twisted bow");
+    expect(result.current.activeModifiers.has("twisted_bow")).toBe(true);
+    expect(result.current.stanceIdx).toBe(1);
+  });
+});
+
+describe("setup tabs", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it("round-trips a configuration through a tab switch", () => {
+    const { result } = renderHook(() => useDpsState({ hiscores: null }));
+    const helm = gearItem({ name: "Torva full helm", slot: "head" as const, attackSlash: 8 });
+
+    act(() => {
+      result.current.setCombatStyle("ranged");
+    });
+    act(() => {
+      result.current.setEquippedGear({ head: helm });
+      result.current.toggleModifier("void_ranged");
+    });
+
+    // Switch to tab B — starts as a copy; change it to a magic setup.
+    act(() => {
+      result.current.switchSetup(1);
+    });
+    act(() => {
+      result.current.setCombatStyle("magic");
+    });
+    act(() => {
+      result.current.setEquippedGear({});
+    });
+
+    // Back to tab A — the ranged setup must be fully restored.
+    act(() => {
+      result.current.switchSetup(0);
+    });
+    expect(result.current.activeSetup).toBe(0);
+    expect(result.current.combatStyle).toBe("ranged");
+    expect(result.current.equippedGear.head?.name).toBe("Torva full helm");
+    expect(result.current.activeModifiers.has("void_ranged")).toBe(true);
+
+    // And tab B still holds the magic setup.
+    act(() => {
+      result.current.switchSetup(1);
+    });
+    expect(result.current.combatStyle).toBe("magic");
+    expect(result.current.equippedGear.head).toBeUndefined();
+  });
+
+  it("ignores out-of-range and same-tab switches", () => {
+    const { result } = renderHook(() => useDpsState({ hiscores: null }));
+    act(() => {
+      result.current.switchSetup(0);
+      result.current.switchSetup(7);
+      result.current.switchSetup(-1);
+    });
+    expect(result.current.activeSetup).toBe(0);
+  });
+});
+
 describe("getDefBonus (regression: previously used Math.min of all melee defs)", () => {
   const monster = {
     defStab: 200, defSlash: 260, defCrush: 200, defMagic: 100, defRanged: 150,

@@ -55,6 +55,41 @@ export interface GearLoadout {
   savedAt?: string;
   dps?: number;
   maxHit?: number;
+  // v3: spell + spec selections persist with the loadout
+  spellId?: string | null;
+  specId?: string | null;
+}
+
+/** Complete calculator configuration — what a setup tab stores and what
+ * loading a saved loadout applies. */
+export interface SetupSnapshot {
+  combatStyle: CombatStyle;
+  stanceIdx: number;
+  prayerIdx: number;
+  bonusMode: BonusMode;
+  attackBonus: number;
+  strengthBonus: number;
+  attackSpeed: number;
+  gear: EquippedGear;
+  modifiers: string[];
+  spellId: string | null;
+  specId: string | null;
+}
+
+export function loadoutToSnapshot(loadout: GearLoadout): SetupSnapshot {
+  return {
+    combatStyle: loadout.combatStyle,
+    stanceIdx: loadout.stanceIdx,
+    prayerIdx: loadout.prayerIdx,
+    bonusMode: loadout.bonusMode ?? (loadout.gear ? "equipment" : "manual"),
+    attackBonus: loadout.attackBonus,
+    strengthBonus: loadout.strengthBonus,
+    attackSpeed: loadout.attackSpeed,
+    gear: (loadout.gear as EquippedGear) ?? {},
+    modifiers: [...loadout.modifiers],
+    spellId: loadout.spellId ?? null,
+    specId: loadout.specId ?? null,
+  };
 }
 
 export function sumGearBonuses(gear: EquippedGear): {
@@ -124,6 +159,110 @@ export function meleeAttackBonus(
 
 const LOADOUTS_KEY = "runewise_dps_loadouts";
 const LOADOUTS_V2_KEY = "runewise_loadouts_v2";
+const SETUPS_KEY = "runewise_dps_setups_v1";
+const SETUP_SLOTS = 3;
+
+interface StoredSetups {
+  setups: (SetupSnapshot | null)[];
+  activeSetup: number;
+}
+
+function loadStoredSetups(): StoredSetups {
+  const stored = loadJSON<StoredSetups>(SETUPS_KEY, {
+    setups: new Array<SetupSnapshot | null>(SETUP_SLOTS).fill(null),
+    activeSetup: 0,
+  });
+  const setups = Array.from({ length: SETUP_SLOTS }, (_, i) => stored.setups?.[i] ?? null);
+  const activeSetup =
+    Number.isInteger(stored.activeSetup) && stored.activeSetup >= 0 && stored.activeSetup < SETUP_SLOTS
+      ? stored.activeSetup
+      : 0;
+  return { setups, activeSetup };
+}
+
+/** Builds the DPS input for a stored setup snapshot, mirroring the live
+ * derivations (gear bonuses, weapon stances, verified speeds, spells). */
+export function snapshotDpsInput(
+  snap: SetupSnapshot,
+  ctx: {
+    attackLevel: number;
+    strengthLevel: number;
+    rangedLevel: number;
+    magicLevel: number;
+    targetDefLevel: number;
+    targetHp: number;
+    targetMagicLevel?: number;
+    targetDefBonusFor: (style: CombatStyle, attackType: string) => number;
+    defReductions: number;
+    tbowRaidCap: boolean;
+  }
+): DpsInput {
+  const weapon = snap.gear["weapon"] ?? snap.gear["2h"] ?? null;
+  const useEquipment = snap.bonusMode === "equipment";
+  const stances = useEquipment && weapon?.combatStyle
+    ? getWeaponType(weapon.combatStyle).stances
+    : GENERIC_STANCES[snap.combatStyle];
+  const stance = stances[snap.stanceIdx] ?? stances[0];
+  const stylePrayers = PRAYERS.filter((p) => p.style === snap.combatStyle);
+  const prayer = stylePrayers[snap.prayerIdx] ?? stylePrayers[0];
+
+  const bonuses = sumGearBonuses(snap.gear);
+  const attackBonus = useEquipment
+    ? snap.combatStyle === "ranged"
+      ? bonuses.rangedBonus
+      : snap.combatStyle === "magic"
+        ? bonuses.magicBonus
+        : meleeAttackBonus(bonuses, stance.attackType)
+    : snap.attackBonus;
+  const strengthBonus = useEquipment
+    ? snap.combatStyle === "ranged"
+      ? bonuses.rangedStrength
+      : snap.combatStyle === "magic"
+        ? bonuses.magicDamage
+        : bonuses.strengthBonus
+    : snap.strengthBonus;
+
+  const weaponSpeed = weapon ? weapon.attackSpeed || knownWeaponSpeed(weapon.name) || 0 : 0;
+  const attackSpeed = useEquipment && weaponSpeed > 0
+    ? weaponSpeed + (stance.speedMod ?? 0)
+    : snap.attackSpeed;
+
+  const spell = snap.combatStyle === "magic" && snap.spellId
+    ? COMBAT_SPELLS.find((s) => s.id === snap.spellId) ?? null
+    : null;
+  const spellBaseMaxHit = spell
+    ? spell.id === "magic_dart"
+      ? magicDartBaseMaxHit(ctx.magicLevel)
+      : spell.levelScaling
+        ? spell.levelScaling(ctx.magicLevel)
+        : spell.baseMaxHit
+    : undefined;
+
+  return {
+    attackLevel: ctx.attackLevel,
+    strengthLevel: ctx.strengthLevel,
+    rangedLevel: ctx.rangedLevel,
+    magicLevel: ctx.magicLevel,
+    attackBonus,
+    strengthBonus,
+    prayerAttackMult: prayer.attackMult,
+    prayerStrengthMult: prayer.strengthMult,
+    stanceAttackBonus: stance.attackBonus,
+    stanceStrengthBonus: stance.strengthBonus,
+    attackSpeed,
+    combatStyle: snap.combatStyle,
+    targetDefLevel: ctx.targetDefLevel,
+    targetDefBonus: ctx.targetDefBonusFor(snap.combatStyle, stance.attackType),
+    targetHp: ctx.targetHp,
+    targetMagicLevel: ctx.targetMagicLevel,
+    modifiers: [...snap.modifiers]
+      .map((id) => DPS_MODIFIERS[id])
+      .filter((m): m is DpsModifier => m != null),
+    defReductions: ctx.defReductions,
+    spellBaseMaxHit,
+    tbowRaidCap: ctx.tbowRaidCap,
+  };
+}
 
 function migrateLoadouts(): GearLoadout[] {
   const v2 = loadJSON<GearLoadout[]>(LOADOUTS_V2_KEY, []);
@@ -199,7 +338,11 @@ export function useDpsState({ hiscores }: Props) {
   const [loadoutName, setLoadoutName] = useState("");
   const [selectedSpec, setSelectedSpec] = useState<SpecWeapon | null>(null);
   const [selectedSpell, setSelectedSpell] = useState<CombatSpell | null>(null);
-  const pendingLoadout = useRef<GearLoadout | null>(null);
+  const pendingSnapshot = useRef<SetupSnapshot | null>(null);
+
+  // Setup tabs: full configurations switched in place, persisted across runs.
+  const [setups, setSetups] = useState<(SetupSnapshot | null)[]>(() => loadStoredSetups().setups);
+  const [activeSetup, setActiveSetup] = useState(() => loadStoredSetups().activeSetup);
 
   // Gear selector state
   const [bonusMode, setBonusMode] = useState<BonusMode>("equipment");
@@ -319,17 +462,35 @@ export function useDpsState({ hiscores }: Props) {
     });
   }, [params.onTask]);
 
-  // Reset stance and prayer when combat style changes, or apply pending loadout
+  // Applies every field of a snapshot to the live state. Only valid when the
+  // snapshot's combat style is already active — cross-style application goes
+  // through pendingSnapshot + setCombatStyle so style-derived state resolves.
+  const applySnapshotNow = useCallback((snap: SetupSnapshot) => {
+    setStanceIdx(snap.stanceIdx);
+    setPrayerIdx(snap.prayerIdx);
+    setAttackBonus(snap.attackBonus);
+    setStrengthBonus(snap.strengthBonus);
+    setAttackSpeed(snap.attackSpeed);
+    setActiveModifiers(sanitizeModifierSet(snap.modifiers));
+    setBonusMode(snap.bonusMode);
+    setEquippedGear(snap.gear);
+    setSelectedSpell(
+      snap.spellId ? COMBAT_SPELLS.find((s) => s.id === snap.spellId) ?? null : null
+    );
+    setSelectedSpec(
+      snap.specId
+        ? getSpecWeaponsForStyle(snap.combatStyle).find((s) => s.id === snap.specId) ?? null
+        : null
+    );
+  }, []);
+
+  // Reset stance and prayer when combat style changes, or apply the pending
+  // snapshot (loadout load / setup-tab switch across styles).
   useEffect(() => {
-    const loadout = pendingLoadout.current;
-    if (loadout && loadout.combatStyle === combatStyle) {
-      pendingLoadout.current = null;
-      setStanceIdx(loadout.stanceIdx);
-      setPrayerIdx(loadout.prayerIdx);
-      setAttackBonus(loadout.attackBonus);
-      setStrengthBonus(loadout.strengthBonus);
-      setAttackSpeed(loadout.attackSpeed);
-      setActiveModifiers(sanitizeModifierSet(loadout.modifiers));
+    const snap = pendingSnapshot.current;
+    if (snap && snap.combatStyle === combatStyle) {
+      pendingSnapshot.current = null;
+      applySnapshotNow(snap);
     } else {
       setStanceIdx(0);
       setPrayerIdx(0);
@@ -338,7 +499,7 @@ export function useDpsState({ hiscores }: Props) {
       setSelectedSpec(null);
       setSelectedSpell(null);
     }
-  }, [combatStyle]);
+  }, [combatStyle]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const gearBonuses = useMemo(() => sumGearBonuses(equippedGear), [equippedGear]);
 
@@ -564,6 +725,27 @@ export function useDpsState({ hiscores }: Props) {
       .sort((a, b) => b.result.dps - a.result.dps);
   }, [loadouts, attackLevel, strengthLevel, rangedLevel, magicLevel, isCustom, customDef.defBonus, selectedMonster, targetDefLevel, targetHp, defReductions, tbowRaidCap]);
 
+  // Live DPS per non-active setup tab against the current target.
+  const setupResults = useMemo(() => {
+    return setups.map((snap, idx) => {
+      if (!snap || idx === activeSetup) return null;
+      const input = snapshotDpsInput(snap, {
+        attackLevel,
+        strengthLevel,
+        rangedLevel,
+        magicLevel,
+        targetDefLevel,
+        targetHp,
+        targetMagicLevel: selectedMonster?.magicLevel,
+        targetDefBonusFor: (style, attackType) =>
+          isCustom ? customDef.defBonus : getDefBonus(selectedMonster, style, attackType),
+        defReductions,
+        tbowRaidCap,
+      });
+      return calculateDps(input);
+    });
+  }, [setups, activeSetup, attackLevel, strengthLevel, rangedLevel, magicLevel, targetDefLevel, targetHp, selectedMonster, isCustom, customDef.defBonus, defReductions, tbowRaidCap]);
+
   const specWeapons = useMemo(
     () => getSpecWeaponsForStyle(combatStyle),
     [combatStyle]
@@ -631,6 +813,8 @@ export function useDpsState({ hiscores }: Props) {
       savedAt: new Date().toISOString(),
       dps: result.dps,
       maxHit: result.maxHit,
+      spellId: selectedSpell?.id ?? null,
+      specId: selectedSpec?.id ?? null,
     };
     setLoadouts((prev) => {
       const next = prev.filter((l) => l.name !== name);
@@ -639,26 +823,66 @@ export function useDpsState({ hiscores }: Props) {
       return next;
     });
     setLoadoutName("");
-  }, [loadoutName, combatStyle, stanceIdx, prayerIdx, attackBonus, strengthBonus, attackSpeed, activeModifiers, bonusMode, equippedGear, result.dps, result.maxHit]);
+  }, [loadoutName, combatStyle, stanceIdx, prayerIdx, attackBonus, strengthBonus, attackSpeed, activeModifiers, bonusMode, equippedGear, result.dps, result.maxHit, selectedSpell, selectedSpec]);
+
+  // Applies a full snapshot, routing through the combat-style effect when the
+  // styles differ so style-derived state (stances, prayers) resolves first.
+  const applySnapshot = useCallback((snap: SetupSnapshot) => {
+    if (snap.combatStyle === combatStyle) {
+      applySnapshotNow(snap);
+    } else {
+      pendingSnapshot.current = snap;
+      setCombatStyle(snap.combatStyle);
+    }
+  }, [combatStyle, applySnapshotNow]);
 
   const applyLoadout = useCallback((loadout: GearLoadout) => {
-    const apply = () => {
-      setStanceIdx(loadout.stanceIdx);
-      setPrayerIdx(loadout.prayerIdx);
-      setAttackBonus(loadout.attackBonus);
-      setStrengthBonus(loadout.strengthBonus);
-      setAttackSpeed(loadout.attackSpeed);
-      setActiveModifiers(sanitizeModifierSet(loadout.modifiers));
-      if (loadout.bonusMode) setBonusMode(loadout.bonusMode);
-      if (loadout.gear) setEquippedGear(loadout.gear as EquippedGear);
-    };
-    if (loadout.combatStyle === combatStyle) {
-      apply();
-    } else {
-      pendingLoadout.current = loadout;
-      setCombatStyle(loadout.combatStyle);
-    }
-  }, [combatStyle]);
+    applySnapshot(loadoutToSnapshot(loadout));
+  }, [applySnapshot]);
+
+  const captureSnapshot = useCallback((): SetupSnapshot => ({
+    combatStyle,
+    stanceIdx,
+    prayerIdx,
+    bonusMode,
+    attackBonus,
+    strengthBonus,
+    attackSpeed,
+    gear: { ...equippedGear },
+    modifiers: [...activeModifiers],
+    spellId: selectedSpell?.id ?? null,
+    specId: selectedSpec?.id ?? null,
+  }), [combatStyle, stanceIdx, prayerIdx, bonusMode, attackBonus, strengthBonus, attackSpeed, equippedGear, activeModifiers, selectedSpell, selectedSpec]);
+
+  // Switch setup tabs: stash the live configuration into the old slot, then
+  // restore the target slot. An empty slot inherits the current configuration.
+  const switchSetup = useCallback((idx: number) => {
+    if (idx === activeSetup || idx < 0 || idx >= SETUP_SLOTS) return;
+    const current = captureSnapshot();
+    const target = setups[idx];
+    setSetups((prev) => {
+      const next = [...prev];
+      next[activeSetup] = current;
+      return next;
+    });
+    setActiveSetup(idx);
+    if (target) applySnapshot(target);
+  }, [activeSetup, setups, captureSnapshot, applySnapshot]);
+
+  useEffect(() => {
+    saveJSON(SETUPS_KEY, { setups, activeSetup } satisfies StoredSetups);
+  }, [setups, activeSetup]);
+
+  // Restore the active setup once on mount — unless a cross-nav param is
+  // steering the calculator, in which case the deep link wins.
+  const mountRestoreDone = useRef(false);
+  useEffect(() => {
+    if (mountRestoreDone.current) return;
+    mountRestoreDone.current = true;
+    if (params.style || params.monster || params.onTask) return;
+    const snap = setups[activeSetup];
+    if (snap) applySnapshot(snap);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const deleteLoadout = useCallback((name: string) => {
     setLoadouts((prev) => {
@@ -814,6 +1038,11 @@ export function useDpsState({ hiscores }: Props) {
     duplicateLoadout,
     importLoadouts,
     arsenalResults,
+    // Setup tabs
+    setups,
+    activeSetup,
+    switchSetup,
+    setupResults,
     // Presets
     applyPreset,
     // Clear
