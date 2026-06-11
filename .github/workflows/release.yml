@@ -4,6 +4,14 @@ on:
   push:
     tags:
       - 'v*'
+  # Manual releases: creates the tag at the dispatched commit via
+  # tauri-action, so a release can be cut (or re-run) without a tag push.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g. v2.2.0)"
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -82,8 +90,8 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: RuneWise ${{ github.ref_name }}
+          tagName: ${{ inputs.tag || github.ref_name }}
+          releaseName: RuneWise ${{ inputs.tag || github.ref_name }}
           releaseBody: ""
           releaseDraft: false
           prerelease: false
