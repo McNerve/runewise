@@ -8,7 +8,8 @@
  *   ToA:  https://oldschool.runescape.wiki/w/Tombs_of_Amascut#Unique_drop_table
  *         Base rates at 0 invocation; scales with invocation level.
  *   CoX:  https://oldschool.runescape.wiki/w/Chambers_of_Xeric#Unique_drops
- *         1 unique per ~33 points; rates shown are approximate solo KC estimates.
+ *         Any-unique chance is personalPoints/867,500 (~1/28.9 at the 30K-point
+ *         reference used here), split by table weight (e.g. Twisted bow 2/69).
  */
 
 export interface RaidDropEntry {
@@ -102,18 +103,18 @@ export const RAID_LOOT: Record<string, RaidLootEntry> = {
 
   "chambers-of-xeric": {
     uniques: [
-      { name: "Twisted bow", rate: "1/34.5", category: "unique" },
-      { name: "Kodai insignia", rate: "1/34.5", category: "unique" },
-      { name: "Ancestral hat", rate: "1/34.5", category: "unique" },
-      { name: "Ancestral robe top", rate: "1/34.5", category: "unique" },
-      { name: "Ancestral robe bottom", rate: "1/34.5", category: "unique" },
-      { name: "Dragon claws", rate: "1/34.5", category: "unique" },
-      { name: "Elder maul", rate: "1/34.5", category: "unique" },
-      { name: "Twisted buckler", rate: "1/34.5", category: "unique" },
-      { name: "Dragon hunter crossbow", rate: "1/34.5", category: "unique" },
-      { name: "Dinh's bulwark", rate: "1/34.5", category: "unique" },
-      { name: "Dexterous prayer scroll", rate: "1/34.5", category: "unique" },
-      { name: "Arcane prayer scroll", rate: "1/34.5", category: "unique" },
+      { name: "Twisted bow", rate: "1/998", category: "unique" },
+      { name: "Kodai insignia", rate: "1/998", category: "unique" },
+      { name: "Ancestral hat", rate: "1/665", category: "unique" },
+      { name: "Ancestral robe top", rate: "1/665", category: "unique" },
+      { name: "Ancestral robe bottom", rate: "1/665", category: "unique" },
+      { name: "Dragon claws", rate: "1/665", category: "unique" },
+      { name: "Elder maul", rate: "1/998", category: "unique" },
+      { name: "Twisted buckler", rate: "1/499", category: "unique" },
+      { name: "Dragon hunter crossbow", rate: "1/499", category: "unique" },
+      { name: "Dinh's bulwark", rate: "1/665", category: "unique" },
+      { name: "Dexterous prayer scroll", rate: "1/100", category: "unique" },
+      { name: "Arcane prayer scroll", rate: "1/100", category: "unique" },
       { name: "Twisted ancestral colour kit", rate: "1/75", category: "unique" },
     ],
     common: [
@@ -125,18 +126,18 @@ export const RAID_LOOT: Record<string, RaidLootEntry> = {
 
   "chambers-of-xeric-challenge-mode": {
     uniques: [
-      { name: "Twisted bow", rate: "1/34.5", category: "unique" },
-      { name: "Kodai insignia", rate: "1/34.5", category: "unique" },
-      { name: "Ancestral hat", rate: "1/34.5", category: "unique" },
-      { name: "Ancestral robe top", rate: "1/34.5", category: "unique" },
-      { name: "Ancestral robe bottom", rate: "1/34.5", category: "unique" },
-      { name: "Dragon claws", rate: "1/34.5", category: "unique" },
-      { name: "Elder maul", rate: "1/34.5", category: "unique" },
-      { name: "Twisted buckler", rate: "1/34.5", category: "unique" },
-      { name: "Dragon hunter crossbow", rate: "1/34.5", category: "unique" },
-      { name: "Dinh's bulwark", rate: "1/34.5", category: "unique" },
-      { name: "Dexterous prayer scroll", rate: "1/34.5", category: "unique" },
-      { name: "Arcane prayer scroll", rate: "1/34.5", category: "unique" },
+      { name: "Twisted bow", rate: "1/998", category: "unique" },
+      { name: "Kodai insignia", rate: "1/998", category: "unique" },
+      { name: "Ancestral hat", rate: "1/665", category: "unique" },
+      { name: "Ancestral robe top", rate: "1/665", category: "unique" },
+      { name: "Ancestral robe bottom", rate: "1/665", category: "unique" },
+      { name: "Dragon claws", rate: "1/665", category: "unique" },
+      { name: "Elder maul", rate: "1/998", category: "unique" },
+      { name: "Twisted buckler", rate: "1/499", category: "unique" },
+      { name: "Dragon hunter crossbow", rate: "1/499", category: "unique" },
+      { name: "Dinh's bulwark", rate: "1/665", category: "unique" },
+      { name: "Dexterous prayer scroll", rate: "1/100", category: "unique" },
+      { name: "Arcane prayer scroll", rate: "1/100", category: "unique" },
       { name: "Twisted ancestral colour kit", rate: "1/75", category: "unique" },
     ],
     common: [],

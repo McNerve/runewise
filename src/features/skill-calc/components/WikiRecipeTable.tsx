@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { formatGp } from "../../../lib/format";
+import { postTaxPrice } from "../../../lib/tax";
 import { itemIcon } from "../../../lib/sprites";
 import type { WikiRecipe } from "../../../lib/api/recipes";
 import type { ItemPrice } from "../../../lib/api/ge";
@@ -49,11 +50,11 @@ export default function WikiRecipeTable({
           materialCost += price * mat.quantity;
         }
 
-        // Calculate output value
+        // Calculate output value (what selling on the GE actually returns)
         let outputValue = 0;
         for (const out of r.output ?? []) {
           const price = getItemPrice(out.name, itemMap, prices);
-          if (price != null) outputValue += price * out.quantity;
+          if (price != null) outputValue += postTaxPrice(price) * out.quantity;
         }
 
         const netCost = materialCost != null ? materialCost - outputValue : null;

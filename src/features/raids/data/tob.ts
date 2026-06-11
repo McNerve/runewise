@@ -9,13 +9,16 @@ export const TOB_ROOMS: RaidRoom[] = [
   { name: "Verzik Vitur", type: "boss", mechanics: "Three phases. P1: use Dawnbringer to attack through shield. P2: dodge bombs, lightning, and nylocas crabs. P3: prayer switching, webs, green ball bounce.", tips: "P1: click Dawnbringer spec. P2: avoid purple tornadoes. P3: bounce green ball between players, prayer flick." },
 ];
 
+// Weights are the OSRS Wiki unique-table weightings (out of 19 total). The
+// team's chance of any unique is ~11% (1/9.1) at full performance, reduced by
+// deaths, and the roll is distributed by points contribution.
 export const TOB_UNIQUES: RaidUnique[] = [
-  { name: "Scythe of vitur", pointsRequired: "MVP-based", rateDescription: "1/86 per completion (MVP weighted)" },
-  { name: "Ghrazi rapier", pointsRequired: "MVP-based", rateDescription: "1/86 per completion" },
-  { name: "Sanguinesti staff", pointsRequired: "MVP-based", rateDescription: "1/86 per completion" },
-  { name: "Justiciar faceguard", pointsRequired: "MVP-based", rateDescription: "1/86 per completion" },
-  { name: "Justiciar chestguard", pointsRequired: "MVP-based", rateDescription: "1/86 per completion" },
-  { name: "Justiciar legguards", pointsRequired: "MVP-based", rateDescription: "1/86 per completion" },
-  { name: "Avernic defender hilt", pointsRequired: "MVP-based", rateDescription: "1/86 per completion" },
-  { name: "Lil' zik", pointsRequired: "N/A", rateDescription: "1/650 per completion (pet)" },
+  { name: "Scythe of vitur", geName: "Scythe of vitur (uncharged)", pointsRequired: "Contribution-based", rateDescription: "1/19 of unique rolls", weight: 1 },
+  { name: "Ghrazi rapier", pointsRequired: "Contribution-based", rateDescription: "2/19 of unique rolls", weight: 2 },
+  { name: "Sanguinesti staff", geName: "Sanguinesti staff (uncharged)", pointsRequired: "Contribution-based", rateDescription: "2/19 of unique rolls", weight: 2 },
+  { name: "Justiciar faceguard", pointsRequired: "Contribution-based", rateDescription: "2/19 of unique rolls", weight: 2 },
+  { name: "Justiciar chestguard", pointsRequired: "Contribution-based", rateDescription: "2/19 of unique rolls", weight: 2 },
+  { name: "Justiciar legguards", pointsRequired: "Contribution-based", rateDescription: "2/19 of unique rolls", weight: 2 },
+  { name: "Avernic defender hilt", pointsRequired: "Contribution-based", rateDescription: "8/19 of unique rolls", weight: 8 },
+  { name: "Lil' zik", pointsRequired: "N/A", rateDescription: "1/650 per completion (pet)", weight: 0 },
 ];

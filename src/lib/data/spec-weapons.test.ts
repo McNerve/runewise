@@ -7,28 +7,28 @@ function spec(id: string) {
   return w;
 }
 
-// These pin the corrected OSRS special-attack damage multipliers. The generic
+// These pin the wiki-cited OSRS special-attack damage multipliers. The generic
 // spec model computes spec max hit as floor(baseMaxHit * damageMult), so each
-// value below is the true in-game damage bonus, not a squared/typo'd version.
+// value below is the true in-game damage bonus.
 describe("spec weapon damage multipliers", () => {
-  it("Bandos godsword deals normal damage (2x accuracy only)", () => {
-    expect(spec("bandos_godsword").damageMult).toBe(1.0);
+  it("Bandos godsword Warstrike is +21% damage", () => {
+    expect(spec("bandos_godsword").damageMult).toBe(1.21);
   });
 
   it("Saradomin godsword is +10% damage", () => {
     expect(spec("saradomin_godsword").damageMult).toBe(1.1);
   });
 
-  it("Ancient godsword initial hit has no damage bonus", () => {
-    expect(spec("ancient_godsword").damageMult).toBe(1.0);
+  it("Ancient godsword Blood Sacrifice is +10% damage", () => {
+    expect(spec("ancient_godsword").damageMult).toBe(1.1);
   });
 
   it("Armadyl godsword stays +37.5%", () => {
     expect(spec("armadyl_godsword").damageMult).toBe(1.375);
   });
 
-  it("Dragon warhammer deals normal damage (defence drain only)", () => {
-    expect(spec("dragon_warhammer").damageMult).toBe(1.0);
+  it("Dragon warhammer Smash is +50% damage", () => {
+    expect(spec("dragon_warhammer").damageMult).toBe(1.5);
   });
 
   it("Voidwaker averages full max hit via a guaranteed hit", () => {

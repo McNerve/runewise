@@ -18,6 +18,7 @@ export interface DpsInput {
   modifiers?: DpsModifier[];
   defReductions?: number; // number of successful DWH/BGS specs (each reduces def by 30%)
   spellBaseMaxHit?: number; // when set, overrides level-based max hit with spell-based formula
+  tbowRaidCap?: boolean; // CoX and ToA raise the twisted bow's target-magic clamp from 250 to 350
 }
 
 export interface DpsModifier {
@@ -70,8 +71,13 @@ export const DPS_MODIFIERS: Record<string, DpsModifier> = {
   slayer_helm: {
     id: "slayer_helm",
     name: "Slayer helm (i)",
+    // On task: melee gets 7/6 (16.67%), ranged and magic get a flat 15%.
     accuracyMult: 7 / 6,
     damageMult: 7 / 6,
+    styleOverrides: {
+      ranged: { accuracyMult: 1.15, damageMult: 1.15 },
+      magic: { accuracyMult: 1.15, damageMult: 1.15 },
+    },
   },
   salve_e: {
     id: "salve_e",
@@ -84,10 +90,10 @@ export const DPS_MODIFIERS: Record<string, DpsModifier> = {
   salve_ei: {
     id: "salve_ei",
     name: "Salve amulet (ei)",
+    // Flat +20% in every style, magic included — the 15% figure belongs to
+    // salve (i), not the enchanted-imbued variant.
     accuracyMult: 1.20,
     damageMult: 1.20,
-    // Magic gets +15% rather than the +20% melee/ranged receive.
-    styleOverrides: { magic: { accuracyMult: 1.15, damageMult: 1.15 } },
   },
   arclight: {
     id: "arclight",
@@ -162,7 +168,8 @@ export const DPS_MODIFIERS: Record<string, DpsModifier> = {
   leaf_bladed: {
     id: "leaf_bladed",
     name: "Leaf-bladed battleaxe",
-    accuracyMult: 1.175,
+    // The passive vs turoths/kurasks is damage-only; no accuracy bonus.
+    accuracyMult: 1.0,
     damageMult: 1.175,
     condition: "melee",
   },
@@ -192,17 +199,40 @@ export const DPS_MODIFIERS: Record<string, DpsModifier> = {
   },
 };
 
+// Modifiers that can't coexist in-game: slayer helm and salve never stack
+// (salve takes priority), and only one void set can be worn at a time.
+export const EXCLUSIVE_MODIFIER_GROUPS: (keyof typeof DPS_MODIFIERS)[][] = [
+  ["slayer_helm", "salve_e", "salve_ei"],
+  ["void_melee", "void_ranged", "void_magic", "elite_void_ranged", "elite_void_magic"],
+];
+
+/** Adds a modifier id to the set, evicting members of its exclusivity group. */
+export function addModifierExclusive(set: Set<string>, id: string): void {
+  EXCLUSIVE_MODIFIER_GROUPS.find((group) => group.includes(id))?.forEach((member) => {
+    set.delete(member);
+  });
+  set.add(id);
+}
+
+/** Builds a modifier set that respects exclusivity — for restoring saved/imported loadouts. */
+export function sanitizeModifierSet(ids: Iterable<string>): Set<string> {
+  const set = new Set<string>();
+  for (const id of ids) addModifierExclusive(set, id);
+  return set;
+}
+
 // OSRS Twisted bow scaling: t = 3 * magic / 10 is the key transform. The bonus
 // rises with the target's magic level and caps at +140% accuracy / +250% damage.
-function twistedBowAccuracy(targetMagicLevel: number): number {
-  const magic = Math.min(targetMagicLevel, 250);
+// The magic level itself is clamped at 250 — 350 inside CoX.
+function twistedBowAccuracy(targetMagicLevel: number, magicCap: number): number {
+  const magic = Math.min(targetMagicLevel, magicCap);
   const t = (3 * magic) / 10;
   const bonus = 140 + Math.floor((10 * t - 10) / 100) - Math.floor(Math.pow(t - 100, 2) / 100);
   return Math.min(Math.max(bonus, 0), 140) / 100;
 }
 
-function twistedBowDamage(targetMagicLevel: number): number {
-  const magic = Math.min(targetMagicLevel, 250);
+function twistedBowDamage(targetMagicLevel: number, magicCap: number): number {
+  const magic = Math.min(targetMagicLevel, magicCap);
   const t = (3 * magic) / 10;
   const bonus = 250 + Math.floor((10 * t - 14) / 100) - Math.floor(Math.pow(t - 140, 2) / 100);
   return Math.min(Math.max(bonus, 0), 250) / 100;
@@ -213,7 +243,8 @@ export function applyModifiers(
   baseDamageMult: number,
   combatStyle: "melee" | "ranged" | "magic",
   modifiers: DpsModifier[],
-  targetMagicLevel?: number
+  targetMagicLevel?: number,
+  tbowMagicCap = 250
 ): { accuracyMult: number; damageMult: number } {
   let accuracyMult = baseAccuracyMult;
   let damageMult = baseDamageMult;
@@ -222,8 +253,8 @@ export function applyModifiers(
     if (mod.condition && mod.condition !== combatStyle) continue;
 
     if (mod.id === "twisted_bow" && targetMagicLevel != null) {
-      accuracyMult *= twistedBowAccuracy(targetMagicLevel);
-      damageMult *= twistedBowDamage(targetMagicLevel);
+      accuracyMult *= twistedBowAccuracy(targetMagicLevel, tbowMagicCap);
+      damageMult *= twistedBowDamage(targetMagicLevel, tbowMagicCap);
     } else {
       const override = mod.styleOverrides?.[combatStyle];
       accuracyMult *= override ? override.accuracyMult : mod.accuracyMult;
@@ -317,7 +348,8 @@ export function calculateDps(input: DpsInput) {
       1,
       input.combatStyle,
       input.modifiers,
-      input.targetMagicLevel
+      input.targetMagicLevel,
+      input.tbowRaidCap ? 350 : 250
     );
     ar = Math.floor(ar * accuracyMult);
     mh = Math.floor(mh * damageMult);

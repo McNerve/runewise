@@ -17,14 +17,20 @@ const DEFAULT_RESOURCES: Omit<Resource, "workers">[] = [
   { name: "Herbs", outputPer10: 46, itemId: 207, itemName: "Grimy ranarr weed" },
   { name: "Coal", outputPer10: 458, itemId: 453, itemName: "Coal" },
   { name: "Maple logs", outputPer10: 892, itemId: 1517, itemName: "Maple logs" },
-  { name: "Fish (raw)", outputPer10: 583, itemId: 377, itemName: "Raw swordfish" },
-  { name: "Hardwood", outputPer10: 168, itemId: 8780, itemName: "Teak plank" },
+  { name: "Fish (raw)", outputPer10: 583, itemId: 371, itemName: "Raw swordfish" },
+  { name: "Hardwood", outputPer10: 168, itemId: 6333, itemName: "Teak logs" },
   { name: "Flax", outputPer10: 1150, itemId: 1779, itemName: "Flax" },
   { name: "Mining (gems)", outputPer10: 100, itemId: 1623, itemName: "Uncut sapphire" },
 ];
 
-const DAILY_UPKEEP = 75_000;
-const MAX_WORKERS = 10;
+// outputPer10 is calibrated per 10 workers at 100% approval.
+const WORKER_BASIS = 10;
+// At most 10 workers can be assigned to a single resource.
+const PER_RESOURCE_CAP = 10;
+// Royal Trouble raises the workforce from 10 to 15 and the max daily coffer
+// withdrawal from 50k to 75k.
+const POST_RT = { workers: 15, upkeep: 75_000 };
+const PRE_RT = { workers: 10, upkeep: 50_000 };
 
 function getPrice(
   name: string,
@@ -41,86 +47,81 @@ export default function Kingdom() {
   const [resources, setResources] = useState<Resource[]>(
     DEFAULT_RESOURCES.map((r) => ({ ...r, workers: 0 })),
   );
+  const [royalTrouble, setRoyalTrouble] = useState(true);
+  const [approval, setApproval] = useState(100);
 
   useEffect(() => { fetchIfNeeded(); }, [fetchIfNeeded]);
 
+  const { workers: maxWorkers, upkeep: dailyUpkeep } = royalTrouble ? POST_RT : PRE_RT;
+
   const [isOptimal, setIsOptimal] = useState(false);
   const totalWorkers = resources.reduce((sum, r) => sum + r.workers, 0);
-  const remaining = MAX_WORKERS - totalWorkers;
+  const remaining = maxWorkers - totalWorkers;
 
   const setWorkers = useCallback((index: number, value: number) => {
     setResources((prev) => {
       const next = [...prev];
       const current = next[index]!;
       const otherTotal = prev.reduce((s, r, i) => s + (i === index ? 0 : r.workers), 0);
-      const clamped = Math.min(Math.max(0, value), MAX_WORKERS - otherTotal);
+      const clamped = Math.min(Math.max(0, value), PER_RESOURCE_CAP, maxWorkers - otherTotal);
       next[index] = { ...current, workers: clamped };
       return next;
     });
     setIsOptimal(false);
-  }, []);
+  }, [maxWorkers]);
+
+  const toggleRoyalTrouble = useCallback(() => {
+    const next = !royalTrouble;
+    // Shrinking the workforce: trim allocations to fit the new budget.
+    let budget = (next ? POST_RT : PRE_RT).workers;
+    const trimmed = resources.map((r) => {
+      const w = Math.min(r.workers, PER_RESOURCE_CAP, budget);
+      budget -= w;
+      return { ...r, workers: w };
+    });
+    setRoyalTrouble(next);
+    setResources(trimmed);
+    setIsOptimal(false);
+  }, [royalTrouble, resources]);
 
   const rows = useMemo(() => {
     return resources.map((r) => {
       const price = getPrice(r.name, r.itemId, prices);
-      const dailyOutput = Math.floor(r.outputPer10 * (r.workers / MAX_WORKERS));
+      const dailyOutput = Math.floor(
+        r.outputPer10 * (r.workers / WORKER_BASIS) * (approval / 100),
+      );
       const dailyGp = price != null ? dailyOutput * price : null;
       return { ...r, price, dailyOutput, dailyGp };
     });
-  }, [resources, prices]);
+  }, [resources, prices, approval]);
 
   const totalDailyGp = rows.reduce((sum, r) => {
     if (r.dailyGp == null) return sum;
     return sum + r.dailyGp;
   }, 0);
 
-  const netProfit = totalDailyGp - DAILY_UPKEEP;
+  const netProfit = totalDailyGp - dailyUpkeep;
 
   const optimize = useCallback(() => {
-    const gpPerWorker = DEFAULT_RESOURCES.map((r) => {
+    // Output is linear in workers, so the optimum is a greedy fill: best
+    // GP-per-worker resource first, capped at 10 workers per resource.
+    const ranked = DEFAULT_RESOURCES.map((r, index) => {
       const price = getPrice(r.name, r.itemId, prices);
-      if (price == null) return 0;
-      return (r.outputPer10 / MAX_WORKERS) * price;
-    });
+      return { index, gp: price != null ? (r.outputPer10 / WORKER_BASIS) * price : 0 };
+    }).sort((a, b) => b.gp - a.gp);
 
-    // Rank resources by GP per worker
-    const sorted = gpPerWorker
-      .map((gp, i) => ({ gp, index: i }))
-      .sort((a, b) => b.gp - a.gp);
-
-    // OSRS Kingdom: max 10 workers, distribute across top resources
-    // Best strategy is typically all 10 on rank 1, but if rank 2 is close
-    // the community recommends a 5/5 or 7/3 split. We do greedy fill:
-    // each resource gets workers proportional to its GP value
     const optimal = DEFAULT_RESOURCES.map((r) => ({ ...r, workers: 0 }));
-    const totalGp = sorted.reduce((s, x) => s + Math.max(0, x.gp), 0);
-
-    if (totalGp > 0) {
-      let budget = MAX_WORKERS;
-      // Give at least 5 to the best, then distribute rest proportionally
-      const bestIdx = sorted[0]?.index;
-      if (bestIdx != null) {
-        const bestShare = Math.min(budget, Math.max(5, Math.round((sorted[0].gp / totalGp) * MAX_WORKERS)));
-        optimal[bestIdx]!.workers = bestShare;
-        budget -= bestShare;
-      }
-      // Fill remaining from 2nd best onwards
-      for (let i = 1; i < sorted.length && budget > 0; i++) {
-        const { index, gp } = sorted[i];
-        if (gp <= 0) continue;
-        const share = Math.min(budget, Math.max(1, Math.round((gp / totalGp) * MAX_WORKERS)));
-        optimal[index]!.workers = share;
-        budget -= share;
-      }
-      // If any budget remains, add to best
-      if (budget > 0 && bestIdx != null) {
-        optimal[bestIdx]!.workers += budget;
-      }
+    let budget = maxWorkers;
+    for (const { index, gp } of ranked) {
+      if (budget <= 0 || gp <= 0) break;
+      const take = Math.min(PER_RESOURCE_CAP, budget);
+      optimal[index]!.workers = take;
+      budget -= take;
     }
 
     setResources(optimal);
     setIsOptimal(true);
-  }, [prices]);
+  }, [prices, maxWorkers]);
 
   const resetAll = useCallback(() => {
     setResources(DEFAULT_RESOURCES.map((r) => ({ ...r, workers: 0 })));
@@ -140,11 +141,11 @@ export default function Kingdom() {
     <div className="max-w-3xl">
       <h2 className="text-xl font-semibold mb-1">Kingdom Calculator</h2>
       <p className="text-xs text-text-secondary mb-4">
-        Allocate 10 workers across resources to maximize daily profit from Managing Miscellania
+        Allocate {maxWorkers} workers across resources to maximize daily profit from Managing Miscellania
       </p>
 
       {/* Controls */}
-      <div className="flex items-center gap-3 mb-4">
+      <div className="flex items-center gap-3 mb-4 flex-wrap">
         <button
           onClick={optimize}
           aria-pressed={isOptimal}
@@ -162,6 +163,28 @@ export default function Kingdom() {
         >
           Reset
         </button>
+        <button
+          onClick={toggleRoyalTrouble}
+          aria-pressed={royalTrouble}
+          title="Royal Trouble unlocks 15 workers and raises max daily upkeep to 75k"
+          className={`home-tile px-3 py-1.5 rounded text-xs font-medium border ${
+            royalTrouble ? "bg-accent text-on-accent border-accent" : "bg-bg-tertiary text-text-secondary border-transparent"
+          }`}
+        >
+          Royal Trouble
+        </button>
+        <label className="flex items-center gap-2 text-xs text-text-secondary">
+          Approval
+          <input
+            type="number"
+            min={0}
+            max={100}
+            value={approval}
+            onChange={(e) => setApproval(Math.min(100, Math.max(0, Number(e.target.value) || 0)))}
+            className="w-14 px-1.5 py-1 rounded-lg bg-bg-tertiary border border-border text-xs text-center tabular-nums focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
+          />
+          %
+        </label>
         <span className={`text-xs tabular-nums ml-auto ${remaining < 0 ? "text-danger" : "text-text-secondary"}`}>
           {remaining} worker{remaining !== 1 ? "s" : ""} remaining
         </span>
@@ -197,7 +220,7 @@ export default function Kingdom() {
             <input
               type="range"
               min={0}
-              max={MAX_WORKERS}
+              max={PER_RESOURCE_CAP}
               value={row.workers}
               onChange={(e) => setWorkers(i, Number(e.target.value))}
               className="flex-1"
@@ -205,7 +228,7 @@ export default function Kingdom() {
             <input
               type="number"
               min={0}
-              max={MAX_WORKERS - (totalWorkers - row.workers)}
+              max={Math.min(PER_RESOURCE_CAP, maxWorkers - (totalWorkers - row.workers))}
               value={row.workers}
               onChange={(e) => setWorkers(i, Number(e.target.value) || 0)}
               className="w-12 px-1.5 py-1 rounded-lg bg-bg-tertiary border border-border text-xs text-center tabular-nums focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
@@ -240,10 +263,10 @@ export default function Kingdom() {
             Coffer Upkeep
           </div>
           <div className="text-sm font-semibold tabular-nums mt-0.5 text-danger">
-            -{formatGp(DAILY_UPKEEP)}
+            -{formatGp(dailyUpkeep)}
           </div>
           <div className="text-[10px] text-text-secondary/50 mt-0.5 leading-tight">
-            Daily coffer cost at 10 workers
+            Max daily coffer withdrawal ({royalTrouble ? "post" : "pre"}-Royal Trouble)
           </div>
         </div>
         <div className="bg-bg-tertiary rounded-lg px-3 py-2">

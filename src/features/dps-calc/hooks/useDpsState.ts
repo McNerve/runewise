@@ -1,6 +1,8 @@
 /* eslint-disable react-hooks/set-state-in-effect -- hook syncs state from external URL params + hiscores; effects are the correct integration point */
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import {
+  addModifierExclusive,
+  sanitizeModifierSet,
   calculateDps,
   calculateSpecDps,
   DPS_MODIFIERS,
@@ -296,7 +298,7 @@ export function useDpsState({ hiscores }: Props) {
     if (params.onTask !== "1") return;
     setActiveModifiers((prev) => {
       const next = new Set(prev);
-      next.add("slayer_helm");
+      addModifierExclusive(next, "slayer_helm");
       return next;
     });
   }, [params.onTask]);
@@ -311,7 +313,7 @@ export function useDpsState({ hiscores }: Props) {
       setAttackBonus(loadout.attackBonus);
       setStrengthBonus(loadout.strengthBonus);
       setAttackSpeed(loadout.attackSpeed);
-      setActiveModifiers(new Set(loadout.modifiers));
+      setActiveModifiers(sanitizeModifierSet(loadout.modifiers));
     } else {
       setStanceIdx(0);
       setPrayerIdx(0);
@@ -384,6 +386,8 @@ export function useDpsState({ hiscores }: Props) {
     : toaInvocation > 0
       ? toaHpScale(baseHp, toaInvocation)
       : baseHp;
+  // Both CoX and ToA raise the twisted bow's target-magic clamp to 350.
+  const tbowRaidCap = coxPartySize > 1 || toaInvocation > 0;
 
   const modifierList = useMemo<DpsModifier[]>(
     () =>
@@ -423,6 +427,7 @@ export function useDpsState({ hiscores }: Props) {
         modifiers: modifierList,
         defReductions,
         spellBaseMaxHit: activeSpellBase,
+        tbowRaidCap,
       }),
     [
       attackLevel,
@@ -442,6 +447,7 @@ export function useDpsState({ hiscores }: Props) {
       modifierList,
       defReductions,
       activeSpellBase,
+      tbowRaidCap,
     ]
   );
 
@@ -520,6 +526,7 @@ export function useDpsState({ hiscores }: Props) {
       targetMagicLevel: selectedMonster?.magicLevel,
       modifiers: [...compareLoadout.modifiers].map((id) => DPS_MODIFIERS[id]).filter((m): m is DpsModifier => m != null),
       defReductions,
+      tbowRaidCap,
     };
     const currentInput: DpsInput = {
       attackLevel,
@@ -541,9 +548,10 @@ export function useDpsState({ hiscores }: Props) {
       modifiers: modifierList,
       defReductions,
       spellBaseMaxHit: activeSpellBase,
+      tbowRaidCap,
     };
     return compareDps(cmpInput, currentInput);
-  }, [compareLoadout, attackLevel, strengthLevel, rangedLevel, magicLevel, effectiveAttackBonus, effectiveStrengthBonus, prayerAttackMult, prayerStrengthMult, stanceAttackBonus, stanceStrengthBonus, effectiveAttackSpeed, combatStyle, targetDefLevel, targetDefBonus, targetHp, selectedMonster?.magicLevel, modifierList, defReductions, activeSpellBase]);
+  }, [compareLoadout, attackLevel, strengthLevel, rangedLevel, magicLevel, effectiveAttackBonus, effectiveStrengthBonus, prayerAttackMult, prayerStrengthMult, stanceAttackBonus, stanceStrengthBonus, effectiveAttackSpeed, combatStyle, targetDefLevel, targetDefBonus, targetHp, selectedMonster?.magicLevel, modifierList, defReductions, activeSpellBase, tbowRaidCap]);
 
   const specWeapons = useMemo(
     () => getSpecWeaponsForStyle(combatStyle),
@@ -571,6 +579,7 @@ export function useDpsState({ hiscores }: Props) {
       targetMagicLevel: selectedMonster?.magicLevel,
       modifiers: modifierList,
       defReductions,
+      tbowRaidCap,
       specAccuracyMult: selectedSpec.accuracyMult,
       specDamageMult: selectedSpec.damageMult,
       specHits: selectedSpec.hits,
@@ -578,7 +587,7 @@ export function useDpsState({ hiscores }: Props) {
       specSpeed: effectiveAttackSpeed,
       specCascadeType: selectedSpec.cascadeType,
     });
-  }, [selectedSpec, attackLevel, strengthLevel, rangedLevel, magicLevel, effectiveAttackBonus, effectiveStrengthBonus, prayerAttackMult, prayerStrengthMult, stanceAttackBonus, stanceStrengthBonus, effectiveAttackSpeed, combatStyle, targetDefLevel, targetDefBonus, targetHp, selectedMonster?.magicLevel, modifierList, defReductions]);
+  }, [selectedSpec, attackLevel, strengthLevel, rangedLevel, magicLevel, effectiveAttackBonus, effectiveStrengthBonus, prayerAttackMult, prayerStrengthMult, stanceAttackBonus, stanceStrengthBonus, effectiveAttackSpeed, combatStyle, targetDefLevel, targetDefBonus, targetHp, selectedMonster?.magicLevel, modifierList, defReductions, tbowRaidCap]);
 
   const toggleModifier = useCallback((id: string) => {
     setActiveModifiers((prev) => {
@@ -586,7 +595,7 @@ export function useDpsState({ hiscores }: Props) {
       if (next.has(id)) {
         next.delete(id);
       } else {
-        next.add(id);
+        addModifierExclusive(next, id);
       }
       return next;
     });
@@ -628,7 +637,7 @@ export function useDpsState({ hiscores }: Props) {
       setAttackBonus(loadout.attackBonus);
       setStrengthBonus(loadout.strengthBonus);
       setAttackSpeed(loadout.attackSpeed);
-      setActiveModifiers(new Set(loadout.modifiers));
+      setActiveModifiers(sanitizeModifierSet(loadout.modifiers));
       if (loadout.bonusMode) setBonusMode(loadout.bonusMode);
       if (loadout.gear) setEquippedGear(loadout.gear as EquippedGear);
     };

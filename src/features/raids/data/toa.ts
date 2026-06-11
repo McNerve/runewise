@@ -12,13 +12,16 @@ export const TOA_ROOMS: RaidRoom[] = [
   { name: "The Wardens", type: "boss", mechanics: "Three-phase final boss. P1: attack Elidinis/Tumeken wardens, dodge slam. P2: destroy core, avoid falling rocks and lightning. P3: prayer switching with powerful attacks, enrage at low HP.", tips: "P1: DPS one warden at a time. P2: focus core, dodge mechanics. P3: prayer flick accurately — mistakes are punishing at high invocations." },
 ];
 
+// Weights are the OSRS Wiki unique-table weightings (out of 24 total). The
+// chance that ANY unique drops scales with invocation level; a specific item
+// is that chance × weight/24.
 export const TOA_UNIQUES: RaidUnique[] = [
-  { name: "Osmumten's fang", pointsRequired: "Invocation-based", rateDescription: "1/48 at 150 invocation (scales with invocation level)" },
-  { name: "Tumeken's shadow", pointsRequired: "Invocation-based", rateDescription: "1/24 at 300+ invocation (rarest drop)" },
-  { name: "Lightbearer", pointsRequired: "Invocation-based", rateDescription: "1/48 at 150 invocation" },
-  { name: "Masori mask", pointsRequired: "Invocation-based", rateDescription: "1/48 at 150 invocation" },
-  { name: "Masori body", pointsRequired: "Invocation-based", rateDescription: "1/48 at 150 invocation" },
-  { name: "Masori chaps", pointsRequired: "Invocation-based", rateDescription: "1/48 at 150 invocation" },
-  { name: "Elidinis' ward", pointsRequired: "Invocation-based", rateDescription: "1/48 at 150 invocation" },
-  { name: "Tumeken's guardian", pointsRequired: "N/A", rateDescription: "1/350+ per completion (pet)" },
+  { name: "Osmumten's fang", pointsRequired: "Invocation-based", rateDescription: "7/24 of unique rolls", weight: 7 },
+  { name: "Tumeken's shadow", geName: "Tumeken's shadow (uncharged)", pointsRequired: "Invocation-based", rateDescription: "1/24 of unique rolls (rarest drop)", weight: 1 },
+  { name: "Lightbearer", pointsRequired: "Invocation-based", rateDescription: "7/24 of unique rolls", weight: 7 },
+  { name: "Masori mask", pointsRequired: "Invocation-based", rateDescription: "2/24 of unique rolls", weight: 2 },
+  { name: "Masori body", pointsRequired: "Invocation-based", rateDescription: "2/24 of unique rolls", weight: 2 },
+  { name: "Masori chaps", pointsRequired: "Invocation-based", rateDescription: "2/24 of unique rolls", weight: 2 },
+  { name: "Elidinis' ward", pointsRequired: "Invocation-based", rateDescription: "3/24 of unique rolls", weight: 3 },
+  { name: "Tumeken's guardian", pointsRequired: "N/A", rateDescription: "1/350+ per completion (pet)", weight: 0 },
 ];

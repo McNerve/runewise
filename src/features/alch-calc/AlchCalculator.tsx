@@ -3,6 +3,7 @@ import { itemIcon } from "../../lib/sprites";
 import type { ItemMapping } from "../../lib/api/ge";
 import { useGEData } from "../../hooks/useGEData";
 import { formatGp } from "../../lib/format";
+import { alchProfit, natureRunePrice } from "../../lib/alch";
 import ItemTooltip from "../../components/ItemTooltip";
 
 type MembersFilter = "all" | "f2p" | "p2p";
@@ -42,7 +43,7 @@ export default function AlchCalculator() {
 
   useEffect(() => { fetchIfNeeded(); }, [fetchIfNeeded]);
 
-  const natureRuneCost = prices["561"]?.high ?? 250;
+  const natureRuneCost = natureRunePrice(prices);
 
   // GE price cap — items at/above this wrap or produce useless alch math.
   const GE_PRICE_CAP = 2_147_000_000;
@@ -56,7 +57,7 @@ export default function AlchCalculator() {
       if (buyPrice == null || buyPrice <= 0) continue;
       if (buyPrice >= GE_PRICE_CAP) continue;
 
-      const profit = item.highalch - buyPrice - natureRuneCost;
+      const profit = alchProfit(item.highalch, buyPrice, natureRuneCost);
       const roi = (profit / buyPrice) * 100;
       result.push({ item, buyPrice, highalch: item.highalch, profit, roi });
     }

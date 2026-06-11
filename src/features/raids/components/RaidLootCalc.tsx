@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useGEData } from "../../../hooks/useGEData";
 import { formatGp } from "../../../lib/format";
 import { itemIcon } from "../../../lib/sprites";
+import { computeRaidEv } from "../raidEv";
 import type { RaidUnique } from "../data/cox";
 
 interface RaidLootCalcProps {
@@ -22,7 +23,7 @@ export default function RaidLootCalc({
   calculateRate,
 }: RaidLootCalcProps) {
   const [inputValue, setInputValue] = useState(inputDefault);
-  const { mapping, prices, fetchIfNeeded } = useGEData();
+  const { mapping, prices, pricesLoaded, fetchIfNeeded } = useGEData();
 
   useEffect(() => { fetchIfNeeded(); }, [fetchIfNeeded]);
 
@@ -34,23 +35,11 @@ export default function RaidLootCalc({
 
   const dropRate = calculateRate(inputValue);
 
-  const rows = useMemo(() => {
-    return uniques
-      .filter((u) => u.pointsRequired !== "N/A")
-      .map((item) => {
-        const id = itemMap.get(item.name.toLowerCase());
-        const price = id ? prices[String(id)] : null;
-        const gePrice = price?.high ?? price?.low ?? null;
-        const evPerRaid = gePrice != null && dropRate > 0
-          ? gePrice / dropRate
-          : null;
-
-        return { item, gePrice, evPerRaid };
-      });
-  }, [uniques, prices, itemMap, dropRate]);
-
-  const totalEvPerRaid = rows.reduce((sum, r) => sum + (r.evPerRaid ?? 0), 0);
-  const petItem = uniques.find((u) => u.pointsRequired === "N/A");
+  const { rows, totalEv: totalEvPerRaid } = useMemo(
+    () => computeRaidEv(uniques, itemMap, prices, dropRate),
+    [uniques, prices, itemMap, dropRate]
+  );
+  const petItem = uniques.find((u) => u.weight === 0);
 
   return (
     <div className="mt-4">
@@ -63,7 +52,7 @@ export default function RaidLootCalc({
           min={1}
           max={10000}
           value={inputValue}
-          onChange={(e) => setInputValue(Math.max(1, Number(e.target.value)))}
+          onChange={(e) => setInputValue(Math.min(10000, Math.max(1, Number(e.target.value) || 1)))}
           className="w-24 px-2 py-1.5 rounded-lg bg-bg-tertiary border border-border text-sm tabular-nums focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
         />
         <span className="text-[10px] text-text-secondary/50">{inputDescription}</span>
@@ -74,7 +63,7 @@ export default function RaidLootCalc({
           <div>
             <div className="text-xs text-text-secondary">Expected value per {raidName}</div>
             <div className="text-2xl font-bold text-success tabular-nums">
-              {formatGp(Math.round(totalEvPerRaid))}
+              {pricesLoaded ? formatGp(Math.round(totalEvPerRaid)) : "—"}
             </div>
           </div>
           <div className="text-right">
@@ -91,6 +80,7 @@ export default function RaidLootCalc({
           <tr className="border-b border-border text-text-secondary text-xs">
             <th className="px-2 py-1.5 text-left w-6" />
             <th className="px-2 py-1.5 text-left">Item</th>
+            <th className="px-2 py-1.5 text-right">Rate</th>
             <th className="px-2 py-1.5 text-right">GE Price</th>
             <th className="px-2 py-1.5 text-right">EV/Raid</th>
           </tr>
@@ -111,6 +101,9 @@ export default function RaidLootCalc({
               </td>
               <td className="px-2 py-1.5 text-sm">{r.item.name}</td>
               <td className="px-2 py-1.5 text-xs text-right tabular-nums text-text-secondary">
+                {r.itemRate != null ? `1/${Math.round(r.itemRate).toLocaleString()}` : "—"}
+              </td>
+              <td className="px-2 py-1.5 text-xs text-right tabular-nums text-text-secondary">
                 {r.gePrice != null ? formatGp(r.gePrice) : "—"}
               </td>
               <td className="px-2 py-1.5 text-xs text-right tabular-nums text-success">
@@ -121,7 +114,7 @@ export default function RaidLootCalc({
         </tbody>
         <tfoot>
           <tr className="border-t border-border font-medium">
-            <td colSpan={3} className="px-2 py-2 text-xs">Total EV per raid</td>
+            <td colSpan={4} className="px-2 py-2 text-xs">Total EV per raid</td>
             <td className="px-2 py-2 text-xs text-right tabular-nums text-success">
               {formatGp(Math.round(totalEvPerRaid))}
             </td>

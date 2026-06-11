@@ -8,6 +8,7 @@ import type {
 import type { ItemMapping, ItemPrice } from "../../lib/api/ge";
 import type { TimeseriesPoint, Timestep } from "../../lib/api/ge-timeseries";
 import { formatGp, timeAgo } from "../../lib/format";
+import { netMargin } from "../../lib/tax";
 
 export type Period = "1D" | "1W" | "1M" | "3M" | "6M" | "1Y";
 export type ChartMode = "line" | "candlestick";
@@ -106,9 +107,15 @@ export function itemToWikiUrl(itemName: string) {
   return `https://oldschool.runescape.wiki/w/${encodeURIComponent(itemName.replace(/ /g, "_"))}`;
 }
 
+/** Tax-aware flip margin from a price pair, null when either side is missing. */
+export function priceMargin(price?: ItemPrice): number | null {
+  return price?.high != null && price?.low != null
+    ? netMargin(price.high, price.low)
+    : null;
+}
+
 export function buildItemStats(item: ItemMapping, price?: ItemPrice) {
-  const margin =
-    price?.high != null && price?.low != null ? price.high - price.low : null;
+  const margin = priceMargin(price);
 
   return [
     {
@@ -126,7 +133,7 @@ export function buildItemStats(item: ItemMapping, price?: ItemPrice) {
     ...(margin != null
       ? [
           {
-            label: "Margin",
+            label: "Margin (after tax)",
             value: `${margin > 0 ? "+" : ""}${formatGp(margin)}`,
             className: margin >= 0 ? "text-success" : "text-danger",
           },

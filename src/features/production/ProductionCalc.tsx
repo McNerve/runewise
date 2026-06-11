@@ -3,6 +3,7 @@ import { fetchAllRecipes, type WikiRecipe } from "../../lib/api/recipes";
 import type { ItemPrice } from "../../lib/api/ge";
 import { useGEData } from "../../hooks/useGEData";
 import { formatGp } from "../../lib/format";
+import { postTaxPrice } from "../../lib/tax";
 import { itemIcon, skillIcon } from "../../lib/sprites";
 import ErrorState from "../../components/ErrorState";
 import { useNavigation } from "../../lib/NavigationContext";
@@ -60,7 +61,7 @@ function calcRecipe(
   for (const out of output) {
     if (!out?.name) continue;
     const price = getItemPrice(out.name, itemMap, prices);
-    if (price != null && outputValue != null) outputValue += price * (out.quantity ?? 1);
+    if (price != null && outputValue != null) outputValue += postTaxPrice(price) * (out.quantity ?? 1);
     else outputValue = null;
   }
 

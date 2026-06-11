@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback, useRef } from "react";
 import { loadJSON, saveJSON } from "../../lib/localStorage";
+import { flipProfit } from "./profit";
 import { formatGp } from "../../lib/format";
 import { searchItems, type ItemMapping } from "../../lib/api/ge";
 import Chart from "../../components/Chart";
@@ -22,7 +23,7 @@ export interface FlipEntry {
 
 function calcProfit(entry: FlipEntry): number | null {
   if (entry.sellPrice == null) return null;
-  return Math.floor((entry.sellPrice - entry.buyPrice) * entry.qty * 0.99);
+  return flipProfit(entry.buyPrice, entry.sellPrice, entry.qty);
 }
 
 function heldTime(entry: FlipEntry): string {
@@ -399,19 +400,20 @@ function CloseModal({ entry, onConfirm, onCancel }: {
           autoFocus
           className="w-full bg-bg-tertiary border border-border rounded-lg px-3 py-1.5 text-sm mb-3"
         />
-        {sellPrice && (
-          <div className="text-xs text-text-secondary mb-3">
-            Profit: <span className={`font-medium ${
-              Math.floor((Number(sellPrice) - entry.buyPrice) * entry.qty * 0.99) >= 0 ? "text-success" : "text-danger"
-            }`}>
-              {formatGp(Math.floor((Number(sellPrice) - entry.buyPrice) * entry.qty * 0.99))}
-            </span>
-          </div>
-        )}
+        {sellPrice && (() => {
+          const preview = flipProfit(entry.buyPrice, Number(sellPrice), entry.qty);
+          return (
+            <div className="text-xs text-text-secondary mb-3">
+              Profit: <span className={`font-medium ${preview >= 0 ? "text-success" : "text-danger"}`}>
+                {formatGp(preview)}
+              </span>
+            </div>
+          );
+        })()}
         <div className="flex gap-2 justify-end">
           <button onClick={onCancel} className="px-3 py-1.5 text-sm text-text-secondary hover:text-text-primary transition-colors">Cancel</button>
           <button
-            disabled={!sellPrice || Number(sellPrice) <= 0}
+            disabled={!Number.isFinite(Number(sellPrice)) || Number(sellPrice) <= 0}
             onClick={() => onConfirm(Number(sellPrice))}
             className="home-tile px-4 py-1.5 text-sm font-medium bg-accent text-on-accent border border-accent rounded-lg disabled:opacity-40 disabled:cursor-not-allowed"
           >

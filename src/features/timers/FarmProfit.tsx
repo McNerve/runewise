@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { FARM_CROPS, CROP_CATEGORIES } from "../../lib/data/farming-crops";
 import { fetchLatestPrices, type ItemPrice } from "../../lib/api/ge";
 import { formatGp } from "../../lib/format";
+import { postTaxPrice } from "../../lib/tax";
 import { WIKI_IMG } from "../../lib/sprites";
 
 export default function FarmProfit() {
@@ -31,7 +32,9 @@ export default function FarmProfit() {
         null;
 
       const revenue =
-        producePrice != null ? producePrice * crop.avgYield * crop.patches : null;
+        producePrice != null
+          ? postTaxPrice(producePrice) * crop.avgYield * crop.patches
+          : null;
       const cost = seedPrice != null ? seedPrice * crop.patches : null;
       const profit =
         revenue != null && cost != null ? revenue - cost : null;
