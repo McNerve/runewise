@@ -145,7 +145,7 @@ function parseLead(rawHtml: string, title: string) {
   // lead; deleting every <table> threw that content away.
   content
     .querySelectorAll(
-      "table.infobox, table[style*='float'], .thumb, .infobox-buttons, .hatnote, .infobox-switch-resources, .navigation-not-searchable"
+      "table.infobox:not(.infobox-bonuses), table[style*='float'], .thumb, .infobox-buttons, .hatnote, .infobox-switch-resources, .navigation-not-searchable, .infobox-bonuses-image"
     )
     .forEach((element) => element.remove());
 

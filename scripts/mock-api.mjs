@@ -81,6 +81,15 @@ ${infoboxRow("High alch", "72,000 coins")}
 ${infoboxRow("Weight", "0.453 kg")}
 </table>
 ${PARA('The <b>abyssal whip</b> is a one-handed melee weapon requiring 70 <a href="/w/Attack">Attack</a> to wield. It is a common drop from <a href="/w/Abyssal_demon">abyssal demons</a>.')}
+<table class="infobox infobox-bonuses">
+<caption>Combat stats</caption>
+<tr><th colspan="4">Attack bonuses</th></tr>
+<tr><td><img src="/images/White_dagger.png" width="20" title="Stab"></td><td><img src="/images/White_scimitar.png" width="20" title="Slash"></td><td><img src="/images/White_warhammer.png" width="20" title="Crush"></td><td><img src="/images/Magic_icon.png" width="20" title="Magic"></td></tr>
+<tr><td>+0</td><td>+82</td><td>+0</td><td>+0</td></tr>
+<tr><th colspan="4">Other bonuses</th></tr>
+<tr><td>Strength +82</td><td>Ranged +0</td><td>Magic dmg +0%</td><td>Prayer +0</td></tr>
+<tr class="infobox-bonuses-image"><td colspan="4"><img src="/images/Equipment_model.png" width="100"></td></tr>
+</table>
 <div class="mw-heading2"><h2>Combat stats</h2></div>
 <table class="wikitable"><tr><th>Slash</th><th>Strength</th></tr><tr><td>+82</td><td>+82</td></tr></table>
 <div class="mw-heading2"><h2>Item sources</h2></div>
@@ -255,7 +264,7 @@ http
         const marks = [...hit.html.matchAll(/<div class="mw-heading([23])"><h[23]>(.*?)<\/h[23]>/g)]
           .map((m, i) => ({ number: String(i + 1), line: m[2], level: m[1], index: m.index }));
         if (url.searchParams.get("prop") === "sections") {
-          return json(res, { parse: { sections: marks.map(({ number, line, level }) => ({ number, line, level })) } });
+          return json(res, { parse: { sections: marks.map(({ number, line, level }) => ({ number, line, level, toclevel: level === "2" ? 1 : 2 })) } });
         }
         const sectionParam = url.searchParams.get("section");
         if (sectionParam !== null) {

@@ -34,6 +34,11 @@ export interface ComparisonTable {
  *  - Optionally a "Notes" / "Description" last column
  */
 export function isComparisonTable(table: HTMLTableElement): boolean {
+  // Drop tables (lighttable) have their own semantics — rarity-tinted rows,
+  // item icons, "Always"/fractional rarity strings. Re-rendering them as
+  // comparison grids silently dropped the icons and colours.
+  if (table.classList.contains("lighttable")) return false;
+
   const headers = getHeaderCells(table);
   if (headers.length < 3) return false;
 
