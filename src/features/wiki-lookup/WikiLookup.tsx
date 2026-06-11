@@ -143,6 +143,13 @@ export default function WikiLookup() {
     const priceEntry = prices[String(match.id)];
     const price = priceEntry?.high ?? priceEntry?.low ?? null;
 
+    // Untradeables can appear in the mapping with no market data — a GE box
+    // showing only dashes is noise, not information.
+    if (price === null && match.limit == null) {
+      setGeSnapshot(null);
+      return;
+    }
+
     let cancelled = false;
     fetchVolumes()
       .then((vols) => {
@@ -751,8 +758,10 @@ export default function WikiLookup() {
             })}
           </section>
 
-          <aside className="space-y-6 xl:sticky xl:top-2 xl:self-start xl:max-h-[calc(100vh-8rem)] xl:overflow-y-auto">
-            <WikiToc entries={tocEntries} contentRef={contentRef} />
+          {/* Snapshot scrolls naturally; the TOC sticks below it for the rest
+              of the column. No inner scroll region — sticky + overflow-auto
+              caused paint artifacts in webviews. */}
+          <aside className="space-y-6">
             <section>
               <div className="text-[10px] uppercase tracking-[0.2em] text-text-secondary/45">
                 Snapshot
@@ -855,6 +864,9 @@ export default function WikiLookup() {
                 </div>
               </div>
             </section>
+            <div className="xl:sticky xl:top-4">
+              <WikiToc entries={tocEntries} contentRef={contentRef} />
+            </div>
           </aside>
         </div>
         </div>

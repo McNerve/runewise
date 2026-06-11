@@ -1,6 +1,7 @@
 import { type ReactNode, useState, memo } from "react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { fetchMapping, fetchLatestPrices, type ItemMapping, type ItemPrice } from "../lib/api/ge";
+import { fetchWikiSummary, type WikiPageSummary } from "../lib/wiki/lookup";
 import { formatGp } from "../lib/format";
 import { encodeIconFilename, WIKI_IMG } from "../lib/sprites";
 
@@ -23,6 +24,7 @@ interface Props {
 export default memo(function ItemTooltip({ itemName, children }: Props) {
   const [item, setItem] = useState<ItemMapping | null>(null);
   const [price, setPrice] = useState<ItemPrice | null>(null);
+  const [wiki, setWiki] = useState<WikiPageSummary | null>(null);
   const [loaded, setLoaded] = useState(false);
 
   function handleOpen(open: boolean) {
@@ -32,8 +34,14 @@ export default memo(function ItemTooltip({ itemName, children }: Props) {
       if (match) {
         setItem(match);
         setPrice(prices[String(match.id)] ?? null);
+        setLoaded(true);
+        return;
       }
-      setLoaded(true);
+      // Not on the GE (untradeables, NPCs, …) — fall back to a wiki-style
+      // page preview instead of "no data".
+      fetchWikiSummary(itemName)
+        .then(setWiki)
+        .finally(() => setLoaded(true));
     });
   }
 
@@ -77,6 +85,33 @@ export default memo(function ItemTooltip({ itemName, children }: Props) {
                   <span className="text-accent">P2P</span>
                 )}
               </div>
+            </div>
+          </div>
+        ) : wiki ? (
+          <div className="flex gap-3 items-start max-w-64">
+            {wiki.image && (
+              <img
+                src={wiki.image}
+                alt=""
+                className="w-10 h-10 shrink-0 mt-0.5 object-contain"
+                onError={(e) => { e.currentTarget.style.display = "none"; }}
+              />
+            )}
+            <div className="min-w-0">
+              <div className="font-semibold text-text-primary text-xs">{wiki.title}</div>
+              {wiki.summary && (
+                <div className="text-[10px] text-text-secondary/70 mt-0.5 line-clamp-3">{wiki.summary}</div>
+              )}
+              {wiki.fields.length > 0 && (
+                <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-[10px]">
+                  {wiki.fields.slice(0, 3).map((f) => (
+                    <span key={f.label}>
+                      <span className="text-text-secondary/50">{f.label}: </span>
+                      <span className="text-text-primary">{f.value}</span>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         ) : loaded ? (

@@ -47,7 +47,9 @@ export const BOSS_DROP_TABLES: BossDropTable[] = [
       { itemName: "Arcane sigil", itemId: 12827, rate: 1365, quantity: 1, category: "unique" },
       { itemName: "Holy elixir", itemId: 12833, rate: 171, quantity: 1, category: "rare" },
       { itemName: "Spirit shield", itemId: 12829, rate: 64, quantity: 1, category: "rare" },
-      { itemName: "Onyx bolts (e)", itemId: 9245, rate: 1, quantity: 175, category: "common" },
+      // ~5/118 on the wiki table — was wrongly marked "always" (rate 1),
+      // which alone inflated Corp to a #1-ranked 14M+/hr.
+      { itemName: "Onyx bolts (e)", itemId: 9245, rate: 24, quantity: 175, category: "common" },
     ],
   },
   {
@@ -307,7 +309,9 @@ export const BOSS_DROP_TABLES: BossDropTable[] = [
   },
   {
     bossName: "The Nightmare",
-    killsPerHour: 6,
+    // Personal-loot rate: a 5-man team does ~12-14 team kills/hr but loot is
+    // split; 6 overvalued it against the per-player unique rates below.
+    killsPerHour: 4,
     drops: [
       { itemName: "Inquisitor's mace", itemId: 24417, rate: 600, quantity: 1, category: "unique" },
       { itemName: "Inquisitor's great helm", itemId: 24419, rate: 600, quantity: 1, category: "unique" },

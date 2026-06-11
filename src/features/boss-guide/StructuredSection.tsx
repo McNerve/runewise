@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import WikiImage from "../../components/WikiImage";
+import ItemTooltip from "../../components/ItemTooltip";
 import {
   parseEquipmentCellEntries,
   parseSuggestedSkill,
@@ -418,30 +419,32 @@ function EquipmentPill({
 
   const isBest = index === 0;
   return (
-    <div
-      className={`flex items-center gap-1.5 rounded-lg border px-2 py-1 ${
-        isBest
-          ? "border-accent/25 bg-accent/8"
-          : "border-border/40 bg-bg-secondary/40"
-      }`}
-    >
-      {entry.imageUrl && (
-        <WikiImage
-          src={entry.imageUrl}
-          alt=""
-          className="h-6 w-6 p-0.5 rounded-md bg-bg-primary/60 object-contain"
-          fallback={entry.name[0]}
-        />
-      )}
-      <span className="text-xs text-text-primary truncate max-w-[160px]">
-        {entry.name}
-      </span>
-      {isBest && (
-        <span className="text-[9px] uppercase tracking-wide text-accent/70 font-semibold">
-          Best
+    <ItemTooltip itemName={entry.name}>
+      <div
+        className={`flex items-center gap-1.5 rounded-lg border px-2 py-1 ${
+          isBest
+            ? "border-accent/25 bg-accent/8"
+            : "border-border/40 bg-bg-secondary/40"
+        }`}
+      >
+        {entry.imageUrl && (
+          <WikiImage
+            src={entry.imageUrl}
+            alt=""
+            className="h-6 w-6 p-0.5 rounded-md bg-bg-primary/60 object-contain"
+            fallback={entry.name[0]}
+          />
+        )}
+        <span className="text-xs text-text-primary truncate max-w-[160px]">
+          {entry.name}
         </span>
-      )}
-    </div>
+        {isBest && (
+          <span className="text-[9px] uppercase tracking-wide text-accent/70 font-semibold">
+            Best
+          </span>
+        )}
+      </div>
+    </ItemTooltip>
   );
 }
 
@@ -572,20 +575,24 @@ function LoadoutTable({ title, html, doc, bossSlug }: { title: string; html: str
             </div>
             <div className="flex flex-wrap gap-1.5 min-w-0 flex-1">
               {row.options.map((option, optionIndex) => (
-                <div
+                <ItemTooltip
                   key={`${title}-legacy-row-${index}-option-${optionIndex}`}
-                  className={`flex items-center gap-1.5 rounded-lg border px-2 py-1 ${
-                    optionIndex === 0
-                      ? "border-accent/25 bg-accent/8"
-                      : "border-border/40 bg-bg-secondary/40"
-                  }`}
+                  itemName={option.text}
                 >
-                  {renderIcon(option.icon, option.text, "sm")}
-                  <span className="text-xs text-text-primary truncate max-w-[160px]">{option.text}</span>
-                  {optionIndex === 0 && (
-                    <span className="text-[9px] uppercase tracking-wide text-accent/70 font-semibold">Best</span>
-                  )}
-                </div>
+                  <div
+                    className={`flex items-center gap-1.5 rounded-lg border px-2 py-1 ${
+                      optionIndex === 0
+                        ? "border-accent/25 bg-accent/8"
+                        : "border-border/40 bg-bg-secondary/40"
+                    }`}
+                  >
+                    {renderIcon(option.icon, option.text, "sm")}
+                    <span className="text-xs text-text-primary truncate max-w-[160px]">{option.text}</span>
+                    {optionIndex === 0 && (
+                      <span className="text-[9px] uppercase tracking-wide text-accent/70 font-semibold">Best</span>
+                    )}
+                  </div>
+                </ItemTooltip>
               ))}
             </div>
             <div className="flex w-8 shrink-0 items-center justify-center pt-0.5">

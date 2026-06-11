@@ -4,6 +4,11 @@ import tailwindcss from "@tailwindcss/vite";
 
 const host = process.env.TAURI_DEV_HOST;
 
+// RW_MOCK_API=1 routes every /api proxy to scripts/mock-api.mjs so the full
+// app can be exercised with realistic data in offline sandboxes.
+const MOCK = process.env.RW_MOCK_API === "1";
+const MOCK_TARGET = "http://localhost:5198";
+
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   define: {
@@ -16,7 +21,13 @@ export default defineConfig({
     host: host || false,
     hmr: host ? { protocol: "ws", host, port: 5174 } : undefined,
     watch: { ignored: ["**/src-tauri/**"] },
-    proxy: {
+    proxy: MOCK ? Object.fromEntries(
+      [
+        "/api/hiscores-hardcore", "/api/hiscores-ultimate", "/api/hiscores-ironman",
+        "/api/hiscores", "/api/wiki-content", "/api/wiki-prices", "/api/wom",
+        "/api/news", "/api/stars", "/api/maps", "/api/cdn", "/api/temple",
+      ].map((path) => [path, { target: MOCK_TARGET, changeOrigin: true }])
+    ) : {
       "/api/hiscores-hardcore": {
         target: "https://secure.runescape.com",
         changeOrigin: true,
