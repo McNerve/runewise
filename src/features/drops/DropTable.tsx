@@ -8,6 +8,7 @@ import { useNavigation } from "../../lib/NavigationContext";
 import WikiImage from "../../components/WikiImage";
 import { findBossByName } from "../../lib/data/bosses";
 import { TableSkeleton } from "../../components/Skeleton";
+import { Button } from "../../components/primitives";
 
 function RarityBar({ rarity }: { rarity: string }) {
   // Match patterns like "1/128", "~1/115", "~8/115"
@@ -121,34 +122,31 @@ export default function DropTable() {
           <div className="flex flex-wrap gap-2">
             {selectedBoss ? (
               <>
-                <button
-                  type="button"
+                <Button
                   onClick={() => navigate("bosses", { boss: selectedBoss.name, tab: "drops" })}
-                  className="rounded-xl border border-border bg-bg-tertiary px-3 py-2 text-xs font-medium text-text-secondary transition hover:border-accent/35 hover:text-text-primary"
+                  className="font-medium hover:border-accent/35"
                 >
                   Open Boss Workspace
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button
                   onClick={() => navigate("bosses", { boss: selectedBoss.name, tab: "tasks" })}
-                  className="rounded-xl border border-border bg-bg-tertiary px-3 py-2 text-xs font-medium text-text-secondary transition hover:border-accent/35 hover:text-text-primary"
+                  className="font-medium hover:border-accent/35"
                 >
                   Combat Tasks
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button
                   onClick={() => navigate("dps-calc", { monster: selectedBoss.name })}
-                  className="rounded-xl border border-border bg-bg-tertiary px-3 py-2 text-xs font-medium text-text-secondary transition hover:border-accent/35 hover:text-text-primary"
+                  className="font-medium hover:border-accent/35"
                 >
                   DPS
-                </button>
+                </Button>
               </>
             ) : null}
             <a
               href={`https://oldschool.runescape.wiki/w/${encodeURIComponent(selectedMonster.replace(/ /g, "_"))}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-xl border border-border bg-bg-tertiary px-3 py-2 text-xs font-medium text-text-secondary transition hover:border-accent/35 hover:text-text-primary"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-bg-tertiary px-3 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:border-accent/35 hover:bg-bg-secondary hover:text-text-primary"
             >
               Open Wiki
             </a>

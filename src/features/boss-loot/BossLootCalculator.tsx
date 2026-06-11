@@ -8,6 +8,7 @@ import { itemIcon } from "../../lib/sprites";
 import { useNavigation } from "../../lib/NavigationContext";
 import { findBossByName, normalizeBossLookup } from "../../lib/data/bosses";
 import WikiImage from "../../components/WikiImage";
+import { Button } from "../../components/primitives";
 
 interface DropRow {
   itemName: string;
@@ -223,13 +224,12 @@ export default function BossLootCalculator() {
           ) : null}
         </div>
         {linkedBoss ? (
-          <button
-            type="button"
+          <Button
             onClick={() => navigate("bosses", { boss: linkedBoss.name, tab: "drops" })}
-            className="rounded-xl border border-border bg-bg-tertiary px-3 py-2 text-xs font-medium text-text-secondary transition hover:border-accent/35 hover:text-text-primary"
+            className="font-medium hover:border-accent/35"
           >
             Open Boss Workspace
-          </button>
+          </Button>
         ) : null}
       </div>
 

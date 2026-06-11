@@ -68,6 +68,7 @@ import BossMetaCard from "./components/BossMetaCard";
 import { BOSS_METADATA } from "../../lib/data/boss-metadata";
 import { fetchDropsForMonster, fetchBossDropsFromWiki, type WikiDrop, type BossWikiDrop } from "../../lib/api/drops";
 import DropTable from "../../components/DropTable";
+import { Button } from "../../components/primitives";
 import { Skeleton, TableSkeleton, CardSkeleton } from "../../components/Skeleton";
 import EmptyState from "../../components/EmptyState";
 import {
@@ -1310,20 +1311,20 @@ export default function BossGuide({ hiscores }: Props) {
                                 <div className="mt-1 text-xs text-text-secondary">{task.description}</div>
                               </div>
                               <div className="flex shrink-0 gap-2">
-                                <button
-                                  type="button"
+                                <Button
+                                  size="xs"
                                   onClick={() => navigate("dps-calc", { monster: selectedBoss.name })}
-                                  className="rounded-lg border border-border bg-bg-tertiary px-2.5 py-1.5 text-[11px] text-text-secondary transition hover:border-accent/35 hover:text-text-primary"
+                                  className="hover:border-accent/35"
                                 >
                                   DPS
-                                </button>
-                                <button
-                                  type="button"
+                                </Button>
+                                <Button
+                                  size="xs"
                                   onClick={() => setActiveTab("drops")}
-                                  className="rounded-lg border border-border bg-bg-tertiary px-2.5 py-1.5 text-[11px] text-text-secondary transition hover:border-accent/35 hover:text-text-primary"
+                                  className="hover:border-accent/35"
                                 >
                                   Drops
-                                </button>
+                                </Button>
                               </div>
                             </div>
                           </div>

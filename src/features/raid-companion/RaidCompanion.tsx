@@ -3,6 +3,7 @@ import { COX_ROOMS } from "../raids/data/cox";
 import { TOB_ROOMS } from "../raids/data/tob";
 import { TOA_ROOMS } from "../raids/data/toa";
 import { loadJSON, saveJSON } from "../../lib/localStorage";
+import { Button } from "../../components/primitives";
 
 const RUNS_KEY = "runewise_raid_runs";
 
@@ -174,12 +175,9 @@ export default function RaidCompanion() {
         ) : (
           <div className="flex gap-2 flex-wrap">
             {nextRoom && (
-              <button
-                onClick={() => recordSplit(nextRoom.name)}
-                className="bg-accent hover:bg-accent-hover text-on-accent px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-              >
+              <Button variant="primary" size="md" onClick={() => recordSplit(nextRoom.name)}>
                 Split: {nextRoom.name}
-              </button>
+              </Button>
             )}
             {splits.length === rooms.length && (
               <button

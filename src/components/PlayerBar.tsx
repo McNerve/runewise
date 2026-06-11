@@ -1,6 +1,7 @@
 import { memo, useState, useEffect } from "react";
 import { useNavigation } from "../lib/NavigationContext";
 import { getFeature } from "../lib/features";
+import { Button } from "./primitives";
 
 interface PlayerBarProps {
   rsn: string;
@@ -86,13 +87,9 @@ const PlayerBar = memo(function PlayerBar({
                 placeholder="Enter RSN..."
                 className="w-40 rounded-lg border border-border bg-bg-primary/80 px-2.5 py-1.5 text-sm text-text-primary outline-none transition placeholder:text-text-secondary/50 focus:border-accent"
               />
-              <button
-                type="submit"
-                disabled={loading || !input.trim()}
-                className="rounded-lg bg-accent px-2.5 py-1.5 text-xs font-medium text-on-accent transition-colors hover:bg-accent-hover disabled:opacity-50"
-              >
+              <Button variant="primary" type="submit" disabled={loading || !input.trim()}>
                 Set
-              </button>
+              </Button>
               {rsn && (
                 <button
                   onClick={handleClear}

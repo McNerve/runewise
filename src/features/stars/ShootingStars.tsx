@@ -18,6 +18,7 @@ import { sendNotification } from "../../lib/notify";
 import { useSettings } from "../../hooks/useSettings";
 import { loadJSON, saveJSON } from "../../lib/localStorage";
 import FreshnessStrip from "../../components/FreshnessStrip";
+import { Button } from "../../components/primitives";
 
 const STAR_ALERTS_KEY = "runewise_star_alerts";
 
@@ -479,13 +480,9 @@ export default function ShootingStars() {
                   ) : null}
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => openStarDetails(topStar)}
-                    className="rounded-xl bg-accent px-3 py-2 text-xs font-medium text-on-accent transition hover:bg-accent-hover"
-                  >
+                  <Button variant="primary" onClick={() => openStarDetails(topStar)}>
                     Open Details
-                  </button>
+                  </Button>
                   <button
                     type="button"
                     onClick={() => navigate("wiki", { query: topStar.calledLocation })}
@@ -678,13 +675,12 @@ export default function ShootingStars() {
                   )}
 
                   <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
+                    <Button
+                      variant="primary"
                       onClick={() => navigate("wiki", { query: selectedStar.calledLocation })}
-                      className="rounded-xl bg-accent px-3 py-2 text-xs font-medium text-on-accent transition hover:bg-accent-hover"
                     >
                       Open Wiki Lookup
-                    </button>
+                    </Button>
                     <a
                       href={`https://oldschool.runescape.wiki/w/Special:Search?search=${wikiSearch}`}
                       target="_blank"

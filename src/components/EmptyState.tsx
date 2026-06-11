@@ -1,3 +1,5 @@
+import { Button } from "./primitives";
+
 interface EmptyStateProps {
   icon?: string;
   title: string;
@@ -33,12 +35,9 @@ export default function EmptyState({
         </p>
       )}
       {action && (
-        <button
-          onClick={action.onClick}
-          className="mt-4 px-4 py-1.5 rounded text-sm bg-accent text-on-accent hover:bg-accent-hover transition-colors"
-        >
+        <Button variant="primary" size="md" onClick={action.onClick} className="mt-4">
           {action.label}
-        </button>
+        </Button>
       )}
     </div>
   );

@@ -5,6 +5,7 @@ import { formatGp } from "../../lib/format";
 import { searchItems, type ItemMapping } from "../../lib/api/ge";
 import Chart from "../../components/Chart";
 import EmptyState from "../../components/EmptyState";
+import { Button } from "../../components/primitives";
 import type { LineData, Time } from "lightweight-charts";
 
 const STORAGE_KEY = "runewise_flip_journal";
@@ -218,13 +219,15 @@ function EntryForm({ initial, onSubmit, onCancel }: EntryFormProps) {
             Cancel
           </button>
         )}
-        <button
+        <Button
+          variant="primary"
+          size="md"
           type="submit"
           disabled={!valid}
-          className="home-tile px-4 py-1.5 text-sm font-medium bg-accent text-on-accent border border-accent rounded-lg disabled:opacity-40 disabled:cursor-not-allowed"
+          className="home-tile"
         >
           {initial ? "Update" : "Add Flip"}
-        </button>
+        </Button>
       </div>
     </form>
   );
@@ -412,13 +415,15 @@ function CloseModal({ entry, onConfirm, onCancel }: {
         })()}
         <div className="flex gap-2 justify-end">
           <button onClick={onCancel} className="px-3 py-1.5 text-sm text-text-secondary hover:text-text-primary transition-colors">Cancel</button>
-          <button
+          <Button
+            variant="primary"
+            size="md"
             disabled={!Number.isFinite(Number(sellPrice)) || Number(sellPrice) <= 0}
             onClick={() => onConfirm(Number(sellPrice))}
-            className="home-tile px-4 py-1.5 text-sm font-medium bg-accent text-on-accent border border-accent rounded-lg disabled:opacity-40 disabled:cursor-not-allowed"
+            className="home-tile"
           >
             Close flip
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -504,12 +509,13 @@ export default function FlipJournal() {
     <div className="max-w-5xl space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-h3 font-semibold">GE Flip Journal</h2>
-        <button
+        <Button
+          variant="primary"
+          size="md"
           onClick={() => { setShowForm((v) => !v); setEditing(null); }}
-          className="px-3 py-1.5 text-sm font-medium bg-accent text-on-accent rounded-lg hover:bg-accent-hover transition-colors"
         >
           {showForm ? "Cancel" : "+ New Flip"}
-        </button>
+        </Button>
       </div>
 
       {(showForm || editing) && (
