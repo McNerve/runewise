@@ -408,12 +408,16 @@ export function useDpsState({ hiscores }: Props) {
   }, [params.style]);
 
   // Handle monster param from cross-nav. Syncing state from an external URL
-  // param is a legitimate effect use.
+  // param is a legitimate effect use. An optional `version` param selects a
+  // specific phase (e.g. Verzik P2) directly.
   useEffect(() => {
     if (!params.monster || wikiMonsters.length === 0) return;
-    const match = wikiMonsters.find(
+    const byName = wikiMonsters.filter(
       (m) => m.name.toLowerCase() === params.monster?.toLowerCase()
     );
+    const match = params.version
+      ? byName.find((m) => m.version?.toLowerCase() === params.version?.toLowerCase()) ?? byName[0]
+      : byName[0];
     if (match) setSelectedMonster(match);
     else {
       const staticMatch = MONSTERS.find(
@@ -450,7 +454,7 @@ export function useDpsState({ hiscores }: Props) {
         });
       }
     }
-  }, [params.monster, wikiMonsters]);
+  }, [params.monster, params.version, wikiMonsters]);
 
   // Handle onTask param from Slayer cross-nav — activate slayer_helm modifier.
   useEffect(() => {

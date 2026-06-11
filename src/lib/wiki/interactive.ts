@@ -266,9 +266,61 @@ export function initItemTextLinks(container: HTMLElement) {
     });
 }
 
+/** Numeric-aware cell comparison: "1,234" and "12.5k" sort as numbers. */
+export function compareTableCells(a: string, b: string): number {
+  const parse = (raw: string): number | null => {
+    const cleaned = raw.replace(/,/g, "").trim();
+    const match = cleaned.match(/^(-?\d+(?:\.\d+)?)\s*([kmb])?/i);
+    if (!match || match[1] === undefined) return null;
+    const mult = { k: 1e3, m: 1e6, b: 1e9 }[match[2]?.toLowerCase() as "k" | "m" | "b"] ?? 1;
+    return parseFloat(match[1]) * mult;
+  };
+  const na = parse(a);
+  const nb = parse(b);
+  if (na !== null && nb !== null) return na - nb;
+  if (na !== null) return -1;
+  if (nb !== null) return 1;
+  return a.localeCompare(b);
+}
+
+export function initSortableTables(container: HTMLElement) {
+  container.querySelectorAll<HTMLTableElement>("table").forEach((table) => {
+    const headerRow = table.tHead?.rows[0] ?? table.rows[0];
+    const body = table.tBodies[0];
+    if (!headerRow || !body || body.rows.length < 3) return;
+    // Only sort simple grids — rowspans would be torn apart by reordering.
+    if (table.querySelector("[rowspan]")) return;
+
+    Array.from(headerRow.cells).forEach((th, colIdx) => {
+      if (th.dataset.sortInit) return;
+      th.dataset.sortInit = "1";
+      th.style.cursor = "pointer";
+      th.title = "Click to sort";
+      th.addEventListener("click", () => {
+        const ascending = th.dataset.sortDir !== "asc";
+        headerRow.querySelectorAll("th, td").forEach((cell) => {
+          delete (cell as HTMLElement).dataset.sortDir;
+        });
+        th.dataset.sortDir = ascending ? "asc" : "desc";
+
+        const rows = Array.from(body.rows).filter((row) => row !== headerRow);
+        rows.sort((rowA, rowB) => {
+          const cellA = rowA.cells[colIdx]?.textContent ?? "";
+          const cellB = rowB.cells[colIdx]?.textContent ?? "";
+          return ascending
+            ? compareTableCells(cellA, cellB)
+            : compareTableCells(cellB, cellA);
+        });
+        rows.forEach((row) => body.appendChild(row));
+      });
+    });
+  });
+}
+
 export function initWikiInteractive(container: HTMLElement, pageSlug = "") {
   initWikiTabbers(container);
   initTooltips(container);
   initItemTextLinks(container);
   initAnchorScroll(container, pageSlug);
+  initSortableTables(container);
 }

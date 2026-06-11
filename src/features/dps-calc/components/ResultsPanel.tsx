@@ -1,9 +1,9 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import MonsterSearch from "./MonsterSearch";
 import DpsBreakdown from "./DpsBreakdown";
 import HitDistributionChart from "./HitDistributionChart";
 import { killTimeStats } from "../../../lib/formulas/hitDistribution";
-import { incomingDps } from "../../../lib/formulas/incomingDps";
+import { incomingDps, type ProtectionPrayer } from "../../../lib/formulas/incomingDps";
 import type { DpsState } from "../hooks/useDpsState";
 
 interface ResultsPanelProps {
@@ -80,6 +80,7 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
 
   // Sustain: what the monster does back. Gear defences only exist in
   // equipment mode; manual mode has no defensive inputs to work from.
+  const [protection, setProtection] = useState<ProtectionPrayer>("none");
   const sustain = useMemo(() => {
     if (!selectedMonster || bonusMode !== "equipment") return null;
     return incomingDps(selectedMonster, {
@@ -91,8 +92,8 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
       defMagic: gearBonuses.defenceMagic,
       defRanged: gearBonuses.defenceRanged,
       stanceDefenceBonus: stance.defenceBonus,
-    });
-  }, [selectedMonster, bonusMode, defenceLevel, magicLevel, gearBonuses, stance.defenceBonus]);
+    }, protection);
+  }, [selectedMonster, bonusMode, defenceLevel, magicLevel, gearBonuses, stance.defenceBonus, protection]);
 
   const damagePerKill =
     sustain && killStats && isFinite(killStats.expectedSeconds)
@@ -434,15 +435,32 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
       {/* Sustain — incoming damage */}
       {sustain && (
         <div className="rounded-xl border border-border/40 bg-bg-primary/20 p-4">
-          <div className="section-kicker mb-2">Sustain — Damage Taken</div>
+          <div className="flex items-center justify-between mb-2">
+            <div className="section-kicker">Sustain — Damage Taken</div>
+            <select
+              value={protection}
+              onChange={(e) => setProtection(e.target.value as ProtectionPrayer)}
+              aria-label="Protection prayer"
+              className="px-2 py-1 rounded-lg bg-bg-tertiary border border-border text-xs text-text-primary focus:outline-none focus:border-accent/60 transition-colors"
+            >
+              <option value="none">No overhead</option>
+              <option value="melee">Protect from Melee</option>
+              <option value="ranged">Protect from Missiles</option>
+              <option value="magic">Protect from Magic</option>
+            </select>
+          </div>
           <div className="space-y-1.5">
             {sustain.threats.map((t) => (
               <div key={t.attackType} className="flex items-center justify-between text-xs">
-                <span className="text-text-secondary capitalize">
+                <span className={`capitalize ${t.prayedOff ? "text-text-secondary/40 line-through" : "text-text-secondary"}`}>
                   {t.style}
-                  <span className="text-text-secondary/40 ml-1">({(t.accuracy * 100).toFixed(0)}% vs you)</span>
+                  <span className="text-text-secondary/40 ml-1 no-underline">({(t.accuracy * 100).toFixed(0)}% vs you)</span>
                 </span>
-                <span className="tabular-nums font-medium text-warning">{t.dps.toFixed(2)} dmg/s</span>
+                {t.prayedOff ? (
+                  <span className="text-[10px] text-success">prayed off</span>
+                ) : (
+                  <span className="tabular-nums font-medium text-warning">{t.dps.toFixed(2)} dmg/s</span>
+                )}
               </div>
             ))}
           </div>
@@ -465,8 +483,8 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
             </div>
           )}
           <p className="mt-2 text-[10px] text-text-secondary/40">
-            Worst attack style, no protection prayers{sustain.assumedAttackSpeed ? ", assumed 4-tick attack speed" : ""}.
-            Sharks heal 20.
+            Worst unprayed style{sustain.assumedAttackSpeed ? ", assumed 4-tick attack speed" : ""}.
+            Sharks heal 20. Some boss attacks pierce overhead prayers.
           </p>
         </div>
       )}

@@ -32,6 +32,28 @@ export interface UpgradeCandidate {
   dpsGainPct: number;
 }
 
+export type UpgradeSort = "dps" | "value";
+
+/**
+ * Orders upgrades for display: by raw DPS gain, or by gp-per-DPS (cheapest
+ * real improvement first). Unpriced items (untradeables) keep their DPS order
+ * after every priced candidate in value mode.
+ */
+export function rankUpgradesForDisplay(
+  upgrades: UpgradeCandidate[],
+  priceOf: (itemName: string) => number | undefined,
+  sort: UpgradeSort,
+  limit = 3
+): UpgradeCandidate[] {
+  if (sort === "dps") return upgrades.slice(0, limit);
+  const priced = upgrades.filter((u) => priceOf(u.item.name) !== undefined);
+  const unpriced = upgrades.filter((u) => priceOf(u.item.name) === undefined);
+  priced.sort(
+    (a, b) => priceOf(a.item.name)! / a.dpsGain - priceOf(b.item.name)! / b.dpsGain
+  );
+  return [...priced, ...unpriced].slice(0, limit);
+}
+
 export interface SlotUpgrades {
   slot: EquipmentSlot | "2h";
   current: WikiEquipment | null;

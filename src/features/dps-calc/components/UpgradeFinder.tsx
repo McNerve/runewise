@@ -4,7 +4,7 @@ import { itemIcon } from "../../../lib/sprites";
 import ItemTooltip from "../../../components/ItemTooltip";
 import { useGEData } from "../../../hooks/useGEData";
 import { formatGp } from "../../../lib/format";
-import { findUpgrades } from "../upgradeFinder";
+import { findUpgrades, rankUpgradesForDisplay, type UpgradeSort } from "../upgradeFinder";
 import type { DpsState, EquippedGear } from "../hooks/useDpsState";
 
 interface UpgradeFinderProps {
@@ -31,6 +31,7 @@ export default function UpgradeFinder({ state }: UpgradeFinderProps) {
   const [equipment, setEquipment] = useState<WikiEquipment[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [showAllSlots, setShowAllSlots] = useState(false);
+  const [sortMode, setSortMode] = useState<UpgradeSort>("dps");
   const { mapping, prices, fetchIfNeeded } = useGEData();
 
   const enable = () => {
@@ -63,11 +64,14 @@ export default function UpgradeFinder({ state }: UpgradeFinderProps) {
       combatStyle,
       meleeAttackType: stance.attackType,
       stanceSpeedMod: stance.speedMod,
+      // Fetch a deeper pool so value-sorting has candidates to reorder.
+      perSlot: 8,
     });
   }, [enabled, equipment, dpsInput, equippedGear, combatStyle, stance.attackType, stance.speedMod]);
 
   if (bonusMode !== "equipment") return null;
 
+  const priceLookup = (name: string) => priceByName.get(name.toLowerCase());
   const withUpgrades = slotResults?.filter((s) => s.upgrades.length > 0) ?? [];
   const maxedSlots = slotResults?.filter((s) => s.upgrades.length === 0) ?? [];
   const visibleSlots = showAllSlots ? withUpgrades : withUpgrades.slice(0, 4);
@@ -77,12 +81,30 @@ export default function UpgradeFinder({ state }: UpgradeFinderProps) {
       <div className="flex items-center justify-between">
         <div className="section-kicker">Upgrade Finder</div>
         {enabled && (
-          <button
-            onClick={() => setEnabled(false)}
-            className="text-[10px] text-text-secondary/50 hover:text-text-primary transition-colors"
-          >
-            Hide
-          </button>
+          <div className="flex items-center gap-2">
+            <div className="flex gap-1" role="group" aria-label="Upgrade sort order">
+              {([["dps", "Top DPS"], ["value", "Best value"]] as const).map(([mode, label]) => (
+                <button
+                  key={mode}
+                  onClick={() => setSortMode(mode)}
+                  aria-pressed={sortMode === mode}
+                  className={`px-2 py-0.5 rounded text-[10px] border transition-colors ${
+                    sortMode === mode
+                      ? "bg-accent text-on-accent border-accent"
+                      : "bg-bg-tertiary text-text-secondary border-transparent hover:text-text-primary"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => setEnabled(false)}
+              className="text-[10px] text-text-secondary/50 hover:text-text-primary transition-colors"
+            >
+              Hide
+            </button>
+          </div>
         )}
       </div>
 
@@ -122,7 +144,7 @@ export default function UpgradeFinder({ state }: UpgradeFinderProps) {
                   </span>
                 </div>
                 <div className="mt-1 space-y-1">
-                  {upgrades.map(({ item, dpsGain, dpsGainPct }) => {
+                  {rankUpgradesForDisplay(upgrades, priceLookup, sortMode).map(({ item, dpsGain, dpsGainPct }) => {
                     const price = priceByName.get(item.name.toLowerCase());
                     return (
                     <div
@@ -144,7 +166,12 @@ export default function UpgradeFinder({ state }: UpgradeFinderProps) {
                             <span className="text-text-secondary/50 ml-1 text-[10px]">({item.version})</span>
                           )}
                           {price != null && (
-                            <span className="text-text-secondary/50 ml-1.5 text-[10px] tabular-nums">{formatGp(price)} gp</span>
+                            <span className="text-text-secondary/50 ml-1.5 text-[10px] tabular-nums">
+                              {formatGp(price)} gp
+                              {sortMode === "value" && dpsGain > 0 && (
+                                <span className="text-text-secondary/40"> · {formatGp(Math.round(price / dpsGain))}/dps</span>
+                              )}
+                            </span>
                           )}
                         </span>
                       </ItemTooltip>

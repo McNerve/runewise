@@ -87,4 +87,29 @@ describe("incomingDps", () => {
     const t = result.worst;
     expect(t.dps).toBeCloseTo((t.accuracy * 10) / 2.4, 10);
   });
+
+  it("protection prayers zero out the matching style only", () => {
+    const result = incomingDps(
+      monster({ attackStyles: ["Melee", "Magic"] }),
+      player(),
+      "melee"
+    )!;
+    const melee = result.threats.find((t) => t.attackType === "slash")!;
+    const magic = result.threats.find((t) => t.attackType === "magic")!;
+    expect(melee.prayedOff).toBe(true);
+    expect(melee.dps).toBe(0);
+    expect(magic.prayedOff).toBe(false);
+    expect(magic.dps).toBeGreaterThan(0);
+    // Worst threat shifts to the unprayed style.
+    expect(result.worst.attackType).toBe("magic");
+  });
+
+  it("protect from melee covers stab, slash, and crush", () => {
+    const result = incomingDps(
+      monster({ attackStyles: ["Stab", "Slash", "Crush"] }),
+      player(),
+      "melee"
+    )!;
+    expect(result.threats.every((t) => t.prayedOff && t.dps === 0)).toBe(true);
+  });
 });

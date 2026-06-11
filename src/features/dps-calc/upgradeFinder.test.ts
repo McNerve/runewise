@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { findUpgrades } from "./upgradeFinder";
+import { findUpgrades, rankUpgradesForDisplay, type UpgradeCandidate } from "./upgradeFinder";
 import { calculateDps, DPS_MODIFIERS, type DpsInput } from "../../lib/formulas/dps";
 import type { WikiEquipment, EquipmentSlot } from "../../lib/api/equipment";
 import type { EquippedGear } from "./hooks/useDpsState";
@@ -239,5 +239,37 @@ describe("findUpgrades", () => {
     const neck = results.find((r) => r.slot === "neck");
     expect(neck!.upgrades).toHaveLength(2);
     expect(neck!.upgrades[0].item.name).toBe("Amulet 5");
+  });
+});
+
+describe("rankUpgradesForDisplay", () => {
+  const candidate = (name: string, dpsGain: number): UpgradeCandidate => ({
+    item: item(name, "neck"),
+    dps: 10 + dpsGain,
+    dpsGain,
+    dpsGainPct: dpsGain * 10,
+  });
+  // Already sorted by gain, as findUpgrades returns them.
+  const upgrades = [
+    candidate("Torture", 0.5), // 100M → 200M gp per dps
+    candidate("Fury", 0.3), // 3M → 10M gp per dps
+    candidate("Stole", 0.1), // untradeable
+  ];
+  const prices: Record<string, number> = { Torture: 100_000_000, Fury: 3_000_000 };
+  const priceOf = (name: string) => prices[name];
+
+  it("keeps DPS order in dps mode", () => {
+    const ranked = rankUpgradesForDisplay(upgrades, priceOf, "dps");
+    expect(ranked.map((u) => u.item.name)).toEqual(["Torture", "Fury", "Stole"]);
+  });
+
+  it("orders by gp per dps in value mode, unpriced last", () => {
+    const ranked = rankUpgradesForDisplay(upgrades, priceOf, "value");
+    expect(ranked.map((u) => u.item.name)).toEqual(["Fury", "Torture", "Stole"]);
+  });
+
+  it("applies the display limit after sorting", () => {
+    const ranked = rankUpgradesForDisplay(upgrades, priceOf, "value", 1);
+    expect(ranked.map((u) => u.item.name)).toEqual(["Fury"]);
   });
 });

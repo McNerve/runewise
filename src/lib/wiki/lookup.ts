@@ -264,6 +264,7 @@ export function parseSections(rawHtml: string): WikiLookupSection[] {
 export interface WikiSearchResult {
   title: string;
   snippet: string | null;
+  thumbnail: string | null;
 }
 
 // MediaWiki search snippets arrive as HTML with <span class="searchmatch">
@@ -273,14 +274,43 @@ function snippetToText(html: string): string {
   return text.replace(/\s+/g, " ").trim();
 }
 
+// Batched page thumbnails for search results. Purely decorative — any
+// failure returns an empty map and the results render without images.
+async function fetchSearchThumbnails(titles: string[]): Promise<Record<string, string>> {
+  if (titles.length === 0) return {};
+  try {
+    return await fetchJson<Record<string, string>>({
+      url: `${WIKI_API}?action=query&titles=${encodeURIComponent(titles.join("|"))}&prop=pageimages&piprop=thumbnail&pithumbsize=64&redirects=1&format=json`,
+      cacheKey: `wiki-lookup-thumbs:${titles.join("|").toLowerCase()}`,
+      ttlMs: LOOKUP_TTL,
+      transform: (json) => {
+        const pages = (json as { query?: { pages?: Record<string, unknown> } })?.query?.pages;
+        const out: Record<string, string> = {};
+        if (pages && typeof pages === "object") {
+          for (const page of Object.values(pages)) {
+            const p = page as { title?: unknown; thumbnail?: { source?: unknown } };
+            if (typeof p.title === "string" && typeof p.thumbnail?.source === "string") {
+              out[p.title] = p.thumbnail.source;
+            }
+          }
+        }
+        return out;
+      },
+    });
+  } catch {
+    return {};
+  }
+}
+
 /**
- * Title + snippet search via list=search. Falls back to plain opensearch
- * titles if the response shape ever surprises us — search must never break.
+ * Title + snippet + thumbnail search via list=search. Falls back to plain
+ * opensearch titles if the response shape ever surprises us — search must
+ * never break.
  */
 export async function searchWikiPagesRich(query: string): Promise<WikiSearchResult[]> {
   if (query.trim().length < 2) return [];
   try {
-    return await fetchJson<WikiSearchResult[]>({
+    const results = await fetchJson<Omit<WikiSearchResult, "thumbnail">[]>({
       url: `${WIKI_API}?action=query&list=search&srsearch=${encodeURIComponent(query)}&srlimit=10&format=json`,
       cacheKey: `wiki-lookup-rich-search:${query.toLowerCase()}`,
       ttlMs: LOOKUP_TTL,
@@ -304,9 +334,11 @@ export async function searchWikiPagesRich(query: string): Promise<WikiSearchResu
           }));
       },
     });
+    const thumbnails = await fetchSearchThumbnails(results.map((r) => r.title));
+    return results.map((r) => ({ ...r, thumbnail: thumbnails[r.title] ?? null }));
   } catch {
     const titles = await searchWikiPages(query);
-    return titles.map((title) => ({ title, snippet: null }));
+    return titles.map((title) => ({ title, snippet: null, thumbnail: null }));
   }
 }
 

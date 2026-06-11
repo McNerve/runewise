@@ -486,13 +486,24 @@ export default function WikiLookup() {
                           : "text-text-secondary hover:bg-bg-tertiary/80 hover:text-text-primary"
                       }`}
                     >
-                      <span className="min-w-0">
-                        <span className="block truncate">{page.title}</span>
-                        {page.snippet ? (
-                          <span className="mt-0.5 block truncate text-xs text-text-secondary/55">
-                            {page.snippet}
-                          </span>
+                      <span className="flex min-w-0 items-center gap-2.5">
+                        {page.thumbnail ? (
+                          <img
+                            src={page.thumbnail}
+                            alt=""
+                            loading="lazy"
+                            className="h-8 w-8 shrink-0 rounded-md object-contain bg-bg-tertiary/40"
+                            onError={(e) => { e.currentTarget.style.display = "none"; }}
+                          />
                         ) : null}
+                        <span className="min-w-0">
+                          <span className="block truncate">{page.title}</span>
+                          {page.snippet ? (
+                            <span className="mt-0.5 block truncate text-xs text-text-secondary/55">
+                              {page.snippet}
+                            </span>
+                          ) : null}
+                        </span>
                       </span>
                       {selectedPage === page.title ? (
                         <span className="shrink-0 text-[10px] uppercase tracking-[0.18em] text-accent">

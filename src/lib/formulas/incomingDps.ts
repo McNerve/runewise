@@ -30,11 +30,15 @@ export interface PlayerDefence {
   stanceDefenceBonus: number;
 }
 
+export type ProtectionPrayer = "none" | "melee" | "ranged" | "magic";
+
 export interface StyleThreat {
   style: string;
   attackType: "stab" | "slash" | "crush" | "magic" | "ranged";
   accuracy: number;
   dps: number;
+  /** True when an overhead prayer blocks this style entirely. */
+  prayedOff: boolean;
 }
 
 export interface IncomingDpsResult {
@@ -58,9 +62,22 @@ function classifyAttackStyle(
   return "slash";
 }
 
+function isPrayedOff(
+  attackType: StyleThreat["attackType"],
+  protection: ProtectionPrayer
+): boolean {
+  if (protection === "magic") return attackType === "magic";
+  if (protection === "ranged") return attackType === "ranged";
+  if (protection === "melee") {
+    return attackType === "stab" || attackType === "slash" || attackType === "crush";
+  }
+  return false;
+}
+
 export function incomingDps(
   monster: MonsterOffence,
-  player: PlayerDefence
+  player: PlayerDefence,
+  protection: ProtectionPrayer = "none"
 ): IncomingDpsResult | null {
   if (monster.maxHit <= 0) return null;
   const styles = monster.attackStyles.length > 0 ? monster.attackStyles : ["Melee"];
@@ -92,11 +109,14 @@ export function incomingDps(
     }
 
     const accuracy = hitChance(attackRoll, playerDefRoll);
+    const prayedOff = isPrayedOff(attackType, protection);
     threats.push({
       style,
       attackType,
       accuracy,
-      dps: (accuracy * (monster.maxHit / 2)) / (speed * 0.6),
+      // Overhead prayers block 100% of standard NPC attacks of that style.
+      dps: prayedOff ? 0 : (accuracy * (monster.maxHit / 2)) / (speed * 0.6),
+      prayedOff,
     });
   }
 
