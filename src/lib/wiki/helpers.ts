@@ -45,6 +45,7 @@ const SANITIZE_TAGS = [
 ] as const;
 
 const SANITIZE_ATTRS = [
+  "id",
   "src",
   "alt",
   "loading",

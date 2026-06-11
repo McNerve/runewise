@@ -19,7 +19,21 @@ import {
 import { useGEData } from "../../hooks/useGEData";
 import { fetchVolumes } from "../../lib/api/ge";
 import WikiSectionContent from "./components/WikiSectionContent";
+import WikiToc from "./components/WikiToc";
+import { extractTocEntries } from "./wikiLookupUtils";
 import { formatGp } from "../../lib/format";
+
+// Curated starting points for the empty state — pages players reach for most.
+const POPULAR_PAGES = [
+  "Money making guide",
+  "Optimal quest guide",
+  "Achievement Diary",
+  "Combat Achievements",
+  "Slayer",
+  "Grand Exchange",
+  "Wilderness",
+  "Free-to-play",
+];
 
 const COLLAPSED_SECTIONS = [
   "used in recommended equipment",
@@ -349,6 +363,11 @@ export default function WikiLookup() {
     [document]
   );
 
+  const tocEntries = useMemo(
+    () => (document ? extractTocEntries(document.sections) : []),
+    [document]
+  );
+
   return (
     <div className="space-y-5">
       <section>
@@ -474,6 +493,21 @@ export default function WikiLookup() {
               ))}
             </div>
           )}
+          <div className="flex flex-wrap items-center justify-center gap-1.5">
+            <span className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
+              Popular
+            </span>
+            {POPULAR_PAGES.map((page) => (
+              <button
+                key={page}
+                type="button"
+                onClick={() => openPage(page)}
+                className="rounded-full border border-border/60 bg-bg-secondary/50 px-3 py-1 text-xs text-text-secondary transition hover:border-accent/40 hover:text-text-primary"
+              >
+                {page}
+              </button>
+            ))}
+          </div>
         </div>
       ) : null}
 
@@ -589,7 +623,7 @@ export default function WikiLookup() {
               const extra = sectionExtraClasses(section.title);
               const collapsed = shouldCollapse(section.title);
               return collapsed ? (
-                <details key={section.id} className="article-content-collapse">
+                <details key={section.id} id={section.id} className="article-content-collapse scroll-mt-4">
                   <summary className="mb-4 text-lg font-semibold tracking-tight cursor-pointer text-text-primary hover:text-accent transition-colors">
                     {section.title}
                   </summary>
@@ -600,7 +634,7 @@ export default function WikiLookup() {
                   />
                 </details>
               ) : (
-                <section key={section.id}>
+                <section key={section.id} id={section.id} className="scroll-mt-4">
                   <h4 className="mb-4 text-lg font-semibold tracking-tight">{section.title}</h4>
                   <WikiSectionContent
                     html={section.html}
@@ -612,7 +646,8 @@ export default function WikiLookup() {
             })}
           </section>
 
-          <aside className="space-y-4">
+          <aside className="space-y-6 xl:sticky xl:top-2 xl:self-start xl:max-h-[calc(100vh-8rem)] xl:overflow-y-auto">
+            <WikiToc entries={tocEntries} contentRef={contentRef} />
             <section>
               <div className="text-[10px] uppercase tracking-[0.2em] text-text-secondary/45">
                 Snapshot

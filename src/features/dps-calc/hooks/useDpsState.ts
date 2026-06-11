@@ -405,30 +405,29 @@ export function useDpsState({ hiscores }: Props) {
     return selectedSpell.baseMaxHit;
   }, [combatStyle, selectedSpell, magicLevel]);
 
-  const result = useMemo(
-    () =>
-      calculateDps({
-        attackLevel,
-        strengthLevel,
-        rangedLevel,
-        magicLevel,
-        attackBonus: effectiveAttackBonus,
-        strengthBonus: effectiveStrengthBonus,
-        prayerAttackMult: prayer.attackMult,
-        prayerStrengthMult: prayer.strengthMult,
-        stanceAttackBonus: stance.attackBonus,
-        stanceStrengthBonus: stance.strengthBonus,
-        attackSpeed: effectiveAttackSpeed,
-        combatStyle,
-        targetDefLevel,
-        targetDefBonus,
-        targetHp,
-        targetMagicLevel: selectedMonster?.magicLevel,
-        modifiers: modifierList,
-        defReductions,
-        spellBaseMaxHit: activeSpellBase,
-        tbowRaidCap,
-      }),
+  const dpsInput = useMemo<DpsInput>(
+    () => ({
+      attackLevel,
+      strengthLevel,
+      rangedLevel,
+      magicLevel,
+      attackBonus: effectiveAttackBonus,
+      strengthBonus: effectiveStrengthBonus,
+      prayerAttackMult: prayer.attackMult,
+      prayerStrengthMult: prayer.strengthMult,
+      stanceAttackBonus: stance.attackBonus,
+      stanceStrengthBonus: stance.strengthBonus,
+      attackSpeed: effectiveAttackSpeed,
+      combatStyle,
+      targetDefLevel,
+      targetDefBonus,
+      targetHp,
+      targetMagicLevel: selectedMonster?.magicLevel,
+      modifiers: modifierList,
+      defReductions,
+      spellBaseMaxHit: activeSpellBase,
+      tbowRaidCap,
+    }),
     [
       attackLevel,
       strengthLevel,
@@ -450,6 +449,8 @@ export function useDpsState({ hiscores }: Props) {
       tbowRaidCap,
     ]
   );
+
+  const result = useMemo(() => calculateDps(dpsInput), [dpsInput]);
 
   const stanceAttackBonus = stance.attackBonus;
   const stanceStrengthBonus = stance.strengthBonus;
@@ -774,6 +775,7 @@ export function useDpsState({ hiscores }: Props) {
     setSelectedSpell,
     activeSpellBase,
     // DPS result
+    dpsInput,
     result,
     totalDps,
     // Poison

@@ -1,5 +1,6 @@
 import MonsterSearch from "./MonsterSearch";
 import DpsBreakdown from "./DpsBreakdown";
+import HitDistributionChart from "./HitDistributionChart";
 import type { DpsState } from "../hooks/useDpsState";
 
 interface ResultsPanelProps {
@@ -229,6 +230,9 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
           defenseRoll={result.defenseRoll}
           showDetails={showBreakdown}
         />
+        <div className="mt-4">
+          <HitDistributionChart maxHit={result.maxHit} accuracy={result.accuracy} />
+        </div>
         {poisonType !== "none" && (
           <div className="mt-3 flex gap-6 items-start">
             <div className="text-center">

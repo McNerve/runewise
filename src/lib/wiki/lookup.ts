@@ -23,7 +23,9 @@ export { resolveWikiPageFromHref } from "./helpers";
 export type { WikiEntityKind } from "./classify";
 
 const LOOKUP_TTL = 60 * 60 * 1000;
-const MAX_SECTIONS = 6;
+// Generous safety cap — sections are parsed from the already-fetched page, so
+// the only cost of a high limit is render time on pathological pages.
+const MAX_SECTIONS = 40;
 const IGNORED_SECTION_PATTERNS = [
   "changes",
   "history",
@@ -34,16 +36,16 @@ const IGNORED_SECTION_PATTERNS = [
   "update history",
 ];
 
-interface WikiLookupApiSection {
-  number: string;
-  line: string;
-  level: string;
+export interface WikiLookupSubsection {
+  id: string;
+  title: string;
 }
 
 export interface WikiLookupSection {
   id: string;
   title: string;
   html: string;
+  subsections?: WikiLookupSubsection[];
 }
 
 export interface WikiRelatedPage {
@@ -177,40 +179,86 @@ function parseLead(rawHtml: string, title: string) {
   };
 }
 
-function parseSection(rawHtml: string, title: string): WikiLookupSection | null {
+// Subsection headings (h3) are demoted to h4 — the only heading tag the
+// sanitizer allows — and given stable ids so the table of contents can jump
+// to them.
+function demoteSubheadings(
+  container: Element,
+  sectionId: string,
+  doc: Document
+): WikiLookupSubsection[] {
+  const subsections: WikiLookupSubsection[] = [];
+  container.querySelectorAll(".mw-heading3, h3").forEach((heading) => {
+    if (heading.tagName === "H3" && heading.closest(".mw-heading3")) return;
+    const title = cleanValue(heading.textContent ?? "");
+    if (!title) {
+      heading.remove();
+      return;
+    }
+    const id = `${sectionId}-${slugify(title)}`;
+    const replacement = doc.createElement("h4");
+    replacement.id = id;
+    replacement.textContent = title;
+    heading.replaceWith(replacement);
+    subsections.push({ id, title });
+  });
+  return subsections;
+}
+
+/**
+ * Splits the full page HTML into level-2 sections client-side. The page HTML
+ * is already fetched for the lead, so this costs zero extra requests and —
+ * unlike the old per-section API calls — never truncates long pages.
+ */
+export function parseSections(rawHtml: string): WikiLookupSection[] {
   const parser = new DOMParser();
   const doc = parser.parseFromString(rawHtml, "text/html");
   const content = doc.querySelector(".mw-parser-output") || doc.body;
 
-  content.querySelectorAll(".navbox, .hatnote, .mw-editsection").forEach((element) => element.remove());
+  content
+    .querySelectorAll(".navbox, .hatnote, .mw-editsection, .infobox-bonuses-image")
+    .forEach((element) => element.remove());
 
-  // Strip duplicate heading that matches section title (including wrapper div)
-  const titleNorm = title.trim().toLowerCase();
-  const headingWrapper = content.querySelector(".mw-heading2, .mw-heading3");
-  if (headingWrapper) {
-    const headingText = (headingWrapper.textContent ?? "").trim().toLowerCase();
-    if (headingText === titleNorm) headingWrapper.remove();
-  }
-  // Fallback: bare heading without wrapper
-  const firstHeading = content.querySelector("h2, h3");
-  if (firstHeading) {
-    const headingText = (firstHeading.textContent ?? "").trim().toLowerCase();
-    if (headingText === titleNorm) firstHeading.remove();
-  }
+  const isSectionHeading = (el: Element) =>
+    el.classList.contains("mw-heading2") || el.tagName === "H2";
 
-  // Strip character model images from equipment bonuses tables
-  content.querySelectorAll(".infobox-bonuses-image").forEach((el) => el.remove());
+  const sections: WikiLookupSection[] = [];
+  let currentTitle: string | null = null;
+  let bucket: Element[] = [];
 
-  stripUnsafeNodes(content);
+  const flush = () => {
+    const title = currentTitle;
+    currentTitle = null;
+    const nodes = bucket;
+    bucket = [];
+    if (!title || nodes.length === 0) return;
 
-  const html = sanitizeHtml(content);
-  if (html.length < 30) return null;
+    const lower = title.toLowerCase();
+    if (IGNORED_SECTION_PATTERNS.some((pattern) => lower.includes(pattern))) return;
 
-  return {
-    id: slugify(title),
-    title,
-    html,
+    const id = slugify(title);
+    const container = doc.createElement("div");
+    nodes.forEach((node) => container.appendChild(node));
+    const subsections = demoteSubheadings(container, id, doc);
+    stripUnsafeNodes(container);
+
+    const html = sanitizeHtml(container);
+    if (html.length < 30) return;
+
+    sections.push({ id, title, html, subsections });
   };
+
+  for (const child of Array.from(content.children)) {
+    if (isSectionHeading(child)) {
+      flush();
+      currentTitle = cleanValue(child.textContent ?? "");
+      continue;
+    }
+    if (currentTitle !== null) bucket.push(child);
+  }
+  flush();
+
+  return sections.slice(0, MAX_SECTIONS);
 }
 
 export async function searchWikiPages(query: string): Promise<string[]> {
@@ -227,24 +275,6 @@ export async function searchWikiPages(query: string): Promise<string[]> {
         .filter((title): title is string => typeof title === "string")
         .filter((title) => !title.includes("/") && !title.startsWith("File:"));
     },
-  });
-}
-
-async function fetchWikiSections(page: string) {
-  return fetchJson<WikiLookupApiSection[]>({
-    url: `${WIKI_API}?action=parse&page=${encodeURIComponent(page)}&prop=sections&${WIKI_PARSE_FLAGS}`,
-    cacheKey: `wiki-lookup-sections:${page}`,
-    ttlMs: LOOKUP_TTL,
-    transform: (json) =>
-      typeof json === "object" &&
-      json !== null &&
-      "parse" in json &&
-      typeof json.parse === "object" &&
-      json.parse !== null &&
-      "sections" in json.parse &&
-      Array.isArray(json.parse.sections)
-        ? (json.parse.sections as WikiLookupApiSection[])
-        : [],
   });
 }
 
@@ -268,26 +298,14 @@ async function fetchWikiHtmlFull(page: string): Promise<WikiFullParseResult> {
   });
 }
 
-async function fetchWikiHtmlSection(page: string, section: string): Promise<string> {
-  const url = `${WIKI_API}?action=parse&page=${encodeURIComponent(page)}&prop=text&section=${section}&${WIKI_PARSE_FLAGS}`;
-  return fetchJson<string>({
-    url,
-    dedupeKey: `wiki-lookup:${page}:${section}`,
-    transform: (json) => ((json as WikiTextResponse).parse?.text?.["*"] ?? "").trim(),
-  });
-}
-
 export async function fetchWikiLookupDocument(
   page: string
 ): Promise<WikiLookupDocument> {
-  const cacheKey = `wiki-lookup:v5:${page}`;
+  const cacheKey = `wiki-lookup:v6:${page}`;
   const cached = getCached<WikiLookupDocument>(cacheKey, LOOKUP_TTL);
   if (cached) return cached;
 
-  const [fullParse, sections] = await Promise.all([
-    fetchWikiHtmlFull(page),
-    fetchWikiSections(page),
-  ]);
+  const fullParse = await fetchWikiHtmlFull(page);
 
   const canonicalTitle = fullParse.canonicalTitle;
   const lead = parseLead(fullParse.html, canonicalTitle);
@@ -302,21 +320,7 @@ export async function fetchWikiLookupDocument(
     ),
   ]);
 
-  const selectedSections = sections
-    .filter((section: WikiLookupApiSection) => section.level === "2")
-    .filter((section: WikiLookupApiSection) => {
-      const lower = section.line.toLowerCase();
-      return !IGNORED_SECTION_PATTERNS.some((pattern) => lower.includes(pattern));
-    })
-    .slice(0, MAX_SECTIONS);
-
-  const normalizedSections = (
-    await Promise.all(
-      selectedSections.map(async (section) =>
-        parseSection(await fetchWikiHtmlSection(page, section.number), section.line)
-      )
-    )
-  ).filter((section: WikiLookupSection | null): section is WikiLookupSection => section !== null);
+  const normalizedSections = parseSections(fullParse.html);
 
   const document: WikiLookupDocument = {
     title: canonicalTitle,
