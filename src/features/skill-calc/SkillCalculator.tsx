@@ -439,7 +439,7 @@ export default function SkillCalculator({ hiscores }: Props) {
                         <td className="px-4 py-1.5 text-right text-text-secondary">
                           {method.xp.toLocaleString()}
                         </td>
-                        <td className={`px-4 py-1.5 text-right font-medium tabular-nums ${
+                        <td className={`px-4 py-1.5 text-right font-medium num ${
                           method.xpPerHour
                             ? (method.xpPerHour / maxXpHr) >= 0.7 ? "text-success"
                               : (method.xpPerHour / maxXpHr) >= 0.35 ? "text-warning"
@@ -464,7 +464,7 @@ export default function SkillCalculator({ hiscores }: Props) {
                                 : `${Math.round(hours)}h`
                             : "—"}
                         </td>
-                        <td className="px-4 py-1.5 text-right text-text-secondary text-xs tabular-nums">
+                        <td className="px-4 py-1.5 text-right text-text-secondary text-xs num">
                           {itemPrice != null
                             ? `${((itemPrice * (method.itemsPerAction ?? 1)) / method.xp).toFixed(1)}`
                             : "—"}

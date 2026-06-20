@@ -53,7 +53,7 @@ export default function RaidLootCalc({
           max={10000}
           value={inputValue}
           onChange={(e) => setInputValue(Math.min(10000, Math.max(1, Number(e.target.value) || 1)))}
-          className="w-24 px-2 py-1.5 rounded-lg bg-bg-tertiary border border-border text-sm tabular-nums focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
+          className="w-24 px-2 py-1.5 rounded-lg bg-bg-tertiary border border-border text-sm num focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
         />
         <span className="text-[10px] text-text-secondary/50">{inputDescription}</span>
       </div>
@@ -62,13 +62,13 @@ export default function RaidLootCalc({
         <div className="flex items-center justify-between">
           <div>
             <div className="text-xs text-text-secondary">Expected value per {raidName}</div>
-            <div className="text-2xl font-bold text-success tabular-nums">
+            <div className="text-2xl font-bold text-success num">
               {pricesLoaded ? formatGp(Math.round(totalEvPerRaid)) : "—"}
             </div>
           </div>
           <div className="text-right">
             <div className="text-xs text-text-secondary">Unique rate</div>
-            <div className="text-sm font-medium tabular-nums">
+            <div className="text-sm font-medium num">
               1/{dropRate.toFixed(1)}
             </div>
           </div>
@@ -100,13 +100,13 @@ export default function RaidLootCalc({
                 />
               </td>
               <td className="px-2 py-1.5 text-sm">{r.item.name}</td>
-              <td className="px-2 py-1.5 text-xs text-right tabular-nums text-text-secondary">
+              <td className="px-2 py-1.5 text-xs text-right num text-text-secondary">
                 {r.itemRate != null ? `1/${Math.round(r.itemRate).toLocaleString()}` : "—"}
               </td>
-              <td className="px-2 py-1.5 text-xs text-right tabular-nums text-text-secondary">
+              <td className="px-2 py-1.5 text-xs text-right num text-text-secondary">
                 {r.gePrice != null ? formatGp(r.gePrice) : "—"}
               </td>
-              <td className="px-2 py-1.5 text-xs text-right tabular-nums text-success">
+              <td className="px-2 py-1.5 text-xs text-right num text-success">
                 {r.evPerRaid != null ? formatGp(Math.round(r.evPerRaid)) : "—"}
               </td>
             </tr>
@@ -115,7 +115,7 @@ export default function RaidLootCalc({
         <tfoot>
           <tr className="border-t border-border font-medium">
             <td colSpan={4} className="px-2 py-2 text-xs">Total EV per raid</td>
-            <td className="px-2 py-2 text-xs text-right tabular-nums text-success">
+            <td className="px-2 py-2 text-xs text-right num text-success">
               {formatGp(Math.round(totalEvPerRaid))}
             </td>
           </tr>

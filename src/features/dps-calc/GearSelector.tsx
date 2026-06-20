@@ -124,7 +124,7 @@ export default function GearSelector({ slot, onSelect, onClose, combatStyle = "m
                         )}
                       </div>
                     </ItemTooltip>
-                    <div className="text-[10px] text-text-secondary/60 tabular-nums">
+                    <div className="text-[10px] text-text-secondary/60 num">
                       {item.attackStab !== 0 && `Stab ${item.attackStab > 0 ? "+" : ""}${item.attackStab} `}
                       {item.attackSlash !== 0 && `Slash ${item.attackSlash > 0 ? "+" : ""}${item.attackSlash} `}
                       {item.attackCrush !== 0 && `Crush ${item.attackCrush > 0 ? "+" : ""}${item.attackCrush} `}

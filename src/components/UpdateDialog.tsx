@@ -265,7 +265,7 @@ export default function UpdateDialog() {
                   {formatBytes(downloadProgress.current)} of {formatBytes(downloadProgress.total)}
                 </p>
                 {speedBps > 0 && (
-                  <p className="text-xs text-text-secondary/60 tabular-nums mb-3">
+                  <p className="text-xs text-text-secondary/60 num mb-3">
                     {formatSpeed(speedBps)}
                     {etaSec !== null && <> · {formatEta(etaSec)}</>}
                   </p>

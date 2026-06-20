@@ -215,7 +215,7 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
           <img src={NAV_ICONS["collection-log"]} alt="" className="w-8 h-8 shrink-0 opacity-60" onError={(e) => { e.currentTarget.style.display = "none"; }} />
           <div>
             <div className="text-[10px] uppercase tracking-wider text-text-secondary/50">Collections</div>
-            <div className="text-lg font-bold tabular-nums">{data.finished} / {data.total}</div>
+            <div className="text-lg font-bold num">{data.finished} / {data.total}</div>
             <div className="text-[10px] text-text-secondary/40">{((data.finished / data.total) * 100).toFixed(1)}%</div>
           </div>
         </div>
@@ -223,7 +223,7 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
           <ProgressRing obtained={completedCats} total={totalCats} size={32} />
           <div>
             <div className="text-[10px] uppercase tracking-wider text-text-secondary/50">Categories</div>
-            <div className="text-lg font-bold tabular-nums">{completedCats} / {totalCats}</div>
+            <div className="text-lg font-bold num">{completedCats} / {totalCats}</div>
             <div className="text-[10px] text-text-secondary/40">completed</div>
           </div>
         </div>
@@ -298,7 +298,7 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
             >
               {tab.charAt(0).toUpperCase() + tab.slice(1)}
               {stats && (
-                <span className={`tabular-nums ${isActive ? "text-on-accent/70" : "text-text-secondary/40"}`}>
+                <span className={`num ${isActive ? "text-on-accent/70" : "text-text-secondary/40"}`}>
                   {stats.obtained}/{stats.total}
                 </span>
               )}
@@ -351,7 +351,7 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
                       />
                     </div>
                   </div>
-                  <span className="text-[10px] text-text-secondary/50 tabular-nums shrink-0">
+                  <span className="text-[10px] text-text-secondary/50 num shrink-0">
                     {cat.obtained}/{cat.total}
                   </span>
                 </button>

@@ -6,11 +6,11 @@ import { type ChangelogSections, categorizeChangelog, parseChangelogFallback } f
 export function VersionChevron({ from, to }: { from: string; to: string }) {
   return (
     <div className="flex items-center justify-center gap-2 mt-1.5 mb-0.5">
-      <span className="text-xs text-text-secondary/60 tabular-nums">v{from}</span>
+      <span className="text-xs text-text-secondary/60 num">v{from}</span>
       <svg viewBox="0 0 16 10" className="w-4 h-3" fill="none">
         <path d="M1 5h12M9 1l4 4-4 4" stroke="var(--color-accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
-      <span className="text-sm font-bold text-accent tabular-nums">v{to}</span>
+      <span className="text-sm font-bold text-accent num">v{to}</span>
     </div>
   );
 }

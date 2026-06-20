@@ -229,7 +229,7 @@ export default function ProductionCalc() {
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
                 <img src={skillIcon(r.skill)} alt="" className="w-3.5 h-3.5" />
-                <span className="text-xs text-text-secondary tabular-nums">
+                <span className="text-xs text-text-secondary num">
                   {r.levelReq}
                 </span>
               </div>
@@ -315,13 +315,13 @@ export default function ProductionCalc() {
                         {mat.name}
                       </button>
                     </ItemTooltip>
-                    <span className="text-xs text-text-secondary tabular-nums">
+                    <span className="text-xs text-text-secondary num">
                       x{mat.quantity}
                     </span>
-                    <span className="text-xs text-text-secondary tabular-nums w-16 text-right">
+                    <span className="text-xs text-text-secondary num w-16 text-right">
                       {price != null ? formatGp(price) : "—"}
                     </span>
-                    <span className="text-xs text-text-secondary tabular-nums w-20 text-right">
+                    <span className="text-xs text-text-secondary num w-20 text-right">
                       {price != null ? formatGp(price * mat.quantity) : "—"}
                     </span>
                   </div>
@@ -351,10 +351,10 @@ export default function ProductionCalc() {
                       onError={(e) => { e.currentTarget.style.display = "none"; }}
                     />
                     <span className="text-sm flex-1">{out.name}</span>
-                    <span className="text-xs text-text-secondary tabular-nums">
+                    <span className="text-xs text-text-secondary num">
                       x{out.quantity}
                     </span>
-                    <span className="text-xs text-text-secondary tabular-nums w-16 text-right">
+                    <span className="text-xs text-text-secondary num w-16 text-right">
                       {price != null ? formatGp(price) : "—"}
                     </span>
                   </div>
@@ -367,29 +367,29 @@ export default function ProductionCalc() {
           <div className="flex gap-6 py-2 text-sm">
             <div>
               <span className="text-text-secondary text-xs">XP/craft</span>
-              <div className="tabular-nums font-medium">{selected.xp}</div>
+              <div className="num font-medium">{selected.xp}</div>
             </div>
             <div>
               <span className="text-text-secondary text-xs">Material cost</span>
-              <div className="tabular-nums font-medium">
+              <div className="num font-medium">
                 {calc.materialCost != null ? formatGp(Math.round(calc.materialCost)) : "—"}
               </div>
             </div>
             <div>
               <span className="text-text-secondary text-xs">Output value</span>
-              <div className="tabular-nums font-medium">
+              <div className="num font-medium">
                 {calc.outputValue != null ? formatGp(Math.round(calc.outputValue)) : "—"}
               </div>
             </div>
             <div>
               <span className="text-text-secondary text-xs">Net cost</span>
-              <div className={`tabular-nums font-medium ${calc.netCost != null && calc.netCost < 0 ? "text-success" : ""}`}>
+              <div className={`num font-medium ${calc.netCost != null && calc.netCost < 0 ? "text-success" : ""}`}>
                 {calc.netCost != null ? formatGp(Math.round(calc.netCost)) : "—"}
               </div>
             </div>
             <div>
               <span className="text-text-secondary text-xs">GP/XP</span>
-              <div className={`tabular-nums font-medium ${calc.costPerXp != null && calc.costPerXp < 0 ? "text-success" : ""}`}>
+              <div className={`num font-medium ${calc.costPerXp != null && calc.costPerXp < 0 ? "text-success" : ""}`}>
                 {calc.costPerXp != null ? calc.costPerXp.toFixed(1) : "—"}
               </div>
             </div>
@@ -405,7 +405,7 @@ export default function ProductionCalc() {
                 min={1}
                 value={quantity}
                 onChange={(e) => setQuantity(Math.max(1, Number(e.target.value) || 1))}
-                className="w-28 px-2 py-1.5 rounded-lg bg-bg-tertiary border border-border text-sm tabular-nums focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
+                className="w-28 px-2 py-1.5 rounded-lg bg-bg-tertiary border border-border text-sm num focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
               />
               <div className="flex gap-1">
                 {[10, 100, 1000, 10000].map((q) => (
@@ -431,7 +431,7 @@ export default function ProductionCalc() {
                 <div className="text-[10px] text-text-secondary uppercase tracking-wider">
                   Total XP
                 </div>
-                <div className="text-sm font-semibold tabular-nums mt-0.5">
+                <div className="text-sm font-semibold num mt-0.5">
                   {totalXp.toLocaleString()}
                 </div>
               </div>
@@ -439,7 +439,7 @@ export default function ProductionCalc() {
                 <div className="text-[10px] text-text-secondary uppercase tracking-wider">
                   Material Cost
                 </div>
-                <div className="text-sm font-semibold tabular-nums mt-0.5">
+                <div className="text-sm font-semibold num mt-0.5">
                   {totalMaterialCost != null ? formatGp(Math.round(totalMaterialCost)) : "—"}
                 </div>
               </div>
@@ -447,7 +447,7 @@ export default function ProductionCalc() {
                 <div className="text-[10px] text-text-secondary uppercase tracking-wider">
                   Output Value
                 </div>
-                <div className="text-sm font-semibold tabular-nums mt-0.5">
+                <div className="text-sm font-semibold num mt-0.5">
                   {totalOutputValue != null ? formatGp(Math.round(totalOutputValue)) : "—"}
                 </div>
               </div>
@@ -455,7 +455,7 @@ export default function ProductionCalc() {
                 <div className="text-[10px] text-text-secondary uppercase tracking-wider">
                   {profit != null && profit >= 0 ? "Profit" : "Loss"}
                 </div>
-                <div className={`text-sm font-semibold tabular-nums mt-0.5 ${
+                <div className={`text-sm font-semibold num mt-0.5 ${
                   profit != null && profit >= 0 ? "text-success" : "text-danger"
                 }`}>
                   {profit != null ? formatGp(Math.round(Math.abs(profit))) : "—"}

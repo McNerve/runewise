@@ -102,23 +102,23 @@ export default function RecipeCostTable({
                   <ItemTooltip itemName={r.name}><span className="text-sm cursor-default">{r.name}</span></ItemTooltip>
                 </div>
               </td>
-              <td className="px-3 py-1.5 text-right text-xs text-text-secondary tabular-nums">
+              <td className="px-3 py-1.5 text-right text-xs text-text-secondary num">
                 {r.levelReq}
               </td>
-              <td className="px-3 py-1.5 text-right text-xs text-text-secondary tabular-nums">
+              <td className="px-3 py-1.5 text-right text-xs text-text-secondary num">
                 {r.xp}
               </td>
-              <td className={`px-3 py-1.5 text-right text-xs tabular-nums ${
+              <td className={`px-3 py-1.5 text-right text-xs num ${
                 netCost != null && netCost < 0 ? "text-success" : "text-text-secondary"
               }`}>
                 {netCost != null ? formatGp(Math.round(netCost)) : "—"}
               </td>
-              <td className={`px-3 py-1.5 text-right text-xs tabular-nums ${
+              <td className={`px-3 py-1.5 text-right text-xs num ${
                 costPerXp != null && costPerXp < 0 ? "text-success" : "text-text-secondary"
               }`}>
                 {costPerXp != null ? `${costPerXp.toFixed(1)}` : "—"}
               </td>
-              <td className={`px-3 py-1.5 text-right text-xs tabular-nums ${
+              <td className={`px-3 py-1.5 text-right text-xs num ${
                 totalCost != null && totalCost < 0 ? "text-success" : "text-text-secondary"
               }`}>
                 {totalCost != null ? formatGp(Math.round(totalCost)) : "—"}

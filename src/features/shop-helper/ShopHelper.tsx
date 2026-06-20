@@ -274,7 +274,7 @@ export default function ShopHelper() {
           {selectedShop ? (
             <div className="space-y-4">
               {/* Shop header card */}
-              <div className="rounded-xl border border-border/40 bg-bg-primary/20 p-4">
+              <div className="rounded-xl border border-border-subtle bg-bg-tertiary p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0 flex items-start gap-3">
                     <ShopIcon shop={selectedShop} iconMap={iconMap} className="w-10 h-10 shrink-0 rounded-lg" />
@@ -425,15 +425,15 @@ export default function ShopHelper() {
                               </button>
                             </ItemTooltip>
                           </td>
-                          <td className="px-3 py-1.5 text-right tabular-nums text-text-secondary">
+                          <td className="px-3 py-1.5 text-right num text-text-secondary">
                             {item.stock === "∞" ? "∞" : parseInt(item.stock).toLocaleString()}
                           </td>
-                          <td className="px-3 py-1.5 text-right tabular-nums">
+                          <td className="px-3 py-1.5 text-right num">
                             {item.sellPrice != null ? (
                               <span className="text-text-primary">{formatGp(item.sellPrice)}</span>
                             ) : "—"}
                           </td>
-                          <td className="px-3 py-1.5 text-right tabular-nums">
+                          <td className="px-3 py-1.5 text-right num">
                             {gePrice != null ? (
                               <div>
                                 <span className="text-text-secondary">{formatGp(gePrice)}</span>
@@ -460,7 +460,7 @@ export default function ShopHelper() {
               </div>
             </div>
           ) : (
-            <div className="rounded-xl border border-border/40 bg-bg-primary/20 p-12 text-center">
+            <div className="rounded-xl border border-border-subtle bg-bg-tertiary p-12 text-center">
               <WikiImage
                 src={`${WIKI_IMG}/General_store_icon.png`}
                 alt=""

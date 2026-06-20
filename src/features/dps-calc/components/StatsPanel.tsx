@@ -34,7 +34,7 @@ function StatInput({
           onChange={(e) =>
             onChange(Math.max(min, Math.min(max, Number(e.target.value))))
           }
-          className="w-full px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary tabular-nums focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
+          className="w-full px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary num focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
         />
         {suffix && (
           <span className="text-[10px] text-text-secondary/50 shrink-0">
@@ -103,7 +103,7 @@ export default function StatsPanel({ state }: StatsPanelProps) {
   return (
     <div className="space-y-5">
       {/* Stats + Equipment side by side */}
-      <div className="rounded-xl border border-border/40 bg-bg-primary/20 p-4">
+      <div className="rounded-xl border border-border-subtle bg-bg-tertiary p-4">
         <div className="grid grid-cols-2 gap-5">
           <div>
             <div className="section-kicker mb-2">Player Stats</div>
@@ -279,7 +279,7 @@ export default function StatsPanel({ state }: StatsPanelProps) {
       )}
 
       {/* Prayer + Stance */}
-      <div className="rounded-xl border border-border/40 bg-bg-primary/20 p-4">
+      <div className="rounded-xl border border-border-subtle bg-bg-tertiary p-4">
         <div className="grid grid-cols-2 gap-5">
           <div>
             <div className="section-kicker mb-2">Prayer</div>

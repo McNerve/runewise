@@ -353,7 +353,7 @@ export default function PetCalculator({ hiscores, rsn }: Props) {
               }`}
             >
               {cat.label}
-              <span className={`ml-1 tabular-nums ${category === cat.id ? "text-on-accent/70" : "text-text-secondary/40"}`}>
+              <span className={`ml-1 num ${category === cat.id ? "text-on-accent/70" : "text-text-secondary/40"}`}>
                 {count}
               </span>
             </button>
@@ -510,7 +510,7 @@ export default function PetCalculator({ hiscores, rsn }: Props) {
                           {isFastest && <span className="text-warning" title="Fastest at current level">★</span>}
                           {action.name}
                         </span>
-                        <span className="shrink-0 tabular-nums text-right">
+                        <span className="shrink-0 num text-right">
                           <span className={isSelected ? "text-text-primary" : "text-text-secondary/80"}>
                             1/{Math.round(rate).toLocaleString()}
                           </span>
@@ -575,7 +575,7 @@ export default function PetCalculator({ hiscores, rsn }: Props) {
                     }}
                     className="w-full px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
                   />
-                  <p className="text-[11px] text-text-secondary/60 mt-1 tabular-nums">
+                  <p className="text-[11px] text-text-secondary/60 mt-1 num">
                     = {actionCount.toLocaleString()} actions
                   </p>
                 </div>
@@ -642,7 +642,7 @@ export default function PetCalculator({ hiscores, rsn }: Props) {
                     <div key={m.id}>
                       <label className="block text-xs text-text-secondary mb-1">
                         {m.label}
-                        <span className="ml-1 text-text-secondary/40 tabular-nums">{val.toLocaleString()}</span>
+                        <span className="ml-1 text-text-secondary/40 num">{val.toLocaleString()}</span>
                       </label>
                       <input
                         type="range"
@@ -717,7 +717,7 @@ export default function PetCalculator({ hiscores, rsn }: Props) {
           {/* Results */}
           <div className="border-t border-border pt-4">
             <div className="text-center mb-3">
-              <span className={`text-4xl font-bold tabular-nums ${
+              <span className={`text-4xl font-bold num ${
                 chance >= 90 ? "text-danger" : chance >= 50 ? "text-warning" : "text-success"
               }`}>
                 {chance.toFixed(2)}%

@@ -50,7 +50,7 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
   return (
     <div className="lg:sticky lg:top-4 lg:self-start space-y-5">
       {/* Target */}
-      <div className="rounded-xl border border-border/40 bg-bg-primary/20 p-4">
+      <div className="rounded-xl border border-border-subtle bg-bg-tertiary p-4">
         <div className="section-kicker mb-2">Target</div>
         <MonsterSearch
           monsters={wikiMonsters}
@@ -169,11 +169,11 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
           <div className="mt-2 rounded-lg border border-border/40 bg-bg-tertiary/30 p-3">
             <div className="grid grid-cols-3 gap-2 text-center">
               <div>
-                <div className="text-lg font-bold text-text-primary tabular-nums">{specResult.specMaxHit}</div>
+                <div className="text-lg font-bold text-text-primary num">{specResult.specMaxHit}</div>
                 <div className="text-[10px] text-text-secondary">Spec Max</div>
               </div>
               <div>
-                <div className={`text-lg font-bold tabular-nums ${
+                <div className={`text-lg font-bold num ${
                   specResult.specAccuracy >= 0.8 ? "text-success" : specResult.specAccuracy >= 0.5 ? "text-warning" : "text-danger"
                 }`}>
                   {(specResult.specAccuracy * 100).toFixed(1)}%
@@ -181,7 +181,7 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
                 <div className="text-[10px] text-text-secondary">Spec Acc</div>
               </div>
               <div>
-                <div className="text-lg font-bold text-accent tabular-nums">{specResult.specDps.toFixed(2)}</div>
+                <div className="text-lg font-bold text-accent num">{specResult.specDps.toFixed(2)}</div>
                 <div className="text-[10px] text-text-secondary">Spec DPS</div>
               </div>
             </div>
@@ -196,7 +196,7 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
       </div>
 
       {/* Results */}
-      <div className="rounded-xl border border-border/40 bg-bg-primary/20 p-4">
+      <div className="rounded-xl border border-border-subtle bg-bg-tertiary p-4">
         <div className="flex items-center justify-between mb-2">
           <div className="section-kicker">Results</div>
           <div className="flex items-center gap-3">
@@ -270,11 +270,11 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
                       }`}
                     >
                       <td className="px-3 py-1.5 font-medium">{phase.label}</td>
-                      <td className="px-3 py-1.5 text-right tabular-nums text-text-secondary">{monster.hitpoints}</td>
-                      <td className={`px-3 py-1.5 text-right tabular-nums ${accColor}`}>{(pr.accuracy * 100).toFixed(1)}%</td>
-                      <td className="px-3 py-1.5 text-right tabular-nums text-accent">{pr.maxHit}</td>
-                      <td className="px-3 py-1.5 text-right tabular-nums font-medium text-accent">{pr.dps.toFixed(2)}</td>
-                      <td className="px-3 py-1.5 text-right tabular-nums text-text-secondary">
+                      <td className="px-3 py-1.5 text-right num text-text-secondary">{monster.hitpoints}</td>
+                      <td className={`px-3 py-1.5 text-right num ${accColor}`}>{(pr.accuracy * 100).toFixed(1)}%</td>
+                      <td className="px-3 py-1.5 text-right num text-accent">{pr.maxHit}</td>
+                      <td className="px-3 py-1.5 text-right num font-medium text-accent">{pr.dps.toFixed(2)}</td>
+                      <td className="px-3 py-1.5 text-right num text-text-secondary">
                         {pr.ttk < 60 ? `${pr.ttk.toFixed(1)}s` : `${Math.floor(pr.ttk / 60)}m ${Math.round(pr.ttk % 60)}s`}
                       </td>
                     </tr>
@@ -282,13 +282,13 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
                 })}
                 <tr className="border-t border-border/40 bg-bg-tertiary/30">
                   <td className="px-3 py-1.5 font-medium text-text-secondary">Total</td>
-                  <td className="px-3 py-1.5 text-right tabular-nums font-medium">
+                  <td className="px-3 py-1.5 text-right num font-medium">
                     {phaseResults.reduce((sum, p) => sum + p.monster.hitpoints, 0)}
                   </td>
                   <td className="px-3 py-1.5" />
                   <td className="px-3 py-1.5" />
                   <td className="px-3 py-1.5" />
-                  <td className="px-3 py-1.5 text-right tabular-nums font-medium text-text-primary">
+                  <td className="px-3 py-1.5 text-right num font-medium text-text-primary">
                     {(() => {
                       const totalTtk = phaseResults.reduce((sum, p) => sum + p.result.ttk, 0);
                       return totalTtk < 60 ? `${totalTtk.toFixed(1)}s` : `${Math.floor(totalTtk / 60)}m ${Math.round(totalTtk % 60)}s`;
@@ -324,12 +324,12 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
                 <div className="grid grid-cols-3 gap-2 text-center text-sm">
                   <div>
                     <div className="text-text-secondary/50 text-[10px] mb-1">{compareLoadout.name}</div>
-                    <div className="font-bold tabular-nums">{comparisonResult.setup1.dps.toFixed(2)}</div>
+                    <div className="font-bold num">{comparisonResult.setup1.dps.toFixed(2)}</div>
                     <div className="text-[10px] text-text-secondary">DPS</div>
                   </div>
                   <div>
                     <div className="text-text-secondary/50 text-[10px] mb-1">Difference</div>
-                    <div className={`font-bold tabular-nums ${
+                    <div className={`font-bold num ${
                       comparisonResult.dpsGain > 0 ? "text-success" :
                       comparisonResult.dpsGain < 0 ? "text-danger" :
                       "text-text-secondary"
@@ -346,7 +346,7 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
                   </div>
                   <div>
                     <div className="text-text-secondary/50 text-[10px] mb-1">Current</div>
-                    <div className="font-bold text-accent tabular-nums">{comparisonResult.setup2.dps.toFixed(2)}</div>
+                    <div className="font-bold text-accent num">{comparisonResult.setup2.dps.toFixed(2)}</div>
                     <div className="text-[10px] text-text-secondary">DPS</div>
                   </div>
                 </div>

@@ -161,7 +161,7 @@ export default function RaidCompanion() {
 
       {/* Timer + controls */}
       <div className="bg-bg-tertiary rounded-xl p-4 flex items-center gap-4 flex-wrap">
-        <div className="tabular-nums text-3xl font-bold text-text-primary min-w-[100px]">
+        <div className="num text-3xl font-bold text-text-primary min-w-[100px]">
           {formatTime(running ? elapsed : 0)}
         </div>
         {!running ? (
@@ -221,7 +221,7 @@ export default function RaidCompanion() {
             {splits.map(({ room, splitMs }) => (
               <div key={room} className="flex items-center justify-between text-sm bg-bg-tertiary/60 rounded px-3 py-1.5">
                 <span className="text-text-primary">{room}</span>
-                <span className="text-success tabular-nums">{formatTime(splitMs)}</span>
+                <span className="text-success num">{formatTime(splitMs)}</span>
               </div>
             ))}
           </div>
@@ -251,13 +251,13 @@ export default function RaidCompanion() {
                 return (
                   <tr key={room.name} className="border-b border-border/40 even:bg-bg-primary/20">
                     <td className="px-4 py-2 font-medium">{room.name}</td>
-                    <td className="px-4 py-2 text-right tabular-nums text-text-secondary">
+                    <td className="px-4 py-2 text-right num text-text-secondary">
                       {pb != null ? formatTime(pb) : "—"}
                     </td>
-                    <td className="px-4 py-2 text-right tabular-nums text-text-secondary/60">
+                    <td className="px-4 py-2 text-right num text-text-secondary/60">
                       {avg != null ? formatTime(avg) : "—"}
                     </td>
-                    <td className={`px-4 py-2 text-right tabular-nums text-xs ${diff == null ? "" : diff <= 0 ? "text-success" : "text-danger"}`}>
+                    <td className={`px-4 py-2 text-right num text-xs ${diff == null ? "" : diff <= 0 ? "text-success" : "text-danger"}`}>
                       {diff == null ? "—" : `${diff > 0 ? "+" : ""}${formatTime(Math.abs(diff))}`}
                     </td>
                   </tr>
@@ -276,7 +276,7 @@ export default function RaidCompanion() {
             {raidRuns.slice(0, 5).map((run) => (
               <div key={run.id} className="flex items-center justify-between bg-bg-tertiary/60 rounded-lg px-4 py-2.5">
                 <div>
-                  <span className="text-sm tabular-nums font-semibold">{formatTime(run.totalMs)}</span>
+                  <span className="text-sm num font-semibold">{formatTime(run.totalMs)}</span>
                   <span className="ml-3 text-xs text-text-secondary/60">
                     {new Date(run.date).toLocaleDateString()} · {run.splits.length}/{rooms.length} rooms
                   </span>

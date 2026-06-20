@@ -332,7 +332,7 @@ export default function Home({ hiscores }: HomeProps) {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.2 }}
-              className="rounded-xl border border-border/40 bg-bg-primary/20 p-4"
+              className="rounded-xl border border-border-subtle bg-bg-tertiary p-4"
             >
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-12 h-12 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center">
@@ -466,7 +466,7 @@ export default function Home({ hiscores }: HomeProps) {
 
           {/* Watchlist widget */}
           {watchlistItems.length > 0 && (
-            <div className="rounded-xl border border-border/40 bg-bg-primary/20 p-3">
+            <div className="rounded-xl border border-border-subtle bg-bg-tertiary p-3">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-kicker font-semibold uppercase tracking-[0.16em] text-text-secondary/70">Watchlist</h3>
                 <button
@@ -488,7 +488,7 @@ export default function Home({ hiscores }: HomeProps) {
                     >
                       <span className="truncate text-text-primary">{item.itemName}</span>
                       {price != null && (
-                        <span className="text-success tabular-nums shrink-0">{formatGp(price)}</span>
+                        <span className="text-success num shrink-0">{formatGp(price)}</span>
                       )}
                     </div>
                   );
@@ -522,7 +522,7 @@ export default function Home({ hiscores }: HomeProps) {
                         {activeTimers} active {activeTimers === 1 ? "run" : "runs"}
                       </div>
                     </div>
-                    <span className="inline-flex items-center justify-center rounded-full bg-accent/20 border border-accent/30 px-1.5 py-0.5 text-[10px] tabular-nums text-accent font-medium">{activeTimers}</span>
+                    <span className="inline-flex items-center justify-center rounded-full bg-accent/20 border border-accent/30 px-1.5 py-0.5 text-[10px] num text-accent font-medium">{activeTimers}</span>
                   </button>
                 )}
                 {liveStarCount > 0 && (
@@ -538,7 +538,7 @@ export default function Home({ hiscores }: HomeProps) {
                         {liveStarCount === 1 ? "1 star live right now" : `${liveStarCount} stars live right now`}
                       </div>
                     </div>
-                    <span className="inline-flex items-center justify-center rounded-full bg-accent/20 border border-accent/30 px-1.5 py-0.5 text-[10px] tabular-nums text-accent font-medium">{liveStarCount}</span>
+                    <span className="inline-flex items-center justify-center rounded-full bg-accent/20 border border-accent/30 px-1.5 py-0.5 text-[10px] num text-accent font-medium">{liveStarCount}</span>
                   </button>
                 )}
               </div>
@@ -548,7 +548,7 @@ export default function Home({ hiscores }: HomeProps) {
           {/* Quick access — curated shortcuts, no live state implied.
               On mobile, collapse to a single section: if Live has data, hide
               Quick access to save vertical space. */}
-          <div className={`rounded-xl border border-border/40 bg-bg-primary/20 p-3 ${hasLiveData ? "hidden lg:block" : ""}`}>
+          <div className={`rounded-xl border border-border-subtle bg-bg-tertiary p-3 ${hasLiveData ? "hidden lg:block" : ""}`}>
             <h3 className="text-kicker font-semibold uppercase tracking-[0.16em] text-text-secondary/70 mb-2">Quick access</h3>
             <div className="space-y-0.5">
               {QUICK_ACCESS_TILES.map(({ id, label, desc }) => (
@@ -570,7 +570,7 @@ export default function Home({ hiscores }: HomeProps) {
 
           {/* Keyboard shortcuts hint */}
           {settings.keybindsEnabled && (
-            <div className="rounded-xl border border-border/40 bg-bg-primary/20 p-3">
+            <div className="rounded-xl border border-border-subtle bg-bg-tertiary p-3">
               <h3 className="text-kicker font-semibold uppercase tracking-[0.16em] text-text-secondary/70 mb-2">Shortcuts</h3>
               <div className="grid grid-cols-2 gap-1 text-[10px]">
                 {[

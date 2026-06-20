@@ -144,7 +144,7 @@ function StarAlertPanel({
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="mb-4 rounded-xl border border-border/60 bg-bg-primary/45">
+    <div className="mb-4 rounded-xl border border-border-subtle bg-bg-tertiary">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}

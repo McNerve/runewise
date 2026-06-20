@@ -738,7 +738,7 @@ export default function BossGuide({ hiscores }: Props) {
               </div>
 
               <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <div className="rounded-xl border border-border/60 bg-bg-primary/45 px-4 py-3">
+                <div className="rounded-xl border border-border-subtle bg-bg-tertiary px-4 py-3">
                   <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
                     Guide Sections
                   </div>
@@ -749,7 +749,7 @@ export default function BossGuide({ hiscores }: Props) {
                     Structured strategy blocks in this workspace.
                   </div>
                 </div>
-                <div className="rounded-xl border border-border/60 bg-bg-primary/45 px-4 py-3">
+                <div className="rounded-xl border border-border-subtle bg-bg-tertiary px-4 py-3">
                   <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
                     Drop Categories
                   </div>
@@ -766,7 +766,7 @@ export default function BossGuide({ hiscores }: Props) {
                           : "No structured loot groups available yet."}
                   </div>
                 </div>
-                <div className="rounded-xl border border-border/60 bg-bg-primary/45 px-4 py-3">
+                <div className="rounded-xl border border-border-subtle bg-bg-tertiary px-4 py-3">
                   <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
                     Task References
                   </div>
@@ -777,7 +777,7 @@ export default function BossGuide({ hiscores }: Props) {
                     Boss-linked combat tasks available for planning.
                   </div>
                 </div>
-                <div className="rounded-xl border border-border/60 bg-bg-primary/45 px-4 py-3">
+                <div className="rounded-xl border border-border-subtle bg-bg-tertiary px-4 py-3">
                   <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
                     Top Drop
                   </div>
@@ -1230,7 +1230,7 @@ export default function BossGuide({ hiscores }: Props) {
                                     <span>{drop.name}</span>
                                   </button>
                                 </td>
-                                <td className="px-4 py-2 text-right text-text-secondary tabular-nums">{drop.rate}</td>
+                                <td className="px-4 py-2 text-right text-text-secondary num">{drop.rate}</td>
                               </tr>
                             ))}
                           </tbody>
