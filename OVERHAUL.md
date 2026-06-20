@@ -47,7 +47,7 @@ Light theme keeps full parity (warm-neutral, no texture; accent `#875F33`, seman
 - **UI — Inter**: medium/semibold.
 - **Numeric — JetBrains Mono** (`.num`) with tnum + slashed zero, for *pure-number* displays. Mixed number+word strings keep `tabular-nums` so label words don't render mono.
 - `--text-mega` (46px) — the single focal metric per view.
-- *Follow-up:* self-host Cinzel + JetBrains Mono + Inter as subset woff2 (Tauri offline; no CDN at runtime). Today the tokens fall back to system mono/serif.
+- ✅ **Done:** Cinzel + JetBrains Mono (Variable) + Inter (Variable) self-hosted via @fontsource, trimmed to latin/latin-ext woff2 (~220K bundled, Tauri-offline, no CDN at runtime).
 
 ### Components
 
@@ -66,7 +66,7 @@ RSN one-click prefill everywhere · BiS / next-upgrade recommender · "what to d
 ## 6. Roadmap
 
 - **This PR — Foundation**: surface ladder + extended `Card` + `StatCard` + DPS verdict + app-wide token/numeric sweep + Cinzel titles + WCAG-fixed light theme. No behaviour change.
-- **Next — Fonts & hierarchy**: bundle the three faces; verdict badges + infobox grammar app-wide.
+- ✅ **Fonts & sidebar identity** (shipped): self-host the three faces; render sidebar family headers (the 27-item wall is now scannable groups). Next within this lane: verdict badges + infobox grammar app-wide.
 - **Then — IA consolidation**: grouped hubs, merge duplicates, ⌘K augment, robustness floor.
 - **Then — Differentiators**: RSN prefill, BiS recommender, Flip Finder, "what next" engine.
 

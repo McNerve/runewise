@@ -129,8 +129,15 @@ const Sidebar = memo(function Sidebar({ currentView, onNavigate, rsn = "" }: Sid
 
         {groupedFeatures.map((section, index) => (
           <div key={section.family}>
-            {index > 0 && (
-              <div className={`border-t border-border/25 ${collapsed ? "my-1 mx-1" : "my-1.5 mx-2"}`} />
+            {/* Collapsed: hairline divider. Expanded: a real family header so
+                the 27-item list is scannable instead of a wall of icons. */}
+            {index > 0 && collapsed && (
+              <div className="border-t border-border/25 my-1 mx-1" />
+            )}
+            {!collapsed && section.family !== "Home" && (
+              <div className={`section-kicker px-2.5 pb-1 ${index > 0 ? "pt-3" : "pt-1.5"}`}>
+                {section.family}
+              </div>
             )}
             <div>
               {section.items.map((item) => {
