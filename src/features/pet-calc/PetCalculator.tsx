@@ -207,9 +207,13 @@ export default function PetCalculator({ hiscores, rsn }: Props) {
   const methodRows = useMemo(() => {
     if (!isSkilling || !selected.skillPet) return [];
     return selected.skillPet.actions.map((action) => {
+      // Flat-rate methods (xpPerAction 0, e.g. Quetzin rumours) still get the
+      // 200M-XP 15x boost, which the level-scaled path applies via skillingPetRate.
       const rate = action.xpPerAction > 0
         ? skillingPetRate(action.baseChance, skillLevel, has200m)
-        : action.baseChance;
+        : has200m
+          ? action.baseChance / 15
+          : action.baseChance;
       return { action, rate };
     });
   }, [isSkilling, selected, skillLevel, has200m]);
