@@ -17,7 +17,7 @@ export default function XpTable() {
         <div className="mb-5 rounded-xl border border-border/40 bg-bg-secondary/50 p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
-              <div className={`text-3xl font-bold tabular-nums ${
+              <div className={`text-3xl font-bold num ${
                 selectedRow.level === 99 ? "text-success" : selectedRow.level > 99 ? "text-accent" : "text-text-primary"
               }`}>
                 {selectedRow.level}
@@ -37,17 +37,17 @@ export default function XpTable() {
           <div className="grid grid-cols-3 gap-3">
             <div>
               <div className="text-[10px] uppercase tracking-wider text-text-secondary/50">Total XP</div>
-              <div className="text-sm font-bold tabular-nums mt-0.5">{selectedRow.xp.toLocaleString()}</div>
+              <div className="text-sm font-bold num mt-0.5">{selectedRow.xp.toLocaleString()}</div>
             </div>
             <div>
               <div className="text-[10px] uppercase tracking-wider text-text-secondary/50">XP to Next</div>
-              <div className="text-sm font-bold tabular-nums mt-0.5 text-accent">
+              <div className="text-sm font-bold num mt-0.5 text-accent">
                 {nextRow ? `+${(nextRow.xp - selectedRow.xp).toLocaleString()}` : "—"}
               </div>
             </div>
             <div>
               <div className="text-[10px] uppercase tracking-wider text-text-secondary/50">XP from Prev</div>
-              <div className="text-sm font-bold tabular-nums mt-0.5 text-text-secondary">
+              <div className="text-sm font-bold num mt-0.5 text-text-secondary">
                 {prevRow ? `+${(selectedRow.xp - prevRow.xp).toLocaleString()}` : "—"}
               </div>
             </div>
@@ -67,7 +67,7 @@ export default function XpTable() {
             <button
               key={level}
               onClick={() => setSelected(isSelected ? null : level)}
-              className={`py-2 rounded text-xs font-medium tabular-nums transition-all ${
+              className={`py-2 rounded text-xs font-medium num transition-all ${
                 isSelected
                   ? "bg-accent text-on-accent scale-110 shadow-lg shadow-accent/20"
                   : level === 99
@@ -84,7 +84,7 @@ export default function XpTable() {
       </div>
 
       <div className="text-xs text-text-secondary/40 mb-4">
-        Max XP per skill: <span className="text-text-primary font-medium tabular-nums">{MAX_XP.toLocaleString()}</span> (200M)
+        Max XP per skill: <span className="text-text-primary font-medium num">{MAX_XP.toLocaleString()}</span> (200M)
       </div>
 
       {/* Virtual levels */}
@@ -96,7 +96,7 @@ export default function XpTable() {
             <button
               key={level}
               onClick={() => setSelected(isSelected ? null : level)}
-              className={`py-2 rounded text-xs font-medium tabular-nums transition-all ${
+              className={`py-2 rounded text-xs font-medium num transition-all ${
                 isSelected
                   ? "bg-accent text-on-accent scale-110 shadow-lg shadow-accent/20"
                   : "bg-accent/8 text-accent/70 hover:bg-accent/15"

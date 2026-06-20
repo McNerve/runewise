@@ -142,7 +142,7 @@ export default function ComparisonTable({ data, onLinkClick }: Props) {
                     <td
                       key={col}
                       className={`px-3 py-2.5 text-sm text-text-secondary ${
-                        isNumeric ? "text-right tabular-nums" : ""
+                        isNumeric ? "text-right num" : ""
                       } ${isName ? "font-medium text-text-primary" : ""}`}
                     >
                       {isName && row.link ? (

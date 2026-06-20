@@ -175,7 +175,7 @@ export default function ProfitRankings() {
               }}
               className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-bg-secondary/70 transition-colors text-left group"
             >
-              <span className="text-xs text-text-secondary/40 w-6 text-right tabular-nums shrink-0">
+              <span className="text-xs text-text-secondary/40 w-6 text-right num shrink-0">
                 {i + 1}
               </span>
               <div className="flex-1 min-w-0">
@@ -218,7 +218,7 @@ export default function ProfitRankings() {
                   />
                 </div>
               </div>
-              <span className="text-sm font-semibold text-accent tabular-nums shrink-0">
+              <span className="text-sm font-semibold text-accent num shrink-0">
                 {formatGp(entry.gpPerHour)}/hr
               </span>
             </button>

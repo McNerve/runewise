@@ -28,7 +28,7 @@ export function StatCard({
   className = "",
   title,
 }: StatCardProps) {
-  const valueClass = `text-lg font-semibold tabular-nums ${accent ?? "text-text-primary"}`;
+  const valueClass = `text-lg font-semibold num ${accent ?? "text-text-primary"}`;
   const body = (
     <>
       <div className="flex items-center gap-1.5">
@@ -58,7 +58,7 @@ export function StatCard({
     </>
   );
 
-  const baseStyle = "rounded-xl border border-border/60 bg-bg-primary/45 px-3 py-3";
+  const baseStyle = "rounded-xl border border-border-subtle bg-bg-tertiary px-3 py-3";
 
   if (onClick) {
     return (
@@ -66,7 +66,7 @@ export function StatCard({
         type="button"
         onClick={onClick}
         title={title}
-        className={`${baseStyle} text-left transition-colors hover:border-accent/35 hover:bg-bg-primary/70 ${className}`}
+        className={`${baseStyle} text-left transition-colors hover:border-border-strong hover:bg-bg-secondary ${className}`}
       >
         {body}
       </button>

@@ -328,16 +328,16 @@ function JournalTable({ entries, onEdit, onDelete, onClose }: JournalTableProps)
                     <div className="text-[11px] text-text-secondary/50 truncate max-w-[180px]">{entry.notes}</div>
                   )}
                 </td>
-                <td className="py-2 pr-4 text-right tabular-nums">{formatGp(entry.buyPrice)}</td>
-                <td className="py-2 pr-4 text-right tabular-nums text-text-secondary/70">
+                <td className="py-2 pr-4 text-right num">{formatGp(entry.buyPrice)}</td>
+                <td className="py-2 pr-4 text-right num text-text-secondary/70">
                   {isOpen ? (
                     <span className="text-[11px] px-1.5 py-0.5 bg-yellow-500/10 text-yellow-400 rounded">Open</span>
                   ) : (
                     formatGp(entry.sellPrice ?? null)
                   )}
                 </td>
-                <td className="py-2 pr-4 text-right tabular-nums">{entry.qty.toLocaleString()}</td>
-                <td className={`py-2 pr-4 text-right tabular-nums font-medium ${
+                <td className="py-2 pr-4 text-right num">{entry.qty.toLocaleString()}</td>
+                <td className={`py-2 pr-4 text-right num font-medium ${
                   profit == null ? "text-text-secondary/40" : profit >= 0 ? "text-success" : "text-danger"
                 }`}>
                   {profit == null ? "—" : formatGp(profit)}

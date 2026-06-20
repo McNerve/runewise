@@ -58,7 +58,7 @@ function StatCompare({
                     </div>
                   </td>
                   <td
-                    className={`px-3 py-1.5 text-right tabular-nums font-medium ${
+                    className={`px-3 py-1.5 text-right num font-medium ${
                       diff > 0 ? "text-success" : diff < 0 ? "text-text-secondary" : ""
                     }`}
                   >
@@ -67,7 +67,7 @@ function StatCompare({
                   <td className="px-2 py-1.5 text-center">
                     {diff !== 0 && (
                       <span
-                        className={`text-[10px] font-medium tabular-nums ${
+                        className={`text-[10px] font-medium num ${
                           diff > 0 ? "text-success" : "text-danger"
                         }`}
                       >
@@ -76,7 +76,7 @@ function StatCompare({
                     )}
                   </td>
                   <td
-                    className={`px-3 py-1.5 text-right tabular-nums font-medium ${
+                    className={`px-3 py-1.5 text-right num font-medium ${
                       diff < 0 ? "text-success" : diff > 0 ? "text-text-secondary" : ""
                     }`}
                   >
@@ -108,13 +108,13 @@ function StatCompare({
               </div>
               <div className="text-xs text-text-secondary">
                 Total level:{" "}
-                <span className="text-text-primary font-medium tabular-nums">
+                <span className="text-text-primary font-medium num">
                   {totalLevel.toLocaleString()}
                 </span>
               </div>
               <div className="text-xs text-text-secondary">
                 Total XP:{" "}
-                <span className="text-text-primary font-medium tabular-nums">
+                <span className="text-text-primary font-medium num">
                   {totalXp.toLocaleString()}
                 </span>
               </div>

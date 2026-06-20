@@ -389,7 +389,7 @@ export default function MoneyMaking({ hiscores }: Props) {
                     )}
                   </div>
                   <div className="text-right shrink-0">
-                    <div className="text-sm font-bold text-success tabular-nums">
+                    <div className="text-sm font-bold text-success num">
                       {formatGp(method.profitPerHour)}
                     </div>
                     <div className="text-[10px] text-text-secondary">GP/hr</div>

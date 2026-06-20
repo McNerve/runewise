@@ -62,7 +62,7 @@ const PlayerBar = memo(function PlayerBar({
               <span className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/50">{feature.family}</span>
               {loading && <span className="w-3 h-3 border-2 border-warning/30 border-t-warning rounded-full animate-spin" />}
             </div>
-            <h2 className="truncate text-base font-semibold tracking-tight">{feature.title}</h2>
+            <h2 className="display-face truncate text-h4 font-semibold tracking-tight text-text-primary">{feature.title}</h2>
           </div>
         </div>
 

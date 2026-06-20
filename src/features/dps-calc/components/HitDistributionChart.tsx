@@ -26,7 +26,7 @@ export default memo(function HitDistributionChart({ maxHit, accuracy }: HitDistr
         <div className="text-[10px] uppercase tracking-wider text-text-secondary/50">
           Hit Distribution
         </div>
-        <div className="text-[10px] text-text-secondary tabular-nums">
+        <div className="text-[10px] text-text-secondary num">
           avg <span className="text-text-primary font-medium">{dist.expectedHit.toFixed(1)}</span>
           <span className="mx-1 text-text-secondary/40">·</span>
           0-hit <span className="text-text-primary font-medium">{(dist.zeroChance * 100).toFixed(0)}%</span>
@@ -65,14 +65,14 @@ export default memo(function HitDistributionChart({ maxHit, accuracy }: HitDistr
         >
           <title>{`Average hit: ${dist.expectedHit.toFixed(1)}`}</title>
         </line>
-        <text x={2} y={CHART_H + LABEL_H - 3} className="fill-text-secondary/50 text-[9px] tabular-nums">
+        <text x={2} y={CHART_H + LABEL_H - 3} className="fill-text-secondary/50 text-[9px] num">
           0
         </text>
         <text
           x={CHART_W - 2}
           y={CHART_H + LABEL_H - 3}
           textAnchor="end"
-          className="fill-text-secondary/50 text-[9px] tabular-nums"
+          className="fill-text-secondary/50 text-[9px] num"
         >
           {maxHit}
         </text>

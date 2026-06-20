@@ -179,7 +179,7 @@ function FarmOverview({ timers, now, onGoToTimers }: { timers: Timer[]; now: num
                       />
                     </div>
                     <span
-                      className={`text-xs tabular-nums font-mono ${allReady ? "text-success font-semibold" : "text-text-secondary"}`}
+                      className={`text-xs num font-mono ${allReady ? "text-success font-semibold" : "text-text-secondary"}`}
                     >
                       {cat.nextReady != null
                         ? formatCountdown(cat.nextReady)

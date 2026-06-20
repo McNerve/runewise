@@ -573,7 +573,7 @@ export default function Market({
           </div>
         ) : (
           <div className="mb-4 grid gap-3 md:grid-cols-3">
-            <div className="rounded-xl border border-border/60 bg-bg-primary/45 px-4 py-3">
+            <div className="rounded-xl border border-border-subtle bg-bg-tertiary px-4 py-3">
               <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
                 Search Flow
               </div>
@@ -581,7 +581,7 @@ export default function Market({
                 Find a specific item to inspect live prices, charts, and wiki context.
               </div>
             </div>
-            <div className="rounded-xl border border-border/60 bg-bg-primary/45 px-4 py-3">
+            <div className="rounded-xl border border-border-subtle bg-bg-tertiary px-4 py-3">
               <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
                 Browse Flow
               </div>
@@ -589,7 +589,7 @@ export default function Market({
                 Switch to Browse All for the full catalogue with members filtering.
               </div>
             </div>
-            <div className="rounded-xl border border-border/60 bg-bg-primary/45 px-4 py-3">
+            <div className="rounded-xl border border-border-subtle bg-bg-tertiary px-4 py-3">
               <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
                 Workspace Goal
               </div>
@@ -764,7 +764,7 @@ export default function Market({
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-2 text-right text-text-secondary tabular-nums">
+                      <td className="px-4 py-2 text-right text-text-secondary num">
                         {volumes[String(item.id)]
                           ? formatGp(volumes[String(item.id)])
                           : "\u2014"}

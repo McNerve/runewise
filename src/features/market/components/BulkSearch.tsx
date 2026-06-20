@@ -112,18 +112,18 @@ export default function BulkSearch({ mapping, prices }: BulkSearchProps) {
                         <span className="ml-1 text-danger text-xs">Not found</span>
                       )}
                     </td>
-                    <td className="px-2 py-1.5 text-xs text-right tabular-nums text-text-secondary">
+                    <td className="px-2 py-1.5 text-xs text-right num text-text-secondary">
                       {r.price?.high != null ? formatGp(r.price.high) : "—"}
                     </td>
-                    <td className="px-2 py-1.5 text-xs text-right tabular-nums text-text-secondary">
+                    <td className="px-2 py-1.5 text-xs text-right num text-text-secondary">
                       {r.price?.low != null ? formatGp(r.price.low) : "—"}
                     </td>
-                    <td className={`px-2 py-1.5 text-xs text-right tabular-nums ${
+                    <td className={`px-2 py-1.5 text-xs text-right num ${
                       margin != null && margin > 0 ? "text-success" : "text-text-secondary"
                     }`}>
                       {margin != null ? formatGp(margin) : "—"}
                     </td>
-                    <td className="px-2 py-1.5 text-xs text-right tabular-nums text-text-secondary">
+                    <td className="px-2 py-1.5 text-xs text-right num text-text-secondary">
                       {r.item.highalch != null && r.item.highalch > 0 ? formatGp(r.item.highalch) : "—"}
                     </td>
                   </tr>
@@ -135,7 +135,7 @@ export default function BulkSearch({ mapping, prices }: BulkSearchProps) {
                 <td colSpan={2} className="px-2 py-2 text-xs text-text-secondary font-medium">
                   Total ({results.length} items)
                 </td>
-                <td className="px-2 py-2 text-xs text-right tabular-nums font-medium">
+                <td className="px-2 py-2 text-xs text-right num font-medium">
                   {formatGp(totalValue)}
                 </td>
                 <td colSpan={3} />

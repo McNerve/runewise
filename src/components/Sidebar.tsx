@@ -72,7 +72,7 @@ const Sidebar = memo(function Sidebar({ currentView, onNavigate, rsn = "" }: Sid
       >
         {!collapsed && (
           <div className="flex-1 min-w-0">
-            <h1 className="text-lg font-semibold tracking-tight">RuneWise</h1>
+            <h1 className="display-face text-lg font-semibold tracking-tight">RuneWise</h1>
           </div>
         )}
         <button
@@ -167,7 +167,7 @@ const Sidebar = memo(function Sidebar({ currentView, onNavigate, rsn = "" }: Sid
                       <span className="min-w-0 flex-1 truncate">{item.navLabel}</span>
                     )}
                     {!collapsed && settings.keybindsEnabled && viewKeys[item.id] && (
-                      <span className="text-[10px] text-text-secondary/45 tabular-nums">{viewKeys[item.id]}</span>
+                      <span className="text-[10px] text-text-secondary/45 num">{viewKeys[item.id]}</span>
                     )}
                   </button>
                 );
@@ -231,7 +231,7 @@ const Sidebar = memo(function Sidebar({ currentView, onNavigate, rsn = "" }: Sid
                 <ShellIcon view="settings" className="h-3.5 w-3.5" />
                 Settings
               </button>
-              <span className="text-[9px] text-text-secondary/30 tabular-nums">v{__APP_VERSION__}</span>
+              <span className="text-[9px] text-text-secondary/30 num">v{__APP_VERSION__}</span>
             </div>
             {pillVersion && (
               <button

@@ -169,7 +169,7 @@ export default function UpgradeFinder({ state }: UpgradeFinderProps) {
                             <span className="text-text-secondary/50 ml-1 text-[10px]">({item.version})</span>
                           )}
                           {price != null && (
-                            <span className="text-text-secondary/50 ml-1.5 text-[10px] tabular-nums">
+                            <span className="text-text-secondary/50 ml-1.5 text-[10px] num">
                               {formatGp(price)} gp
                               {sortMode === "value" && dpsGain > 0 && (
                                 <span className="text-text-secondary/40"> · {formatGp(Math.round(price / dpsGain))}/dps</span>
@@ -178,7 +178,7 @@ export default function UpgradeFinder({ state }: UpgradeFinderProps) {
                           )}
                         </span>
                       </ItemTooltip>
-                      <span className="shrink-0 text-[11px] tabular-nums text-success">
+                      <span className="shrink-0 text-[11px] num text-success">
                         +{dpsGain.toFixed(2)} <span className="text-success/60">({dpsGainPct >= 0 ? "+" : ""}{dpsGainPct.toFixed(1)}%)</span>
                       </span>
                       <Button

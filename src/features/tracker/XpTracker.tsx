@@ -213,7 +213,7 @@ function CompetitionsView({ competitions }: { competitions: WomPlayerCompetition
               </div>
               <div className="text-right shrink-0">
                 {gained !== 0 && (
-                  <div className={`text-sm font-medium tabular-nums ${gained > 0 ? "text-success" : ""}`}>
+                  <div className={`text-sm font-medium num ${gained > 0 ? "text-success" : ""}`}>
                     {gained > 0 ? `+${gained.toLocaleString()}` : gained.toLocaleString()}
                   </div>
                 )}
@@ -571,7 +571,7 @@ export default function XpTracker({ rsn }: Props) {
                   period={period}
                   endTime={lastUpdated ?? new Date()}
                 />
-                <div className="flex justify-between text-xs text-text-secondary mt-2 px-1 tabular-nums">
+                <div className="flex justify-between text-xs text-text-secondary mt-2 px-1 num">
                   <span>Start: {overallXp.start.toLocaleString()} XP</span>
                   <span className="text-success">
                     +{(overallXp.end - overallXp.start).toLocaleString()} gained
@@ -610,10 +610,10 @@ export default function XpTracker({ rsn }: Props) {
                             {SKILL_NAMES[key] ?? key}
                           </button>
                         </td>
-                        <td className="px-4 py-1.5 text-right text-success tabular-nums">
+                        <td className="px-4 py-1.5 text-right text-success num">
                           +{data.experience.gained.toLocaleString()}
                         </td>
-                        <td className={`px-4 py-1.5 text-right tabular-nums ${
+                        <td className={`px-4 py-1.5 text-right num ${
                           data.rank.gained < 0 ? "text-success" : data.rank.gained > 0 ? "text-danger" : "text-text-secondary"
                         }`}>
                           {data.rank.gained > 0
@@ -658,7 +658,7 @@ export default function XpTracker({ rsn }: Props) {
                             {formatBossName(key)}
                           </button>
                         </td>
-                        <td className="px-4 py-1.5 text-right text-success tabular-nums">
+                        <td className="px-4 py-1.5 text-right text-success num">
                           +{data.kills.gained.toLocaleString()}
                         </td>
                       </tr>
@@ -756,7 +756,7 @@ export default function XpTracker({ rsn }: Props) {
                         <div className="text-right">
                           {rec && rec.value > 0 ? (
                             <>
-                              <div className="text-sm font-semibold text-success tabular-nums">
+                              <div className="text-sm font-semibold text-success num">
                                 {formatValue(rec.value)}
                               </div>
                               <div className="text-[10px] text-text-secondary/50">

@@ -221,11 +221,11 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
           <div className="mt-2 rounded-lg border border-border/40 bg-bg-tertiary/30 p-3">
             <div className="grid grid-cols-3 gap-2 text-center">
               <div>
-                <div className="text-lg font-bold text-text-primary tabular-nums">{specResult.specMaxHit}</div>
+                <div className="text-lg font-bold text-text-primary num">{specResult.specMaxHit}</div>
                 <div className="text-[10px] text-text-secondary">Spec Max</div>
               </div>
               <div>
-                <div className={`text-lg font-bold tabular-nums ${
+                <div className={`text-lg font-bold num ${
                   specResult.specAccuracy >= 0.8 ? "text-success" : specResult.specAccuracy >= 0.5 ? "text-warning" : "text-danger"
                 }`}>
                   {(specResult.specAccuracy * 100).toFixed(1)}%
@@ -233,7 +233,7 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
                 <div className="text-[10px] text-text-secondary">Spec Acc</div>
               </div>
               <div>
-                <div className="text-lg font-bold text-accent tabular-nums">{specResult.specDps.toFixed(2)}</div>
+                <div className="text-lg font-bold text-accent num">{specResult.specDps.toFixed(2)}</div>
                 <div className="text-[10px] text-text-secondary">Spec DPS</div>
               </div>
             </div>
@@ -280,7 +280,7 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
           showDetails={showBreakdown}
         />
         {killStats && (
-          <div className="mt-2 text-[10px] text-text-secondary tabular-nums">
+          <div className="mt-2 text-[10px] text-text-secondary num">
             ≈{killStats.expectedAttacks.toFixed(1)} hits to kill
             {killStats.medianSeconds !== null && (
               <> · 50% by <span className="text-text-primary">{formatSeconds(killStats.medianSeconds)}</span></>
@@ -336,11 +336,11 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
                       }`}
                     >
                       <td className="px-3 py-1.5 font-medium">{phase.label}</td>
-                      <td className="px-3 py-1.5 text-right tabular-nums text-text-secondary">{monster.hitpoints}</td>
-                      <td className={`px-3 py-1.5 text-right tabular-nums ${accColor}`}>{(pr.accuracy * 100).toFixed(1)}%</td>
-                      <td className="px-3 py-1.5 text-right tabular-nums text-accent">{pr.maxHit}</td>
-                      <td className="px-3 py-1.5 text-right tabular-nums font-medium text-accent">{pr.dps.toFixed(2)}</td>
-                      <td className="px-3 py-1.5 text-right tabular-nums text-text-secondary">
+                      <td className="px-3 py-1.5 text-right num text-text-secondary">{monster.hitpoints}</td>
+                      <td className={`px-3 py-1.5 text-right num ${accColor}`}>{(pr.accuracy * 100).toFixed(1)}%</td>
+                      <td className="px-3 py-1.5 text-right num text-accent">{pr.maxHit}</td>
+                      <td className="px-3 py-1.5 text-right num font-medium text-accent">{pr.dps.toFixed(2)}</td>
+                      <td className="px-3 py-1.5 text-right num text-text-secondary">
                         {formatSeconds(phaseTtk)}
                       </td>
                     </tr>
@@ -348,13 +348,13 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
                 })}
                 <tr className="border-t border-border/40 bg-bg-tertiary/30">
                   <td className="px-3 py-1.5 font-medium text-text-secondary">Total</td>
-                  <td className="px-3 py-1.5 text-right tabular-nums font-medium">
+                  <td className="px-3 py-1.5 text-right num font-medium">
                     {phaseResults.reduce((sum, p) => sum + p.monster.hitpoints, 0)}
                   </td>
                   <td className="px-3 py-1.5" />
                   <td className="px-3 py-1.5" />
                   <td className="px-3 py-1.5" />
-                  <td className="px-3 py-1.5 text-right tabular-nums font-medium text-text-primary">
+                  <td className="px-3 py-1.5 text-right num font-medium text-text-primary">
                     {formatSeconds(
                       phaseResults.reduce(
                         (sum, p, i) => sum + (phaseKillTimes[i]?.expectedSeconds ?? p.result.ttk),
@@ -401,10 +401,10 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
                         <span className="font-medium">{loadout.name}</span>
                         <span className="ml-1.5 text-[10px] text-text-secondary/50 capitalize">{loadout.combatStyle}</span>
                       </td>
-                      <td className={`px-3 py-1.5 text-right tabular-nums ${accColor}`}>{(lr.accuracy * 100).toFixed(0)}%</td>
-                      <td className="px-3 py-1.5 text-right tabular-nums text-text-secondary">{lr.maxHit}</td>
-                      <td className="px-3 py-1.5 text-right tabular-nums font-medium text-accent">{lr.dps.toFixed(2)}</td>
-                      <td className={`px-3 py-1.5 text-right tabular-nums text-xs ${
+                      <td className={`px-3 py-1.5 text-right num ${accColor}`}>{(lr.accuracy * 100).toFixed(0)}%</td>
+                      <td className="px-3 py-1.5 text-right num text-text-secondary">{lr.maxHit}</td>
+                      <td className="px-3 py-1.5 text-right num font-medium text-accent">{lr.dps.toFixed(2)}</td>
+                      <td className={`px-3 py-1.5 text-right num text-xs ${
                         delta > 0.005 ? "text-success" : delta < -0.005 ? "text-danger" : "text-text-secondary/50"
                       }`}>
                         {delta > 0 ? "+" : ""}{delta.toFixed(2)}
@@ -458,7 +458,7 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
                 {t.prayedOff ? (
                   <span className="text-[10px] text-success">prayed off</span>
                 ) : (
-                  <span className="tabular-nums font-medium text-warning">{t.dps.toFixed(2)} dmg/s</span>
+                  <span className="num font-medium text-warning">{t.dps.toFixed(2)} dmg/s</span>
                 )}
               </div>
             ))}
@@ -466,15 +466,15 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
           {damagePerKill !== null && (
             <div className="mt-3 grid grid-cols-3 gap-2 text-center">
               <div>
-                <div className="text-sm font-bold text-warning tabular-nums">{Math.round(damagePerKill)}</div>
+                <div className="text-sm font-bold text-warning num">{Math.round(damagePerKill)}</div>
                 <div className="text-[10px] text-text-secondary">Dmg / Kill</div>
               </div>
               <div>
-                <div className="text-sm font-bold text-text-primary tabular-nums">{Math.ceil(damagePerKill / 20)}</div>
+                <div className="text-sm font-bold text-text-primary num">{Math.ceil(damagePerKill / 20)}</div>
                 <div className="text-[10px] text-text-secondary">Sharks / Kill</div>
               </div>
               <div>
-                <div className="text-sm font-bold text-text-primary tabular-nums">
+                <div className="text-sm font-bold text-text-primary num">
                   {Math.round((sustain.worst.dps * 3600) / 20)}
                 </div>
                 <div className="text-[10px] text-text-secondary">Sharks / Hour</div>

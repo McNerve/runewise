@@ -96,7 +96,7 @@ function LevelInput({ value, min, max, hasGap, onCommit }: LevelInputProps) {
             step(-1);
           }
         }}
-        className="w-8 bg-transparent px-1 py-0.5 text-xs text-center tabular-nums outline-none"
+        className="w-8 bg-transparent px-1 py-0.5 text-xs text-center num outline-none"
         aria-label="Target level"
       />
       <div className="flex flex-col border-l border-border/60">
@@ -246,7 +246,7 @@ export default function TrainingPlan({ hiscores }: Props) {
                 onError={(e) => { e.currentTarget.style.display = "none"; }}
               />
               <span className={`text-xs flex-1 min-w-0 ${hasGap ? "text-text-primary" : "text-text-secondary"}`}>{skill}</span>
-              <span className="text-xs text-text-secondary/50 tabular-nums shrink-0">
+              <span className="text-xs text-text-secondary/50 num shrink-0">
                 {current}
               </span>
               <span className="text-text-secondary/30 text-xs shrink-0">&rarr;</span>
@@ -269,7 +269,7 @@ export default function TrainingPlan({ hiscores }: Props) {
             <div className="section-kicker">
               Plan ({plan.steps.length} skill{plan.steps.length !== 1 ? "s" : ""})
             </div>
-            <div className={`text-sm font-medium tabular-nums ${hourColor(plan.totalHours)}`}>
+            <div className={`text-sm font-medium num ${hourColor(plan.totalHours)}`}>
               ~{formatHours(plan.totalHours)} total
             </div>
           </div>
@@ -296,7 +296,7 @@ export default function TrainingPlan({ hiscores }: Props) {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-medium">{step.skill}</span>
-                        <span className="text-xs text-text-secondary tabular-nums">
+                        <span className="text-xs text-text-secondary num">
                           {step.fromLevel} → {step.toLevel}
                         </span>
                       </div>
@@ -318,10 +318,10 @@ export default function TrainingPlan({ hiscores }: Props) {
                       </div>
                     </div>
                     <div className="text-right shrink-0">
-                      <div className={`text-sm font-medium tabular-nums ${hourColor(displayHours)}`}>
+                      <div className={`text-sm font-medium num ${hourColor(displayHours)}`}>
                         {formatHours(displayHours)}
                       </div>
-                      <div className="text-[10px] text-text-secondary/50 tabular-nums">
+                      <div className="text-[10px] text-text-secondary/50 num">
                         {formatGp(step.xpNeeded)} XP
                       </div>
                     </div>

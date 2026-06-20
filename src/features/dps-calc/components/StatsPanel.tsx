@@ -35,7 +35,7 @@ function StatInput({
           onChange={(e) =>
             onChange(Math.max(min, Math.min(max, Number(e.target.value))))
           }
-          className="w-full px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary tabular-nums focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
+          className="w-full px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary num focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
         />
         {suffix && (
           <span className="text-[10px] text-text-secondary/50 shrink-0">
@@ -238,7 +238,7 @@ export default function StatsPanel({ state }: StatsPanelProps) {
                   )}
                   <div>Prayer: <span className="text-accent">+{gearBonuses.prayer}</span></div>
                   <div title="Defence bonuses: stab / slash / crush / magic / ranged">
-                    Def: <span className="text-text-secondary tabular-nums">
+                    Def: <span className="text-text-secondary num">
                       {gearBonuses.defenceStab}/{gearBonuses.defenceSlash}/{gearBonuses.defenceCrush}/{gearBonuses.defenceMagic}/{gearBonuses.defenceRanged}
                     </span>
                   </div>

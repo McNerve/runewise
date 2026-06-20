@@ -223,19 +223,19 @@ export default function Overview({ hiscores, rsn, lastFetched = null, onRefresh 
           <span className="text-[10px] uppercase tracking-wider text-text-secondary/50">Efficiency</span>
           {overallRank > 0 && (
             <div className="flex items-baseline gap-1.5">
-              <span className="text-sm font-semibold tabular-nums">#{overallRank.toLocaleString()}</span>
+              <span className="text-sm font-semibold num">#{overallRank.toLocaleString()}</span>
               <span className="text-[10px] text-text-secondary/60">Overall Rank</span>
             </div>
           )}
           {womPlayer?.ehp != null && womPlayer.ehp > 0 && (
             <div className="flex items-baseline gap-1.5" title="Efficient Hours Played">
-              <span className="text-sm font-semibold tabular-nums">{womPlayer.ehp.toFixed(0)}</span>
+              <span className="text-sm font-semibold num">{womPlayer.ehp.toFixed(0)}</span>
               <span className="text-[10px] text-text-secondary/60">EHP</span>
             </div>
           )}
           {womPlayer?.ehb != null && womPlayer.ehb > 0 && (
             <div className="flex items-baseline gap-1.5" title="Efficient Hours Bossed">
-              <span className="text-sm font-semibold tabular-nums">{womPlayer.ehb.toFixed(0)}</span>
+              <span className="text-sm font-semibold num">{womPlayer.ehb.toFixed(0)}</span>
               <span className="text-[10px] text-text-secondary/60">EHB</span>
             </div>
           )}
@@ -310,7 +310,7 @@ export default function Overview({ hiscores, rsn, lastFetched = null, onRefresh 
                     {(() => {
                       const h = hoursTo99(skillName, skill.xp);
                       return h ? (
-                        <span className="text-[10px] text-text-secondary/50 tabular-nums">{h}</span>
+                        <span className="text-[10px] text-text-secondary/50 num">{h}</span>
                       ) : null;
                     })()}
                     <div className="w-12 bg-bg-tertiary rounded-full h-1.5">
