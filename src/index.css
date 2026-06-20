@@ -39,10 +39,10 @@
   --color-warning: #e8b339;
   --color-danger: #f2545b;
 
-  /* Type families — Inter UI, mono numerics, Cinzel display. System
-     fallbacks today; bundled subset woff2 is a follow-up. */
-  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  /* Type families — Inter UI, mono numerics, Cinzel display. Self-hosted
+     (bundled via @fontsource in main.tsx); system fonts as fallback. */
+  --font-sans: "Inter Variable", "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
   --font-display: "Cinzel", Georgia, "Times New Roman", serif;
 
   /* Type scale (v1.6 + mega). Apply via text-2xs … text-mega utilities. */
