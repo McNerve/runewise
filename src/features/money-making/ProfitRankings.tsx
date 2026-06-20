@@ -3,6 +3,7 @@ import { MONEY_METHODS, type MoneyMethod } from "../../lib/data/money-methods";
 import { BOSS_DROP_TABLES } from "../../lib/data/boss-drops";
 import { fetchLatestPrices, type ItemPrice } from "../../lib/api/ge";
 import { formatGp } from "../../lib/format";
+import { postTaxPrice } from "../../lib/tax";
 import { useNavigation } from "../../lib/NavigationContext";
 
 type Source = "all" | "combat" | "skilling";
@@ -22,11 +23,14 @@ function bossGpPerKill(
 ): number {
   let total = 0;
   for (const drop of drops) {
-    const price =
-      prices[String(drop.itemId)]?.high ??
+    // Loot is SOLD on the GE: realize at the instasell (low) price minus 2% tax,
+    // not the optimistic instabuy. Otherwise boss GP/hr is overstated by the
+    // full bid-ask spread plus tax against the skilling methods it's ranked with.
+    const sell =
       prices[String(drop.itemId)]?.low ??
+      prices[String(drop.itemId)]?.high ??
       0;
-    total += (drop.quantity * price) / drop.rate;
+    total += (drop.quantity * postTaxPrice(sell)) / drop.rate;
   }
   return total;
 }

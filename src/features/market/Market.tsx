@@ -573,7 +573,7 @@ export default function Market({
               ))}
             </StatGrid>
           </div>
-        ) : tab === "search" || tab === "browse" ? (
+        ) : tab === "search" && query.trim().length < 2 ? (
           <div className="mb-4 grid gap-3 md:grid-cols-3">
             <div className="rounded-xl border border-border-subtle bg-bg-tertiary px-4 py-3">
               <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">

@@ -128,7 +128,11 @@ function weaponCandidateModifiers(
 function itemStyleBonuses(
   item: WikiEquipment | null,
   combatStyle: CombatStyle,
-  meleeAttackType: string
+  meleeAttackType: string,
+  // For a CANDIDATE weapon, score its own best attack type (you'd use its best
+  // stance) rather than whatever stance the currently-held weapon uses —
+  // otherwise a stab weapon is judged on its near-zero slash bonus, etc.
+  useBestMelee = false
 ): { attackBonus: number; strengthBonus: number } {
   if (!item) return { attackBonus: 0, strengthBonus: 0 };
   if (combatStyle === "ranged") {
@@ -138,7 +142,9 @@ function itemStyleBonuses(
     return { attackBonus: item.attackMagic, strengthBonus: item.magicDamage };
   }
   return {
-    attackBonus: meleeAttackBonus(item, meleeAttackType),
+    attackBonus: useBestMelee
+      ? Math.max(item.attackStab, item.attackSlash, item.attackCrush)
+      : meleeAttackBonus(item, meleeAttackType),
     strengthBonus: item.strengthBonus,
   };
 }
@@ -182,7 +188,7 @@ export function findUpgrades({
       if (!speed) continue;
 
       const dropsShield = item.slot === "2h" && currentShield !== null;
-      const candidateBonuses = itemStyleBonuses(item, combatStyle, meleeAttackType);
+      const candidateBonuses = itemStyleBonuses(item, combatStyle, meleeAttackType, true);
       const attackBonus =
         baseInput.attackBonus +
         candidateBonuses.attackBonus -

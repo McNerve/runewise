@@ -150,7 +150,9 @@ export default function WorldMap() {
   const onMouseUp = () => setDragging(false);
 
   const resetView = () => {
-    setView({ zoom: 0.15, pan: { x: 0, y: 0 } });
+    // Restore the same view the map opens at (initial state + onLoad), so
+    // "Reset" returns to what the user first saw rather than a further zoom-out.
+    setView({ zoom: 0.5, pan: { x: 0, y: 0 } });
   };
 
   const pois = useMemo(

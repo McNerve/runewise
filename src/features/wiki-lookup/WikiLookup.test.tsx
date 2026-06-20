@@ -172,8 +172,8 @@ describe("WikiLookup", () => {
 
     const geBlock = screen.queryByTestId("snapshot-ge-price");
     expect(geBlock).toBeTruthy();
-    // Price ≥ 1M should show M-formatted value
-    expect(geBlock?.textContent).toMatch(/1400\.0M|1[,.]4\d\d/);
+    // A ~1.4B price shows the B-formatted value
+    expect(geBlock?.textContent).toMatch(/1\.4\dB|1[,.]4\d\d/);
 
     unmount();
     window.location.hash = originalHash;

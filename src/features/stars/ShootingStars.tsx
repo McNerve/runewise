@@ -242,6 +242,10 @@ export default function ShootingStars() {
     loadJSON(STAR_ALERTS_KEY, DEFAULT_STAR_ALERTS)
   );
   const seenStarKeys = useRef<Set<string>>(new Set());
+  // Baseline guard: the first qualifying star list seeds seenStarKeys WITHOUT
+  // notifying, so enabling alerts (or launching with them on) doesn't fire a
+  // burst of notifications for every star that was already live.
+  const alertsInitialized = useRef(false);
 
   // Reference tab state
   const [regionFilter, setRegionFilter] = useState("All");
@@ -299,8 +303,16 @@ export default function ShootingStars() {
 
   // Fire notifications for newly-seen stars matching alert filters
   useEffect(() => {
-    if (!settings.notifications.stars) return;
-    if (!alertSettings.enabled) return;
+    // Re-baseline next time alerts come back on, so toggling off then on
+    // doesn't replay stars that appeared while alerts were off.
+    if (!settings.notifications.stars) { alertsInitialized.current = false; return; }
+    if (!alertSettings.enabled) { alertsInitialized.current = false; return; }
+    if (stars.length === 0) return; // wait for the first real star list
+    if (!alertsInitialized.current) {
+      for (const star of stars) seenStarKeys.current.add(starKey(star));
+      alertsInitialized.current = true;
+      return;
+    }
     for (const star of stars) {
       const key = starKey(star);
       if (seenStarKeys.current.has(key)) continue;

@@ -208,9 +208,18 @@ export default function FlipFinder({ mapping, prices }: FlipFinderProps) {
           Showing the top {RESULT_CAP}. Narrow the filters to see more specific flips.
         </p>
       )}
-      {flips.length > 0 && flips[0].updated != null && (
-        <p className="text-2xs text-text-tertiary mt-2">Prices updated {timeAgo(flips[0].updated)}.</p>
-      )}
+      {(() => {
+        // Show the OLDEST timestamp across the rendered rows so the freshness
+        // claim is honest for the most-stale flip shown, not just whichever
+        // item happened to sort to the top.
+        const oldest = flips.reduce(
+          (m, f) => (f.updated != null ? Math.min(m, f.updated) : m),
+          Infinity
+        );
+        return Number.isFinite(oldest) ? (
+          <p className="text-2xs text-text-tertiary mt-2">Oldest price shown updated {timeAgo(oldest)}.</p>
+        ) : null;
+      })()}
     </div>
   );
 }

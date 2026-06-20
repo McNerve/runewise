@@ -16,7 +16,7 @@ export interface DpsInput {
   targetHp: number;
   targetMagicLevel?: number;
   modifiers?: DpsModifier[];
-  defReductions?: number; // number of successful DWH/BGS specs (each reduces def by 30%)
+  defReductions?: number; // number of successful DWH / Elder maul specs (each reduces def by 30%); BGS drains by damage, not modelled here
   spellBaseMaxHit?: number; // when set, overrides level-based max hit with spell-based formula
   tbowRaidCap?: boolean; // CoX and ToA raise the twisted bow's target-magic clamp from 250 to 350
 }
@@ -221,21 +221,20 @@ export function sanitizeModifierSet(ids: Iterable<string>): Set<string> {
   return set;
 }
 
-// OSRS Twisted bow scaling: t = 3 * magic / 10 is the key transform. The bonus
-// rises with the target's magic level and caps at +140% accuracy / +250% damage.
-// The magic level itself is clamped at 250 — 350 inside CoX.
+// OSRS Twisted bow scaling (canonical wiki formula): the bonus is a parabola in
+// the target's Magic level (clamped at 250, or 350 inside CoX), returned as a
+// multiplier 1 + bonus/100. Accuracy bonus caps at +140%, damage at +250%; both
+// fall off past their peak, so a magic-250 target gives 1.00x acc / 2.53x dmg.
 function twistedBowAccuracy(targetMagicLevel: number, magicCap: number): number {
   const magic = Math.min(targetMagicLevel, magicCap);
-  const t = (3 * magic) / 10;
-  const bonus = 140 + Math.floor((10 * t - 10) / 100) - Math.floor(Math.pow(t - 100, 2) / 100);
-  return Math.min(Math.max(bonus, 0), 140) / 100;
+  const bonus = 140 + Math.floor((10 * magic - 10) / 100) - Math.floor(Math.pow(magic - 100, 2) / 100);
+  return 1 + Math.min(Math.max(bonus, 0), 140) / 100;
 }
 
 function twistedBowDamage(targetMagicLevel: number, magicCap: number): number {
   const magic = Math.min(targetMagicLevel, magicCap);
-  const t = (3 * magic) / 10;
-  const bonus = 250 + Math.floor((10 * t - 14) / 100) - Math.floor(Math.pow(t - 140, 2) / 100);
-  return Math.min(Math.max(bonus, 0), 250) / 100;
+  const bonus = 250 + Math.floor((10 * magic - 14) / 100) - Math.floor(Math.pow(magic - 140, 2) / 100);
+  return 1 + Math.min(Math.max(bonus, 0), 250) / 100;
 }
 
 export function applyModifiers(
@@ -362,11 +361,13 @@ export function calculateDps(input: DpsInput) {
       reducedDefLevel = Math.floor(reducedDefLevel * 0.7); // DWH: 30% reduction each
     }
   }
-  // Magic accuracy rolls against a blended defence level: 70% of the target's
-  // Magic level + 30% of its (reduced) Defence level, not the raw Defence level.
-  const effectiveDefLevel = input.combatStyle === "magic" && input.targetMagicLevel != null
-    ? Math.floor(input.targetMagicLevel * 0.7 + reducedDefLevel * 0.3)
-    : reducedDefLevel;
+  // Magic accuracy rolls against the NPC's Magic level only (defenseRoll adds the
+  // +9), using its magic-defence bonus — there is no Defence-level term in PvM,
+  // and DWH/BGS Defence drains don't affect a Magic-level-based roll.
+  const effectiveDefLevel =
+    input.combatStyle === "magic" && input.targetMagicLevel != null
+      ? input.targetMagicLevel
+      : reducedDefLevel;
   const dr = defenseRoll(effectiveDefLevel, input.targetDefBonus);
   const acc = hitChance(ar, dr);
   const d = dps(mh, acc, input.attackSpeed);
@@ -382,6 +383,8 @@ export interface SpecDpsInput extends DpsInput {
   specGuaranteedHit: boolean;
   specSpeed: number;
   specCascadeType?: "dragon_claws";
+  /** Accuracy multiplier for the 2nd hit's roll (e.g. halberd sweep: 0.75). */
+  specSecondHitAccuracyMult?: number;
 }
 
 // Dragon claws' Slice and Dice rolls accuracy four times. The first successful
@@ -430,6 +433,12 @@ export function calculateSpecDps(input: SpecDpsInput) {
       + Math.max(0, Math.floor(specMaxHit / 2) - 1)
       + Math.max(0, Math.floor(specMaxHit / 4) - 1)
       + Math.floor(specMaxHit / 4);
+  } else if (input.specHits === 2 && input.specSecondHitAccuracyMult != null) {
+    // Halberd sweep: 1st hit at full spec accuracy, 2nd hit on a reduced roll.
+    const secondRoll = Math.floor(specAttackRoll * input.specSecondHitAccuracyMult);
+    const secondAccuracy = input.specGuaranteedHit ? 1 : hitChance(secondRoll, base.defenseRoll);
+    specTotalDamage = (specAccuracy + secondAccuracy) * (specMaxHit / 2);
+    specTotalMaxHit = specMaxHit * input.specHits;
   } else {
     specTotalDamage = specAccuracy * (specMaxHit / 2) * input.specHits;
     specTotalMaxHit = specMaxHit * input.specHits;

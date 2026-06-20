@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useNavigation } from "../../lib/NavigationContext";
+import { fetchHiscores } from "../../lib/api/hiscores";
 import { sendNotification } from "../../lib/notify";
 import { openExternal } from "../../lib/openExternal";
 import { useSettings } from "../../hooks/useSettings";
@@ -90,17 +91,19 @@ function StepRsn({
     setStatus("checking");
     setError(null);
     try {
-      const url = `/api/hiscores/index_lite.json?player=${encodeURIComponent(trimmed)}`;
-      const res = await fetch(url);
-      if (res.ok) {
-        setStatus("valid");
-      } else {
+      // Use the real hiscores client — the raw /api path is a dev-only Vite
+      // proxy that doesn't exist in the packaged Tauri build (where it would
+      // 404 and stamp every RSN, including garbage, as valid).
+      await fetchHiscores(trimmed);
+      setStatus("valid");
+    } catch (e) {
+      if (e instanceof Error && /not found/i.test(e.message)) {
         setStatus("invalid");
         setError("Player not found on Hiscores.");
+      } else {
+        // Network failure — accept optimistically so the flow isn't blocked.
+        setStatus("valid");
       }
-    } catch {
-      // Network failure — accept optimistically so flow isn't blocked
-      setStatus("valid");
     }
   }, []);
 

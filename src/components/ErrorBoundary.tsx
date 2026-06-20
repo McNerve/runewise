@@ -3,6 +3,9 @@ import { Button } from "./primitives";
 
 interface ErrorBoundaryProps {
   children: ReactNode;
+  /** When this changes, a latched error is cleared (e.g. on navigation), so a
+   *  crash in one view doesn't strand the whole app until a manual reload. */
+  resetKey?: string | number;
 }
 
 interface ErrorBoundaryState {
@@ -23,6 +26,12 @@ export default class ErrorBoundary extends Component<
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.error("RuneWise view crashed", error, info);
+  }
+
+  componentDidUpdate(prevProps: ErrorBoundaryProps) {
+    if (this.state.hasError && prevProps.resetKey !== this.props.resetKey) {
+      this.setState({ hasError: false });
+    }
   }
 
   handleReload = () => {

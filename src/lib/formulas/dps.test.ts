@@ -302,36 +302,43 @@ describe("dps formulas", () => {
       const naive = calculateSpecDps(baseInput);
       expect(cascade.specDps).toBeLessThan(naive.specDps);
     });
+
+    it("halberd 2nd hit at -25% accuracy lowers spec DPS vs two full-accuracy hits", () => {
+      const full = calculateSpecDps({ ...baseInput, specHits: 2 });
+      const halberd = calculateSpecDps({ ...baseInput, specHits: 2, specSecondHitAccuracyMult: 0.75 });
+      expect(halberd.specDps).toBeLessThan(full.specDps);
+      expect(halberd.specDps).toBeGreaterThan(0);
+    });
   });
 });
 
-describe("twisted bow scaling (regression: previously collapsed to 0)", () => {
-  // Expected values derived from the OSRS wiki formula with t = 3*magic/10:
-  //   acc% = 140 + floor((10t-10)/100) - floor((t-100)^2/100), clamped [0,140]
-  //   dmg% = 250 + floor((10t-14)/100) - floor((t-140)^2/100), clamped [0,250]
-  it("scales up with target magic level instead of going to zero", () => {
-    // magic 150: t=45 -> acc 140+4-30=114 ->1.14, dmg 250+4-90=164 ->1.64
+describe("twisted bow scaling (canonical OSRS wiki formula)", () => {
+  // multiplier = 1 + bonus/100, where (with M = target magic level):
+  //   acc% = 140 + floor((10M-10)/100) - floor((M-100)^2/100), clamped [0,140]
+  //   dmg% = 250 + floor((10M-14)/100) - floor((M-140)^2/100), clamped [0,250]
+  it("scales up with target magic level (the bonus is additive over 1x)", () => {
+    // magic 150: acc 140+14-25=129 ->2.29, dmg 250+14-1=263->cap250 ->3.50
     const m150 = applyModifiers(1, 1, "ranged", [DPS_MODIFIERS.twisted_bow], 150);
-    expect(m150.accuracyMult).toBeCloseTo(1.14, 5);
-    expect(m150.damageMult).toBeCloseTo(1.64, 5);
+    expect(m150.accuracyMult).toBeCloseTo(2.29, 5);
+    expect(m150.damageMult).toBeCloseTo(3.5, 5);
   });
 
-  it("caps accuracy at +40% near magic 250 (Olm/Vorkath range)", () => {
-    // magic 250: t=75 -> acc 140+7-6=141 -> capped 1.40, dmg 250+7-42=215 ->2.15
+  it("falls off at very high magic (parabolic) — magic 250 = no accuracy bonus", () => {
+    // magic 250: acc 140+24-225=-61 ->clamp 0 ->1.00, dmg 250+24-121=153 ->2.53
     const m250 = applyModifiers(1, 1, "ranged", [DPS_MODIFIERS.twisted_bow], 250);
-    expect(m250.accuracyMult).toBeCloseTo(1.4, 5);
-    expect(m250.damageMult).toBeCloseTo(2.15, 5);
+    expect(m250.accuracyMult).toBeCloseTo(1.0, 5);
+    expect(m250.damageMult).toBeCloseTo(2.53, 5);
   });
 
-  it("is never clamped to zero, and exceeds 1x accuracy for high-magic bosses", () => {
-    // The bug clamped both multipliers to exactly 0 above ~magic 80.
+  it("is never clamped to zero, and gives a damage bonus across the boss range", () => {
+    // The old bug both collapsed to ~0 above magic 80 and dropped the +1 base.
     for (const magic of [100, 150, 190, 250]) {
       const r = applyModifiers(1, 1, "ranged", [DPS_MODIFIERS.twisted_bow], magic);
-      expect(r.accuracyMult).toBeGreaterThan(0.5);
-      expect(r.damageMult).toBeGreaterThan(1);
+      expect(r.accuracyMult).toBeGreaterThanOrEqual(1);
+      expect(r.damageMult).toBeGreaterThan(2);
     }
-    // GWD-and-above magic levels get a real accuracy bonus.
-    for (const magic of [150, 190, 250]) {
+    // Mid-range magic (below the accuracy peak) gets a real accuracy bonus.
+    for (const magic of [100, 150, 190] as const) {
       expect(applyModifiers(1, 1, "ranged", [DPS_MODIFIERS.twisted_bow], magic).accuracyMult).toBeGreaterThan(1);
     }
   });
@@ -410,13 +417,17 @@ describe("twisted bow CoX magic clamp", () => {
   it("clamps target magic at 250 outside CoX and 350 inside", () => {
     const outside = applyModifiers(1, 1, "ranged", [DPS_MODIFIERS.twisted_bow], 350);
     const at250 = applyModifiers(1, 1, "ranged", [DPS_MODIFIERS.twisted_bow], 250);
+    // Outside CoX, magic 350 is clamped to 250 → identical.
     expect(outside.damageMult).toBeCloseTo(at250.damageMult, 5);
+    expect(outside.accuracyMult).toBeCloseTo(at250.accuracyMult, 5);
 
+    // Inside CoX the cap is 350, so magic 350 is used directly. The bonus is
+    // parabolic and well past its peak by 350, so it floors to 0 (1.00x) —
+    // a different, lower value than the 250-clamped one. Matches real OSRS.
     const inCox = applyModifiers(1, 1, "ranged", [DPS_MODIFIERS.twisted_bow], 350, 350);
-    // magic 350: t=105 -> dmg 250+10-12=248 -> 2.48, acc capped at 1.40
-    expect(inCox.damageMult).toBeCloseTo(2.48, 5);
-    expect(inCox.damageMult).toBeGreaterThan(at250.damageMult);
-    expect(inCox.accuracyMult).toBeCloseTo(1.4, 5);
+    expect(inCox.damageMult).toBeCloseTo(1.0, 5);
+    expect(inCox.accuracyMult).toBeCloseTo(1.0, 5);
+    expect(inCox.damageMult).not.toBeCloseTo(at250.damageMult, 5);
   });
 });
 
@@ -430,8 +441,9 @@ describe("defReductions (DWH/BGS) reduce defence before the magic blend", () => 
     expect(two.defenseRoll).toBe(defenseRoll(49, 0));
   });
 
-  it("for magic, reduces defence first then blends 70/30 with magic level", () => {
-    // reduced def = floor(100*0.7)=70; blend = floor(0.7*100 + 0.3*70) = 91 -> (91+9)*64=6400.
+  it("does NOT apply Defence reductions to the magic roll (magic uses Magic level)", () => {
+    // magic rolls against targetMagicLevel (100) directly: (100+9)*(0+64)=6976,
+    // regardless of defReductions, which only drain the Defence level.
     const r = calculateDps(meleeInput({
       combatStyle: "magic",
       targetDefLevel: 100,
@@ -440,7 +452,7 @@ describe("defReductions (DWH/BGS) reduce defence before the magic blend", () => 
       defReductions: 1,
       spellBaseMaxHit: 30,
     }));
-    expect(r.defenseRoll).toBe(defenseRoll(91, 0));
+    expect(r.defenseRoll).toBe(defenseRoll(100, 0));
   });
 });
 
@@ -459,9 +471,9 @@ describe("raid scaling helpers", () => {
   });
 });
 
-describe("magic accuracy uses a 70/30 magic/defence blend", () => {
-  it("rolls against floor(0.7*magic + 0.3*defence), not raw defence", () => {
-    // target magic 52, defence 80 -> blended 60; defBonus 35 -> (60+9)*(35+64)=6831
+describe("magic accuracy rolls against the NPC Magic level, not Defence", () => {
+  it("uses (magicLevel+9)*(magicDefBonus+64), independent of the Defence level", () => {
+    // target magic 52, magic-def bonus 35 -> (52+9)*(35+64)=61*99=6039
     const r = calculateDps(meleeInput({
       combatStyle: "magic",
       targetDefLevel: 80,
@@ -469,9 +481,9 @@ describe("magic accuracy uses a 70/30 magic/defence blend", () => {
       targetDefBonus: 35,
       spellBaseMaxHit: 30,
     }));
-    expect(r.defenseRoll).toBe(defenseRoll(60, 35));
-    expect(r.defenseRoll).toBe(6831);
-    // sanity: not the raw-defence roll that the old code produced
+    expect(r.defenseRoll).toBe(defenseRoll(52, 35));
+    expect(r.defenseRoll).toBe(6039);
+    // independent of the raw Defence level (no 70/30 blend, no Defence term)
     expect(r.defenseRoll).not.toBe(defenseRoll(80, 35));
   });
 });

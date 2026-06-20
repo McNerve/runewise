@@ -34,12 +34,15 @@ function AppContent() {
   });
   const renderView = VIEW_RENDERERS[view];
 
-  // Auto-toggle ironman mode when an ironman account is detected
+  // Seed ironman mode from account detection ONCE, then leave it to the user.
+  // Never auto-disable (detection failures shouldn't flip the setting) and
+  // never re-apply on relaunch (that clobbered a manual toggle every launch).
   useEffect(() => {
-    const isIronman = hiscores.ironmanType !== "none";
-    if (isIronman !== settings.ironmanMode) {
-      updateSettings({ ironmanMode: isIronman });
-    }
+    if (hiscores.ironmanType === "none") return;
+    const APPLIED_KEY = "runewise_ironman_autodetected";
+    if (localStorage.getItem(APPLIED_KEY)) return;
+    localStorage.setItem(APPLIED_KEY, "1");
+    if (!settings.ironmanMode) updateSettings({ ironmanMode: true });
   }, [hiscores.ironmanType]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Close-to-tray: sync the setting into Rust state. Rust handles the close
@@ -70,7 +73,7 @@ function AppContent() {
             style={{ "--feature-accent": getFeatureAccent(view) } as React.CSSProperties}
           >
             <div className="max-w-5xl mx-auto">
-              <ErrorBoundary>
+              <ErrorBoundary resetKey={view}>
                 <Suspense fallback={<div className="space-y-4"><CardSkeleton /><CardSkeleton /></div>}>
                   <AnimatePresence mode="wait">
                     <motion.div

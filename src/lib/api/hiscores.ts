@@ -92,10 +92,16 @@ export function findActivityScore(data: HiscoreData, source: string): number | n
   const src = source.toLowerCase();
   const exact = data.activities.find((a) => a.name.toLowerCase() === src);
   if (exact) return exact.score > 0 ? exact.score : null;
-  const fuzzy = data.activities.find((a) => {
+  // Substring match (both directions), but pick the CLOSEST-length candidate so
+  // "The Gauntlet" doesn't resolve to "The Corrupted Gauntlet" (or vice-versa).
+  const candidates = data.activities.filter((a) => {
     const name = a.name.toLowerCase();
     const shorter = Math.min(name.length, src.length);
     return shorter >= 4 && (name.includes(src) || src.includes(name));
   });
+  candidates.sort(
+    (a, b) => Math.abs(a.name.length - src.length) - Math.abs(b.name.length - src.length)
+  );
+  const fuzzy = candidates[0];
   return fuzzy && fuzzy.score > 0 ? fuzzy.score : null;
 }
