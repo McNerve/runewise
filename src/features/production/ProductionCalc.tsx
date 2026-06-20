@@ -57,18 +57,27 @@ function calcRecipe(
     materialCost += price * (mat.quantity ?? 1);
   }
 
+  // Accumulate priced outputs; skip unpriced ones rather than discarding the
+  // whole sum (mirrors WikiRecipeTable). Only when NO output is priceable do we
+  // treat the output value as unknown.
   let outputValue: number | null = 0;
+  let anyOutputPriced = false;
   for (const out of output) {
     if (!out?.name) continue;
     const price = getItemPrice(out.name, itemMap, prices);
-    if (price != null && outputValue != null) outputValue += postTaxPrice(price) * (out.quantity ?? 1);
-    else outputValue = null;
+    if (price != null) {
+      outputValue += postTaxPrice(price) * (out.quantity ?? 1);
+      anyOutputPriced = true;
+    }
   }
+  if (output.length > 0 && !anyOutputPriced) outputValue = null;
 
+  // Net cost is only meaningful when both sides are known — otherwise '—',
+  // never a fabricated full-material loss.
   const netCost =
     materialCost != null && outputValue != null
       ? materialCost - outputValue
-      : materialCost;
+      : null;
 
   const costPerXp = netCost != null && r.xp > 0 ? netCost / r.xp : null;
 

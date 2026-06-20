@@ -14,16 +14,21 @@ describe("formatGp", () => {
     expect(formatGp(999)).toBe("999");
   });
 
-  it("1000 returns '1K'", () => {
-    expect(formatGp(1000)).toBe("1K");
+  it("low-K range keeps one decimal, rounded down", () => {
+    expect(formatGp(1000)).toBe("1.0K");
+    expect(formatGp(1500)).toBe("1.5K"); // never "2K"
+    expect(formatGp(1234)).toBe("1.2K"); // rounds down, never "1K"
+    expect(formatGp(12_340)).toBe("12.3K");
   });
 
-  it("1500 returns '2K' (rounded)", () => {
-    expect(formatGp(1500)).toBe("2K");
+  it("100K+ range shows integer K, rounded down", () => {
+    expect(formatGp(100_000)).toBe("100K");
+    expect(formatGp(999_499)).toBe("999K"); // never "1000K"
   });
 
-  it("999_999 returns '1000K'", () => {
-    expect(formatGp(999_999)).toBe("1000K");
+  it("rounds the just-under-1M boundary to '1.0M', not '1000K'", () => {
+    expect(formatGp(999_999)).toBe("1.0M");
+    expect(formatGp(999_500)).toBe("1.0M");
   });
 
   it("1_000_000 returns '1.0M'", () => {
@@ -34,14 +39,14 @@ describe("formatGp", () => {
     expect(formatGp(1_500_000)).toBe("1.5M");
   });
 
-  it("1_000_000_000 returns '1000.0M'", () => {
-    expect(formatGp(1_000_000_000)).toBe("1000.0M");
+  it("billions use a 'B' suffix", () => {
+    expect(formatGp(1_000_000_000)).toBe("1.00B");
+    expect(formatGp(1_516_700_000)).toBe("1.52B");
   });
 
-  it("negative values use toLocaleString (no suffix)", () => {
-    // Negative values don't hit >= thresholds, so they fall through
-    expect(formatGp(-2_500_000)).toBe((-2_500_000).toLocaleString());
-    expect(formatGp(-5000)).toBe((-5000).toLocaleString());
+  it("negative values keep their suffix with a leading minus", () => {
+    expect(formatGp(-2_500_000)).toBe("-2.5M");
+    expect(formatGp(-5000)).toBe("-5.0K");
   });
 
   it("small negative stays as-is", () => {

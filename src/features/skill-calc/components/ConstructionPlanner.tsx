@@ -19,25 +19,26 @@ export default function ConstructionPlanner({
       (item) => item.levelReq <= Math.max(currentLevel, 99)
     ).map((item) => {
       const actions = Math.ceil(xpNeeded / item.xp);
-      let costPerAction = 0;
+      // null once ANY material is unpriced — don't count it as free.
+      let costPerAction: number | null = 0;
       const materialCosts: string[] = [];
 
       for (const mat of item.materials) {
         const price =
           prices[String(mat.itemId)]?.high ??
           prices[String(mat.itemId)]?.low ??
-          0;
-        const matCost = price * mat.quantity;
-        costPerAction += matCost;
-        if (price > 0) {
-          materialCosts.push(`${mat.quantity}× ${mat.name} (${formatGp(price)})`);
-        } else {
+          null;
+        if (price == null) {
+          costPerAction = null;
           materialCosts.push(`${mat.quantity}× ${mat.name}`);
+          continue;
         }
+        if (costPerAction != null) costPerAction += price * mat.quantity;
+        materialCosts.push(`${mat.quantity}× ${mat.name} (${formatGp(price)})`);
       }
 
-      const totalCost = costPerAction * actions;
-      const gpPerXp = costPerAction > 0 ? costPerAction / item.xp : 0;
+      const totalCost = costPerAction != null ? costPerAction * actions : null;
+      const gpPerXp = costPerAction != null && item.xp > 0 ? costPerAction / item.xp : null;
 
       return {
         ...item,
@@ -98,13 +99,13 @@ export default function ConstructionPlanner({
                         {item.xp.toLocaleString()}
                       </td>
                       <td className="px-3 py-1.5 text-right text-text-secondary text-xs num">
-                        {item.gpPerXp > 0 ? item.gpPerXp.toFixed(1) : "—"}
+                        {item.gpPerXp != null && item.gpPerXp > 0 ? item.gpPerXp.toFixed(1) : "—"}
                       </td>
                       <td className="px-3 py-1.5 text-right text-accent font-medium num">
                         {item.actions.toLocaleString()}
                       </td>
                       <td className="px-4 py-1.5 text-right text-warning num">
-                        {item.totalCost > 0 ? formatGp(item.totalCost) : "—"}
+                        {item.totalCost != null && item.totalCost > 0 ? formatGp(item.totalCost) : "—"}
                       </td>
                     </tr>
                   ))}
