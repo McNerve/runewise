@@ -2,17 +2,15 @@ import { describe, expect, it } from "vitest";
 import { FEATURE_FAMILIES, SEARCHABLE_FEATURES, getFeature } from "./features";
 
 describe("feature registry", () => {
-  it("exposes v1 families for sidebar grouping", () => {
-    expect(FEATURE_FAMILIES).toEqual(
-      expect.arrayContaining([
-        "Player",
-        "Tools",
-        "Bossing",
-        "Market",
-        "Guides",
-        "Live",
-      ])
-    );
+  it("groups sidebar features into ordered hubs", () => {
+    expect(FEATURE_FAMILIES).toEqual([
+      "Home",
+      "Player",
+      "Combat",
+      "Market",
+      "Calculators",
+      "Live",
+    ]);
   });
 
   it("includes the dedicated player lookup view", () => {

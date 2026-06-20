@@ -42,7 +42,7 @@ export const FEATURE_REGISTRY = {
   "skill-calc": {
     title: "Skill Calculator",
     navLabel: "Skill Calculator",
-    family: "Tools",
+    family: "Calculators",
     sidebar: true,
     search: true,
     aliases: ["skills", "skill calculator", "training", "xp", "level", "training method", "construction"],
@@ -50,7 +50,7 @@ export const FEATURE_REGISTRY = {
   "dps-calc": {
     title: "DPS Calculator",
     navLabel: "DPS Calculator",
-    family: "Tools",
+    family: "Combat",
     sidebar: true,
     search: true,
     aliases: ["dps", "damage", "max hit", "combat", "accuracy", "monster", "loadout"],
@@ -58,7 +58,7 @@ export const FEATURE_REGISTRY = {
   "dry-calc": {
     title: "Dry Calculator",
     navLabel: "Dry Calculator",
-    family: "Tools",
+    family: "Calculators",
     sidebar: true,
     search: true,
     aliases: ["dry", "drop chance", "rng"],
@@ -66,7 +66,7 @@ export const FEATURE_REGISTRY = {
   "training-plan": {
     title: "Training Plan",
     navLabel: "Training Plan",
-    family: "Planning",
+    family: "Calculators",
     sidebar: false,
     search: true,
     aliases: ["training plan", "level plan", "goal", "targets", "efficient", "xp per hour"],
@@ -74,7 +74,7 @@ export const FEATURE_REGISTRY = {
   "gear-compare": {
     title: "Gear Compare",
     navLabel: "Gear Compare",
-    family: "Planning",
+    family: "Combat",
     sidebar: true,
     search: true,
     aliases: ["gear", "equipment", "compare", "bis", "best in slot"],
@@ -82,7 +82,7 @@ export const FEATURE_REGISTRY = {
   "pet-calc": {
     title: "Pet Calculator",
     navLabel: "Pet Calculator",
-    family: "Tools",
+    family: "Calculators",
     sidebar: true,
     search: true,
     aliases: ["pet", "pet chance", "pet calculator"],
@@ -90,7 +90,7 @@ export const FEATURE_REGISTRY = {
   bosses: {
     title: "Boss Guides",
     navLabel: "Boss Guides",
-    family: "Bossing",
+    family: "Combat",
     sidebar: true,
     search: true,
     aliases: ["boss", "guide", "strategy"],
@@ -98,7 +98,7 @@ export const FEATURE_REGISTRY = {
   raids: {
     title: "Raid Guides",
     navLabel: "Raid Guides",
-    family: "Bossing",
+    family: "Combat",
     sidebar: true,
     search: true,
     aliases: ["raids", "cox", "tob", "toa", "chambers", "theatre", "tombs", "raid guide"],
@@ -106,7 +106,7 @@ export const FEATURE_REGISTRY = {
   loot: {
     title: "Loot",
     navLabel: "Loot",
-    family: "Market",
+    family: "Combat",
     sidebar: true,
     search: true,
     aliases: ["drops", "drop tables", "loot", "boss loot", "gp per kill", "loot calc"],
@@ -114,7 +114,7 @@ export const FEATURE_REGISTRY = {
   "combat-tasks": {
     title: "Combat Tasks",
     navLabel: "Combat Tasks",
-    family: "Bossing",
+    family: "Combat",
     sidebar: false,
     search: true,
     aliases: ["combat achievements", "ca", "combat tasks"],
@@ -138,7 +138,7 @@ export const FEATURE_REGISTRY = {
   progress: {
     title: "Character Progress",
     navLabel: "Character Progress",
-    family: "Guides",
+    family: "Player",
     sidebar: false,
     search: true,
     aliases: ["quests", "quest requirements", "diaries", "achievement diaries", "progress", "combat tasks", "combat achievements"],
@@ -146,7 +146,7 @@ export const FEATURE_REGISTRY = {
   slayer: {
     title: "Slayer Helper",
     navLabel: "Slayer Helper",
-    family: "Guides",
+    family: "Combat",
     sidebar: true,
     search: true,
     aliases: ["slayer", "slayer blocks", "task weights", "block list", "slayer helper", "slayer master"],
@@ -154,7 +154,7 @@ export const FEATURE_REGISTRY = {
   "clue-helper": {
     title: "Clue Helper",
     navLabel: "Clue Helper",
-    family: "Guides",
+    family: "Live",
     sidebar: true,
     search: true,
     aliases: ["clues", "clue helper"],
@@ -162,7 +162,7 @@ export const FEATURE_REGISTRY = {
   "money-making": {
     title: "Money Making",
     navLabel: "Money Making",
-    family: "Planning",
+    family: "Market",
     sidebar: true,
     search: true,
     aliases: ["money making", "gp", "methods", "gp per hour", "hourly", "gold"],
@@ -170,7 +170,7 @@ export const FEATURE_REGISTRY = {
   "production-calc": {
     title: "Recipe Calculator",
     navLabel: "Recipe Calculator",
-    family: "Tools",
+    family: "Calculators",
     sidebar: true,
     search: true,
     aliases: ["production", "crafting", "recipes", "cost calculator", "profit calculator", "herblore", "smithing"],
@@ -178,7 +178,7 @@ export const FEATURE_REGISTRY = {
   "shop-helper": {
     title: "Shop Helper",
     navLabel: "Shop Helper",
-    family: "Guides",
+    family: "Market",
     sidebar: true,
     search: true,
     aliases: ["shop", "shops", "store", "npc", "buy", "sell", "shopkeeper"],
@@ -186,7 +186,7 @@ export const FEATURE_REGISTRY = {
   kingdom: {
     title: "Kingdom of Miscellania",
     navLabel: "Kingdom Calculator",
-    family: "Tools",
+    family: "Calculators",
     sidebar: true,
     search: true,
     aliases: ["kingdom", "miscellania", "managing miscellania", "throne of miscellania", "workers", "kingdom calculator"],
@@ -210,7 +210,7 @@ export const FEATURE_REGISTRY = {
   stars: {
     title: "Star Helper",
     navLabel: "Star Helper",
-    family: "Guides",
+    family: "Live",
     sidebar: true,
     search: true,
     aliases: ["stars", "star miners", "shooting stars", "star helper"],
@@ -234,7 +234,7 @@ export const FEATURE_REGISTRY = {
   timers: {
     title: "Farm Timers",
     navLabel: "Farming Timers",
-    family: "Planning",
+    family: "Calculators",
     sidebar: true,
     search: true,
     aliases: ["timers", "farm timers", "farming", "crops", "birdhouse", "farm run", "farm profit"],
@@ -242,7 +242,7 @@ export const FEATURE_REGISTRY = {
   "xp-table": {
     title: "XP Table",
     navLabel: "XP Table",
-    family: "Tools",
+    family: "Calculators",
     sidebar: false,
     search: true,
     aliases: ["xp table", "levels"],
@@ -297,9 +297,16 @@ export const SIDEBAR_FEATURES = FEATURE_LIST.filter((feature) => feature.sidebar
 
 export const SEARCHABLE_FEATURES = FEATURE_LIST.filter((feature) => feature.search);
 
-export const FEATURE_FAMILIES = Array.from(
-  new Set(SIDEBAR_FEATURES.map((feature) => feature.family))
-);
+// Sidebar hub order (5 coherent groups). Home renders without a header
+// since it's a single item; every sidebar:true feature maps to one of these.
+export const FEATURE_FAMILIES: FeatureFamily[] = [
+  "Home",
+  "Player",
+  "Combat",
+  "Market",
+  "Calculators",
+  "Live",
+];
 
 export function getFeature(view: View): FeatureDefinition {
   return FEATURE_LIST.find((feature) => feature.id === view) ?? FEATURE_LIST[0]!;
