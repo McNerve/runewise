@@ -502,13 +502,13 @@ export default function SlayerHelper() {
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-2 text-right text-text-secondary tabular-nums">
+                    <td className="px-4 py-2 text-right text-text-secondary num">
                       {task.amount}
                     </td>
-                    <td className="px-4 py-2 text-right text-text-secondary tabular-nums">
+                    <td className="px-4 py-2 text-right text-text-secondary num">
                       {task.weight}
                     </td>
-                    <td className={`px-4 py-2 text-right font-medium tabular-nums ${
+                    <td className={`px-4 py-2 text-right font-medium num ${
                       task.blocked ? "text-text-secondary/40" :
                       task.probability >= 5 ? "text-success" :
                       task.probability >= 3 ? "text-accent" :
@@ -516,7 +516,7 @@ export default function SlayerHelper() {
                     }`}>
                       {task.locked ? "Locked" : task.blocked ? "—" : `${task.probability.toFixed(1)}%`}
                     </td>
-                    <td className="px-4 py-2 text-right text-text-secondary tabular-nums">
+                    <td className="px-4 py-2 text-right text-text-secondary num">
                       {task.slayerLevel > 1 ? task.slayerLevel : "—"}
                     </td>
                     <td className="px-3 py-2 text-right">
@@ -542,21 +542,21 @@ export default function SlayerHelper() {
         <>
           {/* Reward progress */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="rounded-xl border border-border/60 bg-bg-primary/45 px-3 py-2">
+            <div className="rounded-xl border border-border-subtle bg-bg-tertiary px-3 py-2">
               <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">Total Rewards</div>
               <div className="mt-0.5 text-lg font-semibold text-text-primary">{SLAYER_REWARDS.length}</div>
             </div>
-            <div className="rounded-xl border border-border/60 bg-bg-primary/45 px-3 py-2">
+            <div className="rounded-xl border border-border-subtle bg-bg-tertiary px-3 py-2">
               <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">Purchased</div>
               <div className="mt-0.5 text-lg font-semibold text-success">{purchasedRewards.size}</div>
             </div>
-            <div className="rounded-xl border border-border/60 bg-bg-primary/45 px-3 py-2">
+            <div className="rounded-xl border border-border-subtle bg-bg-tertiary px-3 py-2">
               <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">Points Spent</div>
-              <div className="mt-0.5 text-lg font-semibold text-text-primary tabular-nums">{purchasedCost.toLocaleString()}</div>
+              <div className="mt-0.5 text-lg font-semibold text-text-primary num">{purchasedCost.toLocaleString()}</div>
             </div>
-            <div className="rounded-xl border border-border/60 bg-bg-primary/45 px-3 py-2">
+            <div className="rounded-xl border border-border-subtle bg-bg-tertiary px-3 py-2">
               <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">Points Remaining</div>
-              <div className="mt-0.5 text-lg font-semibold text-accent tabular-nums">{(totalCost - purchasedCost).toLocaleString()}</div>
+              <div className="mt-0.5 text-lg font-semibold text-accent num">{(totalCost - purchasedCost).toLocaleString()}</div>
             </div>
           </div>
 
@@ -582,9 +582,9 @@ export default function SlayerHelper() {
                       <td className={`px-3 py-2 font-medium ${selectedMaster.name === master.name ? "text-accent" : ""}`}>
                         {master.name}
                       </td>
-                      <td className="px-3 py-2 text-right tabular-nums">{master.pointsPerTask}</td>
+                      <td className="px-3 py-2 text-right num">{master.pointsPerTask}</td>
                       {SLAYER_STREAK_MULTIPLIERS.map((s) => (
-                        <td key={s.streak} className="px-3 py-2 text-right tabular-nums text-text-secondary">
+                        <td key={s.streak} className="px-3 py-2 text-right num text-text-secondary">
                           {master.pointsPerTask * s.multiplier}
                         </td>
                       ))}
@@ -606,7 +606,7 @@ export default function SlayerHelper() {
                 placeholder="0"
                 value={myPoints}
                 onChange={(e) => setMyPoints(e.target.value === "" ? "" : Number(e.target.value))}
-                className="w-28 px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors tabular-nums"
+                className="w-28 px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors num"
               />
             </div>
             <label className="flex items-center gap-1.5 text-xs text-text-secondary cursor-pointer">
@@ -693,7 +693,7 @@ export default function SlayerHelper() {
                         <div className="sm:hidden text-xs text-text-secondary mt-0.5">{reward.description}</div>
                       </td>
                       <td className="px-4 py-2 text-text-secondary hidden sm:table-cell">{reward.description}</td>
-                      <td className="px-4 py-2 text-right font-medium tabular-nums text-accent">{reward.cost.toLocaleString()}</td>
+                      <td className="px-4 py-2 text-right font-medium num text-accent">{reward.cost.toLocaleString()}</td>
                       <td className="px-4 py-2">
                         <span className={`text-[10px] uppercase tracking-[0.16em] ${
                           reward.category === "unlock" ? "text-accent" :

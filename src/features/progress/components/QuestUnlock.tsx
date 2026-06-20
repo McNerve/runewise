@@ -169,7 +169,7 @@ function QuestRow({
         <span className={`text-xs px-1.5 py-0.5 rounded ${config.bg} ${config.color}`}>
           {config.label}
         </span>
-        <span className="text-xs text-text-secondary/50 tabular-nums w-8 text-right">
+        <span className="text-xs text-text-secondary/50 num w-8 text-right">
           {e.quest.questPoints} QP
         </span>
         <span className="text-xs text-text-secondary/40">
@@ -190,9 +190,9 @@ function QuestRow({
                 className="w-3.5 h-3.5"
                 onError={(ev) => { ev.currentTarget.style.display = "none"; }}
               />
-              <span className="text-danger tabular-nums">{u.current}</span>
+              <span className="text-danger num">{u.current}</span>
               <span className="text-text-secondary/40">→</span>
-              <span className="text-text-primary tabular-nums">{u.required}</span>
+              <span className="text-text-primary num">{u.required}</span>
             </div>
           ))}
         </div>
@@ -211,7 +211,7 @@ function QuestRow({
                 className="w-3.5 h-3.5"
                 onError={(ev) => { ev.currentTarget.style.display = "none"; }}
               />
-              <span className="text-success tabular-nums">{r.level}</span>
+              <span className="text-success num">{r.level}</span>
             </div>
           ))}
         </div>

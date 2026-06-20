@@ -184,7 +184,7 @@ export default function BossProfitRanking({
                 }`}
                 onClick={() => navigate("bosses", { boss: boss.name, tab: "drops" })}
               >
-                <td className="px-2 py-2 text-center text-xs tabular-nums text-text-secondary">
+                <td className="px-2 py-2 text-center text-xs num text-text-secondary">
                   {i + 1}
                 </td>
                 <td className="px-2 py-2">
@@ -196,13 +196,13 @@ export default function BossProfitRanking({
                   />
                 </td>
                 <td className="px-2 py-2 text-sm font-medium">{boss.name}</td>
-                <td className="px-2 py-2 text-right text-sm tabular-nums text-success font-medium">
+                <td className="px-2 py-2 text-right text-sm num text-success font-medium">
                   {boss.gpPerHour != null ? formatGp(boss.gpPerHour) : "\u2014"}
                 </td>
-                <td className="px-2 py-2 text-right text-xs tabular-nums text-text-secondary">
+                <td className="px-2 py-2 text-right text-xs num text-text-secondary">
                   {boss.gpPerKill != null ? formatGp(boss.gpPerKill) : "\u2014"}
                 </td>
-                <td className="px-2 py-2 text-right text-xs tabular-nums text-text-secondary">
+                <td className="px-2 py-2 text-right text-xs num text-text-secondary">
                   {boss.killsPerHour ?? "\u2014"}
                 </td>
                 <td className="px-2 py-2 text-right text-xs text-text-secondary truncate max-w-[120px]">

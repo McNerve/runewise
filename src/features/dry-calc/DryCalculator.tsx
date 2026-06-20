@@ -161,7 +161,7 @@ export default function DryCalculator({ hiscores }: Props) {
             <div className="section-kicker mb-3">Results</div>
             <div className="text-center mb-3">
               <span
-                className={`text-4xl font-bold tabular-nums ${
+                className={`text-4xl font-bold num ${
                   chance >= 95
                     ? "text-danger"
                     : chance >= 75
@@ -193,15 +193,15 @@ export default function DryCalculator({ hiscores }: Props) {
             <div className="space-y-1.5 text-sm">
               <div className="flex justify-between">
                 <span className="text-text-secondary">50% confidence</span>
-                <span className="tabular-nums">{kills50.toLocaleString()} kills</span>
+                <span className="num">{kills50.toLocaleString()} kills</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-text-secondary">95% confidence</span>
-                <span className="tabular-nums">{kills95.toLocaleString()} kills</span>
+                <span className="num">{kills95.toLocaleString()} kills</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-text-secondary">Expected (1x rate)</span>
-                <span className="tabular-nums">{Math.round(rate).toLocaleString()} kills</span>
+                <span className="num">{Math.round(rate).toLocaleString()} kills</span>
               </div>
             </div>
           </div>

@@ -35,7 +35,7 @@ export default function SetupTabs({ state }: { state: DpsState }) {
             <span className="font-semibold">{label}</span>
             {style && <StyleIcon style={style} className="ml-1 inline h-3 w-3 opacity-70" />}
             {tabResult ? (
-              <span className={`ml-1.5 tabular-nums ${isActive ? "text-accent" : "text-text-secondary/70"}`}>
+              <span className={`ml-1.5 num ${isActive ? "text-accent" : "text-text-secondary/70"}`}>
                 {tabResult.dps.toFixed(1)}
               </span>
             ) : !isActive ? (

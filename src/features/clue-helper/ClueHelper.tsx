@@ -102,7 +102,7 @@ export default function ClueHelper() {
           {CLUE_TIERS.map((tier) => {
             const total = clues.filter((c) => c.tier === tier).length;
             return (
-              <div key={tier} className="rounded-xl border border-border/60 bg-bg-primary/45 px-3 py-2 text-center">
+              <div key={tier} className="rounded-xl border border-border-subtle bg-bg-tertiary px-3 py-2 text-center">
                 <div className="text-[10px] uppercase tracking-wider text-text-secondary/50">{tier}</div>
                 <div className={`text-lg font-semibold ${TIER_COLORS[tier].text}`}>{total}</div>
               </div>

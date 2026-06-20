@@ -304,14 +304,14 @@ export default function Spells() {
                         </div>
                       )}
                     </td>
-                    <td className="px-4 py-2 text-right text-xs tabular-nums text-text-secondary align-top">
+                    <td className="px-4 py-2 text-right text-xs num text-text-secondary align-top">
                       {spell.level > 0 ? spell.level : <span className="text-text-secondary/40">—</span>}
                     </td>
-                    <td className="px-4 py-2 text-right text-xs tabular-nums text-text-secondary align-top">
+                    <td className="px-4 py-2 text-right text-xs num text-text-secondary align-top">
                       {spell.xp > 0 ? spell.xp : "—"}
                     </td>
                     {showDamage && (
-                      <td className="px-4 py-2 text-right text-xs tabular-nums align-top">
+                      <td className="px-4 py-2 text-right text-xs num align-top">
                         {spell.damage ? (
                           <span className="text-danger font-medium">{spell.damage}</span>
                         ) : (
@@ -322,7 +322,7 @@ export default function Spells() {
                     <td className="px-4 py-2 align-top">
                       {!isExpanded && <RunePills runes={runes} />}
                     </td>
-                    <td className="px-4 py-2 text-right text-xs tabular-nums text-text-secondary align-top">
+                    <td className="px-4 py-2 text-right text-xs num text-text-secondary align-top">
                       {(() => {
                         const cost = totalCost(runes);
                         return cost == null ? <span className="text-text-secondary/40">—</span> : formatGp(cost);

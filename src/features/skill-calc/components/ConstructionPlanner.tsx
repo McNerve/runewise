@@ -94,16 +94,16 @@ export default function ConstructionPlanner({
                       <td className="px-3 py-1.5 text-right text-text-secondary text-xs">
                         {item.levelReq}
                       </td>
-                      <td className="px-3 py-1.5 text-right text-text-secondary tabular-nums">
+                      <td className="px-3 py-1.5 text-right text-text-secondary num">
                         {item.xp.toLocaleString()}
                       </td>
-                      <td className="px-3 py-1.5 text-right text-text-secondary text-xs tabular-nums">
+                      <td className="px-3 py-1.5 text-right text-text-secondary text-xs num">
                         {item.gpPerXp > 0 ? item.gpPerXp.toFixed(1) : "—"}
                       </td>
-                      <td className="px-3 py-1.5 text-right text-accent font-medium tabular-nums">
+                      <td className="px-3 py-1.5 text-right text-accent font-medium num">
                         {item.actions.toLocaleString()}
                       </td>
-                      <td className="px-4 py-1.5 text-right text-warning tabular-nums">
+                      <td className="px-4 py-1.5 text-right text-warning num">
                         {item.totalCost > 0 ? formatGp(item.totalCost) : "—"}
                       </td>
                     </tr>

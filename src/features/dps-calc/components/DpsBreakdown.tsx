@@ -35,53 +35,59 @@ export default memo(function DpsBreakdown({
   showDetails = false,
 }: DpsBreakdownProps) {
   const accPct = (accuracy * 100).toFixed(1);
-  const accColor =
-    accuracy >= 0.8
-      ? "text-success"
-      : accuracy >= 0.5
-        ? "text-warning"
-        : "text-danger";
+  // One accuracy tier drives the value color, verdict label, and bar fill.
+  const accTier = accuracy >= 0.8 ? 0 : accuracy >= 0.5 ? 1 : 2;
+  const accColor = ["text-success", "text-warning", "text-danger"][accTier];
+  const accLabel = ["High accuracy", "Moderate accuracy", "Low accuracy"][accTier];
+  const accBar = ["bg-success", "bg-warning", "bg-danger"][accTier];
 
   return (
     <div className="space-y-4">
-      {/* Primary results — DPS is the one accent; accuracy uses traffic-light. */}
-      <StatGrid columns={4}>
-        <StatCard label="Max Hit" value={maxHit} />
-        <StatCard label="Accuracy" value={`${accPct}%`} accent={accColor} />
-        <StatCard label="DPS" value={dps.toFixed(2)} accent="text-accent" />
-        <StatCard label="Kill Time" value={formatTtk(ttk)} title="Expected time to kill" />
-      </StatGrid>
+      {/* Hero verdict — DPS is the one focal metric, TTK the supporting answer.
+          No nested Card: this already renders inside the Results card. */}
+      <div className="flex items-end justify-between gap-4 border-b border-border-subtle pb-4">
+        <div>
+          <div className="hero-metric text-accent-bright">{dps.toFixed(2)}</div>
+          <div className="section-kicker mt-1">damage / second</div>
+        </div>
+        <div className="text-right">
+          <div className="num text-h3 font-semibold text-text-primary" title="Expected time to kill">
+            {formatTtk(ttk)}
+          </div>
+          <div className="section-kicker">time to kill</div>
+        </div>
+      </div>
 
-      {/* Accuracy bar */}
+      {/* Accuracy verdict + bar */}
       <div>
-        <div className="h-1.5 rounded-full bg-bg-tertiary overflow-hidden">
+        <div className="mb-1.5 flex items-center justify-between">
+          <span className="section-kicker">{accLabel}</span>
+          <span className={`num text-sm font-semibold ${accColor}`}>{accPct}%</span>
+        </div>
+        <div className="h-1.5 rounded-full bg-bg-secondary overflow-hidden">
           <div
-            className={`h-full rounded-full transition-all duration-300 ${
-              accuracy >= 0.8
-                ? "bg-success"
-                : accuracy >= 0.5
-                  ? "bg-warning"
-                  : "bg-danger"
-            }`}
+            className={`h-full rounded-full transition-all duration-300 ${accBar}`}
             style={{ width: `${Math.min(accuracy * 100, 100)}%` }}
           />
         </div>
       </div>
 
+      {/* Supporting stats */}
+      <StatGrid columns={2}>
+        <StatCard label="Max Hit" value={maxHit} />
+        <StatCard label="Accuracy" value={`${accPct}%`} accent={accColor} />
+      </StatGrid>
+
       {/* Roll breakdown */}
       {showDetails && (
         <div className="grid grid-cols-2 gap-3">
-          <div className="bg-bg-tertiary/50 rounded-lg px-3 py-2">
+          <div className="bg-bg-base rounded-lg px-3 py-2">
             <div className="text-xs text-text-secondary">Attack Roll</div>
-            <div className="text-sm font-medium tabular-nums">
-              {formatRoll(attackRoll)}
-            </div>
+            <div className="num text-sm font-medium">{formatRoll(attackRoll)}</div>
           </div>
-          <div className="bg-bg-tertiary/50 rounded-lg px-3 py-2">
+          <div className="bg-bg-base rounded-lg px-3 py-2">
             <div className="text-xs text-text-secondary">Defence Roll</div>
-            <div className="text-sm font-medium tabular-nums">
-              {formatRoll(defenseRoll)}
-            </div>
+            <div className="num text-sm font-medium">{formatRoll(defenseRoll)}</div>
           </div>
         </div>
       )}

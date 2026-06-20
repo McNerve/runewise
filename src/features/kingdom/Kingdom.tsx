@@ -181,7 +181,7 @@ export default function Kingdom() {
             max={100}
             value={approval}
             onChange={(e) => setApproval(Math.min(100, Math.max(0, Number(e.target.value) || 0)))}
-            className="w-14 px-1.5 py-1 rounded-lg bg-bg-tertiary border border-border text-xs text-center tabular-nums focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
+            className="w-14 px-1.5 py-1 rounded-lg bg-bg-tertiary border border-border text-xs text-center num focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
           />
           %
         </label>
@@ -231,16 +231,16 @@ export default function Kingdom() {
               max={Math.min(PER_RESOURCE_CAP, maxWorkers - (totalWorkers - row.workers))}
               value={row.workers}
               onChange={(e) => setWorkers(i, Number(e.target.value) || 0)}
-              className="w-12 px-1.5 py-1 rounded-lg bg-bg-tertiary border border-border text-xs text-center tabular-nums focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
+              className="w-12 px-1.5 py-1 rounded-lg bg-bg-tertiary border border-border text-xs text-center num focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
             />
 
-            <span className="text-xs text-text-secondary tabular-nums w-14 text-right">
+            <span className="text-xs text-text-secondary num w-14 text-right">
               {row.dailyOutput.toLocaleString()}
             </span>
-            <span className="text-xs text-text-secondary tabular-nums w-10 text-right">
+            <span className="text-xs text-text-secondary num w-10 text-right">
               {row.price != null ? formatGp(row.price) : "\u2014"}
             </span>
-            <span className="text-sm font-medium tabular-nums w-16 text-right">
+            <span className="text-sm font-medium num w-16 text-right">
               {row.dailyGp != null ? formatGp(row.dailyGp) : "\u2014"}
             </span>
           </div>
@@ -254,7 +254,7 @@ export default function Kingdom() {
           <div className="text-[11px] text-text-secondary uppercase tracking-wider">
             Gross Income
           </div>
-          <div className="text-sm font-semibold tabular-nums mt-0.5">
+          <div className="text-sm font-semibold num mt-0.5">
             {formatGp(Math.round(totalDailyGp))}
           </div>
         </div>
@@ -262,7 +262,7 @@ export default function Kingdom() {
           <div className="text-[11px] text-text-secondary uppercase tracking-wider">
             Coffer Upkeep
           </div>
-          <div className="text-sm font-semibold tabular-nums mt-0.5 text-danger">
+          <div className="text-sm font-semibold num mt-0.5 text-danger">
             -{formatGp(dailyUpkeep)}
           </div>
           <div className="text-[10px] text-text-secondary/50 mt-0.5 leading-tight">
@@ -273,7 +273,7 @@ export default function Kingdom() {
           <div className="text-[11px] text-text-secondary uppercase tracking-wider">
             Net Profit
           </div>
-          <div className={`text-sm font-semibold tabular-nums mt-0.5 ${netProfit >= 0 ? "text-success" : "text-danger"}`}>
+          <div className={`text-sm font-semibold num mt-0.5 ${netProfit >= 0 ? "text-success" : "text-danger"}`}>
             {netProfit >= 0 ? "" : "-"}{formatGp(Math.round(Math.abs(netProfit)))}
           </div>
         </div>

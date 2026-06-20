@@ -163,7 +163,7 @@ export default memo(function DropTable({
             max={200}
             value={killsPerHour ?? 20}
             onChange={(e) => onKillsPerHourChange(Math.max(1, Number(e.target.value)))}
-            className="w-20 px-2 py-1.5 rounded-lg bg-bg-tertiary border border-border text-sm tabular-nums focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
+            className="w-20 px-2 py-1.5 rounded-lg bg-bg-tertiary border border-border text-sm num focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
           />
         </div>
       )}
@@ -256,11 +256,11 @@ export default memo(function DropTable({
                           </button>
                         </ItemTooltip>
                       </td>
-                      <td className="px-2 py-1.5 text-xs text-text-secondary text-right tabular-nums">
+                      <td className="px-2 py-1.5 text-xs text-text-secondary text-right num">
                         {drop.quantity}
                       </td>
                       <td className="px-2 py-1.5 text-right">
-                        <div className="text-xs tabular-nums">
+                        <div className="text-xs num">
                           {drop.rarity === "Always" ? (
                             <span className="text-success">Always</span>
                           ) : (
@@ -270,17 +270,17 @@ export default memo(function DropTable({
                         <RarityBar fraction={drop.rarityFraction} rarity={drop.rarity} />
                       </td>
                       {prices && (
-                        <td className="px-2 py-1.5 text-xs text-right tabular-nums text-text-secondary">
+                        <td className="px-2 py-1.5 text-xs text-right num text-text-secondary">
                           {price ? formatGp(price) : "—"}
                         </td>
                       )}
                       {showProfit && prices && (
                         <>
-                          <td className="px-2 py-1.5 text-xs text-right tabular-nums text-text-secondary">
+                          <td className="px-2 py-1.5 text-xs text-right num text-text-secondary">
                             {gpPerKill ? formatGp(Math.round(gpPerKill)) : "—"}
                           </td>
                           {killsPerHour && (
-                            <td className="px-2 py-1.5 text-xs text-right tabular-nums text-text-secondary">
+                            <td className="px-2 py-1.5 text-xs text-right num text-text-secondary">
                               {gpPerHour ? formatGp(Math.round(gpPerHour)) : "—"}
                             </td>
                           )}

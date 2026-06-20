@@ -175,7 +175,7 @@ export default function WorldMap() {
           </p>
         </div>
         <div className="flex gap-2 items-center">
-          <span className="text-xs text-text-secondary tabular-nums">{Math.round(zoom * 100)}%</span>
+          <span className="text-xs text-text-secondary num">{Math.round(zoom * 100)}%</span>
           <button
             onClick={() => setView((v) => ({ ...v, zoom: Math.min(1.5, v.zoom + 0.05) }))}
             className="rounded-lg border border-border bg-bg-primary/60 px-2.5 py-1.5 text-xs font-medium text-text-secondary transition hover:border-accent/40 hover:text-text-primary"
@@ -218,7 +218,7 @@ export default function WorldMap() {
           onChange={(id) => { setFilter(id); setOpenPoi(null); }}
           ariaLabel="POI category filter"
         />
-        <span className="text-xs text-text-secondary/70 tabular-nums">
+        <span className="text-xs text-text-secondary/70 num">
           {pois.length} marker{pois.length === 1 ? "" : "s"}
         </span>
       </div>

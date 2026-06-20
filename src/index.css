@@ -1,26 +1,51 @@
 @import "tailwindcss";
 
 @theme {
-  /* Surfaces — layered from shell (darkest) → card → elevated (lightest).
-     Cards use bg-tertiary; bg-secondary is the ELEVATED state (hover,
-     tooltip, dropdown, active nav). */
-  --color-bg-primary: #0f1117;
-  --color-bg-tertiary: #181b25;
-  --color-bg-secondary: #242836;
-  --color-text-primary: #e4e4e7;
-  --color-text-secondary: #a1a1aa;
-  /* Signature accent — rune/magic gold. Was Tailwind blue-500. */
+  /* ── Gielinor Ledger surface ladder (v2.3) ──
+     Warm near-black, 5 deliberate luminance steps. Depth comes from this
+     ladder + hairline borders, never from shadows or ambient glow.
+     Inverted names kept (primary = darkest shell) to avoid rename churn;
+     --color-bg-* below maps to surface-0..4. */
+  --color-bg-primary: #0b0c10;   /* surface-0 — app shell / canvas (darkest) */
+  --color-bg-base: #131520;      /* surface-1 — content base */
+  --color-bg-tertiary: #1a1d2a;  /* surface-2 — canonical card (sits ABOVE shell) */
+  --color-bg-secondary: #232636; /* surface-3 — elevated: hover, dropdown, active nav */
+  --color-bg-overlay: #2c3042;   /* surface-4 — overlay: tooltip / modal over scrim */
+
+  /* Text — three real tiers (tertiary is a token, not a /40 opacity hack).
+     Migrating legacy /40–/60 faded text onto tertiary is a later pass. */
+  --color-text-primary: #ececef;
+  --color-text-secondary: #a4a7b2;
+  --color-text-tertiary: #6f7382;
+
+  /* Signature accent — rune gold, now with range. Rationed: one CTA + one
+     focal metric + the sidebar rail per view, never ambient washes. */
   --color-accent: #d4a574;
-  --color-accent-hover: #e0b585;
-  /* Foreground color to use on accent-filled surfaces. Gold is light (~L70),
-     so white text fails WCAG at ~1.9:1; use dark navy for ~10:1 contrast. */
-  --color-on-accent: #0f1117;
-  --color-info: #3b82f6;
+  --color-accent-hover: #e8be86;
+  --color-accent-bright: #e8be86;
+  --color-accent-deep: #a87c4e;
+  /* Foreground on accent-filled surfaces — gold is light, so use dark for ~9:1. */
+  --color-on-accent: #0b0c10;
+
+  /* Borders carry elevation — one notch lighter than their surface. */
   --color-border: #2e3345;
-  --color-success: #22c55e;
-  --color-warning: #eab308;
-  --color-danger: #ef4444;
-  /* Type scale (v1.6). Apply via text-kicker … text-hero utilities. */
+  --color-border-subtle: #20232f;
+  --color-border-strong: #3d4358;
+
+  /* Semantic — OSRS contract, desaturated ~8% so they don't bloom on dark. */
+  --color-info: #5b8def;
+  --color-magic: #5b8def;
+  --color-success: #34d058;
+  --color-warning: #e8b339;
+  --color-danger: #f2545b;
+
+  /* Type families — Inter UI, mono numerics, Cinzel display. System
+     fallbacks today; bundled subset woff2 is a follow-up. */
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-display: "Cinzel", Georgia, "Times New Roman", serif;
+
+  /* Type scale (v1.6 + mega). Apply via text-2xs … text-mega utilities. */
   --text-2xs: 10px;
   --text-kicker: 11px;
   --text-label: 13px;
@@ -29,24 +54,36 @@
   --text-h4: 18px;
   --text-h3: 20px;
   --text-hero: 28px;
+  --text-mega: 46px;
 }
 
-/* Light mode (opt-in via .light-theme class on <html>) */
+/* Light mode (opt-in via .light-theme class on <html>) — warm-neutral
+   parchment-adjacent, NO texture. Full parity with every dark token. */
 .light-theme {
-  --color-bg-primary: #eceef2;
-  --color-bg-tertiary: #f4f5f8;
-  --color-bg-secondary: #ffffff;
-  --color-text-primary: #11131a;
-  --color-text-secondary: #424754;
-  --color-accent: #b08552;
-  --color-accent-hover: #986c3c;
-  /* Light-mode gold is darker (~L50); white reads fine here. */
+  --color-bg-primary: #e8e6df;   /* canvas (warm off-white) */
+  --color-bg-base: #f1efe9;       /* base */
+  --color-bg-tertiary: #fbfaf6;   /* raised card */
+  --color-bg-secondary: #ffffff;  /* elevated */
+  --color-bg-overlay: #ffffff;    /* overlay */
+  --color-text-primary: #1a1a22;
+  --color-text-secondary: #4a4e5a;
+  --color-text-tertiary: #6b6f7d;
+  /* Darkened for WCAG AA: white-on-accent (5.65:1) and accent-on-canvas
+     (4.53:1) both clear 4.5:1. */
+  --color-accent: #875f33;
+  --color-accent-hover: #6f4f29;
+  --color-accent-bright: #9a6f3e;
+  --color-accent-deep: #5c4020;
   --color-on-accent: #ffffff;
-  --color-info: #2563eb;
-  --color-border: #bcc4d1;
-  --color-success: #15803d;
-  --color-warning: #92400e;
-  --color-danger: #dc2626;
+  --color-border: #bcb6a8;
+  --color-border-subtle: #d2cdc1;
+  --color-border-strong: #a49d8d;
+  --color-info: #2e63c8;
+  --color-magic: #2e63c8;
+  /* Semantics darkened so they clear 3:1 on the warm canvas (#e8e6df). */
+  --color-success: #157f3a;
+  --color-warning: #8f6210;
+  --color-danger: #c5343b;
 }
 
 /* Light mode overrides for elements that need extra contrast */
@@ -77,36 +114,41 @@
 
 body {
   margin: 0;
-  background:
-    radial-gradient(circle at top, color-mix(in srgb, var(--color-accent) 7%, transparent), transparent 30%),
-    linear-gradient(180deg, var(--color-bg-primary), var(--color-bg-primary) 22%);
+  /* Flat canvas — ambient gold wash retired; depth comes from the surface
+     ladder + hairline borders (Gielinor Ledger). */
+  background: var(--color-bg-primary);
   color: var(--color-text-primary);
-  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
 }
 
 .sidebar-shell {
-  background:
-    radial-gradient(circle at top, color-mix(in srgb, var(--color-accent) 6%, transparent), transparent 32%),
-    linear-gradient(180deg, color-mix(in srgb, var(--color-bg-primary) 96%, transparent), color-mix(in srgb, var(--color-bg-primary) 98%, transparent));
+  background: var(--color-bg-primary);
 }
 
 .topbar-shell {
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--color-bg-primary) 96%, transparent), color-mix(in srgb, var(--color-bg-primary) 98%, transparent));
+  background: var(--color-bg-primary);
 }
 
-.panel-hero {
-  /* Intentionally minimal — content flows on the background */
+/* ── Gielinor Ledger numeric + display helpers ── */
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums slashed-zero;
 }
-
-.panel-surface {
-  /* Intentionally minimal — no visible card treatment */
+.hero-metric {
+  font-family: var(--font-mono);
+  font-size: var(--text-mega);
+  line-height: 0.95;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
 }
-
-.panel-muted {
-  background: color-mix(in srgb, var(--color-bg-secondary) 25%, transparent);
+/* Named (not `.font-display`) to avoid colliding with Tailwind's auto
+   `font-display` utility generated from the @theme --font-display token. */
+.display-face {
+  font-family: var(--font-display);
+  letter-spacing: 0.01em;
 }
 
 .section-kicker {
@@ -197,21 +239,13 @@ body {
 }
 
 .light-theme .sidebar-shell {
-  background:
-    radial-gradient(circle at top, color-mix(in srgb, var(--color-accent) 8%, transparent), transparent 34%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.995), rgba(236, 238, 242, 0.99));
+  background: var(--color-bg-primary);
 }
 
 .light-theme .topbar-shell {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.995), rgba(236, 238, 242, 0.99));
+  background: var(--color-bg-primary);
 }
 
-.light-theme .panel-surface {
-  /* Intentionally minimal */
-}
-
-.light-theme .panel-muted,
 .light-theme .soft-pill {
   background: color-mix(in srgb, var(--color-bg-tertiary) 20%, white);
 }
@@ -1511,11 +1545,6 @@ body {
 @keyframes tooltip-in {
   from { opacity: 0; transform: scale(0.96); }
   to { opacity: 1; transform: scale(1); }
-}
-
-/* ── Light mode hero panel ── */
-.light-theme .panel-hero {
-  /* Intentionally minimal */
 }
 
 .light-theme .content-area {

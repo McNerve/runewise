@@ -156,16 +156,16 @@ export default function FarmProfit() {
                 <td className="px-4 py-1.5 text-right text-text-secondary text-xs">
                   {crop.levelReq}
                 </td>
-                <td className="px-4 py-1.5 text-right text-danger text-xs tabular-nums">
+                <td className="px-4 py-1.5 text-right text-danger text-xs num">
                   {crop.seedPrice != null ? formatGp(crop.seedPrice) : "—"}
                 </td>
-                <td className="px-4 py-1.5 text-right text-text-secondary text-xs tabular-nums">
+                <td className="px-4 py-1.5 text-right text-text-secondary text-xs num">
                   {crop.producePrice != null
                     ? formatGp(crop.producePrice)
                     : "—"}
                 </td>
                 <td
-                  className={`px-4 py-1.5 text-right font-medium tabular-nums ${
+                  className={`px-4 py-1.5 text-right font-medium num ${
                     crop.profit != null && crop.profit > 0
                       ? "text-accent"
                       : crop.profit != null && crop.profit < 0
@@ -176,7 +176,7 @@ export default function FarmProfit() {
                   {crop.profit != null ? formatGp(crop.profit) : "—"}
                 </td>
                 <td
-                  className={`px-4 py-1.5 text-right font-medium tabular-nums ${
+                  className={`px-4 py-1.5 text-right font-medium num ${
                     crop.profitPerHr != null && crop.profitPerHr > 0
                       ? "text-accent"
                       : crop.profitPerHr != null && crop.profitPerHr < 0

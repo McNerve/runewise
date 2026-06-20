@@ -42,14 +42,14 @@ const STAT_COLUMNS: { key: SortKey; label: string; short: string }[] = [
 function StatCell({ value }: { value: number }) {
   if (value === 0) {
     return (
-      <td className="px-2 py-1.5 text-right tabular-nums text-xs">
+      <td className="px-2 py-1.5 text-right num text-xs">
         <span className="text-text-secondary/30">&mdash;</span>
       </td>
     );
   }
   return (
     <td
-      className={`px-2 py-1.5 text-right tabular-nums text-xs ${
+      className={`px-2 py-1.5 text-right num text-xs ${
         value > 0 ? "text-success" : "text-danger"
       }`}
     >
