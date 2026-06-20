@@ -9,6 +9,7 @@ import { X } from "lucide-react";
 import { itemIcon } from "../../lib/sprites";
 import ItemTooltip from "../../components/ItemTooltip";
 import { knownWeaponSpeed } from "../../lib/data/weapon-speeds";
+import { useDialog } from "../../hooks/useDialog";
 
 interface Props {
   slot: EquipmentSlot | "2h";
@@ -18,6 +19,7 @@ interface Props {
 }
 
 export default function GearSelector({ slot, onSelect, onClose, combatStyle = "melee" }: Props) {
+  useDialog(onClose);
   const [allEquipment, setAllEquipment] = useState<WikiEquipment[]>([]);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
@@ -56,6 +58,9 @@ export default function GearSelector({ slot, onSelect, onClose, combatStyle = "m
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Select ${slot === "2h" ? "2-Handed" : slot}`}
         className="bg-bg-primary border border-border rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >

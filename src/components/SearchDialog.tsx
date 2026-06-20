@@ -112,7 +112,11 @@ export default function SearchDialog({ onClose }: SearchDialogProps) {
   }, [selectedIndex]);
 
   useEffect(() => {
+    // Focus the input, and restore focus to the opener (e.g. the sidebar
+    // search button) when the dialog closes so keyboard users keep their place.
+    const opener = document.activeElement as HTMLElement | null;
     requestAnimationFrame(() => inputRef.current?.focus());
+    return () => opener?.focus?.();
   }, []);
 
   // Keyboard nav must follow whichever list is actually on screen — the search

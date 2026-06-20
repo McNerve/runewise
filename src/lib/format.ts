@@ -4,7 +4,7 @@ export function formatGp(gp: number | null): string {
   const abs = Math.abs(gp);
   // Round DOWN throughout so a margin is never overstated, and keep one
   // decimal in the low-K range where flip/alch profits actually live.
-  if (abs >= 1_000_000_000) return `${sign}${(abs / 1_000_000_000).toFixed(2)}B`;
+  if (abs >= 999_950_000) return `${sign}${(abs / 1_000_000_000).toFixed(2)}B`;
   if (abs >= 999_500) return `${sign}${(abs / 1_000_000).toFixed(1)}M`;
   if (abs >= 100_000) return `${sign}${Math.floor(abs / 1_000)}K`;
   if (abs >= 1_000) return `${sign}${(Math.floor(abs / 100) / 10).toFixed(1)}K`;

@@ -3,6 +3,7 @@ import { BOSS_DROP_TABLES } from "../../../lib/data/boss-drops";
 import { BOSSES } from "../../../lib/data/bosses";
 import { fetchLatestPrices, type ItemPrice } from "../../../lib/api/ge";
 import { formatGp } from "../../../lib/format";
+import { postTaxPrice } from "../../../lib/tax";
 import { bossIconSmall } from "../../../lib/sprites";
 import WikiImage from "../../../components/WikiImage";
 import { Skeleton } from "../../../components/Skeleton";
@@ -67,17 +68,19 @@ export default function BossProfitRanking({
 
       for (const drop of dropTable.drops) {
         const p = prices[String(drop.itemId)];
-        const gePrice = p?.high ?? p?.low ?? null;
-        if (gePrice != null) {
-          const ev = (drop.quantity * gePrice) / drop.rate;
+        // Loot is SOLD: realize at the instasell (low) price minus 2% GE tax,
+        // not the optimistic instabuy — this drives a competitive GP/hr ranking.
+        const sell = p?.low ?? p?.high ?? null;
+        if (sell != null) {
+          const ev = (drop.quantity * postTaxPrice(sell)) / drop.rate;
           totalEvPerKill += ev;
 
           if (
             drop.category === "unique" &&
-            (topUniqueValue === null || gePrice > topUniqueValue)
+            (topUniqueValue === null || sell > topUniqueValue)
           ) {
             topUnique = drop.itemName;
-            topUniqueValue = gePrice;
+            topUniqueValue = sell;
           }
         }
       }

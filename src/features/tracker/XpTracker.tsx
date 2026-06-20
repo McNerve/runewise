@@ -503,14 +503,14 @@ export default function XpTracker({ rsn }: Props) {
 
   const skillGains = gains
     ? Object.entries(gains.skills)
-        .filter(([, v]) => v.experience.gained > 0)
-        .sort((a, b) => b[1].experience.gained - a[1].experience.gained)
+        .filter(([, v]) => (v?.experience?.gained ?? 0) > 0)
+        .sort((a, b) => (b[1]?.experience?.gained ?? 0) - (a[1]?.experience?.gained ?? 0))
     : [];
 
   const bossGains = gains
     ? Object.entries(gains.bosses)
-        .filter(([, v]) => v.kills.gained > 0)
-        .sort((a, b) => b[1].kills.gained - a[1].kills.gained)
+        .filter(([, v]) => (v?.kills?.gained ?? 0) > 0)
+        .sort((a, b) => (b[1]?.kills?.gained ?? 0) - (a[1]?.kills?.gained ?? 0))
     : [];
 
   const overallXp = (() => {
