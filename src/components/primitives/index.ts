@@ -5,6 +5,7 @@ export type { FilterPillItem } from "./FilterPills";
 export { StatGrid, StatCard } from "./StatGrid";
 export { Button } from "./Button";
 export { Card } from "./Card";
+export { DeltaBadge } from "./DeltaBadge";
 export { default as TierBadge } from "./TierBadge";
 export { TIER_COLORS } from "./tierColors";
 export type { Tier, TierClassSet } from "./tierColors";

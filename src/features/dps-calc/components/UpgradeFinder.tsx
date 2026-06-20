@@ -4,7 +4,7 @@ import { itemIcon } from "../../../lib/sprites";
 import ItemTooltip from "../../../components/ItemTooltip";
 import { useGEData } from "../../../hooks/useGEData";
 import { formatGp } from "../../../lib/format";
-import { Button, Card } from "../../../components/primitives";
+import { Button, Card, DeltaBadge } from "../../../components/primitives";
 import { findUpgrades, rankUpgradesForDisplay, type UpgradeSort } from "../upgradeFinder";
 import type { DpsState, EquippedGear } from "../hooks/useDpsState";
 
@@ -178,9 +178,7 @@ export default function UpgradeFinder({ state }: UpgradeFinderProps) {
                           )}
                         </span>
                       </ItemTooltip>
-                      <span className="shrink-0 text-[11px] num text-success">
-                        +{dpsGain.toFixed(2)} <span className="text-success/60">({dpsGainPct >= 0 ? "+" : ""}{dpsGainPct.toFixed(1)}%)</span>
-                      </span>
+                      <DeltaBadge delta={dpsGain} pct={dpsGainPct} className="shrink-0" title="DPS gained" />
                       <Button
                         size="xs"
                         onClick={() =>
