@@ -125,7 +125,7 @@ export const FEATURE_REGISTRY = {
     family: "Market",
     sidebar: true,
     search: true,
-    aliases: ["grand exchange", "item database", "prices", "ge", "items", "alch", "high alch", "alchemy", "watchlist", "price alerts"],
+    aliases: ["grand exchange", "item database", "prices", "ge", "items", "alch", "high alch", "alchemy", "watchlist", "price alerts", "flip finder", "flips", "flipping", "margins", "best flips", "profit"],
   },
   "flip-journal": {
     title: "GE Flip Journal",

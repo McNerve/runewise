@@ -37,11 +37,13 @@ import {
   type Period,
 } from "./shared";
 
-type Tab = "search" | "browse" | "watchlist" | "alch" | "bulk";
+type Tab = "search" | "browse" | "flips" | "watchlist" | "alch" | "bulk";
+const VALID_PARAM_TABS: Tab[] = ["watchlist", "alch", "browse", "bulk", "flips"];
 const Chart = lazy(() => import("../../components/Chart"));
 const Watchlist = lazy(() => import("../watchlist/Watchlist"));
 const AlchCalculator = lazy(() => import("../alch-calc/AlchCalculator"));
 const BulkSearch = lazy(() => import("./components/BulkSearch"));
+const FlipFinder = lazy(() => import("./components/FlipFinder"));
 
 // --- Detail panel ---
 
@@ -296,7 +298,7 @@ export default function Market({
   const pricesFetchedRef = useRef(false);
 
   const paramTab = params.tab as Tab | undefined;
-  const resolvedInitial: Tab = paramTab === "watchlist" || paramTab === "alch" || paramTab === "browse" || paramTab === "bulk" ? paramTab : initialTab;
+  const resolvedInitial: Tab = paramTab && VALID_PARAM_TABS.includes(paramTab) ? paramTab : initialTab;
   const [tab, setTab] = useState<Tab>(resolvedInitial);
   const [membersFilter, setMembersFilter] = useState<"all" | "f2p" | "p2p">(
     "all"
@@ -349,7 +351,7 @@ export default function Market({
   }, [initialTab]);
 
   useEffect(() => {
-    if (paramTab === "watchlist" || paramTab === "alch" || paramTab === "browse" || paramTab === "bulk") {
+    if (paramTab && VALID_PARAM_TABS.includes(paramTab)) {
       setTab(paramTab);
     }
   }, [paramTab]);
@@ -571,7 +573,7 @@ export default function Market({
               ))}
             </StatGrid>
           </div>
-        ) : (
+        ) : tab === "search" || tab === "browse" ? (
           <div className="mb-4 grid gap-3 md:grid-cols-3">
             <div className="rounded-xl border border-border-subtle bg-bg-tertiary px-4 py-3">
               <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
@@ -598,7 +600,7 @@ export default function Market({
               </div>
             </div>
           </div>
-        )}
+        ) : null}
 
         {/* Tab bar — always visible */}
         <div className="flex items-center gap-3 mb-4 flex-wrap">
@@ -610,6 +612,7 @@ export default function Market({
             items={[
               { id: "search" as Tab, label: "Search", description: "Find items by name" },
               { id: "browse" as Tab, label: allItems.length > 0 ? `Browse All (${allItems.length.toLocaleString()})` : "Browse All", description: "Full item catalogue" },
+              { id: "flips" as Tab, label: "Flip Finder", description: "Most profitable flips now" },
               { id: "watchlist" as Tab, label: "Watchlist", description: "Tracked items" },
               { id: "alch" as Tab, label: "Alch Profits", description: "Alchemy calculator" },
               { id: "bulk" as Tab, label: "Bulk Lookup", description: "Batch price check" },
@@ -631,7 +634,11 @@ export default function Market({
         </div>
 
         {/* Tab content */}
-        {tab === "watchlist" ? (
+        {tab === "flips" ? (
+          <Suspense fallback={<div className="py-8 text-center"><div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4 mx-auto" /></div>}>
+            <FlipFinder mapping={allItems} prices={prices} />
+          </Suspense>
+        ) : tab === "watchlist" ? (
           <Suspense fallback={<div className="py-8 text-center"><div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4 mx-auto" /></div>}>
             <Watchlist />
           </Suspense>
