@@ -115,6 +115,10 @@ export default function SearchDialog({ onClose }: SearchDialogProps) {
     requestAnimationFrame(() => inputRef.current?.focus());
   }, []);
 
+  // Keyboard nav must follow whichever list is actually on screen — the search
+  // results when there's a query, else the recents shown on the default view.
+  const navList = query.trim() ? filtered : recentEntities.slice(0, 6);
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Escape") {
       e.preventDefault();
@@ -122,13 +126,13 @@ export default function SearchDialog({ onClose }: SearchDialogProps) {
       setQuery("");
     } else if (e.key === "ArrowDown") {
       e.preventDefault();
-      setSelectedIndex((i) => Math.min(i + 1, filtered.length - 1));
+      setSelectedIndex((i) => Math.min(i + 1, navList.length - 1));
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       setSelectedIndex((i) => Math.max(i - 1, 0));
-    } else if (e.key === "Enter" && filtered[selectedIndex]) {
+    } else if (e.key === "Enter" && navList[selectedIndex]) {
       e.preventDefault();
-      select(filtered[selectedIndex]);
+      select(navList[selectedIndex]);
     }
   };
 
