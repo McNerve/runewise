@@ -3,6 +3,8 @@ import { type HiscoreData } from "../../lib/api/hiscores";
 import { fetchWomPlayer, type WomPlayer } from "../../lib/api/wom";
 import { xpForLevel } from "../../lib/formulas/xp";
 import { combatLevel } from "../../lib/formulas/combat";
+import { nearestMilestones } from "../../lib/formulas/milestones";
+import { formatGp } from "../../lib/format";
 import { WIKI_IMG, SKILL_ICONS, NAV_ICONS, bossIconSmall, bossIcon, itemIcon } from "../../lib/sprites";
 import { useNavigation } from "../../lib/NavigationContext";
 import WikiImage from "../../components/WikiImage";
@@ -132,6 +134,9 @@ export default function Overview({ hiscores, rsn, lastFetched = null, onRefresh 
   const rifts = hiscores.activities?.find((a) => a.name === "Rifts closed")?.score ?? 0;
   const gauntlet = hiscores.activities?.find((a) => a.name === "The Corrupted Gauntlet")?.score ?? 0;
   const hasMinigames = wintertodt > 0 || tempoross > 0 || rifts > 0 || gauntlet > 0;
+
+  // Closest skill achievements — purely XP-derived, so always accurate.
+  const milestones = nearestMilestones(hiscores, 4);
 
   return (
     <div className="max-w-3xl">
@@ -267,6 +272,36 @@ export default function Overview({ hiscores, rsn, lastFetched = null, onRefresh 
         </div>
         <span className="text-accent group-hover:translate-x-0.5 transition-transform">→</span>
       </button>
+
+      {/* Closest milestones — what to do next, ranked by least XP remaining */}
+      {milestones.length > 0 && (
+        <div className="mb-5 rounded-xl border border-border-subtle bg-bg-tertiary p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <span className="section-kicker">Closest milestones</span>
+            <span className="text-2xs text-text-tertiary">Your quickest wins</span>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {milestones.map((m) => (
+              <button
+                key={m.skill.name}
+                onClick={() => navigate("skill-calc", { skill: m.skill.name })}
+                title={`Plan ${m.skill.name} to ${m.label}`}
+                className="home-tile flex items-center gap-2.5 rounded-lg border border-border-subtle bg-bg-secondary/40 px-3 py-2 text-left"
+              >
+                <WikiImage src={SKILL_ICONS[m.skill.name]} alt="" className="w-5 h-5 shrink-0" fallback={m.skill.name[0]} />
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm text-text-primary">
+                    {m.skill.name} <span className="text-text-secondary">→ {m.label}</span>
+                  </div>
+                  <div className="num text-2xs text-text-tertiary">{formatGp(m.xpToGo)} xp to go</div>
+                </div>
+                <span className="text-accent">→</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Skill grid — 3 columns, OSRS layout */}
       {maxedSkills >= 24 && (
         <div className="mb-3 rounded-lg border border-[#d4a017]/40 bg-[#d4a017]/8 px-4 py-2.5 flex items-center gap-2">
