@@ -241,7 +241,7 @@ export default function ClueHelper() {
                             </button>
                           )}
                           <button
-                            onClick={() => navigate("wiki", { search: clue.text })}
+                            onClick={() => navigate("wiki", { query: clue.solution })}
                             className="rounded-lg border border-border bg-bg-primary/60 px-2 py-1 text-[10px] font-medium text-accent transition hover:border-accent/40"
                             title="Look up in Wiki"
                           >

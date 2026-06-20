@@ -117,7 +117,10 @@ export default function DryCalculator({ hiscores }: Props) {
               min={1}
               value={rate || ""}
               onChange={(e) => {
-                setRate(Number(e.target.value) || 0);
+                // Clamp to >= 1: a 1-in-0 drop rate is meaningless and renders
+                // all-zero results with no validation message.
+                const v = Number(e.target.value);
+                setRate(e.target.value === "" ? 0 : Math.max(1, v || 1));
                 setSelectedDrop(null);
               }}
               className="w-full px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"

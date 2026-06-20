@@ -93,7 +93,7 @@ describe("parseHiscoreData", () => {
     expect(result.skills[0].xp).toBe(0); // fallback
   });
 
-  it("preserves valid numeric values including zero", () => {
+  it("preserves valid numeric values, flooring level at 1 (no skill is level 0)", () => {
     const input = {
       skills: [{ id: 0, name: "Test", rank: 0, level: 0, xp: 0 }],
       activities: [],
@@ -101,7 +101,17 @@ describe("parseHiscoreData", () => {
     const result = parseHiscoreData(input);
     expect(result.skills[0].id).toBe(0);
     expect(result.skills[0].rank).toBe(0);
-    expect(result.skills[0].level).toBe(0);
+    expect(result.skills[0].level).toBe(1); // level 0/-1 normalized to 1
+    expect(result.skills[0].xp).toBe(0);
+  });
+
+  it("normalizes unranked skills (level/xp = -1) to level 1, xp 0", () => {
+    const input = {
+      skills: [{ id: 5, name: "Runecraft", rank: -1, level: -1, xp: -1 }],
+      activities: [],
+    };
+    const result = parseHiscoreData(input);
+    expect(result.skills[0].level).toBe(1);
     expect(result.skills[0].xp).toBe(0);
   });
 

@@ -180,11 +180,13 @@ export default function DiaryTracker({ hiscores }: Props) {
                       {tier.tier}
                     </span>
                     {isComplete && (
-                      <span className="text-xs text-success">✓ Complete</span>
+                      <span className="text-xs text-success" title="Skill levels met — quest/combat gates aren't auto-checked">
+                        ✓ Skill reqs met
+                      </span>
                     )}
                     {!isComplete && hiscores && (
                       <span className="text-xs text-text-secondary">
-                        {check.met}/{check.total} requirements met
+                        {check.met}/{check.total} skill requirements met
                       </span>
                     )}
                   </div>

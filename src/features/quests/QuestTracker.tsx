@@ -100,6 +100,12 @@ export default function QuestTracker({ hiscores }: Props) {
 
   const available = questsWithStatus.filter((q) => q.met).length;
   const total = questsWithStatus.length;
+  // Derive the QP cap from the loaded quest list so the ratio can never exceed
+  // 100% (the old hardcoded 300 was below the data's own ~333 total).
+  const totalQp = useMemo(
+    () => quests.reduce((sum, q) => sum + (q.questPoints ?? 0), 0),
+    [quests]
+  );
 
   // Quest Points from hiscores (activities array)
   const hiscoresQp = hiscores?.activities.find(
@@ -112,8 +118,8 @@ export default function QuestTracker({ hiscores }: Props) {
       <div className="flex items-start justify-between gap-4 mb-2">
         <h2 className="text-xl font-semibold">Quest Tracker</h2>
         <div className="flex flex-col items-end gap-1 text-xs text-text-secondary">
-          {hiscoresQp !== null && (
-            <span>{hiscoresQp} / 300 QP</span>
+          {hiscoresQp !== null && totalQp > 0 && (
+            <span>{hiscoresQp} / {totalQp} QP</span>
           )}
         </div>
       </div>

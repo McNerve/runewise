@@ -126,7 +126,7 @@ function LevelInput({ value, min, max, hasGap, onCommit }: LevelInputProps) {
 const PREFERENCES: { id: TrainingPreference; label: string; desc: string }[] = [
   { id: "fastest", label: "Fastest XP", desc: "Maximizes XP/hr regardless of effort" },
   { id: "afk", label: "AFK Priority", desc: "Prefers low-intensity methods" },
-  { id: "cheapest", label: "Cheapest", desc: "Avoids expensive consumables" },
+  { id: "cheapest", label: "Low-cost", desc: "Favours methods without consumables" },
 ];
 
 export default function TrainingPlan({ hiscores }: Props) {

@@ -164,7 +164,7 @@ const ALTARS: WorldMapPoi[] = [
 
 // ── Teleport spots (popular POHs, city spells, misc) ────────────────────
 const TELEPORTS: WorldMapPoi[] = [
-  { id: "tele-lumbridge", category: "teleport", name: "Lumbridge teleport", info: "Standard spellbook — 41 magic", x: 51.5, y: 61.3, wiki: "Lumbridge_Teleport" },
+  { id: "tele-lumbridge", category: "teleport", name: "Lumbridge teleport", info: "Standard spellbook — 31 magic", x: 51.5, y: 61.3, wiki: "Lumbridge_Teleport" },
   { id: "tele-varrock", category: "teleport", name: "Varrock teleport", info: "Standard — 25 magic", x: 51.1, y: 52.1, wiki: "Varrock_Teleport" },
   { id: "tele-falador", category: "teleport", name: "Falador teleport", info: "Standard — 37 magic", x: 41.7, y: 56.3, wiki: "Falador_Teleport" },
   { id: "tele-camelot", category: "teleport", name: "Camelot teleport", info: "Standard — 45 magic", x: 45.0, y: 50.8, wiki: "Camelot_Teleport" },
