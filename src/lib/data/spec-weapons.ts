@@ -11,6 +11,9 @@ export interface SpecWeapon {
   notes: string;
   // When set, DPS uses a bespoke cascade formula instead of (accuracy × maxHit/2 × hits).
   cascadeType?: "dragon_claws";
+  // Accuracy multiplier applied to the SECOND hit's attack roll, for multi-hit
+  // specs whose later hit is less accurate (e.g. halberd sweep: 0.75 = -25%).
+  secondHitAccuracyMult?: number;
 }
 
 export const SPEC_WEAPONS: SpecWeapon[] = [
@@ -124,6 +127,7 @@ export const SPEC_WEAPONS: SpecWeapon[] = [
     damageMult: 1.1,
     hits: 2,
     guaranteedHit: false,
+    secondHitAccuracyMult: 0.75,
     notes: "2 hits vs large targets. +10% damage. Second hit -25% accuracy.",
   },
   {
@@ -136,6 +140,7 @@ export const SPEC_WEAPONS: SpecWeapon[] = [
     damageMult: 1.1,
     hits: 2,
     guaranteedHit: false,
+    secondHitAccuracyMult: 0.75,
     notes: "Same as Dragon halberd. Better base stats.",
   },
   {
