@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback, useRef } from "react";
 import { loadJSON, saveJSON } from "../../lib/localStorage";
+import { useDialog } from "../../hooks/useDialog";
 import { flipProfit } from "./profit";
 import { formatGp } from "../../lib/format";
 import { searchItems, type ItemMapping } from "../../lib/api/ge";
@@ -384,18 +385,23 @@ function CloseModal({ entry, onConfirm, onCancel }: {
   onCancel: () => void;
 }) {
   const [sellPrice, setSellPrice] = useState("");
+  useDialog(onCancel);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onCancel}>
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Close flip"
         className="relative bg-bg-primary border border-border rounded-xl p-5 w-80 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <h3 className="font-semibold text-text-primary mb-1">Close flip</h3>
         <p className="text-sm text-text-secondary mb-3">{entry.itemName} × {entry.qty.toLocaleString()}</p>
-        <label className="section-kicker mb-1 block">Sell price (ea)</label>
+        <label htmlFor="flip-sell-price" className="section-kicker mb-1 block">Sell price (ea)</label>
         <input
+          id="flip-sell-price"
           type="number"
           min="1"
           value={sellPrice}

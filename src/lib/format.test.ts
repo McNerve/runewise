@@ -39,9 +39,10 @@ describe("formatGp", () => {
     expect(formatGp(1_500_000)).toBe("1.5M");
   });
 
-  it("billions use a 'B' suffix", () => {
+  it("billions use a 'B' suffix, including the just-under-1B boundary", () => {
     expect(formatGp(1_000_000_000)).toBe("1.00B");
     expect(formatGp(1_516_700_000)).toBe("1.52B");
+    expect(formatGp(999_999_999)).toBe("1.00B"); // never "1000.0M"
   });
 
   it("negative values keep their suffix with a leading minus", () => {

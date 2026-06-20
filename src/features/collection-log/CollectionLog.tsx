@@ -216,7 +216,7 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
           <div>
             <div className="text-[10px] uppercase tracking-wider text-text-secondary/50">Collections</div>
             <div className="text-lg font-bold num">{data.finished} / {data.total}</div>
-            <div className="text-[10px] text-text-secondary/40">{((data.finished / data.total) * 100).toFixed(1)}%</div>
+            <div className="text-[10px] text-text-secondary/40">{(data.total > 0 ? (data.finished / data.total) * 100 : 0).toFixed(1)}%</div>
           </div>
         </div>
         <div className="bg-bg-secondary/50 px-5 py-4 flex items-center gap-3">

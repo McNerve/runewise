@@ -73,6 +73,14 @@ export default function ClueHelper() {
     return results;
   }, [clues, debouncedQuery, typeFilter, tierFilter]);
 
+  // Per-tier counts in one O(n) pass, recomputed only when the clue list loads —
+  // not 6 full-array scans on every render (incl. every keystroke).
+  const tierTotals = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const c of clues) m[c.tier] = (m[c.tier] ?? 0) + 1;
+    return m;
+  }, [clues]);
+
   const pagedFiltered = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
 
   const grouped = useMemo(() => {
@@ -100,7 +108,7 @@ export default function ClueHelper() {
       {!loading && (
         <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-5">
           {CLUE_TIERS.map((tier) => {
-            const total = clues.filter((c) => c.tier === tier).length;
+            const total = tierTotals[tier] ?? 0;
             return (
               <div key={tier} className="rounded-xl border border-border-subtle bg-bg-tertiary px-3 py-2 text-center">
                 <div className="text-[10px] uppercase tracking-wider text-text-secondary/50">{tier}</div>

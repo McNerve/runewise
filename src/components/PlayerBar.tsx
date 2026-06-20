@@ -41,8 +41,9 @@ const PlayerBar = memo(function PlayerBar({
   };
 
   return (
-    <div className="topbar-shell border-b border-border h-16 flex items-center px-4 shrink-0">
-      <div className="flex items-center justify-between gap-4 w-full">
+    <div className="topbar-shell border-b border-border shrink-0">
+      <div className="h-16 flex items-center px-4">
+        <div className="flex items-center justify-between gap-4 w-full">
         {/* Left: nav + title */}
         <div className="flex items-center gap-3 min-w-0">
           {canGoBack && (
@@ -111,10 +112,11 @@ const PlayerBar = memo(function PlayerBar({
             </form>
           )}
         </div>
+        </div>
       </div>
 
       {error && (
-        <div className="mt-2 rounded-lg border border-danger/30 bg-danger/10 px-3 py-1.5 text-xs text-danger">
+        <div role="alert" className="mx-4 mb-2 rounded-lg border border-danger/30 bg-danger/10 px-3 py-1.5 text-xs text-danger">
           {error}
         </div>
       )}

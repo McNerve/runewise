@@ -182,6 +182,7 @@ function StarAlertPanel({
           <div className="flex items-center justify-between">
             <span className="text-sm text-text-secondary">Minimum tier</span>
             <select
+              aria-label="Minimum alert tier"
               value={alertSettings.minTier}
               onChange={(e) => onUpdate({ ...alertSettings, minTier: Number(e.target.value) })}
               className="bg-bg-tertiary border border-border rounded px-2 py-1 text-xs"
@@ -799,6 +800,7 @@ export default function ShootingStars() {
               className="flex-1 bg-bg-tertiary border border-border rounded-lg px-3 py-1.5 text-sm"
             />
             <select
+              aria-label="Filter landing sites by region"
               value={regionFilter}
               onChange={(e) => setRegionFilter(e.target.value)}
               className="bg-bg-tertiary border border-border rounded-lg px-3 py-1.5 text-sm text-text-secondary"

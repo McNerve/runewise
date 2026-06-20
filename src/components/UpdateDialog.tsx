@@ -193,6 +193,9 @@ export default function UpdateDialog() {
       <AnimatePresence mode="wait">
         <motion.div
           key="dialog"
+          role="dialog"
+          aria-modal="true"
+          aria-label="RuneWise update"
           className="bg-bg-primary border border-border rounded-2xl shadow-2xl w-[480px] max-h-[80vh] overflow-hidden"
           initial={{ opacity: 0, scale: 0.93, y: 8 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
