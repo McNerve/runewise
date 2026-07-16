@@ -16,6 +16,12 @@ on:
 permissions:
   contents: write
 
+# Single release tag for all jobs: workflow_dispatch input, or the git tag that
+# triggered the run. Must NOT fall back to github.ref_name alone on manual
+# dispatch (that would be "main" and break notes/prune).
+env:
+  RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -90,8 +96,8 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
-          tagName: ${{ inputs.tag || github.ref_name }}
-          releaseName: RuneWise ${{ inputs.tag || github.ref_name }}
+          tagName: ${{ env.RELEASE_TAG }}
+          releaseName: RuneWise ${{ env.RELEASE_TAG }}
           releaseBody: ""
           releaseDraft: false
           prerelease: false
@@ -110,17 +116,19 @@ jobs:
       - name: Generate release notes
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ env.RELEASE_TAG }}
         run: |
-          PREV_TAG=$(gh release list --limit 2 --json tagName --jq '.[1].tagName // empty')
+          PREV_TAG=$(gh release list --limit 20 --json tagName --jq \
+            --arg tag "$TAG" '[.[] | select(.tagName != $tag)] | .[0].tagName // empty')
           if [ -n "$PREV_TAG" ]; then
             NOTES=$(gh api repos/${{ github.repository }}/releases/generate-notes \
-              -f tag_name=${{ github.ref_name }} \
+              -f tag_name="$TAG" \
               -f previous_tag_name="$PREV_TAG" \
               --jq '.body')
           else
-            NOTES="Initial release"
+            NOTES="See CHANGELOG.md for details."
           fi
-          gh release edit ${{ github.ref_name }} --notes "$NOTES"
+          gh release edit "$TAG" --notes "$NOTES"
 
   prune-old-releases:
     needs: release-notes
@@ -131,11 +139,15 @@ jobs:
       - name: Delete all releases except the current tag
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CURRENT_TAG: ${{ github.ref_name }}
+          CURRENT_TAG: ${{ env.RELEASE_TAG }}
           REPO: ${{ github.repository }}
         run: |
           # Keep only the just-published release. Git tags are preserved (--cleanup-tag=false)
           # so history and commit-SHA lookups still work; only the release + binaries are removed.
+          if [ -z "$CURRENT_TAG" ] || [ "$CURRENT_TAG" = "main" ] || [ "$CURRENT_TAG" = "master" ]; then
+            echo "Refusing to prune: CURRENT_TAG='$CURRENT_TAG' is not a release tag"
+            exit 1
+          fi
           gh release list --repo "$REPO" --limit 100 --json tagName --jq '.[].tagName' \
             | grep -vxF "$CURRENT_TAG" \
             | while IFS= read -r tag; do
