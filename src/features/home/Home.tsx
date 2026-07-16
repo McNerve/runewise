@@ -256,13 +256,14 @@ export default function Home({ hiscores }: HomeProps) {
   return (
     <div className="max-w-5xl">
       {/* Header */}
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between mb-6">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between mb-7">
         <div>
-          <h2 className="text-hero font-semibold tracking-tight">
+          <p className="section-kicker mb-1.5">Home</p>
+          <h2 className="display-face text-hero font-semibold tracking-tight text-text-primary">
             {savedRsn ? `Welcome back, ${savedRsn}` : "RuneWise"}
           </h2>
           {savedRsn && data && (
-            <p className="text-ui text-text-secondary">
+            <p className="text-ui text-text-secondary mt-1">
               {[
                 combatLevel ? `Combat ${combatLevel}` : null,
                 totalLevel ? `${totalLevel.toLocaleString()} total` : null,
@@ -271,11 +272,13 @@ export default function Home({ hiscores }: HomeProps) {
             </p>
           )}
           {!savedRsn && (
-            <p className="text-ui text-text-secondary">Your OSRS companion. Set a RSN to get started.</p>
+            <p className="text-ui text-text-secondary mt-1">
+              Your OSRS companion. Set a RSN to get started.
+            </p>
           )}
         </div>
         {settings.ironmanMode && (
-          <span className="text-[10px] text-warning border border-warning/20 bg-warning/5 rounded-full px-2.5 py-0.5">
+          <span className="text-[10px] font-medium text-warning border border-warning/25 bg-warning/8 rounded-full px-2.5 py-1">
             Ironman Mode
           </span>
         )}
@@ -288,9 +291,10 @@ export default function Home({ hiscores }: HomeProps) {
           {/* First-run welcome */}
           {!savedRsn && !localStorage.getItem("runewise_welcome_dismissed") && (
             <motion.div
-              initial={{ opacity: 0, y: 8 }}
+              initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              className="rounded-xl border border-accent/30 bg-accent/5 p-5"
+              transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+              className="rounded-xl border border-accent/30 bg-accent/5 p-5 shadow-[0_8px_28px_-16px_color-mix(in_srgb,var(--color-accent)_40%,transparent)]"
             >
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -328,10 +332,10 @@ export default function Home({ hiscores }: HomeProps) {
           {/* Player card */}
           {savedRsn && data && (
             <motion.div
-              initial={{ opacity: 0, y: 8 }}
+              initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.2 }}
-              className="rounded-xl border border-border-subtle bg-bg-tertiary p-4"
+              transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
+              className="rounded-xl border border-border-subtle bg-bg-tertiary p-4 shadow-[0_1px_0_color-mix(in_srgb,var(--color-text-primary)_3%,transparent)]"
             >
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-12 h-12 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center">
@@ -370,11 +374,11 @@ export default function Home({ hiscores }: HomeProps) {
 
           {/* Tool grid */}
           <section>
-            <div className="flex items-baseline justify-between mb-2">
-              <h3 className="text-kicker font-semibold uppercase tracking-[0.16em] text-text-secondary/70">Tools</h3>
-              <span className="text-[10px] text-text-secondary/40">Right-click to pin</span>
+            <div className="flex items-baseline justify-between mb-2.5">
+              <h3 className="section-kicker">Tools</h3>
+              <span className="text-[10px] text-text-tertiary">Right-click to pin</span>
             </div>
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
               {toolGrid.map((tool, i) => {
                 const accent = getFeatureAccent(tool.id);
                 return (
@@ -391,8 +395,8 @@ export default function Home({ hiscores }: HomeProps) {
                     }}
                     aria-label={`${tool.label}${tool.pinned ? " (pinned)" : ""}`}
                     title={`Open ${tool.label}${tool.pinned ? " · pinned" : " · right-click to pin"}`}
-                    className={`home-tile relative flex flex-col items-center gap-1.5 rounded-lg border px-2 py-3 ${
-                      tool.pinned ? "border-accent/40" : "border-border/30"
+                    className={`home-tile relative flex flex-col items-center gap-1.5 rounded-xl border bg-bg-tertiary/40 px-2 py-3 ${
+                      tool.pinned ? "border-accent/40 bg-accent/5" : "border-border/40"
                     }`}
                   >
                     {tool.pinned && (
@@ -412,7 +416,7 @@ export default function Home({ hiscores }: HomeProps) {
                     >
                       <ShellIcon view={tool.id} className="h-3.5 w-3.5" />
                     </span>
-                    <span className="text-[11px] text-text-secondary">{tool.label}</span>
+                    <span className="text-[11px] font-medium text-text-secondary">{tool.label}</span>
                   </motion.button>
                 );
               })}
@@ -421,7 +425,7 @@ export default function Home({ hiscores }: HomeProps) {
 
           {/* Recent */}
           <section>
-            <h3 className="text-kicker font-semibold uppercase tracking-[0.16em] text-text-secondary/70 mb-2">Recent</h3>
+            <h3 className="section-kicker mb-2">Recent</h3>
             <div className="grid grid-cols-2 gap-1.5">
               {recentEntities.map((entity) => (
                 <button
@@ -465,9 +469,9 @@ export default function Home({ hiscores }: HomeProps) {
 
           {/* Watchlist widget */}
           {watchlistItems.length > 0 && (
-            <div className="rounded-xl border border-border-subtle bg-bg-tertiary p-3">
+            <div className="rounded-xl border border-border-subtle bg-bg-tertiary p-3 shadow-[0_1px_0_color-mix(in_srgb,var(--color-text-primary)_3%,transparent)]">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-kicker font-semibold uppercase tracking-[0.16em] text-text-secondary/70">Watchlist</h3>
+                <h3 className="section-kicker">Watchlist</h3>
                 <button
                   type="button"
                   onClick={() => navigate("watchlist")}
@@ -498,9 +502,9 @@ export default function Home({ hiscores }: HomeProps) {
 
           {/* Live now — only surfaces actual real-time data */}
           {hasLiveData && (
-            <div className="rounded-xl border border-accent/30 bg-accent/5 p-3">
+            <div className="rounded-xl border border-accent/30 bg-accent/5 p-3 shadow-[0_8px_24px_-14px_color-mix(in_srgb,var(--color-accent)_45%,transparent)]">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-kicker font-semibold uppercase tracking-[0.16em] text-accent/90">Live now</h3>
+                <h3 className="section-kicker !text-accent/90">Live now</h3>
                 <span
                   aria-hidden
                   className="h-1.5 w-1.5 rounded-full bg-success"
@@ -547,20 +551,20 @@ export default function Home({ hiscores }: HomeProps) {
           {/* Quick access — curated shortcuts, no live state implied.
               On mobile, collapse to a single section: if Live has data, hide
               Quick access to save vertical space. */}
-          <div className={`rounded-xl border border-border-subtle bg-bg-tertiary p-3 ${hasLiveData ? "hidden lg:block" : ""}`}>
-            <h3 className="text-kicker font-semibold uppercase tracking-[0.16em] text-text-secondary/70 mb-2">Quick access</h3>
+          <div className={`rounded-xl border border-border-subtle bg-bg-tertiary p-3 shadow-[0_1px_0_color-mix(in_srgb,var(--color-text-primary)_3%,transparent)] ${hasLiveData ? "hidden lg:block" : ""}`}>
+            <h3 className="section-kicker mb-2">Quick access</h3>
             <div className="space-y-0.5">
               {QUICK_ACCESS_TILES.map(({ id, label, desc }) => (
                 <button
                   key={id}
                   type="button"
                   onClick={() => navigate(id)}
-                  className="flex items-center gap-2.5 w-full rounded-lg px-2 py-2 text-left transition hover:bg-bg-secondary/50"
+                  className="home-tile flex items-center gap-2.5 w-full rounded-lg border border-transparent px-2 py-2 text-left"
                 >
-                  <ShellIcon view={id} className="h-4 w-4 shrink-0 opacity-50" />
+                  <ShellIcon view={id} className="h-4 w-4 shrink-0 opacity-55" />
                   <div className="min-w-0">
                     <div className="text-xs font-medium">{label}</div>
-                    <div className="text-[10px] text-text-secondary/40">{desc}</div>
+                    <div className="text-[10px] text-text-secondary/50">{desc}</div>
                   </div>
                 </button>
               ))}
@@ -569,8 +573,8 @@ export default function Home({ hiscores }: HomeProps) {
 
           {/* Keyboard shortcuts hint */}
           {settings.keybindsEnabled && (
-            <div className="rounded-xl border border-border-subtle bg-bg-tertiary p-3">
-              <h3 className="text-kicker font-semibold uppercase tracking-[0.16em] text-text-secondary/70 mb-2">Shortcuts</h3>
+            <div className="rounded-xl border border-border-subtle bg-bg-tertiary p-3 shadow-[0_1px_0_color-mix(in_srgb,var(--color-text-primary)_3%,transparent)]">
+              <h3 className="section-kicker mb-2">Shortcuts</h3>
               <div className="grid grid-cols-2 gap-1 text-[10px]">
                 {[
                   { key: "K", label: "Search" },

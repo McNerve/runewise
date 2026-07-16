@@ -10,7 +10,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const VARIANTS: Record<Variant, string> = {
   primary:
-    "bg-accent text-on-accent border border-transparent font-medium hover:bg-accent-hover",
+    "bg-accent text-on-accent border border-transparent font-medium hover:bg-accent-hover shadow-[0_1px_0_color-mix(in_srgb,var(--color-on-accent)_12%,transparent)]",
   secondary:
     "bg-bg-tertiary text-text-secondary border border-border hover:bg-bg-secondary hover:text-text-primary",
   ghost:
@@ -29,6 +29,9 @@ const SIZES: Record<Size, string> = {
  * The app-wide button. Variants: primary (one per view, the main action),
  * secondary (boxed utility actions), ghost (low-emphasis inline actions),
  * danger (destructive, quiet until hovered).
+ *
+ * Press feedback uses scale(0.97) + ease-out (emil-design-eng) — never
+ * transition: all, and never animate keyboard-driven actions separately.
  */
 export function Button({
   variant = "secondary",
@@ -40,7 +43,7 @@ export function Button({
   return (
     <button
       type={type}
-      className={`inline-flex items-center justify-center transition-colors disabled:pointer-events-none disabled:opacity-40 ${VARIANTS[variant]} ${SIZES[size]} ${className}`}
+      className={`rw-button inline-flex items-center justify-center disabled:pointer-events-none disabled:opacity-40 ${VARIANTS[variant]} ${SIZES[size]} ${className}`}
       {...rest}
     />
   );

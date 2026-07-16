@@ -163,12 +163,12 @@ export default function SearchDialog({ onClose }: SearchDialogProps) {
         setQuery("");
       }}
     >
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-      <div className="relative mx-auto mt-[15vh] max-w-lg" onClick={(e) => e.stopPropagation()}>
-        <div className="overflow-hidden rounded-xl border border-border/50 bg-bg-primary/95 backdrop-blur-xl shadow-2xl shadow-black/30">
-          <div className="flex items-center gap-3 border-b border-border px-4 py-3">
+      <div className="absolute inset-0 bg-black/55 backdrop-blur-[6px]" />
+      <div className="relative mx-auto mt-[12vh] max-w-lg px-3" onClick={(e) => e.stopPropagation()}>
+        <div className="overflow-hidden rounded-2xl border border-border/60 bg-bg-overlay/95 backdrop-blur-xl shadow-[0_24px_64px_-16px_rgba(0,0,0,0.55)]">
+          <div className="flex items-center gap-3 border-b border-border/70 px-4 py-3.5">
             <svg
-              className="h-5 w-5 shrink-0 text-text-secondary/50"
+              className="h-5 w-5 shrink-0 text-accent/70"
               fill="none"
               stroke="currentColor"
               strokeWidth={2}
@@ -189,7 +189,7 @@ export default function SearchDialog({ onClose }: SearchDialogProps) {
               placeholder="Search skills, bosses, pages..."
               className="flex-1 bg-transparent text-lg text-text-primary outline-none placeholder:text-text-secondary/40"
             />
-            <kbd className="rounded border border-border px-1.5 py-0.5 font-mono text-[10px] text-text-secondary/40">
+            <kbd className="rounded-md border border-border/70 bg-bg-tertiary/50 px-1.5 py-0.5 font-mono text-[10px] text-text-secondary/50">
               ESC
             </kbd>
           </div>
@@ -202,7 +202,7 @@ export default function SearchDialog({ onClose }: SearchDialogProps) {
             )}
             {groups.map((group) => (
               <div key={group.category}>
-                <div className="select-none px-4 pb-1 pt-3 text-[10px] uppercase tracking-wider text-text-secondary/50">
+                <div className="section-kicker select-none px-4 pb-1 pt-3">
                   {group.category}
                 </div>
                 {group.items.map((item, i) => {
@@ -215,10 +215,10 @@ export default function SearchDialog({ onClose }: SearchDialogProps) {
                       onClick={() => select(item)}
                       onMouseEnter={() => setSelectedIndex(flatIndex)}
                       title={`Open ${item.name}`}
-                      className={`flex w-full items-center gap-3 px-4 py-2 text-left transition-colors border-l-2 ${
+                      className={`flex w-full items-center gap-3 px-4 py-2.5 text-left border-l-2 transition-[background-color,border-color] duration-100 ease ${
                         isSelected
-                          ? "bg-accent/10 border-l-accent"
-                          : "border-l-transparent hover:bg-bg-tertiary/40"
+                          ? "bg-accent/12 border-l-accent"
+                          : "border-l-transparent hover:bg-bg-tertiary/50"
                       }`}
                     >
                       {item.icon ? (

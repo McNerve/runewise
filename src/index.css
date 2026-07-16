@@ -55,6 +55,18 @@
   --text-h3: 20px;
   --text-hero: 28px;
   --text-mega: 46px;
+
+  /* ── Motion (emil-design-eng / apple-design) ──
+     Strong custom curves; default durations stay under 300ms for UI.
+     Prefer transform + opacity only. Never ease-in for enter/feedback. */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --duration-press: 140ms;
+  --duration-fast: 160ms;
+  --duration-ui: 200ms;
+  --duration-panel: 280ms;
+  --press-scale: 0.97;
 }
 
 /* Light mode (opt-in via .light-theme class on <html>) — warm-neutral
@@ -105,17 +117,17 @@
   background:
     radial-gradient(
       ellipse at top,
-      color-mix(in srgb, var(--feature-accent, var(--color-accent)) 5%, transparent),
-      transparent 55%
+      color-mix(in srgb, var(--feature-accent, var(--color-accent)) 6%, transparent),
+      transparent 58%
     ),
     transparent;
-  transition: background 0.3s ease;
+  transition: background var(--duration-ui) var(--ease-out);
 }
 
 body {
   margin: 0;
   /* Flat canvas — ambient gold wash retired; depth comes from the surface
-     ladder + hairline borders (Gielinor Ledger). */
+     ladder + hairline borders (Gielinor Ledger). Subtle grain adds material. */
   background: var(--color-bg-primary);
   color: var(--color-text-primary);
   font-family: var(--font-sans);
@@ -123,12 +135,38 @@ body {
   min-height: 100vh;
 }
 
+/* App shell materials — translucent chrome so content scrolls under structure
+   (Apple materials, translated for the dark ledger). */
 .sidebar-shell {
-  background: var(--color-bg-primary);
+  background: color-mix(in srgb, var(--color-bg-primary) 88%, transparent);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
 }
 
 .topbar-shell {
-  background: var(--color-bg-primary);
+  background: color-mix(in srgb, var(--color-bg-primary) 82%, transparent);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+}
+
+/* Shared pressable feedback — buttons, tiles, nav chips */
+.pressable,
+.rw-button {
+  transition:
+    transform var(--duration-press) var(--ease-out),
+    background-color var(--duration-fast) ease,
+    border-color var(--duration-fast) ease,
+    color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease;
+}
+.pressable:active:not(:disabled),
+.rw-button:active:not(:disabled) {
+  transform: scale(var(--press-scale));
+}
+
+/* Origin-aware popovers (Radix) — scale from trigger, not center */
+[data-radix-popper-content-wrapper] > * {
+  transform-origin: var(--radix-tooltip-content-transform-origin, var(--radix-popover-content-transform-origin, center));
 }
 
 /* ── Gielinor Ledger numeric + display helpers ── */
@@ -164,24 +202,32 @@ body {
 
 .sidebar-nav-item {
   position: relative;
+  transition:
+    background-color var(--duration-fast) ease,
+    color var(--duration-fast) ease,
+    transform var(--duration-press) var(--ease-out);
+}
+.sidebar-nav-item:active {
+  transform: scale(0.98);
 }
 
 .sidebar-nav-item::after {
   content: "";
   position: absolute;
-  left: 0.4rem;
+  left: 0.35rem;
   top: 0.55rem;
   bottom: 0.55rem;
   width: 2px;
   border-radius: 9999px;
   background: transparent;
-  transition: background-color 140ms ease;
+  transition: background-color var(--duration-fast) var(--ease-out);
 }
 
 .sidebar-nav-item[aria-current="page"]::after {
   /* Use per-feature accent (set via --item-accent on each nav button) so sidebar
      retains feature identity while the primary accent stays rune gold. */
   background: var(--item-accent, color-mix(in srgb, var(--color-accent) 88%, white 12%));
+  box-shadow: 0 0 10px color-mix(in srgb, var(--item-accent, var(--color-accent)) 35%, transparent);
 }
 
 .compact-sidebar-scroll {
@@ -239,11 +285,11 @@ body {
 }
 
 .light-theme .sidebar-shell {
-  background: var(--color-bg-primary);
+  background: color-mix(in srgb, var(--color-bg-primary) 90%, transparent);
 }
 
 .light-theme .topbar-shell {
-  background: var(--color-bg-primary);
+  background: color-mix(in srgb, var(--color-bg-primary) 88%, transparent);
 }
 
 .light-theme .soft-pill {
@@ -413,18 +459,24 @@ body {
 .home-tile {
   cursor: pointer;
   transition:
-    transform 150ms ease,
-    border-color 150ms ease,
-    background 150ms ease,
-    color 150ms ease,
-    box-shadow 150ms ease;
+    transform var(--duration-press) var(--ease-out),
+    border-color var(--duration-fast) ease,
+    background-color var(--duration-fast) ease,
+    color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease;
 }
-.home-tile:hover {
-  transform: translateY(-1px);
-  border-color: color-mix(in srgb, var(--color-accent) 40%, transparent);
-  background: color-mix(in srgb, var(--color-bg-secondary) 65%, transparent);
-  color: var(--color-text-primary);
-  box-shadow: 0 6px 18px -8px color-mix(in srgb, var(--color-accent) 40%, transparent);
+@media (hover: hover) and (pointer: fine) {
+  .home-tile:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--color-accent) 40%, transparent);
+    background: color-mix(in srgb, var(--color-bg-secondary) 65%, transparent);
+    color: var(--color-text-primary);
+    box-shadow: 0 8px 20px -10px color-mix(in srgb, var(--color-accent) 45%, transparent);
+  }
+}
+.home-tile:active {
+  transform: scale(var(--press-scale));
+  box-shadow: none;
 }
 
 /* Boss guide pill tabs (Strategy / Loot & Drops / Task Planner) and the
@@ -439,11 +491,14 @@ body {
   border: 1px solid var(--color-border);
   text-align: left;
   transition:
-    transform 150ms ease,
-    border-color 150ms ease,
-    background 150ms ease,
-    color 150ms ease,
-    box-shadow 150ms ease;
+    transform var(--duration-press) var(--ease-out),
+    border-color var(--duration-fast) ease,
+    background-color var(--duration-fast) ease,
+    color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease;
+}
+.tab-pill:active {
+  transform: scale(var(--press-scale));
 }
 .tab-pill > div:first-child {
   font-size: 0.75rem;
@@ -468,15 +523,17 @@ body {
   background: color-mix(in srgb, var(--color-bg-primary) 50%, transparent);
   color: var(--color-text-secondary);
 }
-.tab-pill--inactive:hover {
-  transform: translateY(-2px);
-  border-color: color-mix(in srgb, var(--color-accent) 45%, transparent);
-  background: color-mix(in srgb, var(--color-bg-primary) 90%, transparent);
-  color: var(--color-text-primary);
-  box-shadow: 0 6px 20px -6px color-mix(in srgb, var(--color-accent) 45%, transparent);
-}
-.tab-pill--inactive:hover > div:nth-child(2) {
-  color: color-mix(in srgb, var(--color-text-primary) 70%, transparent);
+@media (hover: hover) and (pointer: fine) {
+  .tab-pill--inactive:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--color-accent) 45%, transparent);
+    background: color-mix(in srgb, var(--color-bg-primary) 90%, transparent);
+    color: var(--color-text-primary);
+    box-shadow: 0 6px 20px -8px color-mix(in srgb, var(--color-accent) 40%, transparent);
+  }
+  .tab-pill--inactive:hover > div:nth-child(2) {
+    color: color-mix(in srgb, var(--color-text-primary) 70%, transparent);
+  }
 }
 
 .boss-action-icon {
@@ -492,18 +549,23 @@ body {
   color: var(--color-text-secondary);
   font-size: 1rem;
   transition:
-    transform 150ms ease,
-    border-color 150ms ease,
-    background 150ms ease,
-    color 150ms ease,
-    box-shadow 150ms ease;
+    transform var(--duration-press) var(--ease-out),
+    border-color var(--duration-fast) ease,
+    background-color var(--duration-fast) ease,
+    color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease;
 }
-.boss-action-icon:hover {
-  transform: translateY(-2px);
-  border-color: color-mix(in srgb, var(--color-accent) 45%, transparent);
-  background: color-mix(in srgb, var(--color-bg-primary) 90%, transparent);
-  color: var(--color-text-primary);
-  box-shadow: 0 6px 20px -6px color-mix(in srgb, var(--color-accent) 45%, transparent);
+@media (hover: hover) and (pointer: fine) {
+  .boss-action-icon:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--color-accent) 45%, transparent);
+    background: color-mix(in srgb, var(--color-bg-primary) 90%, transparent);
+    color: var(--color-text-primary);
+    box-shadow: 0 6px 18px -8px color-mix(in srgb, var(--color-accent) 40%, transparent);
+  }
+}
+.boss-action-icon:active {
+  transform: scale(var(--press-scale));
 }
 
 /* Horizontal-scroll wrapper added by bossGuide.cleanSectionHtml so multi-
@@ -1506,16 +1568,24 @@ body {
 
 /* ── Sidebar active state upgrade ── */
 .sidebar-nav-item[aria-current="page"] {
-  background: color-mix(in srgb, var(--item-accent, var(--color-accent)) 12%, transparent);
+  background: color-mix(in srgb, var(--item-accent, var(--color-accent)) 14%, transparent);
+  color: var(--color-text-primary);
 }
 
 .sidebar-nav-item:hover:not([aria-current="page"]) {
-  background: color-mix(in srgb, var(--item-accent, var(--color-text-secondary)) 6%, transparent);
+  background: color-mix(in srgb, var(--item-accent, var(--color-text-secondary)) 8%, transparent);
 }
 
-/* ── Radix tooltip styling ── */
+/* ── Radix tooltip styling (origin-aware, scale 0.95 → 1) ── */
 [data-radix-popper-content-wrapper] {
   z-index: 50;
+}
+
+.tooltip-content,
+.item-tooltip-content {
+  transform-origin: var(--radix-tooltip-content-transform-origin, center);
+  will-change: transform, opacity;
+  animation: tooltip-in var(--duration-fast) var(--ease-out);
 }
 
 .tooltip-content {
@@ -1523,28 +1593,37 @@ body {
   padding: 0.375rem 0.625rem;
   font-size: 0.75rem;
   font-weight: 500;
-  background: var(--color-bg-tertiary);
+  background: color-mix(in srgb, var(--color-bg-overlay) 92%, transparent);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
   border: 1px solid var(--color-border);
   color: var(--color-text-primary);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-  animation: tooltip-in 120ms ease;
+  box-shadow: 0 10px 28px -8px rgba(0, 0, 0, 0.45);
 }
 
 .item-tooltip-content {
   border-radius: 0.75rem;
   padding: 0.625rem 0.75rem;
   font-size: 0.75rem;
-  background: var(--color-bg-tertiary);
+  background: color-mix(in srgb, var(--color-bg-overlay) 94%, transparent);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
   border: 1px solid var(--color-border);
   color: var(--color-text-primary);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
-  animation: tooltip-in 120ms ease;
+  box-shadow: 0 14px 36px -10px rgba(0, 0, 0, 0.5);
   max-width: 280px;
 }
 
+/* Never scale from 0 — start visible enough to feel material (emil-design-eng) */
 @keyframes tooltip-in {
-  from { opacity: 0; transform: scale(0.96); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .light-theme .content-area {
@@ -1565,10 +1644,11 @@ body {
   background: color-mix(in srgb, var(--item-accent, var(--color-text-secondary)) 5%, transparent);
 }
 
-.light-theme .tooltip-content {
-  background: white;
+.light-theme .tooltip-content,
+.light-theme .item-tooltip-content {
+  background: color-mix(in srgb, white 92%, transparent);
   border-color: var(--color-border);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 22px -6px rgba(0, 0, 0, 0.12);
 }
 
 /* ── Scroll fade indicator ── */
@@ -1592,11 +1672,11 @@ body {
   background: linear-gradient(
     90deg,
     transparent 0%,
-    color-mix(in srgb, var(--color-accent) 10%, transparent) 50%,
+    color-mix(in srgb, var(--color-accent) 12%, transparent) 50%,
     transparent 100%
   );
   transform: translateX(-100%);
-  animation: skeleton-shimmer 1.6s ease-in-out infinite;
+  animation: skeleton-shimmer 1.4s var(--ease-in-out) infinite;
 }
 
 @keyframes skeleton-shimmer {
@@ -1642,7 +1722,9 @@ input[type="range"]::-moz-range-thumb {
   cursor: pointer;
 }
 
-/* ── Reduced motion ── */
+/* ── Reduced motion ──
+   Keep opacity/color comprehension aids; drop transform-based movement
+   and long looping animations (apple-design / emil-design-eng). */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -1651,6 +1733,49 @@ input[type="range"]::-moz-range-thumb {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  .home-tile:hover,
+  .home-tile:active,
+  .tab-pill:active,
+  .tab-pill--inactive:hover,
+  .boss-action-icon:hover,
+  .boss-action-icon:active,
+  .sidebar-nav-item:active,
+  .pressable:active:not(:disabled),
+  .rw-button:active:not(:disabled) {
+    transform: none !important;
+  }
+
+  .tooltip-content,
+  .item-tooltip-content {
+    animation: none !important;
+  }
+
+  .skeleton-shimmer::after {
+    animation: none !important;
+    opacity: 0.35;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .sidebar-shell,
+  .topbar-shell,
+  .tooltip-content,
+  .item-tooltip-content {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  .sidebar-shell {
+    background: var(--color-bg-primary);
+  }
+  .topbar-shell {
+    background: var(--color-bg-primary);
+  }
+  .tooltip-content,
+  .item-tooltip-content {
+    background: var(--color-bg-overlay);
   }
 }
 

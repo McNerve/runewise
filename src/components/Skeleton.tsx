@@ -23,7 +23,11 @@ export function TableSkeleton({ rows = 5, cols = 4 }: { rows?: number; cols?: nu
 
 export function CardSkeleton() {
   return (
-    <div aria-busy="true" aria-label="Loading content" className="bg-bg-tertiary rounded-lg p-4 space-y-3">
+    <div
+      aria-busy="true"
+      aria-label="Loading content"
+      className="rounded-xl border border-border-subtle bg-bg-tertiary p-4 space-y-3"
+    >
       <Skeleton className="h-5 w-1/3" />
       <Skeleton className="h-3 w-2/3" />
       <Skeleton className="h-3 w-1/2" />

@@ -65,19 +65,24 @@ const Sidebar = memo(function Sidebar({ currentView, onNavigate, rsn = "" }: Sid
   return (
     <Tooltip.Provider delayDuration={200}>
     <aside
-      className={`sidebar-shell ${collapsed ? "w-16" : "w-56"} flex flex-col overflow-hidden border-r border-border transition-all duration-200`}
+      className={`sidebar-shell ${collapsed ? "w-16" : "w-56"} flex flex-col overflow-hidden border-r border-border/80 transition-[width] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]`}
     >
       <div
-        className={`h-16 ${collapsed ? "px-3 justify-center" : "px-4"} flex items-center border-b border-border/80`}
+        className={`h-16 ${collapsed ? "px-3 justify-center" : "px-4"} flex items-center border-b border-border/60`}
       >
         {!collapsed && (
           <div className="flex-1 min-w-0">
-            <h1 className="display-face text-lg font-semibold tracking-tight">RuneWise</h1>
+            <h1 className="display-face text-lg font-semibold tracking-tight text-text-primary">
+              RuneWise
+            </h1>
+            <p className="text-[10px] tracking-[0.12em] uppercase text-text-tertiary/80 mt-0.5">
+              OSRS Companion
+            </p>
           </div>
         )}
         <button
           onClick={toggleCollapse}
-          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-text-secondary/70 transition-colors hover:bg-bg-secondary/50 hover:text-text-primary"
+          className="pressable inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-text-secondary/70 hover:bg-bg-secondary/50 hover:text-text-primary"
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
@@ -112,8 +117,8 @@ const Sidebar = memo(function Sidebar({ currentView, onNavigate, rsn = "" }: Sid
                   }}
                   aria-current={currentView === item.id ? "page" : undefined}
                   style={{ "--item-accent": accent } as React.CSSProperties}
-                  className={`sidebar-nav-item w-full text-left ${collapsed ? "mx-auto h-9 w-9 justify-center px-0 py-0" : "px-2.5 py-[3px]"} rounded-lg text-[13px] flex items-center gap-2.5 transition-colors ${
-                    currentView === item.id ? "font-medium" : "text-text-secondary hover:text-text-primary"
+                  className={`sidebar-nav-item w-full text-left ${collapsed ? "mx-auto h-9 w-9 justify-center px-0 py-0" : "px-2.5 py-[5px]"} rounded-lg text-[13px] flex items-center gap-2.5 ${
+                    currentView === item.id ? "font-medium text-text-primary" : "text-text-secondary hover:text-text-primary"
                   }`}
                 >
                   <span className={`inline-flex shrink-0 items-center justify-center ${collapsed ? "h-7 w-7" : "h-5 w-5"}`} style={getIconStyle(item.id, currentView === item.id)}>
@@ -158,9 +163,9 @@ const Sidebar = memo(function Sidebar({ currentView, onNavigate, rsn = "" }: Sid
                     }}
                     aria-current={currentView === item.id ? "page" : undefined}
                     style={{ "--item-accent": accent } as React.CSSProperties}
-                    className={`sidebar-nav-item w-full text-left ${collapsed ? "mx-auto h-9 w-9 justify-center px-0 py-0" : "px-2.5 py-[3px]"} rounded-lg text-[13px] flex items-center gap-2.5 transition-colors ${
+                    className={`sidebar-nav-item w-full text-left ${collapsed ? "mx-auto h-9 w-9 justify-center px-0 py-0" : "px-2.5 py-[5px]"} rounded-lg text-[13px] flex items-center gap-2.5 ${
                       currentView === item.id
-                        ? "font-medium"
+                        ? "font-medium text-text-primary"
                         : "text-text-secondary hover:text-text-primary"
                     }`}
                   >
@@ -217,7 +222,7 @@ const Sidebar = memo(function Sidebar({ currentView, onNavigate, rsn = "" }: Sid
             <button
               type="button"
               onClick={openGlobalSearch}
-              className="flex w-full items-center justify-between rounded-lg border border-border/40 bg-bg-secondary/30 px-2.5 py-1.5 text-[11px] text-text-secondary transition hover:bg-bg-secondary/60 hover:text-text-primary"
+              className="pressable flex w-full items-center justify-between rounded-lg border border-border/50 bg-bg-secondary/40 px-2.5 py-1.5 text-[11px] text-text-secondary hover:bg-bg-secondary/70 hover:text-text-primary"
             >
               <span>Search</span>
               <kbd className="rounded border border-border/50 bg-bg-tertiary/40 px-1.5 py-0.5 font-mono text-[9px] text-text-secondary/60">
