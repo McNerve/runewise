@@ -256,14 +256,14 @@ export default function Home({ hiscores }: HomeProps) {
   return (
     <div className="max-w-5xl">
       {/* Header */}
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between mb-7">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between mb-8">
         <div>
-          <p className="section-kicker mb-1.5">Home</p>
-          <h2 className="display-face text-hero font-semibold tracking-tight text-text-primary">
+          <p className="section-kicker mb-2">Dashboard</p>
+          <h2 className="display-face text-[2rem] sm:text-hero font-semibold tracking-tight text-text-primary leading-[1.05]">
             {savedRsn ? `Welcome back, ${savedRsn}` : "RuneWise"}
           </h2>
           {savedRsn && data && (
-            <p className="text-ui text-text-secondary mt-1">
+            <p className="text-ui text-text-secondary mt-2">
               {[
                 combatLevel ? `Combat ${combatLevel}` : null,
                 totalLevel ? `${totalLevel.toLocaleString()} total` : null,
@@ -272,19 +272,19 @@ export default function Home({ hiscores }: HomeProps) {
             </p>
           )}
           {!savedRsn && (
-            <p className="text-ui text-text-secondary mt-1">
-              Your OSRS companion. Set a RSN to get started.
+            <p className="text-ui text-text-secondary mt-2 max-w-md">
+              Your OSRS companion — set a RSN in the top bar, or jump into any tool below.
             </p>
           )}
         </div>
         {settings.ironmanMode && (
-          <span className="text-[10px] font-medium text-warning border border-warning/25 bg-warning/8 rounded-full px-2.5 py-1">
+          <span className="self-start text-[10px] font-semibold uppercase tracking-[0.12em] text-warning border border-warning/30 bg-warning/10 rounded-full px-3 py-1.5">
             Ironman Mode
           </span>
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.7fr)_minmax(16rem,1fr)] gap-5 lg:gap-6">
         {/* Left column */}
         <div className="space-y-5">
 
@@ -294,18 +294,19 @@ export default function Home({ hiscores }: HomeProps) {
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
-              className="rounded-xl border border-accent/30 bg-accent/5 p-5 shadow-[0_8px_28px_-16px_color-mix(in_srgb,var(--color-accent)_40%,transparent)]"
+              className="surface-panel--hero rounded-2xl p-5 sm:p-6"
             >
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h3 className="text-sm font-semibold text-accent">Welcome to RuneWise</h3>
-                  <p className="text-xs text-text-secondary mt-1 leading-relaxed">
+                  <h3 className="display-face text-base font-semibold text-accent">Welcome to RuneWise</h3>
+                  <p className="text-sm text-text-secondary mt-1.5 leading-relaxed max-w-lg">
                     Enter your RSN in the top bar to unlock personalized stats, XP tracking, and boss KC.
-                    All tools work without an RSN too — just start exploring.
+                    All tools work without an RSN too — start exploring any time.
                   </p>
-                  <div className="flex gap-2 mt-3">
+                  <div className="flex flex-wrap gap-2 mt-4">
                     <Button
                       variant="primary"
+                      size="md"
                       onClick={() => {
                         const input = document.querySelector<HTMLInputElement>('.topbar-shell input[type="text"]');
                         if (input) { input.focus(); input.select(); }
@@ -317,9 +318,9 @@ export default function Home({ hiscores }: HomeProps) {
                       type="button"
                       onClick={(e) => {
                         localStorage.setItem("runewise_welcome_dismissed", "1");
-                        (e.currentTarget.closest("[class*=rounded-xl]") as HTMLElement)?.remove();
+                        (e.currentTarget.closest(".surface-panel--hero") as HTMLElement)?.remove();
                       }}
-                      className="rounded-lg border border-border px-3 py-1.5 text-xs text-text-secondary hover:text-text-primary transition-colors"
+                      className="pressable rounded-xl border border-border px-4 py-2 text-xs text-text-secondary hover:text-text-primary"
                     >
                       Dismiss
                     </button>
@@ -335,32 +336,37 @@ export default function Home({ hiscores }: HomeProps) {
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
-              className="rounded-xl border border-border-subtle bg-bg-tertiary p-4 shadow-[0_1px_0_color-mix(in_srgb,var(--color-text-primary)_3%,transparent)]"
+              className="surface-panel--hero rounded-2xl p-5"
             >
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center">
+              <div className="flex items-center gap-4 mb-5">
+                <div className="w-14 h-14 rounded-2xl bg-accent/12 border border-accent/30 flex items-center justify-center shadow-[inset_0_1px_0_color-mix(in_srgb,var(--color-accent)_20%,transparent)]">
                   <img
                     src={`${WIKI_IMG}/${accountType.icon ?? "Combat_icon.png"}`}
                     alt={accountType.label}
-                    className="w-7 h-7"
+                    className="w-8 h-8"
+                    style={{ imageRendering: "pixelated" }}
                     onError={(e) => { e.currentTarget.style.visibility = "hidden"; }}
                   />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <span className="text-h4 font-semibold">{savedRsn}</span>
-                  <div className="flex items-center gap-3 text-xs text-text-secondary">
-                    <span>Combat {combatLevel}</span>
-                    {questPoints != null && questPoints > 0 && <span>{questPoints} QP</span>}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="display-face text-h3 font-semibold tracking-tight">{savedRsn}</span>
+                    {accountType.label && (
+                      <span className={`text-[10px] font-semibold uppercase tracking-wider ${accountType.color}`}>
+                        {accountType.label}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-text-secondary mt-1">
+                    <span className="num">Combat {combatLevel}</span>
+                    {questPoints != null && questPoints > 0 && (
+                      <span className="num">{questPoints} QP</span>
+                    )}
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => navigate("overview")}
-                  title="Open full profile"
-                  className="home-tile rounded-lg border border-accent/25 bg-accent/10 px-3 py-1.5 text-xs font-medium text-accent"
-                >
+                <Button variant="secondary" onClick={() => navigate("overview")}>
                   Full Profile
-                </button>
+                </Button>
               </div>
 
               <StatGrid columns={4}>
@@ -373,12 +379,12 @@ export default function Home({ hiscores }: HomeProps) {
           )}
 
           {/* Tool grid */}
-          <section>
-            <div className="flex items-baseline justify-between mb-2.5">
+          <section className="surface-panel rounded-2xl p-4 sm:p-5">
+            <div className="flex items-baseline justify-between mb-3.5">
               <h3 className="section-kicker">Tools</h3>
               <span className="text-[10px] text-text-tertiary">Right-click to pin</span>
             </div>
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
               {toolGrid.map((tool, i) => {
                 const accent = getFeatureAccent(tool.id);
                 return (
@@ -395,15 +401,17 @@ export default function Home({ hiscores }: HomeProps) {
                     }}
                     aria-label={`${tool.label}${tool.pinned ? " (pinned)" : ""}`}
                     title={`Open ${tool.label}${tool.pinned ? " · pinned" : " · right-click to pin"}`}
-                    className={`home-tile relative flex flex-col items-center gap-1.5 rounded-xl border bg-bg-tertiary/40 px-2 py-3 ${
-                      tool.pinned ? "border-accent/40 bg-accent/5" : "border-border/40"
+                    className={`home-tile relative flex flex-col items-center gap-2 rounded-xl border bg-bg-base/55 px-2 py-3.5 ${
+                      tool.pinned
+                        ? "border-accent/45 bg-accent/8"
+                        : "border-border/50"
                     }`}
                   >
                     {tool.pinned && (
                       <span
                         aria-hidden
                         title="Pinned"
-                        className="absolute top-1 right-1 text-accent"
+                        className="absolute top-1.5 right-1.5 text-accent"
                       >
                         <svg viewBox="0 0 16 16" className="h-3 w-3" fill="currentColor">
                           <path d="M9.828.722a.5.5 0 0 1 .354.146l4.95 4.95a.5.5 0 0 1 0 .707c-.48.48-1.072.588-1.503.588a2.8 2.8 0 0 1-.51-.051l-3.16 3.16 .083 2.535a.5.5 0 0 1-.834.395L6.205 9.905l-3.89 3.89a.5.5 0 1 1-.708-.707l3.89-3.89L2.49 6.183a.5.5 0 0 1 .395-.834l2.535.083 3.16-3.16a2.78 2.78 0 0 1-.051-.51c0-.43.108-1.022.588-1.503a.5.5 0 0 1 .353-.146Z"/>
@@ -411,12 +419,18 @@ export default function Home({ hiscores }: HomeProps) {
                       </span>
                     )}
                     <span
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-lg"
-                      style={{ color: accent, background: `color-mix(in srgb, ${accent} 10%, transparent)` }}
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-xl border"
+                      style={{
+                        color: accent,
+                        background: `color-mix(in srgb, ${accent} 14%, transparent)`,
+                        borderColor: `color-mix(in srgb, ${accent} 28%, transparent)`,
+                      }}
                     >
-                      <ShellIcon view={tool.id} className="h-3.5 w-3.5" />
+                      <ShellIcon view={tool.id} className="h-4.5 w-4.5" />
                     </span>
-                    <span className="text-[11px] font-medium text-text-secondary">{tool.label}</span>
+                    <span className="text-[11px] font-medium text-text-secondary text-center leading-tight">
+                      {tool.label}
+                    </span>
                   </motion.button>
                 );
               })}
@@ -424,38 +438,40 @@ export default function Home({ hiscores }: HomeProps) {
           </section>
 
           {/* Recent */}
-          <section>
-            <h3 className="section-kicker mb-2">Recent</h3>
-            <div className="grid grid-cols-2 gap-1.5">
+          <section className="surface-panel rounded-2xl p-4 sm:p-5">
+            <h3 className="section-kicker mb-3">Recent</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {recentEntities.map((entity) => (
                 <button
                   key={entity.id}
                   type="button"
                   onClick={() => navigate(entity.view, entity.params)}
                   title={`Open ${entity.name}`}
-                  className="home-tile flex items-center gap-2.5 rounded-lg border border-transparent px-3 py-2 text-left"
+                  className="home-tile flex items-center gap-3 rounded-xl border border-border/40 bg-bg-base/40 px-3 py-2.5 text-left"
                 >
-                  <WikiImage src={entity.icon ?? NAV_ICONS.wiki} alt="" className="h-5 w-5 shrink-0" fallback={entity.name[0]} />
+                  <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border/50 bg-bg-tertiary">
+                    <WikiImage src={entity.icon ?? NAV_ICONS.wiki} alt="" className="h-5 w-5" fallback={entity.name[0]} />
+                  </span>
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-medium">{entity.name}</div>
-                    <div className="text-[10px] text-text-secondary/40">{entity.category}</div>
+                    <div className="truncate text-sm font-medium text-text-primary">{entity.name}</div>
+                    <div className="text-[10px] text-text-tertiary">{entity.category}</div>
                   </div>
                 </button>
               ))}
               {recentEntities.length === 0 && Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-2.5 rounded-lg px-3 py-2 border border-dashed border-border/30">
-                  <div className="h-5 w-5 shrink-0 rounded bg-bg-tertiary/60" />
-                  <div className="min-w-0 flex-1 space-y-1">
-                    <div className="h-3 rounded bg-bg-tertiary/60 w-3/4" />
-                    <div className="h-2.5 rounded bg-bg-tertiary/40 w-1/2" />
+                <div key={i} className="flex items-center gap-3 rounded-xl px-3 py-2.5 border border-dashed border-border/35 bg-bg-base/25">
+                  <div className="h-8 w-8 shrink-0 rounded-lg bg-bg-secondary/40" />
+                  <div className="min-w-0 flex-1 space-y-1.5">
+                    <div className="h-3 rounded bg-bg-secondary/50 w-3/4" />
+                    <div className="h-2.5 rounded bg-bg-secondary/30 w-1/2" />
                   </div>
                 </div>
               ))}
               {recentEntities.length > 0 && recentEntities.length < 4 && Array.from({ length: 4 - recentEntities.length }).map((_, i) => (
-                <div key={`pad-${i}`} className="flex items-center gap-2.5 rounded-lg px-3 py-2 border border-dashed border-border/20">
-                  <div className="h-5 w-5 shrink-0 rounded bg-bg-tertiary/40" />
+                <div key={`pad-${i}`} className="flex items-center gap-3 rounded-xl px-3 py-2.5 border border-dashed border-border/25 bg-bg-base/20">
+                  <div className="h-8 w-8 shrink-0 rounded-lg bg-bg-secondary/30" />
                   <div className="min-w-0 flex-1">
-                    <div className="text-[10px] text-text-secondary/30">No recent activity</div>
+                    <div className="text-[10px] text-text-tertiary">No recent activity</div>
                   </div>
                 </div>
               ))}
@@ -467,15 +483,14 @@ export default function Home({ hiscores }: HomeProps) {
         {/* Right column — widgets */}
         <div className="space-y-4">
 
-          {/* Watchlist widget */}
           {watchlistItems.length > 0 && (
-            <div className="rounded-xl border border-border-subtle bg-bg-tertiary p-3 shadow-[0_1px_0_color-mix(in_srgb,var(--color-text-primary)_3%,transparent)]">
-              <div className="flex items-center justify-between mb-2">
+            <div className="surface-panel rounded-2xl p-4">
+              <div className="flex items-center justify-between mb-3">
                 <h3 className="section-kicker">Watchlist</h3>
                 <button
                   type="button"
                   onClick={() => navigate("watchlist")}
-                  className="text-[10px] text-accent hover:text-accent-hover transition-colors"
+                  className="text-[11px] font-medium text-accent hover:text-accent-hover transition-colors"
                 >
                   View all
                 </button>
@@ -487,11 +502,11 @@ export default function Home({ hiscores }: HomeProps) {
                   return (
                     <div
                       key={item.itemId}
-                      className="flex items-center justify-between gap-2 px-2 py-1 rounded text-xs"
+                      className="flex items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-xs hover:bg-bg-base/50"
                     >
-                      <span className="truncate text-text-primary">{item.itemName}</span>
+                      <span className="truncate text-text-primary font-medium">{item.itemName}</span>
                       {price != null && (
-                        <span className="text-success num shrink-0">{formatGp(price)}</span>
+                        <span className="text-success num shrink-0 font-medium">{formatGp(price)}</span>
                       )}
                     </div>
                   );
@@ -500,91 +515,92 @@ export default function Home({ hiscores }: HomeProps) {
             </div>
           )}
 
-          {/* Live now — only surfaces actual real-time data */}
           {hasLiveData && (
-            <div className="rounded-xl border border-accent/30 bg-accent/5 p-3 shadow-[0_8px_24px_-14px_color-mix(in_srgb,var(--color-accent)_45%,transparent)]">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="section-kicker !text-accent/90">Live now</h3>
+            <div className="surface-panel--hero rounded-2xl p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="section-kicker !text-accent">Live now</h3>
                 <span
                   aria-hidden
-                  className="h-1.5 w-1.5 rounded-full bg-success"
-                  style={{ boxShadow: "0 0 8px currentColor" }}
+                  className="h-2 w-2 rounded-full bg-success"
+                  style={{ boxShadow: "0 0 10px currentColor" }}
                 />
               </div>
-              <div className="space-y-0.5">
+              <div className="space-y-1">
                 {activeTimers > 0 && (
                   <button
                     type="button"
                     onClick={() => navigate("timers")}
-                    className="home-tile flex items-center gap-2.5 w-full rounded-lg border border-transparent px-2 py-2 text-left"
+                    className="home-tile flex items-center gap-2.5 w-full rounded-xl border border-transparent px-2.5 py-2.5 text-left"
                   >
-                    <ShellIcon view="timers" className="h-4 w-4 shrink-0 text-accent" />
+                    <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-accent/25 bg-accent/10">
+                      <ShellIcon view="timers" className="h-4 w-4 shrink-0 text-accent" />
+                    </span>
                     <div className="min-w-0 flex-1">
-                      <div className="text-xs font-medium">Farm Timers</div>
-                      <div className="text-[10px] text-text-secondary/50">
+                      <div className="text-xs font-semibold">Farm Timers</div>
+                      <div className="text-[10px] text-text-tertiary">
                         {activeTimers} active {activeTimers === 1 ? "run" : "runs"}
                       </div>
                     </div>
-                    <span className="inline-flex items-center justify-center rounded-full bg-accent/20 border border-accent/30 px-1.5 py-0.5 text-[10px] num text-accent font-medium">{activeTimers}</span>
+                    <span className="inline-flex items-center justify-center rounded-full bg-accent/20 border border-accent/30 px-2 py-0.5 text-[10px] num text-accent font-semibold">{activeTimers}</span>
                   </button>
                 )}
                 {liveStarCount > 0 && (
                   <button
                     type="button"
                     onClick={() => navigate("stars")}
-                    className="home-tile flex items-center gap-2.5 w-full rounded-lg border border-transparent px-2 py-2 text-left"
+                    className="home-tile flex items-center gap-2.5 w-full rounded-xl border border-transparent px-2.5 py-2.5 text-left"
                   >
-                    <ShellIcon view="stars" className="h-4 w-4 shrink-0 text-accent" />
+                    <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-accent/25 bg-accent/10">
+                      <ShellIcon view="stars" className="h-4 w-4 shrink-0 text-accent" />
+                    </span>
                     <div className="min-w-0 flex-1">
-                      <div className="text-xs font-medium">Shooting Stars</div>
-                      <div className="text-[10px] text-text-secondary/50">
+                      <div className="text-xs font-semibold">Shooting Stars</div>
+                      <div className="text-[10px] text-text-tertiary">
                         {liveStarCount === 1 ? "1 star live right now" : `${liveStarCount} stars live right now`}
                       </div>
                     </div>
-                    <span className="inline-flex items-center justify-center rounded-full bg-accent/20 border border-accent/30 px-1.5 py-0.5 text-[10px] num text-accent font-medium">{liveStarCount}</span>
+                    <span className="inline-flex items-center justify-center rounded-full bg-accent/20 border border-accent/30 px-2 py-0.5 text-[10px] num text-accent font-semibold">{liveStarCount}</span>
                   </button>
                 )}
               </div>
             </div>
           )}
 
-          {/* Quick access — curated shortcuts, no live state implied.
-              On mobile, collapse to a single section: if Live has data, hide
-              Quick access to save vertical space. */}
-          <div className={`rounded-xl border border-border-subtle bg-bg-tertiary p-3 shadow-[0_1px_0_color-mix(in_srgb,var(--color-text-primary)_3%,transparent)] ${hasLiveData ? "hidden lg:block" : ""}`}>
-            <h3 className="section-kicker mb-2">Quick access</h3>
-            <div className="space-y-0.5">
+          <div className={`surface-panel rounded-2xl p-4 ${hasLiveData ? "hidden lg:block" : ""}`}>
+            <h3 className="section-kicker mb-3">Quick access</h3>
+            <div className="space-y-1">
               {QUICK_ACCESS_TILES.map(({ id, label, desc }) => (
                 <button
                   key={id}
                   type="button"
                   onClick={() => navigate(id)}
-                  className="home-tile flex items-center gap-2.5 w-full rounded-lg border border-transparent px-2 py-2 text-left"
+                  className="home-tile flex items-center gap-3 w-full rounded-xl border border-transparent px-2.5 py-2.5 text-left"
                 >
-                  <ShellIcon view={id} className="h-4 w-4 shrink-0 opacity-55" />
+                  <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border/50 bg-bg-base/60">
+                    <ShellIcon view={id} className="h-4 w-4 opacity-70" />
+                  </span>
                   <div className="min-w-0">
-                    <div className="text-xs font-medium">{label}</div>
-                    <div className="text-[10px] text-text-secondary/50">{desc}</div>
+                    <div className="text-xs font-semibold text-text-primary">{label}</div>
+                    <div className="text-[10px] text-text-tertiary">{desc}</div>
                   </div>
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Keyboard shortcuts hint */}
           {settings.keybindsEnabled && (
-            <div className="rounded-xl border border-border-subtle bg-bg-tertiary p-3 shadow-[0_1px_0_color-mix(in_srgb,var(--color-text-primary)_3%,transparent)]">
-              <h3 className="section-kicker mb-2">Shortcuts</h3>
-              <div className="grid grid-cols-2 gap-1 text-[10px]">
+            <div className="surface-panel rounded-2xl p-4">
+              <h3 className="section-kicker mb-3">Shortcuts</h3>
+              <div className="grid grid-cols-2 gap-1.5 text-[11px]">
                 {[
                   { key: "K", label: "Search" },
                   { key: "1", label: "Profile" },
                   { key: "3", label: "Skills" },
                   { key: "5", label: "Bosses" },
                 ].map(({ key, label }) => (
-                  <div key={key} className="flex items-center justify-between px-2 py-1">
-                    <span className="text-text-secondary/50">{label}</span>
-                    <kbd className="rounded border border-border/60 bg-bg-tertiary/50 px-1.5 py-0.5 font-mono text-text-secondary/40">
+                  <div key={key} className="flex items-center justify-between rounded-lg px-2.5 py-1.5 bg-bg-base/40">
+                    <span className="text-text-tertiary">{label}</span>
+                    <kbd className="rounded-md border border-border/60 bg-bg-tertiary px-1.5 py-0.5 font-mono text-[10px] text-text-secondary">
                       {navigator.platform?.includes("Mac") ? "⌘" : "Ctrl+"}{key}
                     </kbd>
                   </div>
