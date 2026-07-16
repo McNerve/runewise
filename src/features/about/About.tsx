@@ -40,10 +40,10 @@ export default function About() {
             <span className="text-text-secondary">Temple OSRS</span>
           </div>
           <div className="flex justify-between">
-            <a href="https://starminers.site/" target="_blank" rel="noopener noreferrer" className="text-accent hover:text-accent-hover">
-              Star Miners
+            <a href="https://old.07.gg/" target="_blank" rel="noopener noreferrer" className="text-accent hover:text-accent-hover">
+              07.gg Shooting Stars
             </a>
-            <span className="text-text-secondary">Star Miners</span>
+            <span className="text-text-secondary">Public API</span>
           </div>
           <div className="flex justify-between">
             <a href="https://secure.runescape.com/m=hiscore_oldschool/" target="_blank" rel="noopener noreferrer" className="text-accent hover:text-accent-hover">

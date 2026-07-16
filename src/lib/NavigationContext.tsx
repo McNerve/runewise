@@ -59,6 +59,17 @@ function serializeHash(state: NavState): string {
   return query ? `#${state.view}?${query}` : `#${state.view}`;
 }
 
+function isValidNavState(value: unknown): value is NavState {
+  if (typeof value !== "object" || value === null) return false;
+  const candidate = value as { view?: unknown; params?: unknown };
+  if (typeof candidate.view !== "string" || !VALID_VIEWS.has(candidate.view)) return false;
+  if (candidate.params == null) return true;
+  if (typeof candidate.params !== "object" || Array.isArray(candidate.params)) return false;
+  return Object.values(candidate.params as Record<string, unknown>).every(
+    (v) => typeof v === "string"
+  );
+}
+
 function loadInitialState(): NavState {
   const fromHash = parseHash(window.location.hash);
   if (fromHash) return fromHash;
@@ -66,7 +77,14 @@ function loadInitialState(): NavState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return { view: "home", params: {} };
-    return JSON.parse(raw) as NavState;
+    const parsed: unknown = JSON.parse(raw);
+    if (isValidNavState(parsed)) {
+      return {
+        view: parsed.view,
+        params: parsed.params ?? {},
+      };
+    }
+    return { view: "home", params: {} };
   } catch {
     return { view: "home", params: {} };
   }
@@ -149,7 +167,9 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
         goBack,
         goForward,
         canGoBack: state.view !== "home" || Object.keys(state.params).length > 0,
-        canGoForward: window.history.length > 1,
+        // Browser history API does not expose a reliable forward-stack size.
+        // Keep the flag conservative so UI never pretends forward is available.
+        canGoForward: false,
       }}
     >
       {children}

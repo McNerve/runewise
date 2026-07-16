@@ -406,7 +406,7 @@ export default function ShootingStars() {
               )}
             </div>
             <p className="max-w-2xl text-sm text-text-secondary">
-              Track active shooting stars across all worlds. Data from Star Miners crowdsource API.
+              Track active shooting stars across all worlds. Data from the 07.gg public stars API.
             </p>
           </div>
           {tab === "live" && (
@@ -515,7 +515,7 @@ export default function ShootingStars() {
           {!loading && stars.length === 0 && (
             <div className="bg-bg-tertiary rounded-lg p-6 text-center">
               <p className="text-sm text-text-secondary">No active stars reported right now.</p>
-              <p className="text-xs text-text-secondary/50 mt-1">Data from Star Miners crowdsource API</p>
+              <p className="text-xs text-text-secondary/50 mt-1">Data from the 07.gg public stars API</p>
             </div>
           )}
 
@@ -713,7 +713,7 @@ export default function ShootingStars() {
           )}
 
           <p className="text-[10px] text-text-secondary/40 mt-4 text-center">
-            Data provided by Star Miners crowdsource
+            Data provided by the 07.gg public stars API
           </p>
         </>
       )}

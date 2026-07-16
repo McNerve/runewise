@@ -2,6 +2,18 @@
 
 All notable changes to RuneWise are documented here. Versions follow [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixes
+
+- **Windows RuneLite integration** — home directory resolution now falls back to `USERPROFILE` when `HOME` is unset, and paths are built with `PathBuf` so profile / loot-tracker / bossing-info lookups work on native Windows.
+- **Corrupt navigation recovery** — persisted `runewise_navigation` is validated against the feature registry; invalid views fall back to Home instead of rendering a broken shell.
+- **Shooting Stars attribution** — About, Settings, Star Helper UI, and README now credit the live **07.gg** public API (Star Miners was retired after key revocation).
+
+### Tests
+
+- **Training Plan** — unit coverage for empty targets, XP/actions/hours math, fastest vs AFK preference, ironman method filtering, and multi-skill hour sort.
+
 ## [1.6.1] - 2026-04-18
 
 ### Page-by-page audit follow-ups

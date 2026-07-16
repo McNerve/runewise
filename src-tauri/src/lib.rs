@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::{LazyLock, Mutex};
 use std::time::Duration;
 use serde::Serialize;
@@ -69,16 +69,34 @@ const ALLOWED_HOSTS: &[&str] = &[
     "maps.runescape.wiki",
 ];
 
-fn runelite_paths() -> Result<(Option<String>, Vec<String>), String> {
-    let home = std::env::var("HOME").map_err(|e| e.to_string())?;
-    let checked_paths = vec![
-        format!("{home}/.runelite/profiles2/profiles.json"),
-        format!("{home}/.runelite/profiles/profiles.json"),
-    ];
+/// Resolve the user's home directory on both Unix and Windows.
+/// Native Windows often has USERPROFILE but no HOME; Git Bash may set both.
+fn home_dir() -> Result<PathBuf, String> {
+    for key in ["HOME", "USERPROFILE"] {
+        if let Ok(value) = std::env::var(key) {
+            let trimmed = value.trim();
+            if !trimmed.is_empty() {
+                return Ok(PathBuf::from(trimmed));
+            }
+        }
+    }
+    Err("Could not determine home directory (HOME/USERPROFILE unset)".to_string())
+}
 
-    for path in &checked_paths {
-        if std::path::Path::new(path).exists() {
-            return Ok((Some(path.clone()), checked_paths));
+fn runelite_paths() -> Result<(Option<String>, Vec<String>), String> {
+    let home = home_dir()?;
+    let candidates = [
+        home.join(".runelite").join("profiles2").join("profiles.json"),
+        home.join(".runelite").join("profiles").join("profiles.json"),
+    ];
+    let checked_paths: Vec<String> = candidates
+        .iter()
+        .map(|p| p.to_string_lossy().into_owned())
+        .collect();
+
+    for path in &candidates {
+        if path.exists() {
+            return Ok((Some(path.to_string_lossy().into_owned()), checked_paths));
         }
     }
 
@@ -143,9 +161,11 @@ async fn proxy_fetch(
 #[tauri::command]
 fn runelite_status() -> Result<RuneLiteStatus, String> {
     let (profiles_file, checked_paths) = runelite_paths()?;
-    let directory = profiles_file
-        .as_ref()
-        .and_then(|path| path.rsplit_once('/').map(|(dir, _)| dir.to_string()));
+    let directory = profiles_file.as_ref().and_then(|path| {
+        Path::new(path)
+            .parent()
+            .map(|dir| dir.to_string_lossy().into_owned())
+    });
 
     Ok(RuneLiteStatus {
         found: profiles_file.is_some(),
@@ -201,17 +221,15 @@ fn runelite_read_loot_tracker(profile_id: String) -> Result<Vec<LootEntry>, Stri
         return Ok(Vec::new());
     };
 
-    let root = path
-        .rsplit_once('/')
-        .map(|(dir, _)| dir.to_string())
+    let root = Path::new(&path)
+        .parent()
         .ok_or_else(|| "Invalid RuneLite profile path".to_string())?;
-    let loot_path = format!("{root}/{profile_id}/loot-tracker.log");
+    let loot_path = root.join(&profile_id).join("loot-tracker.log");
     let raw = match fs::read_to_string(&loot_path) {
         Ok(contents) => contents,
         Err(_) => {
-            let home = std::env::var("HOME").map_err(|e| e.to_string())?;
-            let bossing_root = format!("{home}/.runelite/bossing-info");
-            let bossing_path = Path::new(&bossing_root);
+            let home = home_dir()?;
+            let bossing_path = home.join(".runelite").join("bossing-info");
             if !bossing_path.exists() {
                 return Ok(Vec::new());
             }
