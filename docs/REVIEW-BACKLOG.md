@@ -14,15 +14,16 @@ Prioritized follow-ups from the full-app review. Shipped on branch
 ## P1 — Product focus
 
 - [x] Sidebar IA trim (secondary tools → search/deep-link only)
-- [ ] Pick one marketing hero: Upgrade Finder **or** Flip Finder **or** “what next”
-- [ ] RSN / hiscores prefill as default entry on every calculator (partial via existing hiscores props)
+- [x] Flip Finder hero strip (Best / limit, top margin, median ROI)
+- [x] RSN / hiscores prefill banners on major calcs (player bar remains single entry)
 - [x] Always-visible GE / hiscores staleness on money-critical screens (Market + Money Making)
 - [x] Offline banner + window min-size (desktop polish)
 
 ## P2 — Maintainability
 
-- [ ] Split `BossGuide.tsx`, `useDpsState.ts`, `WikiLookup.tsx`, `Market.tsx`
-- [ ] Golden-file DPS fixtures vs wiki calculator for flagship setups
+- [x] Extract BossGuide pure helpers (`bossGuideUtils.ts`) — full file splits still open
+- [ ] Split `BossGuide.tsx`, `useDpsState.ts`, `WikiLookup.tsx`, `Market.tsx` further
+- [x] Golden-file DPS fixtures for flagship setups (`dps.golden.test.ts`)
 - [ ] UI/integration tests for market flip path + skill calculator edge cases
 - [x] Wrap remaining hiscores-heavy views with `ViewErrorBoundary` consistently
 

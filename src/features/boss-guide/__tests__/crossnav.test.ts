@@ -11,31 +11,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useDpsState } from "../../dps-calc/hooks/useDpsState";
-
-// --- Utility functions duplicated here to keep tests independent ---
-function weaknessToStyle(weakness: string): string {
-  const map: Record<string, string> = {
-    stab: "melee",
-    slash: "melee",
-    crush: "melee",
-    melee: "melee",
-    ranged: "ranged",
-    range: "ranged",
-    magic: "magic",
-    mage: "magic",
-  };
-  return map[weakness.toLowerCase()] ?? "melee";
-}
-
-function normalizeBossSlug(name: string): string {
-  return name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
-}
-
-function extractWeaknessFromSummary(summary: string | undefined): string | null {
-  if (!summary) return null;
-  const m = summary.match(/weak(?:\s+against|\s+to|ness:?)\s+([a-z]+)/i);
-  return m ? m[1] : null;
-}
+import {
+  extractWeaknessFromSummary,
+  normalizeBossSlug,
+  weaknessToStyle,
+} from "../bossGuideUtils";
 
 // --- weaknessToStyle tests ---
 describe("weaknessToStyle", () => {

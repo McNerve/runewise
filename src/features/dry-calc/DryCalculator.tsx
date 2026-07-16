@@ -4,6 +4,7 @@ import { POPULAR_DROPS, DROP_CATEGORIES, type DropEntry } from "../../lib/data/d
 import { itemIcon } from "../../lib/sprites";
 import { findActivityScore, type HiscoreData } from "../../lib/api/hiscores";
 import { useNavigation } from "../../lib/NavigationContext";
+import AccountPrefillBanner from "../../components/AccountPrefillBanner";
 
 interface Props {
   hiscores: HiscoreData | null;
@@ -77,6 +78,10 @@ export default function DryCalculator({ hiscores }: Props) {
     <div className="max-w-3xl">
       <h2 className="text-2xl font-semibold tracking-tight">Dry Calculator</h2>
       <p className="text-sm text-text-secondary mb-4">Calculate the probability of going dry on any drop. Select a boss preset or enter custom rates.</p>
+      <AccountPrefillBanner
+        hasHiscores={Boolean(hiscores)}
+        context="boss kill counts when you pick a preset"
+      />
 
       <div className="grid grid-cols-[1fr_280px] gap-4">
         {/* Calculator */}

@@ -4,6 +4,7 @@ import { generatePlan, type TrainingPreference } from "../../lib/formulas/traini
 import { formatGp } from "../../lib/format";
 import { SKILL_ICONS } from "../../lib/sprites";
 import { useSettings } from "../../hooks/useSettings";
+import AccountPrefillBanner from "../../components/AccountPrefillBanner";
 
 const SKILLS = [
   "Attack", "Strength", "Defence", "Ranged", "Prayer", "Magic",
@@ -163,6 +164,10 @@ export default function TrainingPlan({ hiscores }: Props) {
   return (
     <div>
       <h2 className="text-2xl font-semibold tracking-tight mb-5">Training Plan</h2>
+      <AccountPrefillBanner
+        hasHiscores={Boolean(hiscores)}
+        context="starting levels from your hiscores"
+      />
 
       {/* Quick presets */}
       <div className="section-kicker mb-2">Quick Presets</div>

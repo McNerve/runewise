@@ -18,12 +18,20 @@ All notable changes to RuneWise are documented here. Versions follow [Semantic V
 - **View error isolation** — every tool (including hiscores-heavy views) is wrapped in `ViewErrorBoundary` with per-view names and clear-on-navigate recovery.
 - **Sidebar IA trim** — secondary tools stay in ⌘K/search + deep links, but leave the main nav: Hiscores lookup, Dry/Pet/Recipe/Kingdom calcs, Shop Helper, Spells, World Map, News.
 - **GE freshness** — shared `pricesUpdatedAt` on the GE context; Money Making shows the same 5‑minute freshness strip as Items.
+- **Account prefill banners** — DPS, Skills, Dry, Pets, Training Plan, Boss Guides, and Money Making prompt for RSN when hiscores are empty (player bar remains the single entry).
+- **Flip Finder hero strip** — Best / limit, top margin, and median ROI verdict cards above the flip table (tax-correct, post GE sell tax).
+
+### Maintainability
+
+- **Boss guide utils** — `weaknessToStyle`, `normalizeBossSlug`, and summary weakness extraction live in `bossGuideUtils.ts` (shared with cross-nav tests).
 
 ### Tests
 
 - **Training Plan** — unit coverage for empty targets, XP/actions/hours math, fastest vs AFK preference, ironman method filtering, and multi-skill hour sort.
 - **Offline banner** — online/offline event transitions.
 - **Feature registry** — asserts secondary tools remain searchable after sidebar trim.
+- **Golden DPS fixtures** — flagship melee / piety / tbow / shadow / DWH / claws scenarios locked in `dps.golden.test.ts`.
+- **Account prefill banner** — render / hide cases.
 
 ## [1.6.1] - 2026-04-18
 

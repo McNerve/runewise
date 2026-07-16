@@ -6,6 +6,7 @@ import ResultsPanel from "./components/ResultsPanel";
 import UpgradeFinder from "./components/UpgradeFinder";
 import SetupTabs from "./components/SetupTabs";
 import { FilterPills } from "../../components/primitives";
+import AccountPrefillBanner from "../../components/AccountPrefillBanner";
 
 interface Props {
   hiscores: HiscoreData | null;
@@ -16,6 +17,10 @@ export default function DpsCalculator({ hiscores }: Props) {
 
   return (
     <div className="max-w-5xl">
+      <AccountPrefillBanner
+        hasHiscores={Boolean(hiscores)}
+        context="Attack / Strength / Ranged / Magic levels from your hiscores"
+      />
       <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
         <h2 className="text-h3 font-semibold">DPS Calculator</h2>
         <SetupTabs state={state} />

@@ -9,6 +9,7 @@ import EmptyState from "../../components/EmptyState";
 import FreshnessStrip from "../../components/FreshnessStrip";
 import { Tabs, FilterPills } from "../../components/primitives";
 import { useGEData } from "../../hooks/useGEData";
+import AccountPrefillBanner from "../../components/AccountPrefillBanner";
 
 const ProfitRankings = lazy(() => import("./ProfitRankings"));
 
@@ -145,6 +146,10 @@ export default function MoneyMaking({ hiscores }: Props) {
           cacheLabel="5 min"
         />
       </div>
+      <AccountPrefillBanner
+        hasHiscores={Boolean(hiscores)}
+        context="the “Best for me” skill-gated method filter"
+      />
 
       {/* Main tabs */}
       <Tabs

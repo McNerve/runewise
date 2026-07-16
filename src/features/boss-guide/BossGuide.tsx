@@ -32,33 +32,13 @@ import {
 } from "../../lib/data/boss-drops";
 import { getRaidLoot, type RaidDropEntry } from "../../lib/data/raid-loot";
 
-// Weakness → DPS Calc combat style mapping
-const WEAKNESS_STYLE_MAP: Record<string, string> = {
-  stab: "melee",
-  slash: "melee",
-  crush: "melee",
-  melee: "melee",
-  ranged: "ranged",
-  range: "ranged",
-  magic: "magic",
-  mage: "magic",
-};
-
-function weaknessToStyle(weakness: string): string {
-  return WEAKNESS_STYLE_MAP[weakness.toLowerCase()] ?? "melee";
-}
-
-/** Attempt to extract weakness from description prose as fallback */
-function extractWeaknessFromSummary(summary: string | undefined): string | null {
-  if (!summary) return null;
-  const m = summary.match(/weak(?:\s+against|\s+to|ness:?)\s+([a-z]+)/i);
-  return m ? m[1] : null;
-}
-
-function normalizeBossSlug(name: string): string {
-  return name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
-}
 import { openExternal } from "../../lib/openExternal";
+import {
+  extractWeaknessFromSummary,
+  normalizeBossSlug,
+  weaknessToStyle,
+} from "./bossGuideUtils";
+import AccountPrefillBanner from "../../components/AccountPrefillBanner";
 import { formatGp } from "../../lib/format";
 import FreshnessStrip from "../../components/FreshnessStrip";
 import { useNavigation } from "../../lib/NavigationContext";
@@ -477,6 +457,10 @@ export default function BossGuide({ hiscores }: Props) {
 
   return (
     <div className="space-y-5">
+      <AccountPrefillBanner
+        hasHiscores={Boolean(hiscores)}
+        context="boss kill counts and personalised task context"
+      />
       <div>
         <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
           <div className="space-y-1">
