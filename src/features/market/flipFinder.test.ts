@@ -74,3 +74,54 @@ describe("findFlips", () => {
     expect(flip.perLimit).toBe(0);
   });
 });
+
+/**
+ * Integration-style path: the same pure pipeline the Flip Finder hero strip
+ * uses (rank → best/limit → top margin → median ROI).
+ */
+describe("flip finder hero path", () => {
+  function heroMetrics(flips: ReturnType<typeof findFlips>) {
+    if (flips.length === 0) return null;
+    const topByLimit = flips.reduce((best, f) => (f.perLimit > best.perLimit ? f : best), flips[0]!);
+    const topMargin = flips.reduce((best, f) => (f.margin > best.margin ? f : best), flips[0]!);
+    const sortedRoi = [...flips].map((f) => f.roi).sort((a, b) => a - b);
+    const medianRoi = sortedRoi[Math.floor(sortedRoi.length / 2)]!;
+    return { topByLimit, topMargin, medianRoi, count: flips.length };
+  }
+
+  it("picks best/limit and top margin from a mixed catalogue", () => {
+    const mapping = [
+      item(1, { name: "Big margin tiny limit", limit: 1, members: true }),
+      item(2, { name: "Small margin huge limit", limit: 10_000, members: false }),
+      item(3, { name: "Loser", limit: 100, members: false }),
+    ];
+    const prices = {
+      "1": price(100, 1000), // margin large, perLimit small
+      "2": price(990, 1000), // margin small after tax, perLimit large-ish
+      "3": price(1000, 1000), // zero margin → excluded
+    };
+    const flips = findFlips(mapping, prices, { "1": 200, "2": 5000, "3": 999 }, {
+      minVolume: 50,
+      sort: "perLimit",
+    });
+    const hero = heroMetrics(flips);
+    expect(hero).not.toBeNull();
+    expect(hero!.count).toBe(2);
+    expect(hero!.topMargin.item.id).toBe(1);
+    expect(hero!.topByLimit.item.id).toBe(2);
+    expect(hero!.medianRoi).toBeGreaterThan(0);
+  });
+
+  it("applies f2p filter before hero ranking", () => {
+    const mapping = [
+      item(1, { members: true, limit: 100 }),
+      item(2, { members: false, limit: 100 }),
+    ];
+    const prices = { "1": price(100, 500), "2": price(100, 200) };
+    const flips = findFlips(mapping, prices, { "1": 1000, "2": 1000 }, { members: "f2p" });
+    const hero = heroMetrics(flips);
+    expect(hero!.count).toBe(1);
+    expect(hero!.topByLimit.item.id).toBe(2);
+  });
+});
+
