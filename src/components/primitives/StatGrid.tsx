@@ -58,7 +58,8 @@ export function StatCard({
     </>
   );
 
-  const baseStyle = "rounded-xl border border-border-subtle bg-bg-tertiary px-3 py-3";
+  const baseStyle =
+    "rounded-xl border border-border-subtle bg-bg-tertiary px-3 py-3 shadow-[0_1px_0_color-mix(in_srgb,var(--color-text-primary)_3%,transparent)]";
 
   if (onClick) {
     return (
@@ -66,7 +67,7 @@ export function StatCard({
         type="button"
         onClick={onClick}
         title={title}
-        className={`${baseStyle} text-left transition-colors hover:border-border-strong hover:bg-bg-secondary ${className}`}
+        className={`pressable ${baseStyle} text-left hover:border-border-strong hover:bg-bg-secondary ${className}`}
       >
         {body}
       </button>

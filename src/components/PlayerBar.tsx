@@ -41,8 +41,8 @@ const PlayerBar = memo(function PlayerBar({
   };
 
   return (
-    <div className="topbar-shell border-b border-border shrink-0">
-      <div className="h-16 flex items-center px-4">
+    <div className="topbar-shell border-b border-border/70 shrink-0">
+      <div className="h-16 flex items-center px-5">
         <div className="flex items-center justify-between gap-4 w-full">
         {/* Left: nav + title */}
         <div className="flex items-center gap-3 min-w-0">
@@ -50,7 +50,7 @@ const PlayerBar = memo(function PlayerBar({
             <button
               type="button"
               onClick={goBack}
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-text-secondary transition hover:bg-bg-secondary hover:text-text-primary"
+              className="pressable flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-text-secondary hover:bg-bg-secondary hover:text-text-primary"
               title="Go back"
             >
               <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -60,10 +60,12 @@ const PlayerBar = memo(function PlayerBar({
           )}
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/50">{feature.family}</span>
+              <span className="section-kicker !tracking-[0.14em]">{feature.family}</span>
               {loading && <span className="w-3 h-3 border-2 border-warning/30 border-t-warning rounded-full animate-spin" />}
             </div>
-            <h2 className="display-face truncate text-h4 font-semibold tracking-tight text-text-primary">{feature.title}</h2>
+            <h2 className="display-face truncate text-h4 font-semibold tracking-tight text-text-primary leading-tight">
+              {feature.title}
+            </h2>
           </div>
         </div>
 
@@ -72,7 +74,7 @@ const PlayerBar = memo(function PlayerBar({
           {rsn && !editing ? (
             <button
               onClick={() => setEditing(true)}
-              className="flex items-center gap-2 rounded-xl border border-accent/30 bg-accent/10 px-3 py-1.5 text-sm font-medium text-accent transition hover:bg-accent/15"
+              className="pressable flex items-center gap-2 rounded-xl border border-accent/30 bg-accent/10 px-3 py-1.5 text-sm font-medium text-accent hover:bg-accent/15"
             >
               <span className="flex h-5 w-5 items-center justify-center rounded-full bg-accent/20 text-[10px] font-bold">
                 {rsn[0].toUpperCase()}
@@ -86,7 +88,7 @@ const PlayerBar = memo(function PlayerBar({
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Enter RSN..."
-                className="w-40 rounded-lg border border-border bg-bg-primary/80 px-2.5 py-1.5 text-sm text-text-primary outline-none transition placeholder:text-text-secondary/50 focus:border-accent"
+                className="w-40 rounded-lg border border-border bg-bg-base/80 px-2.5 py-1.5 text-sm text-text-primary outline-none transition-[border-color,background-color] duration-150 ease placeholder:text-text-secondary/50 focus:border-accent focus:bg-bg-tertiary"
               />
               <Button variant="primary" type="submit" disabled={loading || !input.trim()}>
                 Set
@@ -95,7 +97,7 @@ const PlayerBar = memo(function PlayerBar({
                 <button
                   onClick={handleClear}
                   type="button"
-                  className="rounded-lg border border-border px-2.5 py-1.5 text-xs text-text-secondary transition hover:border-danger/30 hover:text-danger"
+                  className="pressable rounded-lg border border-border px-2.5 py-1.5 text-xs text-text-secondary hover:border-danger/30 hover:text-danger"
                 >
                   Clear
                 </button>
@@ -104,7 +106,7 @@ const PlayerBar = memo(function PlayerBar({
                 <button
                   onClick={() => setEditing(false)}
                   type="button"
-                  className="text-xs text-text-secondary hover:text-text-primary transition"
+                  className="text-xs text-text-secondary hover:text-text-primary transition-colors duration-150"
                 >
                   Cancel
                 </button>

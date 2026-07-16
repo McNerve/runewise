@@ -48,7 +48,13 @@ export default memo(function ItemTooltip({ itemName, children }: Props) {
   return (
     <Tooltip.Root delayDuration={200} onOpenChange={handleOpen}>
       <Tooltip.Trigger asChild>{children}</Tooltip.Trigger>
-      <Tooltip.Content className="item-tooltip-content" sideOffset={6} side="top" collisionPadding={8}>
+      <Tooltip.Content
+        className="item-tooltip-content"
+        sideOffset={6}
+        side="top"
+        collisionPadding={8}
+        style={{ transformOrigin: "var(--radix-tooltip-content-transform-origin)" }}
+      >
         {item ? (
           <div className="flex gap-3 items-start">
             <img

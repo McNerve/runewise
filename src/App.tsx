@@ -71,7 +71,7 @@ function AppContent() {
           <OfflineBanner />
           <main
             aria-label="Main content"
-            className="content-area flex-1 overflow-y-auto p-6"
+            className="content-area flex-1 overflow-y-auto p-5 sm:p-6"
             style={{ "--feature-accent": getFeatureAccent(view) } as React.CSSProperties}
           >
             <div className="max-w-5xl mx-auto">
@@ -80,10 +80,10 @@ function AppContent() {
                   <AnimatePresence mode="wait">
                     <motion.div
                       key={view}
-                      initial={{ opacity: 0, y: 6 }}
+                      initial={{ opacity: 0, y: 4 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0 }}
-                      transition={{ duration: 0.15, ease: "easeOut" }}
+                      transition={{ duration: 0.16, ease: [0.23, 1, 0.32, 1] }}
                     >
                       {renderView
                         ? renderView({

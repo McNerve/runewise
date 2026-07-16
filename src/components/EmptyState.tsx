@@ -17,25 +17,30 @@ export default function EmptyState({
   action,
 }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center py-16 text-center">
+    <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
       {icon && (
-        <img
-          src={icon}
-          alt=""
-          className="w-12 h-12 mb-4 opacity-30"
-          onError={(e) => { e.currentTarget.style.display = "none"; }}
-        />
+        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-border-subtle bg-bg-tertiary">
+          <img
+            src={icon}
+            alt=""
+            className="h-9 w-9 opacity-55"
+            style={{ imageRendering: "pixelated" }}
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+            }}
+          />
+        </div>
       )}
-      <h3 className="text-base font-medium text-text-secondary mb-1">
+      <h3 className="display-face text-base font-semibold text-text-primary mb-1.5">
         {title}
       </h3>
       {description && (
-        <p className="text-sm text-text-secondary/60 max-w-sm">
+        <p className="text-sm text-text-secondary max-w-sm leading-relaxed">
           {description}
         </p>
       )}
       {action && (
-        <Button variant="primary" size="md" onClick={action.onClick} className="mt-4">
+        <Button variant="primary" size="md" onClick={action.onClick} className="mt-5">
           {action.label}
         </Button>
       )}

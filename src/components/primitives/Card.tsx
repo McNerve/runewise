@@ -21,10 +21,10 @@ interface CardProps {
 
 const SURFACE: Record<Elevation, string> = {
   flat: "bg-bg-base",
-  raised: "border border-border-subtle bg-bg-tertiary",
+  raised: "border border-border-subtle bg-bg-tertiary shadow-[0_1px_0_color-mix(in_srgb,var(--color-text-primary)_3%,transparent)]",
   overlay:
-    "border border-border bg-bg-overlay shadow-[0_8px_24px_-6px_rgba(0,0,0,0.45)]",
-  hero: "border border-accent-deep bg-bg-tertiary",
+    "border border-border bg-bg-overlay shadow-[0_12px_32px_-10px_rgba(0,0,0,0.5)] backdrop-blur-md",
+  hero: "border border-accent-deep bg-bg-tertiary shadow-[0_0_0_1px_color-mix(in_srgb,var(--color-accent)_12%,transparent),0_8px_28px_-14px_color-mix(in_srgb,var(--color-accent)_35%,transparent)]",
 };
 
 /**
@@ -42,7 +42,7 @@ export function Card({
   return (
     <section className={`rounded-xl p-4 ${SURFACE[elevation]} ${className}`}>
       {(kicker || action) && (
-        <div className="mb-2 flex items-center justify-between gap-3">
+        <div className="mb-2.5 flex items-center justify-between gap-3">
           {kicker ? <div className="section-kicker">{kicker}</div> : <span />}
           {action}
         </div>
