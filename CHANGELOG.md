@@ -4,6 +4,8 @@ All notable changes to RuneWise are documented here. Versions follow [Semantic V
 
 ## [Unreleased]
 
+## [2.5.3] - 2026-07-16
+
 ### Fixes
 
 - **Windows RuneLite integration** — home directory resolution now falls back to `USERPROFILE` when `HOME` is unset, and paths are built with `PathBuf` so profile / loot-tracker / bossing-info lookups work on native Windows.
