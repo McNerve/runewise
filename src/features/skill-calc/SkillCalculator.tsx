@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo, lazy, Suspense } from "react";
-import { xpForLevel, levelForXp } from "../../lib/formulas/xp";
+import { levelForXp } from "../../lib/formulas/xp";
 import { getSkillXp, type HiscoreData } from "../../lib/api/hiscores";
 import { useGEData } from "../../hooks/useGEData";
 import { formatGp } from "../../lib/format";
@@ -14,19 +14,19 @@ import WikiRecipeTable from "./components/WikiRecipeTable";
 import ConstructionPlanner from "./components/ConstructionPlanner";
 import { useSettings } from "../../hooks/useSettings";
 import AccountPrefillBanner from "../../components/AccountPrefillBanner";
+import {
+  SKILLS,
+  clampTargetLevel,
+  computeXpNeeded,
+  defaultTargetLevel,
+  filterMethodsByIntensity,
+  normalizeSkill,
+} from "./skillCalcUtils";
 
 const TrainingPlan = lazy(() => import("../training-plan/TrainingPlan"));
 const XpTable = lazy(() => import("../xp-table/XpTable"));
 
 type SkillTab = "calculator" | "plan" | "xp-table";
-
-const SKILLS = [
-  "Attack", "Strength", "Defence", "Ranged", "Prayer", "Magic",
-  "Runecraft", "Hitpoints", "Crafting", "Mining", "Smithing",
-  "Fishing", "Cooking", "Firemaking", "Woodcutting", "Agility",
-  "Herblore", "Thieving", "Fletching", "Slayer", "Farming",
-  "Construction", "Hunter", "Sailing",
-] as const;
 
 interface Props {
   hiscores: HiscoreData | null;
@@ -37,11 +37,6 @@ export default function SkillCalculator({ hiscores }: Props) {
   const { params, navigate } = useNavigation();
   const { mapping, prices, fetchIfNeeded } = useGEData();
   const [skillTab, setSkillTab] = useState<SkillTab>(() => params.tab === "plan" ? "plan" : "calculator");
-  const normalizeSkill = (name: string | undefined): string | null => {
-    if (!name) return null;
-    const match = SKILLS.find((s) => s.toLowerCase() === name.toLowerCase());
-    return match ?? null;
-  };
   const [selectedSkill, setSelectedSkill] = useState<string | null>(normalizeSkill(params.skill));
 
   useEffect(() => {
@@ -84,13 +79,7 @@ export default function SkillCalculator({ hiscores }: Props) {
     }
 
     const saved = customTargets.current.get(selectedSkill);
-    if (saved !== undefined) {
-      setTargetLevel(saved);
-    } else if (currentLevel !== null && currentLevel < 99) {
-      setTargetLevel(currentLevel + 1);
-    } else {
-      setTargetLevel(99);
-    }
+    setTargetLevel(defaultTargetLevel(currentLevel, saved));
   }, [hiscores, selectedSkill]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load wiki recipes for selected skill
@@ -106,7 +95,7 @@ export default function SkillCalculator({ hiscores }: Props) {
   }, [selectedSkill]);
 
   const handleTargetChange = (value: number) => {
-    const clamped = Math.max(2, Math.min(99, value));
+    const clamped = clampTargetLevel(value);
     setTargetLevel(clamped);
     if (selectedSkill) customTargets.current.set(selectedSkill, clamped);
   };
@@ -118,14 +107,10 @@ export default function SkillCalculator({ hiscores }: Props) {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- reset 200M chase when switching skills
     setChaseMaxXp(false);
   }, [selectedSkill]);
-  const baseTargetXp = xpForLevel(targetLevel);
-  const targetXp = chaseMaxXp ? 200_000_000 : baseTargetXp;
-  const xpNeeded = Math.max(0, targetXp - currentXp);
+  const { targetXp, xpNeeded } = computeXpNeeded(currentXp, targetLevel, chaseMaxXp);
   const isMaxed = currentLevel !== null && currentLevel >= 99;
   const allMethods = selectedSkill ? (TRAINING_METHODS[selectedSkill] ?? []) : [];
-  const methods = intensityFilter === "All"
-    ? allMethods
-    : allMethods.filter((m) => m.intensity?.toLowerCase() === intensityFilter.toLowerCase());
+  const methods = filterMethodsByIntensity(allMethods, intensityFilter);
 
   return (
     <div className="max-w-3xl">
