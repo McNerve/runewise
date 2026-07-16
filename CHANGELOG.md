@@ -4,6 +4,16 @@ All notable changes to RuneWise are documented here. Versions follow [Semantic V
 
 ## [Unreleased]
 
+## [2.5.4] - 2026-07-16
+
+### UI / design
+
+- **Visual overhaul (emil-design-eng)** — shell polish guided by [emilkowalski/skills](https://github.com/emilkowalski/skills) while keeping OSRS icon sprites as the saturated identity.
+- **Motion craft** — custom ease-out curves, press-scale (`0.97`) feedback on buttons/tiles/nav, property-specific transitions (no `transition: all`), hover lifts gated to fine-pointer devices.
+- **Materials** — translucent sidebar + topbar with backdrop blur; frosted origin-aware tooltips; refined card elevations and Home tool grid.
+- **Search & empty states** — deeper command-palette scrim, clearer selection rail; empty states frame OSRS sprites in a soft tile.
+- **Accessibility** — `prefers-reduced-motion` strips transform motion; `prefers-reduced-transparency` falls back to solid chrome.
+
 ## [2.5.3] - 2026-07-16
 
 ### Fixes
