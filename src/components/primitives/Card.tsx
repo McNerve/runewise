@@ -8,11 +8,11 @@ interface CardProps {
   /** Right-aligned header content (actions, toggles). */
   action?: ReactNode;
   /**
-   * Surface elevation (Gielinor Ledger ladder):
+   * Surface elevation (Ledger Studio ladder):
    * - `flat`    — surface-1, no border. Nested groupings inside a card.
    * - `raised`  — surface-2 + hairline border. The DEFAULT card.
    * - `overlay` — surface-4 + soft drop-shadow. Menus / tooltips / modals.
-   * - `hero`    — surface-2 + deep-gold border. The one focal element per view.
+   * - `hero`    — surface-2 + gold edge. The one focal element per view.
    */
   elevation?: Elevation;
   children: ReactNode;
@@ -21,16 +21,15 @@ interface CardProps {
 
 const SURFACE: Record<Elevation, string> = {
   flat: "bg-bg-base",
-  raised: "border border-border-subtle bg-bg-tertiary shadow-[0_1px_0_color-mix(in_srgb,var(--color-text-primary)_3%,transparent)]",
+  raised:
+    "border border-border-subtle bg-bg-tertiary shadow-[0_1px_0_color-mix(in_srgb,var(--color-text-primary)_4%,transparent),0_10px_24px_-16px_rgba(0,0,0,0.45)]",
   overlay:
-    "border border-border bg-bg-overlay shadow-[0_12px_32px_-10px_rgba(0,0,0,0.5)] backdrop-blur-md",
-  hero: "border border-accent-deep bg-bg-tertiary shadow-[0_0_0_1px_color-mix(in_srgb,var(--color-accent)_12%,transparent),0_8px_28px_-14px_color-mix(in_srgb,var(--color-accent)_35%,transparent)]",
+    "border border-border bg-bg-overlay shadow-[0_16px_40px_-12px_rgba(0,0,0,0.55)] backdrop-blur-md",
+  hero: "border border-accent-deep/80 bg-bg-tertiary shadow-[0_0_0_1px_color-mix(in_srgb,var(--color-accent)_12%,transparent),0_14px_32px_-14px_color-mix(in_srgb,var(--color-accent)_30%,transparent)]",
 };
 
 /**
- * Standard content card — the one surface treatment for grouped controls
- * and results. Carries a real raised surface (genuine figure-ground) from
- * the token ladder instead of the old translucent `bg-bg-primary/20`.
+ * Standard content card — clear figure-ground against the content canvas.
  */
 export function Card({
   kicker,
@@ -40,9 +39,9 @@ export function Card({
   className = "",
 }: CardProps) {
   return (
-    <section className={`rounded-xl p-4 ${SURFACE[elevation]} ${className}`}>
+    <section className={`rounded-2xl p-4 sm:p-5 ${SURFACE[elevation]} ${className}`}>
       {(kicker || action) && (
-        <div className="mb-2.5 flex items-center justify-between gap-3">
+        <div className="mb-3 flex items-center justify-between gap-3">
           {kicker ? <div className="section-kicker">{kicker}</div> : <span />}
           {action}
         </div>
