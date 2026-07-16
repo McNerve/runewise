@@ -1,7 +1,7 @@
 # Review backlog (2026-07)
 
-Prioritized follow-ups from the full-app review. P0 items in this list that are
-checked were shipped on branch `fix/review-p0-hardening`.
+Prioritized follow-ups from the full-app review. Shipped on branch
+`fix/review-p0-hardening`.
 
 ## P0 — Platform / correctness
 
@@ -13,18 +13,18 @@ checked were shipped on branch `fix/review-p0-hardening`.
 
 ## P1 — Product focus
 
-- [ ] IA consolidation: fewer sidebar leaves, hub-first navigation (see `OVERHAUL.md`)
+- [x] Sidebar IA trim (secondary tools → search/deep-link only)
 - [ ] Pick one marketing hero: Upgrade Finder **or** Flip Finder **or** “what next”
-- [ ] RSN / hiscores prefill as default entry on every calculator
-- [ ] Always-visible GE / hiscores staleness on money-critical screens
-- [ ] Offline banner + window min-size (desktop polish)
+- [ ] RSN / hiscores prefill as default entry on every calculator (partial via existing hiscores props)
+- [x] Always-visible GE / hiscores staleness on money-critical screens (Market + Money Making)
+- [x] Offline banner + window min-size (desktop polish)
 
 ## P2 — Maintainability
 
 - [ ] Split `BossGuide.tsx`, `useDpsState.ts`, `WikiLookup.tsx`, `Market.tsx`
 - [ ] Golden-file DPS fixtures vs wiki calculator for flagship setups
 - [ ] UI/integration tests for market flip path + skill calculator edge cases
-- [ ] Wrap remaining hiscores-heavy views with `ViewErrorBoundary` consistently
+- [x] Wrap remaining hiscores-heavy views with `ViewErrorBoundary` consistently
 
 ## P3 — Growth
 

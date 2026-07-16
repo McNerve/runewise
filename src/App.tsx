@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "motion/react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import Sidebar from "./components/Sidebar";
 import PlayerBar from "./components/PlayerBar";
+import OfflineBanner from "./components/OfflineBanner";
 import GlobalSearch from "./components/GlobalSearch";
 const UpdateDialog = lazy(() => import("./components/UpdateDialog"));
 const Welcome = lazy(() => import("./features/onboarding/Welcome"));
@@ -67,6 +68,7 @@ function AppContent() {
             onLookup={hiscores.lookup}
             onClear={hiscores.clear}
           />
+          <OfflineBanner />
           <main
             aria-label="Main content"
             className="content-area flex-1 overflow-y-auto p-6"

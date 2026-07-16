@@ -6,7 +6,9 @@ import { formatGp } from "../../lib/format";
 import { WIKI_IMG, SKILL_ICONS, NAV_ICONS } from "../../lib/sprites";
 import { useNavigation } from "../../lib/NavigationContext";
 import EmptyState from "../../components/EmptyState";
+import FreshnessStrip from "../../components/FreshnessStrip";
 import { Tabs, FilterPills } from "../../components/primitives";
+import { useGEData } from "../../hooks/useGEData";
 
 const ProfitRankings = lazy(() => import("./ProfitRankings"));
 
@@ -59,6 +61,7 @@ function resolveMainTab(raw: string | undefined): MainTab {
 
 export default function MoneyMaking({ hiscores }: Props) {
   const { navigate, params } = useNavigation();
+  const { pricesUpdatedAt, fetchIfNeeded, refreshPrices } = useGEData();
   const [category, setCategory] = useState<Category>("All");
   const [search, setSearch] = useState("");
   const [membersOnly, setMembersOnly] = useState(true);
@@ -70,6 +73,10 @@ export default function MoneyMaking({ hiscores }: Props) {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- sync tab from nav params
     setMainTab(resolveMainTab(params.tab));
   }, [params.tab]);
+
+  useEffect(() => {
+    void fetchIfNeeded();
+  }, [fetchIfNeeded]);
 
   useEffect(() => {
     fetchAllMoneyMethods().then((methods) => {
@@ -124,11 +131,20 @@ export default function MoneyMaking({ hiscores }: Props) {
 
   return (
     <div className="max-w-4xl">
-      <h2 className="text-hero font-semibold tracking-tight">Money Making</h2>
-      <p className="text-sm text-text-secondary mb-4">
-        {totalMethods} curated methods
-        {availableCount !== null && ` — ${availableCount} available for your stats`}
-      </p>
+      <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
+        <div>
+          <h2 className="text-hero font-semibold tracking-tight">Money Making</h2>
+          <p className="text-sm text-text-secondary">
+            {totalMethods} curated methods
+            {availableCount !== null && ` — ${availableCount} available for your stats`}
+          </p>
+        </div>
+        <FreshnessStrip
+          updatedAt={pricesUpdatedAt}
+          onRefresh={refreshPrices}
+          cacheLabel="5 min"
+        />
+      </div>
 
       {/* Main tabs */}
       <Tabs

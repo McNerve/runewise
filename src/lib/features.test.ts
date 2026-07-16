@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { FEATURE_FAMILIES, SEARCHABLE_FEATURES, getFeature } from "./features";
+import {
+  FEATURE_FAMILIES,
+  SEARCHABLE_FEATURES,
+  SIDEBAR_FEATURES,
+  getFeature,
+} from "./features";
 
 describe("feature registry", () => {
   it("groups sidebar features into ordered hubs", () => {
@@ -18,5 +23,28 @@ describe("feature registry", () => {
     expect(SEARCHABLE_FEATURES.some((feature) => feature.id === "lookup")).toBe(
       true
     );
+  });
+
+  it("keeps secondary tools searchable but off the main sidebar", () => {
+    const secondary = [
+      "lookup",
+      "dry-calc",
+      "pet-calc",
+      "production-calc",
+      "shop-helper",
+      "kingdom",
+      "spells",
+      "world-map",
+      "news",
+    ] as const;
+    for (const id of secondary) {
+      expect(getFeature(id).sidebar).toBe(false);
+      expect(getFeature(id).search).toBe(true);
+    }
+    // Daily drivers stay visible — IA trim, not a dead product.
+    expect(SIDEBAR_FEATURES.some((f) => f.id === "dps-calc")).toBe(true);
+    expect(SIDEBAR_FEATURES.some((f) => f.id === "market")).toBe(true);
+    expect(SIDEBAR_FEATURES.some((f) => f.id === "bosses")).toBe(true);
+    expect(SIDEBAR_FEATURES.length).toBeLessThanOrEqual(20);
   });
 });

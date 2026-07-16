@@ -22,6 +22,14 @@ export default class ViewErrorBoundary extends Component<Props, State> {
     console.error(`[RuneWise] ${this.props.viewName ?? "View"} crashed:`, error, info);
   }
 
+  componentDidUpdate(prevProps: Props) {
+    // Clear a latched error when the shell navigates to a different tool so a
+    // crash in one view never strands the next destination.
+    if (this.state.hasError && prevProps.viewName !== this.props.viewName) {
+      this.setState({ hasError: false, error: null });
+    }
+  }
+
   handleRetry = () => {
     this.setState({ hasError: false, error: null });
   };

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { lazy, Suspense, useState, useEffect, useMemo, useCallback } from "react";
 import {
   searchItems,
   fetchVolumes,
@@ -291,11 +291,16 @@ export default function Market({
   const { params, navigate } = useNavigation();
   const { settings } = useSettings();
   const { items: watchlistItems, addItem: addToWatchlist } = useWatchlist();
-  const { mapping: allItems, prices, pricesLoaded, fetchIfNeeded, refreshPrices } = useGEData();
+  const {
+    mapping: allItems,
+    prices,
+    pricesLoaded,
+    pricesUpdatedAt,
+    fetchIfNeeded,
+    refreshPrices,
+  } = useGEData();
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebounce(query, 250);
-  const [pricesLastFetched, setPricesLastFetched] = useState<Date | null>(null);
-  const pricesFetchedRef = useRef(false);
 
   const paramTab = params.tab as Tab | undefined;
   const resolvedInitial: Tab = paramTab && VALID_PARAM_TABS.includes(paramTab) ? paramTab : initialTab;
@@ -313,14 +318,6 @@ export default function Market({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => { fetchIfNeeded(); }, [fetchIfNeeded]);
-
-  // Track when prices arrive so FreshnessStrip can show a timestamp
-  useEffect(() => {
-    if (pricesLoaded && !pricesFetchedRef.current) {
-      pricesFetchedRef.current = true;
-      setPricesLastFetched(new Date());
-    }
-  }, [pricesLoaded]);
 
   // Load volumes on mount (not part of GE context)
   useEffect(() => {
@@ -342,8 +339,6 @@ export default function Market({
 
   const handlePricesRefresh = useCallback(async () => {
     await refreshPrices();
-    setPricesLastFetched(new Date());
-    pricesFetchedRef.current = true;
   }, [refreshPrices]);
 
   useEffect(() => {
@@ -493,7 +488,7 @@ export default function Market({
               <p className="max-w-2xl text-sm text-text-secondary">{subtitle}</p>
             </div>
             <div className="shrink-0 pt-1">
-              <FreshnessStrip updatedAt={pricesLastFetched} onRefresh={handlePricesRefresh} cacheLabel="5 min" />
+              <FreshnessStrip updatedAt={pricesUpdatedAt} onRefresh={handlePricesRefresh} cacheLabel="5 min" />
             </div>
           </div>
           {settings.ironmanMode && (
