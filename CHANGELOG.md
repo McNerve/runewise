@@ -28,6 +28,7 @@ All notable changes to RuneWise are documented here. Versions follow [Semantic V
 - **DPS pure core split** — types in `dpsTypes.ts`, gear/math helpers in `dpsGearMath.ts`; `useDpsState` re-exports for stable import paths (~180 LOC out of the hook).
 - **Upgrade Finder hero** — top DPS upgrade and best gp-per-DPS pick shown above per-slot lists.
 - **UI shell splits** — `MarketDetail` extracted; BossActionIcon + guide click helpers moved out of BossGuide; wiki section collapse/class helpers shared with boss guides; popular-page constants isolated.
+- **Boss guide selectors** — pure KC/task/loot/EV helpers in `bossGuideSelectors.ts` with unit tests; GE wiki enrichment pure path in `wikiLookupGe.ts`.
 
 ### Tests
 
