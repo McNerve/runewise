@@ -36,53 +36,11 @@ import {
   type WikiHistory,
 } from "./wikiHistory";
 import { formatGp } from "../../lib/format";
-
-// Curated starting points for the empty state — pages players reach for most.
-const POPULAR_PAGES = [
-  "Money making guide",
-  "Optimal quest guide",
-  "Achievement Diary",
-  "Combat Achievements",
-  "Slayer",
-  "Grand Exchange",
-  "Wilderness",
-  "Free-to-play",
-];
-
-const COLLAPSED_SECTIONS = [
-  "used in recommended equipment",
-  "item sources",
-  "products",
-  "gallery",
-  "drop sources",
-  "spawns",
-  "combat stats",
-  "changes",
-];
-
-function shouldCollapse(title: string): boolean {
-  const lower = title.toLowerCase();
-  return COLLAPSED_SECTIONS.some((s) => lower.includes(s));
-}
-
-function sectionExtraClasses(title: string): string {
-  const lower = title.toLowerCase();
-  if (
-    lower.includes("suggested skills") ||
-    lower.includes("recommended skills") ||
-    lower.includes("requirements")
-  ) {
-    return "article-content--structured article-content--requirements";
-  }
-  if (
-    lower.includes("equipment") ||
-    lower.includes("inventory") ||
-    lower.includes("gear")
-  ) {
-    return "article-content--structured article-content--loadout article-content--loadout-table";
-  }
-  return "";
-}
+import { POPULAR_PAGES } from "./wikiLookupConstants";
+import {
+  sectionContentClasses,
+  shouldCollapseSection,
+} from "./wikiLookupUtils";
 
 interface GESnapshot {
   price: number | null;
@@ -732,8 +690,8 @@ export default function WikiLookup() {
             ) : null}
 
             {document.sections.map((section) => {
-              const extra = sectionExtraClasses(section.title);
-              const collapsed = shouldCollapse(section.title);
+              const extra = sectionContentClasses(section.title);
+              const collapsed = shouldCollapseSection(section.title);
               return collapsed ? (
                 <details key={section.id} id={section.id} className="article-content-collapse scroll-mt-4">
                   <summary className="mb-4 text-lg font-semibold tracking-tight cursor-pointer text-text-primary hover:text-accent transition-colors">

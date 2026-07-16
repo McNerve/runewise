@@ -24,7 +24,8 @@ Prioritized follow-ups from the full-app review. Shipped on branch
 
 - [x] Extract BossGuide pure helpers (`bossGuideUtils.ts`) + constants
 - [x] Extract DPS types + gear math from `useDpsState` (`dpsTypes.ts`, `dpsGearMath.ts`)
-- [ ] Further split remaining UI shells: BossGuide / WikiLookup / Market / useDpsState effects
+- [x] Further split UI shells: MarketDetail, BossActionIcon, shared wiki section classes (shells still large but thinner)
+- [ ] Deeper effect/data-hook splits for BossGuide / WikiLookup / useDpsState
 - [x] Golden-file DPS fixtures for flagship setups (`dps.golden.test.ts`)
 - [ ] UI/integration tests for market flip path + skill calculator edge cases
 - [x] Wrap remaining hiscores-heavy views with `ViewErrorBoundary` consistently

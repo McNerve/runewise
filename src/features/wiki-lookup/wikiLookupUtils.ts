@@ -1,5 +1,45 @@
 import type { WikiLookupDocument } from "../../lib/wiki/lookup";
 
+/** Sections that default to collapsed in wiki/boss article views. */
+export const COLLAPSED_SECTIONS = [
+  "used in recommended equipment",
+  "item sources",
+  "products",
+  "gallery",
+  "drop sources",
+  "spawns",
+  "combat stats",
+  "changes",
+];
+
+export function shouldCollapseSection(title: string): boolean {
+  const lower = title.toLowerCase();
+  return COLLAPSED_SECTIONS.some((s) => lower.includes(s));
+}
+
+/**
+ * Shared section class names for wiki HTML blocks (boss guides + wiki lookup).
+ * Keeps loadout/requirements styling in one place.
+ */
+export function sectionContentClasses(title: string): string {
+  const lower = title.toLowerCase();
+  if (
+    lower.includes("suggested skills") ||
+    lower.includes("recommended skills") ||
+    lower.includes("requirements")
+  ) {
+    return "article-content--structured article-content--requirements";
+  }
+  if (
+    lower.includes("equipment") ||
+    lower.includes("inventory") ||
+    lower.includes("gear")
+  ) {
+    return "article-content--structured article-content--loadout article-content--loadout-table";
+  }
+  return "";
+}
+
 // Task 4: Date pill filter
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",

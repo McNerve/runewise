@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import * as Tooltip from "@radix-ui/react-tooltip";
 import {
   BOSS_CATEGORIES,
   BOSSES,
@@ -35,7 +34,9 @@ import { getRaidLoot, type RaidDropEntry } from "../../lib/data/raid-loot";
 import { openExternal } from "../../lib/openExternal";
 import {
   extractWeaknessFromSummary,
+  handleGuideClick,
   normalizeBossSlug,
+  scrollToGuideSection,
   weaknessToStyle,
 } from "./bossGuideUtils";
 import AccountPrefillBanner from "../../components/AccountPrefillBanner";
@@ -45,115 +46,23 @@ import { useNavigation } from "../../lib/NavigationContext";
 import WikiImage from "../../components/WikiImage";
 import StructuredSection from "./StructuredSection";
 import BossMetaCard from "./components/BossMetaCard";
+import BossActionIcon from "./components/BossActionIcon";
 import { BOSS_METADATA } from "../../lib/data/boss-metadata";
 import { fetchDropsForMonster, fetchBossDropsFromWiki, type WikiDrop, type BossWikiDrop } from "../../lib/api/drops";
 import DropTable from "../../components/DropTable";
 import { Button } from "../../components/primitives";
 import { Skeleton, TableSkeleton, CardSkeleton } from "../../components/Skeleton";
 import EmptyState from "../../components/EmptyState";
-import {
-  initWikiInteractive,
-  handleLightboxClick,
-} from "../../lib/wiki/interactive";
+import { initWikiInteractive } from "../../lib/wiki/interactive";
 import {
   BOSS_WORKSPACE_TABS,
   CATEGORY_LABELS,
   type BossWorkspaceTab,
 } from "./bossGuideConstants";
+import { sectionContentClasses } from "../wiki-lookup/wikiLookupUtils";
 
 interface Props {
   hiscores?: HiscoreData | null;
-}
-
-function BossActionIcon({
-  label,
-  icon,
-  onClick,
-  href,
-}: {
-  label: string;
-  icon: string;
-  onClick?: () => void;
-  href?: string;
-}) {
-  const className = "boss-action-icon";
-  const trigger = href ? (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label={label}
-      className={className}
-    >
-      {icon}
-    </a>
-  ) : (
-    <button type="button" onClick={onClick} aria-label={label} className={className}>
-      {icon}
-    </button>
-  );
-  return (
-    <Tooltip.Root delayDuration={150}>
-      <Tooltip.Trigger asChild>{trigger}</Tooltip.Trigger>
-      <Tooltip.Portal>
-        <Tooltip.Content className="tooltip-content" side="bottom" sideOffset={6}>
-          {label}
-          <Tooltip.Arrow className="fill-bg-tertiary" />
-        </Tooltip.Content>
-      </Tooltip.Portal>
-    </Tooltip.Root>
-  );
-}
-
-function guideSectionClassName(title: string) {
-  const lower = title.toLowerCase();
-  if (
-    lower.includes("suggested skills") ||
-    lower.includes("recommended skills") ||
-    lower.includes("requirements")
-  ) {
-    return "article-content--structured article-content--requirements";
-  }
-
-  if (
-    lower.includes("equipment") ||
-    lower.includes("inventory") ||
-    lower.includes("gear")
-  ) {
-    return "article-content--structured article-content--loadout article-content--loadout-table";
-  }
-
-  return "";
-}
-
-function scrollToGuideSection(sectionId: string) {
-  const element = document.getElementById(sectionId);
-  if (!element) return;
-  element.scrollIntoView({ behavior: "smooth", block: "start" });
-}
-
-function handleGuideClick(e: React.MouseEvent) {
-  const target = e.target;
-
-  if (target instanceof HTMLButtonElement && target.classList.contains("tile-marker-copy")) {
-    const tiles = target.getAttribute("data-tiles");
-    if (tiles) {
-      navigator.clipboard.writeText(tiles).then(() => {
-        const original = target.textContent;
-        target.textContent = "✓ Copied!";
-        target.style.color = "#22c55e";
-        target.style.borderColor = "rgba(34,197,94,0.3)";
-        setTimeout(() => {
-          target.textContent = original;
-          target.style.color = "#3b82f6";
-          target.style.borderColor = "#2e3345";
-        }, 2000);
-      });
-    }
-    return;
-  }
-
-  handleLightboxClick(e);
 }
 
 export default function BossGuide({ hiscores }: Props) {
@@ -877,7 +786,7 @@ export default function BossGuide({ hiscores }: Props) {
                     )}
                     <StructuredSection title={section.title} html={section.html} bossSlug={normalizeBossSlug(selectedBoss.name)} />
                     <div
-                      className={`article-content text-sm leading-7 text-text-secondary ${guideSectionClassName(section.title)}`.trim()}
+                      className={`article-content text-sm leading-7 text-text-secondary ${sectionContentClasses(section.title)}`.trim()}
                       dangerouslySetInnerHTML={{ __html: section.html }}
                       style={
                         section.title.toLowerCase().includes("requirements") ||

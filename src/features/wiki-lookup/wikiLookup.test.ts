@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { isDatePill, extractTocEntries, upgradeImageUrl } from "./wikiLookupUtils";
+import {
+  isDatePill,
+  extractTocEntries,
+  upgradeImageUrl,
+  shouldCollapseSection,
+  sectionContentClasses,
+} from "./wikiLookupUtils";
 import type { WikiLookupDocument } from "../../lib/wiki/lookup";
 
 // Task 1: Breadcrumb ordering is a UI concern; tested via integration.
@@ -163,5 +169,19 @@ describe("breadcrumb trail", () => {
   it("does not add duplicate when reloading same page", () => {
     const trail = computeNextTrail(["Twisted bow"], "Dragon Slayer II", "Dragon Slayer II");
     expect(trail).toEqual(["Twisted bow"]);
+  });
+});
+
+describe("shouldCollapseSection / sectionContentClasses", () => {
+  it("collapses gallery and combat stats sections", () => {
+    expect(shouldCollapseSection("Gallery")).toBe(true);
+    expect(shouldCollapseSection("Combat stats")).toBe(true);
+    expect(shouldCollapseSection("Strategy")).toBe(false);
+  });
+
+  it("tags requirements and gear sections with structured classes", () => {
+    expect(sectionContentClasses("Requirements")).toContain("requirements");
+    expect(sectionContentClasses("Equipment")).toContain("loadout");
+    expect(sectionContentClasses("Strategy")).toBe("");
   });
 });
