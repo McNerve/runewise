@@ -194,7 +194,7 @@ Every item, every price, updated every couple of minutes.
 
 Real-time game events in one place.
 
-- **Shooting Stars** — live tracker from the Star Miners crowdsource API with tier, world, time remaining, teleport suggestions, and opt-in native spawn alerts
+- **Shooting Stars** — live tracker from the 07.gg public stars API with tier, world, time remaining, teleport suggestions, and opt-in native spawn alerts
 - **World Map** — 114+ hand-placed POIs (farming, fairy rings, slayer, altars, teleports) with cursor-anchored zoom
 - **OSRS News** — shipped, upcoming, and proposed updates in one feed
 - **Wiki Lookup** — search any wiki page, rendered in full with a sticky scrollspy table of contents and live GE price enrichment
@@ -218,7 +218,7 @@ IndexedDB. The game client is never touched; no EULA is ever strained.
 | [OSRS Hiscores](https://secure.runescape.com/m=hiscore_oldschool/) | Player stats, boss KCs, ironman detection | Jagex |
 | [Wise Old Man](https://wiseoldman.net/) | XP tracking, achievements, records, competitions | [MIT](https://github.com/wise-old-man/wise-old-man/blob/master/LICENSE) |
 | [Temple OSRS](https://templeosrs.com/) | Collection log data | Public API |
-| [Star Miners](https://starminers.site/) | Live shooting star locations | Public API |
+| [07.gg Shooting Stars](https://old.07.gg/) | Live shooting star locations | Public API |
 | [RuneLite](https://github.com/runelite/runelite) | Clue data | [BSD](https://github.com/runelite/runelite/blob/master/LICENSE) |
 
 ---

@@ -6,6 +6,7 @@ import { petIcon } from "../../lib/sprites";
 import { loadJSON, saveJSON } from "../../lib/localStorage";
 import { fetchTempleCollectionLog, fetchTempleClogItemNames } from "../../lib/api/temple";
 import { findActivityScore, type HiscoreData } from "../../lib/api/hiscores";
+import AccountPrefillBanner from "../../components/AccountPrefillBanner";
 
 const OWNED_KEY_PREFIX = "runewise_owned_pets:";
 const ownedKey = (rsn: string) => `${OWNED_KEY_PREFIX}${rsn.toLowerCase() || "anon"}`;
@@ -290,6 +291,10 @@ export default function PetCalculator({ hiscores, rsn }: Props) {
   return (
     <div className="max-w-3xl">
       <h2 className="text-2xl font-semibold tracking-tight">Pet Chance Calculator</h2>
+      <AccountPrefillBanner
+        hasHiscores={Boolean(hiscores)}
+        context="skill levels, XP, and boss KC for pet odds"
+      />
       <p className="text-sm text-text-secondary mb-1">Handles level-scaled skilling pets, raid scaling, team size, and Slayer-task boosts.</p>
       <p className="text-xs text-text-secondary/70 mb-4 tabular-nums">
         Owned: <span className="text-success font-medium">{ownedCount}</span> / {ALL_PETS.length}

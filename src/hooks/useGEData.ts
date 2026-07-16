@@ -7,6 +7,8 @@ interface GEDataState {
   prices: Record<string, ItemPrice>;
   mappingLoaded: boolean;
   pricesLoaded: boolean;
+  /** When latest prices were last successfully fetched (local clock). */
+  pricesUpdatedAt: Date | null;
   loading: boolean;
   fetchIfNeeded: () => Promise<void>;
   refreshPrices: () => Promise<void>;
@@ -22,6 +24,7 @@ export function useGEDataProvider(): GEDataState {
   const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
   const [mappingLoaded, setMappingLoaded] = useState(false);
   const [pricesLoaded, setPricesLoaded] = useState(false);
+  const [pricesUpdatedAt, setPricesUpdatedAt] = useState<Date | null>(null);
   const [loading, setLoading] = useState(false);
   const fetchedRef = useRef(false);
 
@@ -35,8 +38,11 @@ export function useGEDataProvider(): GEDataState {
       setPrices(p);
       setMappingLoaded(true);
       setPricesLoaded(true);
+      setPricesUpdatedAt(new Date());
     } catch (err: unknown) {
       warn("GEData: fetch failed", err);
+      // Allow a later retry if the first attempt failed offline.
+      fetchedRef.current = false;
     } finally {
       setLoading(false);
     }
@@ -47,6 +53,7 @@ export function useGEDataProvider(): GEDataState {
       const p = await fetchLatestPrices();
       setPrices(p);
       setPricesLoaded(true);
+      setPricesUpdatedAt(new Date());
     } catch (err: unknown) {
       warn("GEData: refresh prices failed", err);
     }
@@ -65,6 +72,7 @@ export function useGEDataProvider(): GEDataState {
     prices,
     mappingLoaded,
     pricesLoaded,
+    pricesUpdatedAt,
     loading,
     fetchIfNeeded,
     refreshPrices,

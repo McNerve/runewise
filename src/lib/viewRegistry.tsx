@@ -3,6 +3,8 @@ import { lazy, type LazyExoticComponent, type ComponentType, type ReactNode } fr
 import type { HiscoreData, IronmanType } from "./api/hiscores";
 import type { View } from "./features";
 import ViewErrorBoundary from "../components/ViewErrorBoundary";
+import EmptyState from "../components/EmptyState";
+import { NAV_ICONS } from "./sprites";
 
 const Home = lazy(() => import("../features/home/Home"));
 const Overview = lazy(() => import("../features/overview/Overview"));
@@ -31,8 +33,6 @@ const Progress = lazy(() => import("../features/progress/Progress"));
 const GearCompare = lazy(() => import("../features/gear-compare/GearCompare"));
 const WorldMap = lazy(() => import("../features/world-map/WorldMap"));
 const Spells = lazy(() => import("../features/spells/Spells"));
-import EmptyState from "../components/EmptyState";
-import { NAV_ICONS } from "./sprites";
 const TrainingPlan = lazy(() => import("../features/training-plan/TrainingPlan"));
 const CollectionLog = lazy(() => import("../features/collection-log/CollectionLog"));
 const Raids = lazy(() => import("../features/raids/Raids"));
@@ -53,56 +53,89 @@ interface AppViewContext {
 
 type ViewRenderer = (context: AppViewContext) => ReactNode;
 
-function renderComponent(Component: LazyExoticComponent<ComponentType>, name?: string) {
-  return () => (
-    <ViewErrorBoundary viewName={name}>
-      <Component />
+/** Wrap any view renderer so a crash stays isolated to that tool. */
+function withBoundary(viewName: string, render: ViewRenderer): ViewRenderer {
+  return (context) => (
+    <ViewErrorBoundary viewName={viewName}>
+      {render(context)}
     </ViewErrorBoundary>
   );
 }
 
+function renderComponent(Component: LazyExoticComponent<ComponentType>, name: string) {
+  return withBoundary(name, () => <Component />);
+}
+
 export const VIEW_RENDERERS: Record<View, ViewRenderer> = {
-  home: ({ hiscores }) => <Home hiscores={hiscores} />,
-  overview: ({ hiscores }) =>
+  home: withBoundary("Home", ({ hiscores }) => <Home hiscores={hiscores} />),
+  overview: withBoundary("Profile", ({ hiscores }) =>
     hiscores.data ? (
-      <Overview hiscores={hiscores.data} rsn={hiscores.rsn} lastFetched={hiscores.lastFetched ?? null} onRefresh={hiscores.onRefresh} />
+      <Overview
+        hiscores={hiscores.data}
+        rsn={hiscores.rsn}
+        lastFetched={hiscores.lastFetched ?? null}
+        onRefresh={hiscores.onRefresh}
+      />
     ) : (
       <EmptyState
         icon={NAV_ICONS.overview}
         title="Set your RSN to get started"
         description="Enter your RuneScape name above to turn RuneWise into a personalized command center."
       />
-    ),
-  lookup: renderComponent(PlayerLookup),
-  "skill-calc": ({ hiscores }) => <SkillCalculator hiscores={hiscores.data} />,
-  "dry-calc": ({ hiscores }) => <DryCalculator hiscores={hiscores.data} />,
-  "xp-table": renderComponent(XpTable),
-  "collection-log": ({ hiscores }) => <CollectionLog rsn={hiscores.rsn} />,
-  tracker: ({ hiscores }) => <XpTracker rsn={hiscores.rsn} />,
-  bosses: ({ hiscores }) => <BossGuide hiscores={hiscores.data} />,
-  raids: renderComponent(Raids),
-  loot: () => <Loot key={window.location.hash} />,
-  progress: ({ hiscores }) => <Progress key={window.location.hash} hiscores={hiscores.data} />,
-  slayer: renderComponent(SlayerHelper),
-  news: renderComponent(News),
-  "pet-calc": ({ hiscores }) => <PetCalculator hiscores={hiscores.data} rsn={hiscores.rsn} />,
-  "dps-calc": ({ hiscores }) => <DpsCalculator hiscores={hiscores.data} />,
-  "training-plan": ({ hiscores }) => <TrainingPlan hiscores={hiscores.data} />,
-  "gear-compare": renderComponent(GearCompare),
-  watchlist: renderComponent(Watchlist),
-  timers: renderComponent(FarmTimers),
-  "money-making": ({ hiscores }) => <MoneyMaking hiscores={hiscores.data} />,
-  "combat-tasks": () => <CombatTasks key={window.location.hash} />,
-  "clue-helper": renderComponent(ClueHelper),
-  spells: renderComponent(Spells),
-  "world-map": renderComponent(WorldMap),
-  stars: renderComponent(ShootingStars),
-  wiki: () => <WikiLookup key={window.location.hash} />,
-  market: renderComponent(Market),
-  "production-calc": renderComponent(ProductionCalc),
-  "shop-helper": renderComponent(ShopHelper),
-  kingdom: renderComponent(Kingdom),
+    )
+  ),
+  lookup: renderComponent(PlayerLookup, "Hiscores Lookup"),
+  "skill-calc": withBoundary("Skill Calculator", ({ hiscores }) => (
+    <SkillCalculator hiscores={hiscores.data} />
+  )),
+  "dry-calc": withBoundary("Dry Calculator", ({ hiscores }) => (
+    <DryCalculator hiscores={hiscores.data} />
+  )),
+  "xp-table": renderComponent(XpTable, "XP Table"),
+  "collection-log": withBoundary("Collection Log", ({ hiscores }) => (
+    <CollectionLog rsn={hiscores.rsn} />
+  )),
+  tracker: withBoundary("XP Tracker", ({ hiscores }) => (
+    <XpTracker rsn={hiscores.rsn} />
+  )),
+  bosses: withBoundary("Boss Guides", ({ hiscores }) => (
+    <BossGuide hiscores={hiscores.data} />
+  )),
+  raids: renderComponent(Raids, "Raid Guides"),
+  loot: withBoundary("Loot", () => <Loot key={window.location.hash} />),
+  progress: withBoundary("Character Progress", ({ hiscores }) => (
+    <Progress key={window.location.hash} hiscores={hiscores.data} />
+  )),
+  slayer: renderComponent(SlayerHelper, "Slayer Helper"),
+  news: renderComponent(News, "OSRS News"),
+  "pet-calc": withBoundary("Pet Calculator", ({ hiscores }) => (
+    <PetCalculator hiscores={hiscores.data} rsn={hiscores.rsn} />
+  )),
+  "dps-calc": withBoundary("DPS Calculator", ({ hiscores }) => (
+    <DpsCalculator hiscores={hiscores.data} />
+  )),
+  "training-plan": withBoundary("Training Plan", ({ hiscores }) => (
+    <TrainingPlan hiscores={hiscores.data} />
+  )),
+  "gear-compare": renderComponent(GearCompare, "Gear Compare"),
+  watchlist: renderComponent(Watchlist, "Watchlist"),
+  timers: renderComponent(FarmTimers, "Farming Timers"),
+  "money-making": withBoundary("Money Making", ({ hiscores }) => (
+    <MoneyMaking hiscores={hiscores.data} />
+  )),
+  "combat-tasks": withBoundary("Combat Tasks", () => (
+    <CombatTasks key={window.location.hash} />
+  )),
+  "clue-helper": renderComponent(ClueHelper, "Clue Helper"),
+  spells: renderComponent(Spells, "Spells"),
+  "world-map": renderComponent(WorldMap, "World Map"),
+  stars: renderComponent(ShootingStars, "Star Helper"),
+  wiki: withBoundary("OSRS Wiki", () => <WikiLookup key={window.location.hash} />),
+  market: renderComponent(Market, "Items & Watchlist"),
+  "production-calc": renderComponent(ProductionCalc, "Recipe Calculator"),
+  "shop-helper": renderComponent(ShopHelper, "Shop Helper"),
+  kingdom: renderComponent(Kingdom, "Kingdom Calculator"),
   "flip-journal": renderComponent(FlipJournal, "Flip Journal"),
-  about: renderComponent(About),
-  settings: renderComponent(Settings),
+  about: renderComponent(About, "About"),
+  settings: renderComponent(Settings, "Settings"),
 };

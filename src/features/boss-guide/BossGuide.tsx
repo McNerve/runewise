@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import * as Tooltip from "@radix-ui/react-tooltip";
 import {
   BOSS_CATEGORIES,
   BOSSES,
@@ -21,176 +20,55 @@ import {
   fetchMapping,
   type ItemPrice,
 } from "../../lib/api/ge";
-import {
-  COMBAT_TASKS,
-  COMBAT_TIERS,
-  type CombatTask,
-} from "../../lib/data/combat-achievements";
-import {
-  BOSS_DROP_TABLES,
-  type BossDropTable,
-} from "../../lib/data/boss-drops";
-import { getRaidLoot, type RaidDropEntry } from "../../lib/data/raid-loot";
+import { type CombatTask } from "../../lib/data/combat-achievements";
+import { BOSS_DROP_TABLES } from "../../lib/data/boss-drops";
+import type { RaidDropEntry } from "../../lib/data/raid-loot";
 
-// Weakness → DPS Calc combat style mapping
-const WEAKNESS_STYLE_MAP: Record<string, string> = {
-  stab: "melee",
-  slash: "melee",
-  crush: "melee",
-  melee: "melee",
-  ranged: "ranged",
-  range: "ranged",
-  magic: "magic",
-  mage: "magic",
-};
-
-function weaknessToStyle(weakness: string): string {
-  return WEAKNESS_STYLE_MAP[weakness.toLowerCase()] ?? "melee";
-}
-
-/** Attempt to extract weakness from description prose as fallback */
-function extractWeaknessFromSummary(summary: string | undefined): string | null {
-  if (!summary) return null;
-  const m = summary.match(/weak(?:\s+against|\s+to|ness:?)\s+([a-z]+)/i);
-  return m ? m[1] : null;
-}
-
-function normalizeBossSlug(name: string): string {
-  return name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
-}
 import { openExternal } from "../../lib/openExternal";
+import {
+  extractWeaknessFromSummary,
+  handleGuideClick,
+  normalizeBossSlug,
+  scrollToGuideSection,
+  weaknessToStyle,
+} from "./bossGuideUtils";
+import AccountPrefillBanner from "../../components/AccountPrefillBanner";
 import { formatGp } from "../../lib/format";
 import FreshnessStrip from "../../components/FreshnessStrip";
 import { useNavigation } from "../../lib/NavigationContext";
 import WikiImage from "../../components/WikiImage";
 import StructuredSection from "./StructuredSection";
 import BossMetaCard from "./components/BossMetaCard";
+import BossActionIcon from "./components/BossActionIcon";
 import { BOSS_METADATA } from "../../lib/data/boss-metadata";
 import { fetchDropsForMonster, fetchBossDropsFromWiki, type WikiDrop, type BossWikiDrop } from "../../lib/api/drops";
 import DropTable from "../../components/DropTable";
 import { Button } from "../../components/primitives";
 import { Skeleton, TableSkeleton, CardSkeleton } from "../../components/Skeleton";
 import EmptyState from "../../components/EmptyState";
+import { initWikiInteractive } from "../../lib/wiki/interactive";
 import {
-  initWikiInteractive,
-  handleLightboxClick,
-} from "../../lib/wiki/interactive";
+  BOSS_WORKSPACE_TABS,
+  CATEGORY_LABELS,
+  type BossWorkspaceTab,
+} from "./bossGuideConstants";
+import { sectionContentClasses } from "../wiki-lookup/wikiLookupUtils";
+import {
+  buildItemMaps,
+  computeDropCategoryCount,
+  computeLootRows,
+  computeLootTotals,
+  computeTopDrops,
+  getBossKc,
+  getBossLootTable,
+  getBossTasks,
+  getRaidLootFallback,
+  groupTasksByTier,
+  raidTopUniqueName,
+} from "./bossGuideSelectors";
 
 interface Props {
   hiscores?: HiscoreData | null;
-}
-
-type BossWorkspaceTab = "guide" | "drops" | "tasks";
-
-const BOSS_WORKSPACE_TABS: Array<{
-  id: BossWorkspaceTab;
-  label: string;
-  description: string;
-}> = [
-  { id: "guide", label: "Strategy", description: "Mechanics, requirements, gear" },
-  { id: "drops", label: "Loot & Drops", description: "Uniques, value, drop groups" },
-  { id: "tasks", label: "Task Planner", description: "Boss-linked CA reference" },
-];
-
-const CATEGORY_LABELS: Record<string, string> = {
-  All: "All bosses",
-  Raids: "Raid encounters",
-  GWD: "God Wars Dungeon",
-  Slayer: "Slayer bosses",
-  Wilderness: "Wilderness bosses",
-  Other: "Other bosses",
-  Varlamore: "Varlamore",
-};
-
-function BossActionIcon({
-  label,
-  icon,
-  onClick,
-  href,
-}: {
-  label: string;
-  icon: string;
-  onClick?: () => void;
-  href?: string;
-}) {
-  const className = "boss-action-icon";
-  const trigger = href ? (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label={label}
-      className={className}
-    >
-      {icon}
-    </a>
-  ) : (
-    <button type="button" onClick={onClick} aria-label={label} className={className}>
-      {icon}
-    </button>
-  );
-  return (
-    <Tooltip.Root delayDuration={150}>
-      <Tooltip.Trigger asChild>{trigger}</Tooltip.Trigger>
-      <Tooltip.Portal>
-        <Tooltip.Content className="tooltip-content" side="bottom" sideOffset={6}>
-          {label}
-          <Tooltip.Arrow className="fill-bg-tertiary" />
-        </Tooltip.Content>
-      </Tooltip.Portal>
-    </Tooltip.Root>
-  );
-}
-
-function guideSectionClassName(title: string) {
-  const lower = title.toLowerCase();
-  if (
-    lower.includes("suggested skills") ||
-    lower.includes("recommended skills") ||
-    lower.includes("requirements")
-  ) {
-    return "article-content--structured article-content--requirements";
-  }
-
-  if (
-    lower.includes("equipment") ||
-    lower.includes("inventory") ||
-    lower.includes("gear")
-  ) {
-    return "article-content--structured article-content--loadout article-content--loadout-table";
-  }
-
-  return "";
-}
-
-function scrollToGuideSection(sectionId: string) {
-  const element = document.getElementById(sectionId);
-  if (!element) return;
-  element.scrollIntoView({ behavior: "smooth", block: "start" });
-}
-
-function handleGuideClick(e: React.MouseEvent) {
-  const target = e.target;
-
-  if (target instanceof HTMLButtonElement && target.classList.contains("tile-marker-copy")) {
-    const tiles = target.getAttribute("data-tiles");
-    if (tiles) {
-      navigator.clipboard.writeText(tiles).then(() => {
-        const original = target.textContent;
-        target.textContent = "✓ Copied!";
-        target.style.color = "#22c55e";
-        target.style.borderColor = "rgba(34,197,94,0.3)";
-        setTimeout(() => {
-          target.textContent = original;
-          target.style.color = "#3b82f6";
-          target.style.borderColor = "#2e3345";
-        }, 2000);
-      });
-    }
-    return;
-  }
-
-  handleLightboxClick(e);
 }
 
 export default function BossGuide({ hiscores }: Props) {
@@ -222,164 +100,49 @@ export default function BossGuide({ hiscores }: Props) {
     [selectedCategory]
   );
 
-  const bossKc = useMemo(() => {
-    if (!selectedBoss || !hiscores?.activities) return null;
-    const bossName = selectedBoss.name.toLowerCase();
-    const altName = selectedBoss.hiscoresName?.toLowerCase();
-    const activity = hiscores.activities.find((item) => {
-      const actName = item.name.toLowerCase();
-      return (
-        actName === bossName ||
-        (altName && actName === altName) ||
-        bossName.includes(actName) ||
-        actName.includes(bossName)
-      );
-    });
-    return activity && activity.score > 0 ? activity.score : null;
-  }, [hiscores, selectedBoss]);
-
-  const bossTasks = useMemo(() => {
-    if (!selectedBoss) return [];
-
-    // Map boss names to their combat task boss names (handles mismatches)
-    const TASK_ALIASES: Record<string, string[]> = {
-      "Dagannoth Rex": ["Dagannoth Kings"],
-      "Dagannoth Prime": ["Dagannoth Kings"],
-      "Dagannoth Supreme": ["Dagannoth Kings"],
-      "TzKal-Zuk": ["The Inferno"],
-      "TzTok-Jad": ["TzHaar Fight Cave"],
-      "Barrows Chests": ["Barrows"],
-      "The Gauntlet": ["Gauntlet"],
-      "The Corrupted Gauntlet": ["Corrupted Gauntlet"],
-      "Nightmare": ["The Nightmare"],
-    };
-
-    const selected = normalizeBossLookup(selectedBoss.name);
-    const aliases = (TASK_ALIASES[selectedBoss.name] ?? []).map(normalizeBossLookup);
-
-    return COMBAT_TASKS.filter((task) => {
-      const taskBoss = normalizeBossLookup(task.boss);
-      return (
-        taskBoss === selected ||
-        taskBoss.includes(selected) ||
-        selected.includes(taskBoss) ||
-        aliases.some((alias) => taskBoss === alias || taskBoss.includes(alias))
-      );
-    });
-  }, [selectedBoss]);
-
-  const tasksByTier = useMemo(
-    () =>
-      COMBAT_TIERS.map((tier) => ({
-        tier,
-        tasks: bossTasks.filter((task) => task.tier === tier),
-      })).filter((group) => group.tasks.length > 0),
-    [bossTasks]
+  const bossKc = useMemo(
+    () => getBossKc(hiscores, selectedBoss),
+    [hiscores, selectedBoss]
   );
 
-  const bossLootTable = useMemo<BossDropTable | null>(() => {
-    if (!selectedBoss) return null;
-    return (
-      BOSS_DROP_TABLES.find(
-        (boss) => normalizeBossLookup(boss.bossName) === normalizeBossLookup(selectedBoss.name)
-      ) ?? null
-    );
-  }, [selectedBoss]);
+  const bossTasks = useMemo(() => getBossTasks(selectedBoss), [selectedBoss]);
+
+  const tasksByTier = useMemo(() => groupTasksByTier(bossTasks), [bossTasks]);
+
+  const bossLootTable = useMemo(
+    () => getBossLootTable(selectedBoss),
+    [selectedBoss]
+  );
 
   // Raid loot fallback: used when wiki drops are empty and boss is a raid
   const raidLootFallback = useMemo(() => {
-    if (!selectedBoss) return null;
-    const hasLootData = dropCategories.length > 0 || wikiDrops.length > 0 || bossLootTable !== null;
-    if (hasLootData) return null;
-    return getRaidLoot(selectedBoss.name);
+    const hasLootData =
+      dropCategories.length > 0 || wikiDrops.length > 0 || bossLootTable !== null;
+    return getRaidLootFallback(selectedBoss, hasLootData);
   }, [selectedBoss, dropCategories, wikiDrops, bossLootTable]);
 
-  const topDrops = useMemo(() => {
-    if (dropCategories.length > 0) {
-      return dropCategories
-        .flatMap((category) => category.drops)
-        .map((drop) => {
-          const itemId = itemMap.get(drop.name.toLowerCase());
-          const price = itemId ? prices[String(itemId)] : null;
-          const gePrice = price?.high ?? price?.low ?? null;
-          return { drop, gePrice };
-        })
-        .sort((a, b) => (b.gePrice ?? 0) - (a.gePrice ?? 0))
-        .slice(0, 3);
-    }
-
-    if (!bossLootTable) return [];
-
-    return bossLootTable.drops
-      .map((drop) => {
-        const price = prices[String(drop.itemId)];
-        const gePrice = price?.high ?? price?.low ?? null;
-        return {
-          drop: {
-            name: drop.itemName,
-            quantity: String(drop.quantity),
-            rarity: drop.rate === 1 ? "Always" : `1/${drop.rate.toLocaleString()}`,
-            price: gePrice != null ? String(gePrice) : "",
-            category: drop.category,
-          },
-          gePrice,
-        };
-      })
-      .sort((a, b) => (b.gePrice ?? 0) - (a.gePrice ?? 0))
-      .slice(0, 3);
-  }, [bossLootTable, dropCategories, itemMap, prices]);
+  const topDrops = useMemo(
+    () => computeTopDrops(dropCategories, bossLootTable, itemMap, prices),
+    [bossLootTable, dropCategories, itemMap, prices]
+  );
 
   // Top drop from raid fallback (for summary card)
-  const raidTopDrop = useMemo((): string | null => {
-    if (!raidLootFallback) return null;
-    return raidLootFallback.uniques[0]?.name ?? null;
-  }, [raidLootFallback]);
+  const raidTopDrop = useMemo(
+    () => raidTopUniqueName(raidLootFallback),
+    [raidLootFallback]
+  );
 
-  const lootRows = useMemo(() => {
-    if (!bossLootTable) return [];
+  const lootRows = useMemo(
+    () => computeLootRows(bossLootTable, prices, lootKillsPerHour),
+    [bossLootTable, lootKillsPerHour, prices]
+  );
 
-    return bossLootTable.drops.map((drop) => {
-      const price = prices[String(drop.itemId)];
-      const gePrice =
-        price?.high != null && price?.low != null
-          ? Math.round((price.high + price.low) / 2)
-          : (price?.high ?? price?.low ?? null);
-      const evPerKill = gePrice != null ? (drop.quantity * gePrice) / drop.rate : null;
-      return {
-        ...drop,
-        gePrice,
-        evPerKill,
-        evPerHr: evPerKill != null ? evPerKill * lootKillsPerHour : null,
-      };
-    });
-  }, [bossLootTable, lootKillsPerHour, prices]);
+  const lootTotals = useMemo(() => computeLootTotals(lootRows), [lootRows]);
 
-  const lootTotals = useMemo(() => {
-    const perKill = lootRows.reduce((sum, row) => sum + (row.evPerKill ?? 0), 0);
-    const perHour = lootRows.reduce((sum, row) => sum + (row.evPerHr ?? 0), 0);
-    return { perKill, perHour };
-  }, [lootRows]);
-
-  // Raid bosses have structured loot even without a static BossDropTable entry.
-  // Known raid category counts: Uniques + Common = 2.
-  const RAID_DROP_CATEGORY_COUNTS: Record<string, number> = {
-    "Tombs of Amascut": 2,
-    "Tombs of Amascut: Expert Mode": 2,
-    "Theatre of Blood": 2,
-    "Theatre of Blood: Hard Mode": 2,
-    "Chambers of Xeric": 2,
-    "Chambers of Xeric: Challenge Mode": 2,
-  };
-
-  const dropCategoryCount = useMemo(() => {
-    if (dropCategories.length > 0) return dropCategories.length;
-    if (bossLootTable) return new Set(bossLootTable.drops.map((drop) => drop.category)).size;
-    if (selectedBoss && RAID_DROP_CATEGORY_COUNTS[selectedBoss.name] != null) {
-      return RAID_DROP_CATEGORY_COUNTS[selectedBoss.name];
-    }
-    return null;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bossLootTable, dropCategories, selectedBoss]);
+  const dropCategoryCount = useMemo(
+    () => computeDropCategoryCount(dropCategories, bossLootTable, selectedBoss),
+    [bossLootTable, dropCategories, selectedBoss]
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -388,14 +151,9 @@ export default function BossGuide({ hiscores }: Props) {
       ([nextPrices, mapping]) => {
         if (cancelled) return;
         setPrices(nextPrices);
-        const nameToId = new Map<string, number>();
-        const nameToIcon = new Map<string, string>();
-        for (const item of mapping) {
-          nameToId.set(item.name.toLowerCase(), item.id);
-          if (item.icon) nameToIcon.set(item.name.toLowerCase(), item.icon);
-        }
-        setItemMap(nameToId);
-        setIconMap(nameToIcon);
+        const maps = buildItemMaps(mapping);
+        setItemMap(maps.itemMap);
+        setIconMap(maps.iconMap);
       }
     );
 
@@ -477,6 +235,10 @@ export default function BossGuide({ hiscores }: Props) {
 
   return (
     <div className="space-y-5">
+      <AccountPrefillBanner
+        hasHiscores={Boolean(hiscores)}
+        context="boss kill counts and personalised task context"
+      />
       <div>
         <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
           <div className="space-y-1">
@@ -910,7 +672,7 @@ export default function BossGuide({ hiscores }: Props) {
                     )}
                     <StructuredSection title={section.title} html={section.html} bossSlug={normalizeBossSlug(selectedBoss.name)} />
                     <div
-                      className={`article-content text-sm leading-7 text-text-secondary ${guideSectionClassName(section.title)}`.trim()}
+                      className={`article-content text-sm leading-7 text-text-secondary ${sectionContentClasses(section.title)}`.trim()}
                       dangerouslySetInnerHTML={{ __html: section.html }}
                       style={
                         section.title.toLowerCase().includes("requirements") ||

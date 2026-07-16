@@ -84,8 +84,57 @@ export default function FlipFinder({ mapping, prices }: FlipFinderProps) {
     [mapping, prices, volumes, budget, minMargin, minVolume, members, sort]
   );
 
+  const topByLimit = useMemo(() => {
+    if (flips.length === 0) return null;
+    return flips.reduce((best, f) => (f.perLimit > best.perLimit ? f : best), flips[0]!);
+  }, [flips]);
+
+  const topMargin = useMemo(() => {
+    if (flips.length === 0) return null;
+    return flips.reduce((best, f) => (f.margin > best.margin ? f : best), flips[0]!);
+  }, [flips]);
+
+  const medianRoi = useMemo(() => {
+    if (flips.length === 0) return null;
+    const sorted = [...flips].map((f) => f.roi).sort((a, b) => a - b);
+    return sorted[Math.floor(sorted.length / 2)] ?? null;
+  }, [flips]);
+
   return (
     <div>
+      {/* Hero verdict — marketing differentiator for flippers */}
+      {volLoaded && flips.length > 0 && topByLimit && topMargin && medianRoi != null && (
+        <div className="mb-4 grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div className="rounded-xl border border-accent/25 bg-accent/8 px-3 py-2.5">
+            <div className="text-[10px] uppercase tracking-[0.14em] text-accent/80">Best / limit</div>
+            <div className="mt-0.5 text-lg font-semibold num text-accent">
+              {formatGp(topByLimit.perLimit)}
+            </div>
+            <div className="text-xs text-text-secondary truncate" title={topByLimit.item.name}>
+              {topByLimit.item.name}
+            </div>
+          </div>
+          <div className="rounded-xl border border-border-subtle bg-bg-tertiary/60 px-3 py-2.5">
+            <div className="text-[10px] uppercase tracking-[0.14em] text-text-tertiary">Top margin</div>
+            <div className="mt-0.5 text-lg font-semibold num text-success">
+              {formatGp(topMargin.margin)}
+            </div>
+            <div className="text-xs text-text-secondary truncate" title={topMargin.item.name}>
+              {topMargin.item.name}
+            </div>
+          </div>
+          <div className="rounded-xl border border-border-subtle bg-bg-tertiary/60 px-3 py-2.5">
+            <div className="text-[10px] uppercase tracking-[0.14em] text-text-tertiary">Median ROI</div>
+            <div className="mt-0.5 text-lg font-semibold num text-text-primary">
+              {(medianRoi * 100).toFixed(1)}%
+            </div>
+            <div className="text-xs text-text-secondary">
+              {flips.length} tax-correct flips · after 2% sell tax
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Filters */}
       <div className="flex flex-wrap items-end gap-3 mb-3">
         <NumberField label="Budget (max buy)" value={budget} onChange={setBudget} placeholder="any" />

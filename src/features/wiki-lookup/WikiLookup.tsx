@@ -36,59 +36,12 @@ import {
   type WikiHistory,
 } from "./wikiHistory";
 import { formatGp } from "../../lib/format";
-
-// Curated starting points for the empty state — pages players reach for most.
-const POPULAR_PAGES = [
-  "Money making guide",
-  "Optimal quest guide",
-  "Achievement Diary",
-  "Combat Achievements",
-  "Slayer",
-  "Grand Exchange",
-  "Wilderness",
-  "Free-to-play",
-];
-
-const COLLAPSED_SECTIONS = [
-  "used in recommended equipment",
-  "item sources",
-  "products",
-  "gallery",
-  "drop sources",
-  "spawns",
-  "combat stats",
-  "changes",
-];
-
-function shouldCollapse(title: string): boolean {
-  const lower = title.toLowerCase();
-  return COLLAPSED_SECTIONS.some((s) => lower.includes(s));
-}
-
-function sectionExtraClasses(title: string): string {
-  const lower = title.toLowerCase();
-  if (
-    lower.includes("suggested skills") ||
-    lower.includes("recommended skills") ||
-    lower.includes("requirements")
-  ) {
-    return "article-content--structured article-content--requirements";
-  }
-  if (
-    lower.includes("equipment") ||
-    lower.includes("inventory") ||
-    lower.includes("gear")
-  ) {
-    return "article-content--structured article-content--loadout article-content--loadout-table";
-  }
-  return "";
-}
-
-interface GESnapshot {
-  price: number | null;
-  buyLimit: number | null;
-  dailyVolume: number | null;
-}
+import { POPULAR_PAGES } from "./wikiLookupConstants";
+import {
+  sectionContentClasses,
+  shouldCollapseSection,
+} from "./wikiLookupUtils";
+import { buildGeSnapshot, wikiKindLabel, type GESnapshot } from "./wikiLookupGe";
 
 export default function WikiLookup() {
   const { params, navigate } = useNavigation();
@@ -133,19 +86,9 @@ export default function WikiLookup() {
       return;
     }
 
-    const title = document.title.toLowerCase();
-    const match = mapping.find((m) => m.name.toLowerCase() === title);
-    if (!match) {
-      setGeSnapshot(null);
-      return;
-    }
-
-    const priceEntry = prices[String(match.id)];
-    const price = priceEntry?.high ?? priceEntry?.low ?? null;
-
-    // Untradeables can appear in the mapping with no market data — a GE box
-    // showing only dashes is noise, not information.
-    if (price === null && match.limit == null) {
+    // Sync lookup first so untradeables / misses clear immediately.
+    const base = buildGeSnapshot(document.title, mapping, prices);
+    if (!base) {
       setGeSnapshot(null);
       return;
     }
@@ -154,16 +97,10 @@ export default function WikiLookup() {
     fetchVolumes()
       .then((vols) => {
         if (cancelled) return;
-        setGeSnapshot({
-          price,
-          buyLimit: match.limit ?? null,
-          dailyVolume: vols[String(match.id)] ?? null,
-        });
+        setGeSnapshot(buildGeSnapshot(document.title, mapping, prices, vols));
       })
       .catch(() => {
-        if (!cancelled) {
-          setGeSnapshot({ price, buyLimit: match.limit ?? null, dailyVolume: null });
-        }
+        if (!cancelled) setGeSnapshot(base);
       });
 
     return () => { cancelled = true; };
@@ -224,10 +161,7 @@ export default function WikiLookup() {
   }
 
   function getKindLabel(kind: WikiEntityKind) {
-    if (kind === "item") return "Item";
-    if (kind === "boss") return "Boss";
-    if (kind === "quest") return "Quest";
-    return "Wiki";
+    return wikiKindLabel(kind);
   }
 
   useEffect(() => {
@@ -732,8 +666,8 @@ export default function WikiLookup() {
             ) : null}
 
             {document.sections.map((section) => {
-              const extra = sectionExtraClasses(section.title);
-              const collapsed = shouldCollapse(section.title);
+              const extra = sectionContentClasses(section.title);
+              const collapsed = shouldCollapseSection(section.title);
               return collapsed ? (
                 <details key={section.id} id={section.id} className="article-content-collapse scroll-mt-4">
                   <summary className="mb-4 text-lg font-semibold tracking-tight cursor-pointer text-text-primary hover:text-accent transition-colors">

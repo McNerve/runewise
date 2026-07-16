@@ -13,6 +13,7 @@ import RecipeCostTable from "./components/RecipeCostTable";
 import WikiRecipeTable from "./components/WikiRecipeTable";
 import ConstructionPlanner from "./components/ConstructionPlanner";
 import { useSettings } from "../../hooks/useSettings";
+import AccountPrefillBanner from "../../components/AccountPrefillBanner";
 
 const TrainingPlan = lazy(() => import("../training-plan/TrainingPlan"));
 const XpTable = lazy(() => import("../xp-table/XpTable"));
@@ -129,6 +130,10 @@ export default function SkillCalculator({ hiscores }: Props) {
   return (
     <div className="max-w-3xl">
       <h2 className="text-2xl font-semibold tracking-tight mb-4">Skills</h2>
+      <AccountPrefillBanner
+        hasHiscores={Boolean(hiscores)}
+        context="current XP and levels for each skill"
+      />
 
       {/* Tab bar */}
       <div className="flex gap-1 mb-5">

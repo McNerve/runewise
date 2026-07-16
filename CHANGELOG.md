@@ -2,6 +2,42 @@
 
 All notable changes to RuneWise are documented here. Versions follow [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixes
+
+- **Windows RuneLite integration** — home directory resolution now falls back to `USERPROFILE` when `HOME` is unset, and paths are built with `PathBuf` so profile / loot-tracker / bossing-info lookups work on native Windows.
+- **Corrupt navigation recovery** — persisted `runewise_navigation` is validated against the feature registry; invalid views fall back to Home instead of rendering a broken shell.
+- **Shooting Stars attribution** — About, Settings, Star Helper UI, and README now credit the live **07.gg** public API (Star Miners was retired after key revocation).
+- **GE fetch retry** — failed initial price/mapping loads no longer permanently block later `fetchIfNeeded` attempts (important when launching offline).
+
+### UX / product
+
+- **Offline banner** — shell shows a clear status strip when the network drops; cached data still works.
+- **Window min size** — desktop window floors at 900×600 so layouts don't collapse into unusable shards.
+- **View error isolation** — every tool (including hiscores-heavy views) is wrapped in `ViewErrorBoundary` with per-view names and clear-on-navigate recovery.
+- **Sidebar IA trim** — secondary tools stay in ⌘K/search + deep links, but leave the main nav: Hiscores lookup, Dry/Pet/Recipe/Kingdom calcs, Shop Helper, Spells, World Map, News.
+- **GE freshness** — shared `pricesUpdatedAt` on the GE context; Money Making shows the same 5‑minute freshness strip as Items.
+- **Account prefill banners** — DPS, Skills, Dry, Pets, Training Plan, Boss Guides, and Money Making prompt for RSN when hiscores are empty (player bar remains the single entry).
+- **Flip Finder hero strip** — Best / limit, top margin, and median ROI verdict cards above the flip table (tax-correct, post GE sell tax).
+
+### Maintainability
+
+- **Boss guide utils** — `weaknessToStyle`, `normalizeBossSlug`, and summary weakness extraction live in `bossGuideUtils.ts` (shared with cross-nav tests).
+- **Boss guide constants** — workspace tabs + category labels moved to `bossGuideConstants.ts`.
+- **DPS pure core split** — types in `dpsTypes.ts`, gear/math helpers in `dpsGearMath.ts`; `useDpsState` re-exports for stable import paths (~180 LOC out of the hook).
+- **Upgrade Finder hero** — top DPS upgrade and best gp-per-DPS pick shown above per-slot lists.
+- **UI shell splits** — `MarketDetail` extracted; BossActionIcon + guide click helpers moved out of BossGuide; wiki section collapse/class helpers shared with boss guides; popular-page constants isolated.
+- **Boss guide selectors** — pure KC/task/loot/EV helpers in `bossGuideSelectors.ts` with unit tests; GE wiki enrichment pure path in `wikiLookupGe.ts`.
+
+### Tests
+
+- **Training Plan** — unit coverage for empty targets, XP/actions/hours math, fastest vs AFK preference, ironman method filtering, and multi-skill hour sort.
+- **Offline banner** — online/offline event transitions.
+- **Feature registry** — asserts secondary tools remain searchable after sidebar trim.
+- **Golden DPS fixtures** — flagship melee / piety / tbow / shadow / DWH / claws scenarios locked in `dps.golden.test.ts`.
+- **Account prefill banner** — render / hide cases.
+
 ## [1.6.1] - 2026-04-18
 
 ### Page-by-page audit follow-ups
