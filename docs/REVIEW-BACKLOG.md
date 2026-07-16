@@ -30,7 +30,7 @@ Prioritized follow-ups from the full-app review. Shipped on branch
 - [ ] Optional: full `useBossGuideData` / `useWikiDocument` hooks for remaining effects
 - [x] Golden-file DPS fixtures for flagship setups (`dps.golden.test.ts`)
 - [x] Flip Finder hero path integration-style tests
-- [ ] Skill calculator edge-case tests
+- [x] Skill calculator edge-case tests (`skillCalcUtils`)
 - [x] Wrap remaining hiscores-heavy views with `ViewErrorBoundary` consistently
 
 ## P3 — Growth
