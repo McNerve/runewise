@@ -24,6 +24,9 @@ All notable changes to RuneWise are documented here. Versions follow [Semantic V
 ### Maintainability
 
 - **Boss guide utils** — `weaknessToStyle`, `normalizeBossSlug`, and summary weakness extraction live in `bossGuideUtils.ts` (shared with cross-nav tests).
+- **Boss guide constants** — workspace tabs + category labels moved to `bossGuideConstants.ts`.
+- **DPS pure core split** — types in `dpsTypes.ts`, gear/math helpers in `dpsGearMath.ts`; `useDpsState` re-exports for stable import paths (~180 LOC out of the hook).
+- **Upgrade Finder hero** — top DPS upgrade and best gp-per-DPS pick shown above per-slot lists.
 
 ### Tests
 

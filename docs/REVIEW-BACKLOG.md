@@ -15,14 +15,16 @@ Prioritized follow-ups from the full-app review. Shipped on branch
 
 - [x] Sidebar IA trim (secondary tools → search/deep-link only)
 - [x] Flip Finder hero strip (Best / limit, top margin, median ROI)
+- [x] Upgrade Finder hero (top DPS + best value picks)
 - [x] RSN / hiscores prefill banners on major calcs (player bar remains single entry)
 - [x] Always-visible GE / hiscores staleness on money-critical screens (Market + Money Making)
 - [x] Offline banner + window min-size (desktop polish)
 
 ## P2 — Maintainability
 
-- [x] Extract BossGuide pure helpers (`bossGuideUtils.ts`) — full file splits still open
-- [ ] Split `BossGuide.tsx`, `useDpsState.ts`, `WikiLookup.tsx`, `Market.tsx` further
+- [x] Extract BossGuide pure helpers (`bossGuideUtils.ts`) + constants
+- [x] Extract DPS types + gear math from `useDpsState` (`dpsTypes.ts`, `dpsGearMath.ts`)
+- [ ] Further split remaining UI shells: BossGuide / WikiLookup / Market / useDpsState effects
 - [x] Golden-file DPS fixtures for flagship setups (`dps.golden.test.ts`)
 - [ ] UI/integration tests for market flip path + skill calculator edge cases
 - [x] Wrap remaining hiscores-heavy views with `ViewErrorBoundary` consistently

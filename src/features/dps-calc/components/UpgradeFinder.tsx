@@ -73,6 +73,41 @@ export default function UpgradeFinder({ state }: UpgradeFinderProps) {
     });
   }, [enabled, equipment, dpsInput, equippedGear, combatStyle, stance.attackType, stance.speedMod]);
 
+  // Cross-slot heroes: top raw DPS pick and best gp-per-DPS among priced upgrades.
+  // Must run before any early return so hooks stay unconditional.
+  const heroPicks = useMemo(() => {
+    if (!slotResults) return null;
+    type Pick = {
+      slot: string;
+      item: WikiEquipment;
+      dpsGain: number;
+      dpsGainPct: number;
+      price?: number;
+    };
+    let bestDps: Pick | null = null;
+    let bestValue: Pick | null = null;
+    for (const { slot, upgrades } of slotResults) {
+      for (const u of upgrades) {
+        const price = priceByName.get(u.item.name.toLowerCase());
+        const pick: Pick = {
+          slot: SLOT_LABELS[slot] ?? slot,
+          item: u.item,
+          dpsGain: u.dpsGain,
+          dpsGainPct: u.dpsGainPct,
+          price,
+        };
+        if (!bestDps || u.dpsGain > bestDps.dpsGain) bestDps = pick;
+        if (price != null && u.dpsGain > 0) {
+          const value = price / u.dpsGain;
+          if (!bestValue || value < (bestValue.price! / bestValue.dpsGain)) {
+            bestValue = pick;
+          }
+        }
+      }
+    }
+    return { bestDps, bestValue };
+  }, [slotResults, priceByName]);
+
   if (bonusMode !== "equipment") return null;
 
   const priceLookup = (name: string) => priceByName.get(name.toLowerCase());
@@ -110,7 +145,8 @@ export default function UpgradeFinder({ state }: UpgradeFinderProps) {
       {!enabled ? (
         <div className="mt-2 flex items-center justify-between gap-3">
           <p className="text-xs text-text-secondary">
-            Scan every item against this target and rank each slot by real DPS gained.
+            Scan every item against this target and rank each slot by real DPS gained —
+            then jump straight to the single best upgrade or best gp-per-DPS pick.
           </p>
           <Button variant="primary" onClick={enable} className="shrink-0">
             Find upgrades
@@ -136,7 +172,50 @@ export default function UpgradeFinder({ state }: UpgradeFinderProps) {
               Nothing beats this setup — every scanned slot is best in slot.
             </div>
           ) : (
-            visibleSlots.map(({ slot, current, upgrades }) => (
+            <>
+            {heroPicks?.bestDps && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="rounded-xl border border-accent/25 bg-accent/8 px-3 py-2.5">
+                  <div className="text-[10px] uppercase tracking-[0.14em] text-accent/80">
+                    Top DPS upgrade · {heroPicks.bestDps.slot}
+                  </div>
+                  <div className="mt-0.5 text-sm font-semibold text-text-primary truncate">
+                    {heroPicks.bestDps.item.name}
+                  </div>
+                  <div className="mt-0.5 flex items-center gap-2 text-xs">
+                    <DeltaBadge
+                      delta={heroPicks.bestDps.dpsGain}
+                      pct={heroPicks.bestDps.dpsGainPct}
+                      title="DPS gained"
+                    />
+                    {heroPicks.bestDps.price != null && (
+                      <span className="text-text-secondary/60 num">
+                        {formatGp(heroPicks.bestDps.price)} gp
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {heroPicks.bestValue && (
+                  <div className="rounded-xl border border-border-subtle bg-bg-tertiary/60 px-3 py-2.5">
+                    <div className="text-[10px] uppercase tracking-[0.14em] text-text-tertiary">
+                      Best value · {heroPicks.bestValue.slot}
+                    </div>
+                    <div className="mt-0.5 text-sm font-semibold text-text-primary truncate">
+                      {heroPicks.bestValue.item.name}
+                    </div>
+                    <div className="mt-0.5 text-xs text-text-secondary num">
+                      {formatGp(Math.round(heroPicks.bestValue.price! / heroPicks.bestValue.dpsGain))}
+                      /dps
+                      <span className="text-text-secondary/50">
+                        {" "}
+                        · +{heroPicks.bestValue.dpsGain.toFixed(2)} dps
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            {visibleSlots.map(({ slot, current, upgrades }) => (
               <div key={slot}>
                 <div className="flex items-baseline justify-between">
                   <span className="text-[10px] uppercase tracking-wider text-text-secondary/50">
@@ -209,7 +288,8 @@ export default function UpgradeFinder({ state }: UpgradeFinderProps) {
                   })}
                 </div>
               </div>
-            ))
+            ))}
+            </>
           )}
 
           {withUpgrades.length > 4 && (
