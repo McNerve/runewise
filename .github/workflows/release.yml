@@ -118,8 +118,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ env.RELEASE_TAG }}
         run: |
-          PREV_TAG=$(gh release list --limit 20 --json tagName --jq \
-            --arg tag "$TAG" '[.[] | select(.tagName != $tag)] | .[0].tagName // empty')
+          PREV_TAG=$(gh release list --limit 20 --json tagName --jq '.[].tagName' \
+            | grep -vxF "$TAG" | head -n 1 || true)
           if [ -n "$PREV_TAG" ]; then
             NOTES=$(gh api repos/${{ github.repository }}/releases/generate-notes \
               -f tag_name="$TAG" \
