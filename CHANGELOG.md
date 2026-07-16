@@ -4,13 +4,17 @@ All notable changes to RuneWise are documented here. Versions follow [Semantic V
 
 ## [Unreleased]
 
+## [2.5.6] - 2026-07-16
+
+### UI / design
+
+- **Revert Ledger Studio (v2.5.5)** — restore the pre–Ledger Studio shell and Home layout after user feedback.
+
 ## [2.5.5] - 2026-07-16
 
 ### UI / design
 
-- **Ledger Studio redesign** — visible shell overhaul (not just motion): deeper sidebar chrome, distinct content canvas, stronger card lift, gold active-nav pills with icon chips behind OSRS sprites, feature accent rule under the topbar.
-- **Home** — hero player panel, tools/recent framed in raised panels, larger icon wells; professional density and hierarchy.
-- **Primitives** — rounded-2xl cards, stronger primary CTAs, refined empty states.
+- **Ledger Studio redesign** — *(reverted in 2.5.6)* deeper sidebar chrome, distinct content canvas, stronger card lift, gold active-nav pills with icon chips, feature accent rule under the topbar, Home hero panels.
 
 ## [2.5.4] - 2026-07-16
 

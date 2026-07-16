@@ -1,6 +1,6 @@
 [package]
 name = "runewise"
-version = "2.5.5"
+version = "2.5.6"
 description = "OSRS desktop companion app"
 authors = ["McNerve"]
 license = "MIT"
