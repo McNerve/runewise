@@ -4,6 +4,14 @@ All notable changes to RuneWise are documented here. Versions follow [Semantic V
 
 ## [Unreleased]
 
+## [2.5.5] - 2026-07-16
+
+### UI / design
+
+- **Ledger Studio redesign** — visible shell overhaul (not just motion): deeper sidebar chrome, distinct content canvas, stronger card lift, gold active-nav pills with icon chips behind OSRS sprites, feature accent rule under the topbar.
+- **Home** — hero player panel, tools/recent framed in raised panels, larger icon wells; professional density and hierarchy.
+- **Primitives** — rounded-2xl cards, stronger primary CTAs, refined empty states.
+
 ## [2.5.4] - 2026-07-16
 
 ### UI / design
