@@ -96,8 +96,8 @@ describe("flip finder hero path", () => {
       item(3, { name: "Loser", limit: 100, members: false }),
     ];
     const prices = {
-      "1": price(100, 1000), // margin large, perLimit small
-      "2": price(990, 1000), // margin small after tax, perLimit large-ish
+      "1": price(100, 1000), // large margin, tiny limit → wins topMargin
+      "2": price(800, 1000), // smaller margin, huge limit → wins perLimit
       "3": price(1000, 1000), // zero margin → excluded
     };
     const flips = findFlips(mapping, prices, { "1": 200, "2": 5000, "3": 999 }, {
