@@ -59,7 +59,7 @@ export function StatCard({
   );
 
   const baseStyle =
-    "rounded-xl border border-border-subtle bg-bg-base/70 px-3 py-3 shadow-[inset_0_1px_0_color-mix(in_srgb,var(--color-text-primary)_3%,transparent)]";
+    "rounded-xl border border-border-subtle bg-bg-tertiary px-3 py-3 shadow-[0_1px_0_color-mix(in_srgb,var(--color-text-primary)_3%,transparent)]";
 
   if (onClick) {
     return (

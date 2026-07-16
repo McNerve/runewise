@@ -58,12 +58,9 @@ function AppContent() {
 
   return (
     <>
-      <div className="flex h-screen bg-bg-base">
+      <div className="flex h-screen">
         <Sidebar currentView={view} onNavigate={navigate} rsn={hiscores.rsn} />
-        <div
-          className="flex-1 flex flex-col overflow-hidden min-w-0"
-          style={{ "--feature-accent": getFeatureAccent(view) } as React.CSSProperties}
-        >
+        <div className="flex-1 flex flex-col overflow-hidden">
           <PlayerBar
             rsn={hiscores.rsn}
             loading={hiscores.loading}
@@ -74,7 +71,8 @@ function AppContent() {
           <OfflineBanner />
           <main
             aria-label="Main content"
-            className="content-area flex-1 overflow-y-auto p-5 sm:p-7"
+            className="content-area flex-1 overflow-y-auto p-5 sm:p-6"
+            style={{ "--feature-accent": getFeatureAccent(view) } as React.CSSProperties}
           >
             <div className="max-w-5xl mx-auto">
               <ErrorBoundary resetKey={view}>

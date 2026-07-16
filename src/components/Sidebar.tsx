@@ -55,238 +55,211 @@ const Sidebar = memo(function Sidebar({ currentView, onNavigate, rsn = "" }: Sid
     []
   );
 
-  const navClass = (active: boolean, compact: boolean) =>
-    `sidebar-nav-item w-full text-left rounded-xl text-[13px] flex items-center gap-2.5 ${
-      compact ? "mx-auto h-10 w-10 justify-center px-0 py-0" : "px-2.5 py-1.5"
-    } ${active ? "font-semibold text-text-primary" : "text-text-secondary hover:text-text-primary"}`;
-
-  const renderNavIcon = (view: View, active: boolean, compact: boolean) => {
+  const getIconStyle = (view: View, active: boolean) => {
     const accent = getFeatureAccent(view);
-    return (
-      <span
-        className={`sidebar-icon-chip shrink-0 ${compact ? "h-8 w-8" : "h-7 w-7"}`}
-        style={
-          {
-            "--item-accent": accent,
-            color: active
-              ? accent
-              : `color-mix(in srgb, ${accent} 78%, var(--color-text-secondary))`,
-          } as React.CSSProperties
-        }
-      >
-        <ShellIcon view={view} className={`${compact ? "h-4 w-4" : "h-[17px] w-[17px]"} shrink-0`} />
-      </span>
-    );
+    return {
+      color: active ? accent : `color-mix(in srgb, ${accent} 72%, var(--color-text-secondary))`,
+    };
   };
 
   return (
     <Tooltip.Provider delayDuration={200}>
-      <aside
-        className={`sidebar-shell ${collapsed ? "w-[4.25rem]" : "w-60"} flex flex-col overflow-hidden transition-[width] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]`}
+    <aside
+      className={`sidebar-shell ${collapsed ? "w-16" : "w-56"} flex flex-col overflow-hidden border-r border-border/80 transition-[width] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]`}
+    >
+      <div
+        className={`h-16 ${collapsed ? "px-3 justify-center" : "px-4"} flex items-center border-b border-border/60`}
       >
-        <div
-          className={`h-[4.25rem] ${collapsed ? "px-2 justify-center" : "px-3.5"} flex items-center gap-2 border-b border-border/50`}
+        {!collapsed && (
+          <div className="flex-1 min-w-0">
+            <h1 className="display-face text-lg font-semibold tracking-tight text-text-primary">
+              RuneWise
+            </h1>
+            <p className="text-[10px] tracking-[0.12em] uppercase text-text-tertiary/80 mt-0.5">
+              OSRS Companion
+            </p>
+          </div>
+        )}
+        <button
+          onClick={toggleCollapse}
+          className="pressable inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-text-secondary/70 hover:bg-bg-secondary/50 hover:text-text-primary"
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
-          {!collapsed && (
-            <div className="flex-1 min-w-0 pl-0.5">
-              <div className="flex items-center gap-2">
-                <span
-                  aria-hidden
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-accent/25 bg-accent/10 text-accent"
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            {collapsed ? (
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+            ) : (
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+            )}
+          </svg>
+        </button>
+      </div>
+      <nav
+        aria-label="Main navigation"
+        className={`sidebar-scroll flex-1 overflow-y-auto overflow-x-hidden ${collapsed ? "compact-sidebar-scroll px-2 py-2" : "px-2 py-2"}`}
+      >
+        {/* Pinned section */}
+        {settings.sidebar.pinned.length > 0 && (
+          <div>
+            {settings.sidebar.pinned.map((pinnedId) => {
+              const item = SIDEBAR_FEATURES.find((f) => f.id === pinnedId);
+              if (!item) return null;
+              const accent = getFeatureAccent(item.id);
+              return (
+                <button
+                  key={`pin-${item.id}`}
+                  onClick={() => onNavigate(item.id)}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    const next = settings.sidebar.pinned.filter((p) => p !== item.id);
+                    update({ sidebar: { ...settings.sidebar, pinned: next } });
+                  }}
+                  aria-current={currentView === item.id ? "page" : undefined}
+                  style={{ "--item-accent": accent } as React.CSSProperties}
+                  className={`sidebar-nav-item w-full text-left ${collapsed ? "mx-auto h-9 w-9 justify-center px-0 py-0" : "px-2.5 py-[5px]"} rounded-lg text-[13px] flex items-center gap-2.5 ${
+                    currentView === item.id ? "font-medium text-text-primary" : "text-text-secondary hover:text-text-primary"
+                  }`}
                 >
-                  <svg viewBox="0 0 16 16" className="h-4 w-4" fill="currentColor">
-                    <path d="M8 1.2 2.5 4.1v5.1c0 3.1 2.2 5.7 5.5 6.6 3.3-.9 5.5-3.5 5.5-6.6V4.1L8 1.2Zm0 1.7 4.2 2.2v3.9c0 2.2-1.5 4-4.2 4.8-2.7-.8-4.2-2.6-4.2-4.8V5.1L8 2.9Z" />
-                  </svg>
-                </span>
-                <div className="min-w-0">
-                  <h1 className="display-face text-[1.05rem] font-semibold tracking-tight text-text-primary leading-none">
-                    RuneWise
-                  </h1>
-                  <p className="mt-1 text-[10px] font-medium tracking-[0.14em] uppercase text-text-tertiary">
-                    OSRS Companion
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-          <button
-            onClick={toggleCollapse}
-            className="pressable inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-transparent text-text-secondary/70 hover:border-border/60 hover:bg-bg-secondary/40 hover:text-text-primary"
-            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              {collapsed ? (
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
-              )}
-            </svg>
-          </button>
-        </div>
+                  <span className={`inline-flex shrink-0 items-center justify-center ${collapsed ? "h-7 w-7" : "h-5 w-5"}`} style={getIconStyle(item.id, currentView === item.id)}>
+                    <ShellIcon view={item.id} className={`${collapsed ? "h-4.5 w-4.5" : "h-[18px] w-[18px]"} shrink-0`} />
+                  </span>
+                  {!collapsed && <span className="min-w-0 flex-1 truncate">{item.navLabel}</span>}
+                </button>
+              );
+            })}
+            <div className={`border-t border-accent/20 ${collapsed ? "my-1 mx-1" : "my-1.5 mx-2"}`} />
+          </div>
+        )}
 
-        <nav
-          aria-label="Main navigation"
-          className={`sidebar-scroll flex-1 overflow-y-auto overflow-x-hidden ${collapsed ? "compact-sidebar-scroll px-1.5 py-2.5" : "px-2.5 py-3"}`}
-        >
-          {settings.sidebar.pinned.length > 0 && (
-            <div className="mb-1">
-              {settings.sidebar.pinned.map((pinnedId) => {
-                const item = SIDEBAR_FEATURES.find((f) => f.id === pinnedId);
-                if (!item) return null;
+        {groupedFeatures.map((section, index) => (
+          <div key={section.family}>
+            {/* Collapsed: hairline divider. Expanded: a real family header so
+                the 27-item list is scannable instead of a wall of icons. */}
+            {index > 0 && collapsed && (
+              <div className="border-t border-border/25 my-1 mx-1" />
+            )}
+            {!collapsed && section.family !== "Home" && (
+              <div className={`section-kicker px-2.5 pb-1 ${index > 0 ? "pt-3" : "pt-1.5"}`}>
+                {section.family}
+              </div>
+            )}
+            <div>
+              {section.items.map((item) => {
                 const accent = getFeatureAccent(item.id);
-                const active = currentView === item.id;
-                return (
+                const isPinned = settings.sidebar.pinned.includes(item.id);
+                const navButton = (
                   <button
-                    key={`pin-${item.id}`}
+                    key={item.id}
                     onClick={() => onNavigate(item.id)}
                     onContextMenu={(e) => {
                       e.preventDefault();
-                      const next = settings.sidebar.pinned.filter((p) => p !== item.id);
-                      update({ sidebar: { ...settings.sidebar, pinned: next } });
+                      if (isPinned) {
+                        const next = settings.sidebar.pinned.filter((p) => p !== item.id);
+                        update({ sidebar: { ...settings.sidebar, pinned: next } });
+                      } else if (settings.sidebar.pinned.length < 5) {
+                        update({ sidebar: { ...settings.sidebar, pinned: [...settings.sidebar.pinned, item.id] } });
+                      }
                     }}
-                    aria-current={active ? "page" : undefined}
+                    aria-current={currentView === item.id ? "page" : undefined}
                     style={{ "--item-accent": accent } as React.CSSProperties}
-                    className={`${navClass(active, collapsed)} mb-0.5`}
+                    className={`sidebar-nav-item w-full text-left ${collapsed ? "mx-auto h-9 w-9 justify-center px-0 py-0" : "px-2.5 py-[5px]"} rounded-lg text-[13px] flex items-center gap-2.5 ${
+                      currentView === item.id
+                        ? "font-medium text-text-primary"
+                        : "text-text-secondary hover:text-text-primary"
+                    }`}
                   >
-                    {renderNavIcon(item.id, active, collapsed)}
-                    {!collapsed && <span className="min-w-0 flex-1 truncate">{item.navLabel}</span>}
+                    <span
+                      className={`inline-flex shrink-0 items-center justify-center ${collapsed ? "h-7 w-7" : "h-5 w-5"}`}
+                      style={getIconStyle(item.id, currentView === item.id)}
+                    >
+                      <ShellIcon view={item.id} className={`${collapsed ? "h-4.5 w-4.5" : "h-[18px] w-[18px]"} shrink-0`} />
+                    </span>
+                    {!collapsed && (
+                      <span className="min-w-0 flex-1 truncate">{item.navLabel}</span>
+                    )}
+                    {!collapsed && settings.keybindsEnabled && viewKeys[item.id] && (
+                      <span className="text-[10px] text-text-secondary/45 num">{viewKeys[item.id]}</span>
+                    )}
                   </button>
                 );
-              })}
-              <div className={`border-t border-accent/20 ${collapsed ? "my-1.5 mx-1" : "my-2 mx-2"}`} />
-            </div>
-          )}
 
-          {groupedFeatures.map((section, index) => (
-            <div key={section.family} className={index > 0 ? "mt-0.5" : ""}>
-              {index > 0 && collapsed && (
-                <div className="border-t border-border/30 my-1.5 mx-1" />
-              )}
-              {!collapsed && section.family !== "Home" && (
-                <div className={`section-kicker px-2.5 pb-1.5 ${index > 0 ? "pt-3.5" : "pt-1"}`}>
-                  {section.family}
-                </div>
-              )}
-              <div className="space-y-0.5">
-                {section.items.map((item) => {
-                  const accent = getFeatureAccent(item.id);
-                  const isPinned = settings.sidebar.pinned.includes(item.id);
-                  const active = currentView === item.id;
-                  const navButton = (
-                    <button
-                      key={item.id}
-                      onClick={() => onNavigate(item.id)}
-                      onContextMenu={(e) => {
-                        e.preventDefault();
-                        if (isPinned) {
-                          const next = settings.sidebar.pinned.filter((p) => p !== item.id);
-                          update({ sidebar: { ...settings.sidebar, pinned: next } });
-                        } else if (settings.sidebar.pinned.length < 5) {
-                          update({
-                            sidebar: {
-                              ...settings.sidebar,
-                              pinned: [...settings.sidebar.pinned, item.id],
-                            },
-                          });
-                        }
-                      }}
-                      aria-current={active ? "page" : undefined}
-                      style={{ "--item-accent": accent } as React.CSSProperties}
-                      className={navClass(active, collapsed)}
-                    >
-                      {renderNavIcon(item.id, active, collapsed)}
-                      {!collapsed && (
-                        <span className="min-w-0 flex-1 truncate">{item.navLabel}</span>
-                      )}
-                      {!collapsed && settings.keybindsEnabled && viewKeys[item.id] && (
-                        <span className="text-[10px] text-text-tertiary num">{viewKeys[item.id]}</span>
-                      )}
-                    </button>
+                if (collapsed) {
+                  return (
+                    <Tooltip.Root key={item.id} delayDuration={200}>
+                      <Tooltip.Trigger asChild>{navButton}</Tooltip.Trigger>
+                      <Tooltip.Portal>
+                        <Tooltip.Content className="tooltip-content" side="right" sideOffset={8}>
+                          {item.navLabel}
+                          <Tooltip.Arrow className="fill-bg-tertiary" />
+                        </Tooltip.Content>
+                      </Tooltip.Portal>
+                    </Tooltip.Root>
                   );
+                }
 
-                  if (collapsed) {
-                    return (
-                      <Tooltip.Root key={item.id} delayDuration={200}>
-                        <Tooltip.Trigger asChild>{navButton}</Tooltip.Trigger>
-                        <Tooltip.Portal>
-                          <Tooltip.Content className="tooltip-content" side="right" sideOffset={10}>
-                            {item.navLabel}
-                            <Tooltip.Arrow className="fill-bg-overlay" />
-                          </Tooltip.Content>
-                        </Tooltip.Portal>
-                      </Tooltip.Root>
-                    );
-                  }
-
-                  return navButton;
-                })}
-              </div>
+                return navButton;
+              })}
             </div>
-          ))}
-        </nav>
-
-        {!collapsed && <SessionWidget rsn={rsn} onNavigate={onNavigate} />}
-
-        <div className={`${collapsed ? "p-1.5" : "px-2.5 py-2.5"} border-t border-border/50`}>
-          {collapsed ? (
+          </div>
+        ))}
+      </nav>
+      {!collapsed && (
+        <SessionWidget rsn={rsn} onNavigate={onNavigate} />
+      )}
+      <div className={`${collapsed ? "p-2" : "px-2.5 py-2"} border-t border-border/80`}>
+        {collapsed ? (
+          <button
+            onClick={() => onNavigate("settings")}
+            title="Settings"
+            aria-current={currentView === "settings" ? "page" : undefined}
+            className="sidebar-nav-item mx-auto h-9 w-9 justify-center px-0 py-0 rounded-lg flex items-center transition-colors text-text-secondary hover:text-text-primary"
+          >
+            <ShellIcon view="settings" className="h-4.5 w-4.5 shrink-0" />
+          </button>
+        ) : (
+          <div className="space-y-1.5">
             <button
-              onClick={() => onNavigate("settings")}
-              title="Settings"
-              aria-current={currentView === "settings" ? "page" : undefined}
-              className="sidebar-nav-item mx-auto h-10 w-10 justify-center px-0 py-0 rounded-xl flex items-center text-text-secondary hover:text-text-primary"
+              type="button"
+              onClick={openGlobalSearch}
+              className="pressable flex w-full items-center justify-between rounded-lg border border-border/50 bg-bg-secondary/40 px-2.5 py-1.5 text-[11px] text-text-secondary hover:bg-bg-secondary/70 hover:text-text-primary"
             >
-              <ShellIcon view="settings" className="h-4 w-4 shrink-0" />
+              <span>Search</span>
+              <kbd className="rounded border border-border/50 bg-bg-tertiary/40 px-1.5 py-0.5 font-mono text-[9px] text-text-secondary/60">
+                {mod}K
+              </kbd>
             </button>
-          ) : (
-            <div className="space-y-2">
+            <div className="flex items-center justify-between px-1">
               <button
-                type="button"
-                onClick={openGlobalSearch}
-                className="pressable flex w-full items-center justify-between rounded-xl border border-border/60 bg-bg-secondary/35 px-3 py-2 text-[12px] text-text-secondary hover:border-accent/30 hover:bg-bg-secondary/55 hover:text-text-primary"
+                onClick={() => onNavigate("settings")}
+                aria-current={currentView === "settings" ? "page" : undefined}
+                title="Settings"
+                className={`inline-flex items-center gap-1.5 rounded-lg px-1.5 py-1 text-[11px] transition-colors ${
+                  currentView === "settings"
+                    ? "text-accent"
+                    : "text-text-secondary/60 hover:text-text-primary"
+                }`}
               >
-                <span className="font-medium">Search</span>
-                <kbd className="rounded-md border border-border/60 bg-bg-primary/50 px-1.5 py-0.5 font-mono text-[10px] text-text-tertiary">
-                  {mod}K
-                </kbd>
+                <ShellIcon view="settings" className="h-3.5 w-3.5" />
+                Settings
               </button>
-              <div className="flex items-center justify-between px-1">
-                <button
-                  onClick={() => onNavigate("settings")}
-                  aria-current={currentView === "settings" ? "page" : undefined}
-                  title="Settings"
-                  className={`inline-flex items-center gap-1.5 rounded-lg px-1.5 py-1 text-[11px] transition-colors ${
-                    currentView === "settings"
-                      ? "text-accent font-medium"
-                      : "text-text-tertiary hover:text-text-primary"
-                  }`}
-                >
-                  <ShellIcon view="settings" className="h-3.5 w-3.5" />
-                  Settings
-                </button>
-                <span className="text-[10px] text-text-tertiary/70 num">v{__APP_VERSION__}</span>
-              </div>
-              {pillVersion && (
-                <button
-                  onClick={() => emitOpenUpdate()}
-                  className="pressable flex w-full items-center justify-center gap-1.5 rounded-xl border border-accent/40 bg-accent/12 px-2.5 py-2 text-[11px] font-medium text-accent hover:bg-accent/20"
-                >
-                  <svg viewBox="0 0 16 10" className="w-3 h-2" fill="none">
-                    <path
-                      d="M1 5h12M9 1l4 4-4 4"
-                      stroke="var(--color-accent)"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                  v{pillVersion} ready
-                </button>
-              )}
+              <span className="text-[9px] text-text-secondary/30 num">v{__APP_VERSION__}</span>
             </div>
-          )}
-        </div>
-      </aside>
+            {pillVersion && (
+              <button
+                onClick={() => emitOpenUpdate()}
+                className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-2.5 py-1.5 text-[11px] text-accent hover:bg-accent/20 transition-colors"
+              >
+                <svg viewBox="0 0 16 10" className="w-3 h-2" fill="none">
+                  <path d="M1 5h12M9 1l4 4-4 4" stroke="var(--color-accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                v{pillVersion} ready
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    </aside>
     </Tooltip.Provider>
   );
 });

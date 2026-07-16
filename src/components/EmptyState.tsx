@@ -19,11 +19,11 @@ export default function EmptyState({
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
       {icon && (
-        <div className="mb-5 flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-2xl border border-border-subtle bg-bg-tertiary shadow-[inset_0_1px_0_color-mix(in_srgb,var(--color-text-primary)_4%,transparent)]">
+        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-border-subtle bg-bg-tertiary">
           <img
             src={icon}
             alt=""
-            className="h-10 w-10 opacity-70"
+            className="h-9 w-9 opacity-55"
             style={{ imageRendering: "pixelated" }}
             onError={(e) => {
               e.currentTarget.style.display = "none";
@@ -31,7 +31,7 @@ export default function EmptyState({
           />
         </div>
       )}
-      <h3 className="display-face text-lg font-semibold text-text-primary mb-1.5">
+      <h3 className="display-face text-base font-semibold text-text-primary mb-1.5">
         {title}
       </h3>
       {description && (
