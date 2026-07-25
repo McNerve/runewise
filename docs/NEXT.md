@@ -1,43 +1,35 @@
 # NEXT — living product backlog
 
-After the e2e wiki-parity + reliability + CI lint pass on `feat/e2e-improve`.
+After **2.5.8** (budget loadout finder + UX audit + meta packs + search ranking).
 
-## Shipped on this branch
+## Shipped in 2.5.8
 
-- Wiki-aligned DPS core + spot-check fixes (fang accuracy, magic +9, tbow, void, shadow, …)
-- Bolt **PMF** mixture (`boltDist.ts`) + EV parity
-- Monster attributes table; expanded specs
-- GE context unification for farm profit, profit rankings, boss profit ranking
-- Reliability UX (skill/kingdom/alch/farm/production/prefill)
-- Windows SmartScreen notes (`docs/WINDOWS-SIGNING.md`)
-- Wiki golden + spot-check fixtures
+- Budget Loadout Finder + leftover multi-step path → DPS
+- Boss meta packs (curated + weakness fallback)
+- Flip sanity filters, search feature ranking
+- Progress/Loot/Boss/Skill defaults; WOM links; manual clog
+- Home combat/money hubs + What next
 
-## Shipped after 2.5.7 (product IA)
-
-- Sidebar hubs: Player · Combat · Market · Plan · Live (secondary tools search-only)
-- Home **What next** (`whatNext.ts`) + Combat/Money hub cards
-- Money deep-links: rankings tab + `forMe` level filter
-
-## Still open (optional follow-ups)
+## Still open (optional)
 
 ### Combat
 
-- Remaining obscure specs (burning claws full matrix, ballista, true MSB ammo table)
-- Kandarin diary bolt proc rate variants
-- Live wiki/bucket **monster size/attributes** API when fields exist
+- Full combinatorial budget BiS (GearScape-class) beyond presets + leftover path
+- Remaining obscure specs / Kandarin diary bolt rate variants
+- Live wiki monster size/attributes API when fields exist
 
 ### Product
 
-- Deeper gear-string paste / one-click import everywhere
-- Upgrade finder open-by-default when landing on DPS from What next
-- Fold training-plan fully into skill-calc path
+- Profile milestones ignore lvl-1 noise
+- Home tool icon failures
+- Custom budget free-text input
+- Manual clog expand categories / import export
+- Demo clip + community post
 
-### Growth
+### Platform
 
-- Short demo clip + community post
 - Authenticode signing in CI (see WINDOWS-SIGNING.md)
 
 ## Ownership
 
-- Formula goldens: `dps.wiki-fixtures.test.ts`, `dps.wiki-spotcheck.test.ts`
-- Monster meta: `src/lib/data/monster-attributes.ts`
+Default: whoever is shipping the next release; keep this file current after each major merge.

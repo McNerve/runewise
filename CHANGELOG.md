@@ -4,11 +4,29 @@ All notable changes to RuneWise are documented here. Versions follow [Semantic V
 
 ## [Unreleased]
 
-### Product / IA
+## [2.5.8] - 2026-07-25
 
-- **Focused sidebar hubs** — Player · Combat · Market · Plan · Live; demoted gear-compare, raids, flip journal, clues, collection log to search-only.
-- **Home “What next”** — RSN-aware suggestions (max 3): train, DPS/upgrades, money rankings, live timers/stars.
-- **Combat & Money hub cards** on Home for loadout→DPS→upgrades and profit rankings / GE flips.
+### Product / combat path
+
+- **Budget Loadout Finder** — monster + GE budget + hiscores → rank curated presets by DPS; Open in DPS deep-link.
+- **Leftover upgrade path** — multi-step “next buys” under remaining cash (accuracy/style guards); apply path into DPS.
+- **Boss meta packs** — one-click DHCB/DHL/BiS-style presets per boss (weakness fallback for the rest).
+- **Home hubs** — Budget Setup first on Combat; What next routes to loadout finder; Money → Flip Finder.
+- **Focused sidebar hubs** — Player · Combat · Market · Plan · Live; secondary tools search-only.
+- **What Can I Do?** default on Progress when RSN is set; Loot defaults to Boss Rankings.
+
+### Market / trust
+
+- **Flip Finder sanity** — max ROI 100%, min buy 100gp, drop poison `(p)` variants (no more javelin/cup-of-water “flips”).
+- **Market cold start** — popular item chips + Flip Finder shortcut instead of instruction cards.
+
+### Account / live
+
+- **WOM deep links** on Profile and XP Tracker.
+- **Manual collection log** checklist when Temple has no data (localStorage).
+- **Global search ranking** — features beat “Lookup player …” on Enter (e.g. “loadout” → Loadout Finder).
+- **News** — 12s fetch timeout + Retry empty state.
+- **Skill calc** auto-opens lowest non-99 priority skill; **Boss Guides** auto-open highest KC; **Upgrade Finder** auto-scans with gear; ZCB special only for ranged + ZCB.
 
 ## [2.5.7] - 2026-07-25
 
