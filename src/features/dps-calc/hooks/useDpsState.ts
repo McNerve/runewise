@@ -250,6 +250,16 @@ export function useDpsState({ hiscores }: Props) {
     }
   }, [params.style]);
 
+  // Handle preset param from Budget Loadout Finder / deep links
+  useEffect(() => {
+    const name = params.preset;
+    if (!name) return;
+    const preset = GEAR_PRESETS.find(
+      (p) => p.name.toLowerCase() === name.toLowerCase()
+    );
+    if (preset) void applyPreset(preset);
+  }, [params.preset, applyPreset]);
+
   // Handle monster param from cross-nav. Syncing state from an external URL
   // param is a legitimate effect use. An optional `version` param selects a
   // specific phase (e.g. Verzik P2) directly.
@@ -927,7 +937,7 @@ export function useDpsState({ hiscores }: Props) {
   useEffect(() => {
     if (mountRestoreDone.current) return;
     mountRestoreDone.current = true;
-    if (params.style || params.monster || params.onTask) return;
+    if (params.style || params.monster || params.onTask || params.preset) return;
     const snap = setups[activeSetup];
     if (snap) applySnapshot(snap);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps

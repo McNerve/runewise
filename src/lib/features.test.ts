@@ -37,6 +37,7 @@ describe("feature registry", () => {
       "world-map",
       "news",
       "gear-compare",
+      "loadout-finder",
       "raids",
       "flip-journal",
       "clue-helper",

@@ -30,6 +30,7 @@ describe("buildWhatNext", () => {
   it("prompts for RSN when no account is set", () => {
     const actions = buildWhatNext({ rsn: null, hiscores: null });
     expect(actions.some((a) => a.id === "set-rsn")).toBe(true);
+    expect(actions.some((a) => a.view === "loadout-finder")).toBe(true);
     expect(actions.length).toBeLessThanOrEqual(3);
   });
 

@@ -57,6 +57,23 @@ export const FEATURE_REGISTRY = {
     search: true,
     aliases: ["dps", "damage", "max hit", "combat", "accuracy", "monster", "loadout"],
   },
+  "loadout-finder": {
+    title: "Budget Loadout Finder",
+    navLabel: "Loadout Finder",
+    family: "Combat",
+    // Search + What next / DPS deep links; rail stays on daily drivers.
+    sidebar: false,
+    search: true,
+    aliases: [
+      "loadout finder",
+      "budget gear",
+      "budget loadout",
+      "best setup",
+      "gear finder",
+      "bis budget",
+      "under budget",
+    ],
+  },
   "dry-calc": {
     title: "Dry Calculator",
     navLabel: "Dry Calculator",

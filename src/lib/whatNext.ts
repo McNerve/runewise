@@ -108,10 +108,10 @@ export function buildWhatNext(input: WhatNextInput): WhatNextAction[] {
     });
     // Generic combat entry for cold starts
     actions.push({
-      id: "open-dps",
-      title: "Plan a loadout",
-      reason: "DPS calc with upgrade finder for any boss",
-      view: "dps-calc",
+      id: "open-loadout-finder",
+      title: "Find a budget loadout",
+      reason: "Monster + budget → best preset DPS",
+      view: "loadout-finder",
       kind: "combat",
     });
     return actions.slice(0, 3);
@@ -122,15 +122,15 @@ export function buildWhatNext(input: WhatNextInput): WhatNextAction[] {
   const money = bestMoneyMethod(hiscores);
   const slayer = skillLevel(hiscores, "Slayer");
 
-  // Combat: mid-game+ players → DPS / upgrades
+  // Combat: mid-game+ players → budget finder (then open full DPS)
   if (cb >= 70) {
     actions.push({
       id: "dps-upgrades",
-      title: hasBossKc(hiscores) ? "Improve boss DPS" : "Set up combat loadouts",
+      title: hasBossKc(hiscores) ? "Best gear under budget" : "Find a budget loadout",
       reason: hasBossKc(hiscores)
-        ? "Open DPS calc → Upgrade Finder for your next gear step"
-        : `Combat ${cb} — compare gear and find upgrades`,
-      view: "dps-calc",
+        ? "Rank presets by DPS for your cash stack"
+        : `Combat ${cb} — monster + budget → best setup`,
+      view: "loadout-finder",
       kind: "combat",
     });
   }

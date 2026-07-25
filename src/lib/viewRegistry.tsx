@@ -17,6 +17,7 @@ const BossGuide = lazy(() => import("../features/boss-guide/BossGuide"));
 const SlayerHelper = lazy(() => import("../features/slayer/SlayerHelper"));
 const PetCalculator = lazy(() => import("../features/pet-calc/PetCalculator"));
 const DpsCalculator = lazy(() => import("../features/dps-calc/DpsCalculator"));
+const LoadoutFinder = lazy(() => import("../features/loadout-finder/LoadoutFinder"));
 const Watchlist = lazy(() => import("../features/watchlist/Watchlist"));
 const FarmTimers = lazy(() => import("../features/timers/FarmTimers"));
 const MoneyMaking = lazy(() => import("../features/money-making/MoneyMaking"));
@@ -145,6 +146,9 @@ export const VIEW_RENDERERS: Record<View, ViewRenderer> = {
   )),
   "dps-calc": withBoundary("DPS Calculator", ({ hiscores }) => (
     <DpsCalculator hiscores={hiscores.data} />
+  )),
+  "loadout-finder": withBoundary("Budget Loadout Finder", ({ hiscores }) => (
+    <LoadoutFinder hiscores={hiscores.data} />
   )),
   "training-plan": withBoundary("Training Plan", ({ hiscores }) => (
     <TrainingPlan hiscores={hiscores.data} />

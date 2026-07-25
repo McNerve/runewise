@@ -15,6 +15,7 @@ const FEATURE_ACCENTS: Record<View, string> = {
   home: STRONG,
   overview: STRONG,
   "dps-calc": STRONG,
+  "loadout-finder": STRONG,
   bosses: STRONG,
   market: STRONG,
   "money-making": STRONG,
