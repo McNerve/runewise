@@ -224,6 +224,33 @@ export default function BossGuide({ hiscores }: Props) {
     }
   }, []);
 
+  // Default to highest-KC boss (or first in list) when no deep-link boss is set.
+  const defaultBossDone = useRef(false);
+  useEffect(() => {
+    if (defaultBossDone.current) return;
+    if (params.boss) {
+      defaultBossDone.current = true;
+      return;
+    }
+    if (selectedBoss) {
+      defaultBossDone.current = true;
+      return;
+    }
+    let best: { boss: BossInfo; kc: number } | null = null;
+    if (hiscores?.activities?.length) {
+      for (const boss of BOSSES) {
+        const kc = getBossKc(hiscores, boss);
+        if (kc == null || kc <= 0) continue;
+        if (!best || kc > best.kc) best = { boss, kc };
+      }
+    }
+    const pick = best?.boss ?? BOSSES[0] ?? null;
+    if (pick) {
+      defaultBossDone.current = true;
+      void selectBoss(pick);
+    }
+  }, [hiscores, params.boss, selectedBoss, selectBoss]);
+
   useEffect(() => {
     if (!params.boss) return;
 

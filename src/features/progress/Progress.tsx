@@ -25,19 +25,23 @@ interface Props {
   hiscores?: HiscoreData | null;
 }
 
-function resolveTab(raw: string | undefined): Tab {
-  if (raw === "diaries" || raw === "combat-tasks" || raw === "unlock" || raw === "quest-map") return raw;
-  return "quests";
+function resolveTab(raw: string | undefined, hasHiscores: boolean): Tab {
+  if (raw === "diaries" || raw === "combat-tasks" || raw === "unlock" || raw === "quest-map" || raw === "quests") {
+    return raw;
+  }
+  // With an account, lead with available-now quests instead of the full list.
+  return hasHiscores ? "unlock" : "quests";
 }
 
 export default function Progress({ hiscores }: Props) {
   const { params } = useNavigation();
-  const [activeTab, setActiveTab] = useState<Tab>(() => resolveTab(params.tab));
+  const hasHiscores = Boolean(hiscores);
+  const [activeTab, setActiveTab] = useState<Tab>(() => resolveTab(params.tab, hasHiscores));
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- sync tab from nav params
-    setActiveTab(resolveTab(params.tab));
-  }, [params.tab]);
+    setActiveTab(resolveTab(params.tab, hasHiscores));
+  }, [params.tab, hasHiscores]);
 
   return (
     <div>

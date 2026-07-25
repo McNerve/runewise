@@ -122,8 +122,8 @@ export function buildWhatNext(input: WhatNextInput): WhatNextAction[] {
   const money = bestMoneyMethod(hiscores);
   const slayer = skillLevel(hiscores, "Slayer");
 
-  // Combat: mid-game+ players → budget finder (then open full DPS)
-  if (cb >= 70) {
+  // Combat: any mid-level+ account gets the budget loadout path
+  if (cb >= 50) {
     actions.push({
       id: "dps-upgrades",
       title: hasBossKc(hiscores) ? "Best gear under budget" : "Find a budget loadout",

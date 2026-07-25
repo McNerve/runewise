@@ -32,7 +32,19 @@ export interface FlipFilters {
   sort?: FlipSort;
   /** Result cap. */
   limit?: number;
+  /**
+   * Cap on margin/buy. Default 1.0 (100%) — cuts manipulated / illiquid spreads
+   * like javelins with 40,000% "ROI".
+   */
+  maxRoi?: number;
+  /** Minimum buy (GE low). Default 100 gp — filters junk like cup of water. */
+  minBuy?: number;
+  /** Drop poison-dose variants "(p)" / "(p+)". Default true. */
+  excludePoison?: boolean;
 }
+
+/** Names that rarely make honest GE flips. */
+const JUNK_NAME_RE = /\(unf\)|\bbroken\b|placeholder|test item/i;
 
 /**
  * Rank Grand Exchange flips by tax-correct margin. Pure + deterministic so
@@ -52,19 +64,27 @@ export function findFlips(
     members = "all",
     sort = "perLimit",
     limit: cap = 80,
+    maxRoi = 1.0,
+    minBuy = 100,
+    excludePoison = true,
   } = filters;
 
   const out: Flip[] = [];
   for (const item of mapping) {
     if (members === "f2p" && item.members) continue;
     if (members === "p2p" && !item.members) continue;
+    if (excludePoison && /\(p\+?\)$/i.test(item.name.trim())) continue;
+    if (JUNK_NAME_RE.test(item.name)) continue;
     const p = prices[String(item.id)];
     if (!p || p.high == null || p.low == null) continue;
     const buy = p.low;
     const sell = p.high;
     if (buy <= 0 || sell <= buy || buy > budget) continue;
+    if (buy < minBuy) continue;
     const margin = netMargin(sell, buy);
     if (margin <= 0 || margin < minMargin) continue;
+    const roi = margin / buy;
+    if (roi > maxRoi) continue;
     const volume = volumes[String(item.id)] ?? 0;
     if (volume < minVolume) continue;
     const itemLimit = item.limit ?? 0;
@@ -73,7 +93,7 @@ export function findFlips(
       buy,
       sell,
       margin,
-      roi: margin / buy,
+      roi,
       volume,
       limit: itemLimit,
       perLimit: itemLimit > 0 ? margin * itemLimit : 0,

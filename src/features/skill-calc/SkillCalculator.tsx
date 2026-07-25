@@ -38,7 +38,10 @@ export default function SkillCalculator({ hiscores }: Props) {
   const { params, navigate } = useNavigation();
   const { mapping, prices, fetchIfNeeded } = useGEData();
   const [skillTab, setSkillTab] = useState<SkillTab>(() => params.tab === "plan" ? "plan" : "calculator");
-  const [selectedSkill, setSelectedSkill] = useState<string | null>(normalizeSkill(params.skill));
+  const [selectedSkill, setSelectedSkill] = useState<string | null>(() => {
+    if (params.skill) return normalizeSkill(params.skill);
+    return null;
+  });
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- sync tab from nav params
@@ -49,6 +52,31 @@ export default function SkillCalculator({ hiscores }: Props) {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- sync skill from nav params
     if (params.skill) setSelectedSkill(normalizeSkill(params.skill));
   }, [params.skill]);
+
+  // Auto-open the lowest non-maxed combat/skilling skill from hiscores when nothing is selected.
+  useEffect(() => {
+    if (params.skill || selectedSkill || !hiscores) return;
+    const priority = [
+      "Attack", "Strength", "Defence", "Ranged", "Magic", "Prayer", "Hitpoints",
+      "Slayer", "Farming", "Herblore", "Cooking", "Fishing", "Woodcutting", "Mining",
+    ];
+    let best: { name: string; level: number } | null = null;
+    for (const name of priority) {
+      const level = hiscores.skills.find((s) => s.name === name)?.level ?? 1;
+      if (level >= 99) continue;
+      if (!best || level < best.level) best = { name, level };
+    }
+    if (!best) {
+      for (const name of SKILLS) {
+        const level = hiscores.skills.find((s) => s.name === name)?.level ?? 1;
+        if (level < 99) {
+          best = { name, level };
+          break;
+        }
+      }
+    }
+    if (best) setSelectedSkill(best.name); // eslint-disable-line react-hooks/set-state-in-effect
+  }, [hiscores, params.skill, selectedSkill]);
   const [currentXp, setCurrentXp] = useState(0);
   const [targetLevel, setTargetLevel] = useState(99);
   const [wikiRecipes, setWikiRecipes] = useState<WikiRecipe[]>([]);

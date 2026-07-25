@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { fetchAllEquipment, type WikiEquipment } from "../../../lib/api/equipment";
 import { itemIcon } from "../../../lib/sprites";
 import ItemTooltip from "../../../components/ItemTooltip";
@@ -35,6 +35,7 @@ export default function UpgradeFinder({ state }: UpgradeFinderProps) {
   const [showAllSlots, setShowAllSlots] = useState(false);
   const [sortMode, setSortMode] = useState<UpgradeSort>("dps");
   const { mapping, prices, fetchIfNeeded } = useGEData();
+  const autoStarted = useRef(false);
 
   const enable = () => {
     setEnabled(true);
@@ -47,6 +48,17 @@ export default function UpgradeFinder({ state }: UpgradeFinderProps) {
       .catch(() => setLoadError(true))
       .finally(() => setLoading(false));
   };
+
+  // Auto-scan when the player has equipment equipped (e.g. after Open in DPS from loadout finder).
+  useEffect(() => {
+    if (bonusMode !== "equipment") return;
+    if (autoStarted.current) return;
+    const hasGear = Object.values(equippedGear).some((item) => item != null);
+    if (!hasGear) return;
+    autoStarted.current = true;
+    enable();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot when gear first appears
+  }, [equippedGear, bonusMode]);
 
   // GE price by lowercase item name — untradeables simply won't match.
   const priceByName = useMemo(() => {

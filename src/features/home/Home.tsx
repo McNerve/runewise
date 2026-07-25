@@ -69,6 +69,7 @@ const TOOL_GRID_SIZE = 12;
 const TOOL_POOL: Array<{ id: View; label: string }> = [
   { id: "skill-calc", label: "Skill Calc" },
   { id: "dps-calc", label: "DPS Calc" },
+  { id: "loadout-finder", label: "Loadout Finder" },
   { id: "bosses", label: "Boss Guides" },
   { id: "market", label: "Market" },
   { id: "loot", label: "Loot & Drops" },
@@ -99,19 +100,20 @@ const TOOL_POOL: Array<{ id: View; label: string }> = [
   { id: "flip-journal", label: "Flip Journal" },
 ];
 
-/** Combat hub entry points — single planning path: loadout → DPS → upgrades. */
-const COMBAT_HUB_TILES: Array<{ id: View; label: string; desc: string }> = [
+/** Combat hub entry points — budget setup → DPS → upgrades. */
+const COMBAT_HUB_TILES: Array<{ id: View; label: string; desc: string; params?: Record<string, string> }> = [
+  { id: "loadout-finder", label: "Budget Setup", desc: "Monster + budget → best loadout" },
   { id: "dps-calc", label: "DPS & Upgrades", desc: "Loadouts, TTK, upgrade finder" },
   { id: "bosses", label: "Boss Guides", desc: "Strategy + deep-link DPS" },
-  { id: "loot", label: "Loot EV", desc: "GP/kill and drop tables" },
+  { id: "loot", label: "Loot EV", desc: "GP/hr rankings + drops", params: { tab: "ranking" } },
   { id: "slayer", label: "Slayer", desc: "Tasks, weights, blocks" },
 ];
 
 /** Money hub entry — one ranking surface + market. */
 const MONEY_HUB_TILES: Array<{ id: View; label: string; desc: string; params?: Record<string, string> }> = [
   { id: "money-making", label: "Profit Rankings", desc: "Best gp/hr for your levels", params: { tab: "rankings" } },
-  { id: "market", label: "GE & Flips", desc: "Prices, watchlist, flip finder" },
-  { id: "loot", label: "Boss GP/hr", desc: "Expected loot value" },
+  { id: "market", label: "GE & Flips", desc: "Prices, watchlist, flip finder", params: { tab: "flips" } },
+  { id: "loot", label: "Boss GP/hr", desc: "Expected loot value", params: { tab: "ranking" } },
 ];
 
 const KIND_STYLES: Record<WhatNextAction["kind"], string> = {
@@ -633,11 +635,11 @@ export default function Home({ hiscores }: HomeProps) {
           <div className={`rounded-xl border border-border-subtle bg-bg-tertiary p-3 shadow-[0_1px_0_color-mix(in_srgb,var(--color-text-primary)_3%,transparent)] ${hasLiveData ? "hidden lg:block" : ""}`}>
             <h3 className="section-kicker mb-2">Combat</h3>
             <div className="space-y-0.5">
-              {COMBAT_HUB_TILES.map(({ id, label, desc }) => (
+              {COMBAT_HUB_TILES.map(({ id, label, desc, params }) => (
                 <button
-                  key={id}
+                  key={`${id}-${label}`}
                   type="button"
-                  onClick={() => navigate(id)}
+                  onClick={() => navigate(id, params)}
                   className="home-tile flex items-center gap-2.5 w-full rounded-lg border border-transparent px-2 py-2 text-left"
                 >
                   <ShellIcon view={id} className="h-4 w-4 shrink-0 opacity-55" />

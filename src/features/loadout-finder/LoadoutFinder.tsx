@@ -58,6 +58,7 @@ function ResultRow({
 }) {
   const pctOfBest = bestDps > 0 ? (row.dps / bestDps) * 100 : 0;
   const slotEntries = Object.entries(row.gear).filter(([, item]) => item != null);
+  const lowAcc = row.accuracy > 0 && row.accuracy < 0.4;
 
   return (
     <li className="rounded-xl border border-border-subtle bg-bg-primary/40 p-3 sm:p-4">
@@ -71,6 +72,11 @@ function ResultRow({
             >
               {row.style}
             </span>
+            {lowAcc && (
+              <span className="text-2xs px-1.5 py-0.5 rounded border border-warning/40 bg-warning/10 text-warning">
+                Low accuracy
+              </span>
+            )}
           </div>
           {row.preset.description && (
             <p className="text-xs text-text-secondary">{row.preset.description}</p>
@@ -89,7 +95,9 @@ function ResultRow({
             </span>
             <span>
               <span className="text-text-secondary/60">Acc </span>
-              <span className="num">{(row.accuracy * 100).toFixed(1)}%</span>
+              <span className={`num ${lowAcc ? "text-warning" : ""}`}>
+                {(row.accuracy * 100).toFixed(1)}%
+              </span>
             </span>
             <span>
               <span className="text-text-secondary/60">TTK </span>
@@ -100,11 +108,19 @@ function ResultRow({
               <span className="num text-accent">
                 {row.totalCost > 0 ? formatGp(row.totalCost) : "—"}
               </span>
-              {row.unpricedCount > 0 && (
-                <span className="text-warning/80"> (+{row.unpricedCount} unpriced)</span>
+              {row.unpricedCount > 0 && row.totalCost > 0 && (
+                <span className="text-text-secondary/50"> (GE tradeables)</span>
+              )}
+              {row.unpricedCount > 0 && row.totalCost === 0 && (
+                <span className="text-text-secondary/50"> (untradeables)</span>
               )}
             </span>
           </div>
+          {lowAcc && (
+            <p className="text-2xs text-warning/90">
+              Levels or better gear will help more than raising budget alone.
+            </p>
+          )}
         </div>
         <Button variant="primary" size="sm" onClick={onOpen}>
           Open in DPS
@@ -204,6 +220,13 @@ export default function LoadoutFinder({ hiscores }: Props) {
   const isCustom = targetName === "Custom / Dummy";
   const hasEquipError = Boolean(equipError);
 
+  const levelSummary = useMemo(() => {
+    if (!hiscores) return "Levels: 99s (no hiscores — using defaults)";
+    const get = (n: string) =>
+      hiscores.skills.find((s) => s.name.toLowerCase() === n.toLowerCase())?.level ?? "—";
+    return `Using your levels — Atk ${get("Attack")} · Str ${get("Strength")} · Ranged ${get("Ranged")} · Magic ${get("Magic")}`;
+  }, [hiscores]);
+
   const openInDps = (row: RankedLoadout) => {
     const params: Record<string, string> = {
       preset: row.preset.name,
@@ -227,6 +250,7 @@ export default function LoadoutFinder({ hiscores }: Props) {
         <p className="text-sm text-text-secondary mt-1">
           Pick a monster and budget — rank full gear presets by DPS with live GE prices.
         </p>
+        <p className="text-xs text-text-secondary/80 mt-1">{levelSummary}</p>
       </div>
 
       <Card kicker="Inputs" elevation="hero">
@@ -367,9 +391,9 @@ export default function LoadoutFinder({ hiscores }: Props) {
       </Card>
 
       <p className="text-2xs text-text-secondary/70 leading-relaxed">
-        Ranks curated gear presets (not a full combinatorial search). Untradeables and missing GE
-        prices count as 0 gp. Open a setup in the DPS calculator to tweak gear, prayers, and
-        modifiers.
+        Ranks curated gear presets (not a full combinatorial search). Untradeables (torso, fire cape,
+        defenders, etc.) are treated as free. Open a setup in the DPS calculator to tweak gear,
+        prayers, and modifiers.
       </p>
     </div>
   );

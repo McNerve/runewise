@@ -65,7 +65,14 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
     magicLevel,
     stance,
     bonusMode,
+    equippedGear,
   } = state;
+
+  const showZcbSpec = useMemo(() => {
+    if (combatStyle !== "ranged") return false;
+    const weapon = equippedGear?.weapon ?? equippedGear?.["2h"];
+    return Boolean(weapon?.name?.toLowerCase().includes("zaryte crossbow"));
+  }, [combatStyle, equippedGear]);
 
   // Exact kill time from the damage distribution — overkill-aware, unlike
   // the hp / dps figure inside `result.ttk`. Fang/scythe use specialized PMFs.
@@ -235,15 +242,17 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
             {" "}(EV-blended procs)
           </div>
         ) : null}
-        <label className="mb-2 flex items-center gap-2 text-[11px] text-text-secondary cursor-pointer">
-          <input
-            type="checkbox"
-            checked={zcbSpec}
-            onChange={(e) => setZcbSpec(e.target.checked)}
-            className="rounded border-border"
-          />
-          Zaryte crossbow special (guaranteed hit + bolt proc)
-        </label>
+        {showZcbSpec && (
+          <label className="mb-2 flex items-center gap-2 text-[11px] text-text-secondary cursor-pointer">
+            <input
+              type="checkbox"
+              checked={zcbSpec}
+              onChange={(e) => setZcbSpec(e.target.checked)}
+              className="rounded border-border"
+            />
+            Zaryte crossbow special (guaranteed hit + bolt proc)
+          </label>
+        )}
         <select
           value={selectedSpec?.id ?? ""}
           onChange={(e) => {
