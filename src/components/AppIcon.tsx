@@ -159,6 +159,18 @@ export default function AppIcon({ view, className = "h-4 w-4" }: AppIconProps) {
         </Glyph>
       );
 
+    // Equipment loadout + coin — Budget Loadout Finder.
+    case "loadout-finder":
+      return (
+        <Glyph className={className}>
+          <path d="M8 3h8v3H8z" />
+          <path d="M7 6h10v12a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V6z" />
+          <path d="M10 10h4v1.5h-4zM10 13h4v1.5h-4z" fill="var(--app-bg, #0b0f17)" opacity="0.5" />
+          <circle cx="17.5" cy="17.5" r="3.2" />
+          <path d="M17.5 15.6v3.8M16 17h3" stroke="var(--app-bg, #0b0f17)" strokeWidth="0.9" fill="none" opacity="0.75" />
+        </Glyph>
+      );
+
     // Stack of coins — Money Making.
     case "money-making":
       return (

@@ -482,6 +482,45 @@ function ManualClogView({ rsn }: { rsn: string }) {
     persist(next);
   };
 
+  const exportJson = () => {
+    const payload = {
+      version: 1,
+      rsn,
+      exportedAt: new Date().toISOString(),
+      obtained: [...obtained].sort(),
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `runewise-clog-${(rsn || "guest").replace(/\s+/g, "_")}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const importJson = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "application/json,.json";
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const data = JSON.parse(text) as { obtained?: unknown };
+        if (!Array.isArray(data.obtained)) {
+          window.alert("Invalid clog file — expected { obtained: string[] }");
+          return;
+        }
+        const names = data.obtained.filter((x): x is string => typeof x === "string");
+        persist(new Set(names));
+      } catch {
+        window.alert("Could not read that file as JSON");
+      }
+    };
+    input.click();
+  };
+
   const cat = COLLECTION_CATEGORIES.find((c) => c.name === category) ?? COLLECTION_CATEGORIES[0]!;
   const totalSlots = COLLECTION_CATEGORIES.reduce((n, c) => n + c.slots.length, 0);
   const obtainedCount = obtained.size;
@@ -499,6 +538,20 @@ function ManualClogView({ rsn }: { rsn: string }) {
             {obtainedCount} / {totalSlots}
           </span>
           <span className="text-text-secondary/60">marked obtained</span>
+          <button
+            type="button"
+            className="text-accent hover:text-accent-hover text-xs"
+            onClick={exportJson}
+          >
+            Export JSON
+          </button>
+          <button
+            type="button"
+            className="text-accent hover:text-accent-hover text-xs"
+            onClick={importJson}
+          >
+            Import JSON
+          </button>
           {obtainedCount > 0 && (
             <button
               type="button"
