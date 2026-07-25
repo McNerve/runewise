@@ -94,6 +94,38 @@ export const COLLECTION_CATEGORIES: CollectionCategory[] = [
       "Dragon defender", "Fighter torso",
       "Fire cape", "Infernal cape",
       "Void knight top", "Void knight robe", "Void knight gloves",
+      "Dizana's quiver", "Sunfire fanatic helm", "Sunfire fanatic cuirass",
+      "Sunfire fanatic chausses", "Echo crystal",
+    ],
+  },
+  {
+    name: "Nex & God Wars",
+    slots: [
+      "Nihil horn", "Zaryte vambraces", "Torva full helm", "Torva platebody",
+      "Torva platelegs", "Ancient hilt", "Nexling",
+    ],
+  },
+  {
+    name: "Wilderness",
+    slots: [
+      "Ursine chainmace", "Webweaver bow", "Accursed sceptre",
+      "Voidwaker", "Claws of callisto", "Fangs of venenatis", "Skull of vet'ion",
+      "Muphin",
+    ],
+  },
+  {
+    name: "Raids misc",
+    slots: [
+      "Twisted ancestral colour kit", "Metamorphic dust", "Sanguine dust",
+      "Lil'viathan", "Wisp", "Butch", "Baron",
+    ],
+  },
+  {
+    name: "Uniques misc",
+    slots: [
+      "Abyssal bludgeon", "Abyssal dagger", "Jar of dirt", "Jar of souls",
+      "Dark claw", "Overpass", "Smolcano", "Little nightmare",
+      "Jal-nib-rek", "Tzrek-jad",
     ],
   },
 ];

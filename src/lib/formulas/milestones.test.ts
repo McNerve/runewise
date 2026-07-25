@@ -51,4 +51,16 @@ describe("nearestMilestones", () => {
     const skills = ["a", "b", "c", "d"].map((n, i) => skill(n, 50 + i, xpForLevel(50 + i)));
     expect(nearestMilestones(hs(skills), 2)).toHaveLength(2);
   });
+
+  it("skips untrained level-1 skills and base Hitpoints", () => {
+    const ms = nearestMilestones(
+      hs([
+        skill("Ranged", 1, 0),
+        skill("Hitpoints", 10, xpForLevel(10)),
+        skill("Mining", 50, xpForLevel(50)),
+      ])
+    );
+    expect(ms.map((m) => m.skill.name)).toEqual(["Mining"]);
+    expect(ms[0]!.label).toBe("Level 60");
+  });
 });

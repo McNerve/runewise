@@ -7,6 +7,7 @@ import { getFeatureAccent } from "../../lib/featureAccent";
 import { useNavigation, type View } from "../../lib/NavigationContext";
 import WikiImage from "../../components/WikiImage";
 import ShellIcon from "../../components/ShellIcon";
+import AppIcon from "../../components/AppIcon";
 import { Button, StatGrid, StatCard } from "../../components/primitives";
 import { useSettings } from "../../hooks/useSettings";
 import { loadRecentEntities } from "../../lib/recentEntities";
@@ -497,7 +498,8 @@ export default function Home({ hiscores }: HomeProps) {
                       className="inline-flex h-7 w-7 items-center justify-center rounded-lg"
                       style={{ color: accent, background: `color-mix(in srgb, ${accent} 10%, transparent)` }}
                     >
-                      <ShellIcon view={tool.id} className="h-3.5 w-3.5" />
+                      {/* AppIcon glyphs always paint; wiki imgs often 404 as blank tiles. */}
+                      <AppIcon view={tool.id} className="h-3.5 w-3.5" />
                     </span>
                     <span className="text-[11px] font-medium text-text-secondary">{tool.label}</span>
                   </motion.button>

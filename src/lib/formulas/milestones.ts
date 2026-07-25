@@ -30,6 +30,10 @@ export function nearestMilestones(hiscores: HiscoreData, count = 5): Milestone[]
   for (const skill of hiscores.skills) {
     if (skill.name === "Overall") continue;
     if (skill.xp == null || skill.xp < 0 || skill.level < 1) continue;
+    // Skip untrained skills (lvl 1 / trivial XP) — "Hitpoints → 10" is noise on pures.
+    // Hitpoints starts at 10 in OSRS; treat base combat skills with no real training as skip.
+    if (skill.level <= 1) continue;
+    if (skill.name === "Hitpoints" && skill.level <= 10 && skill.xp <= xpForLevel(10)) continue;
     if (skill.level < 99) {
       const target = LEVEL_MILESTONES.find((m) => m > skill.level) ?? 99;
       const xpToGo = xpForLevel(target) - skill.xp;

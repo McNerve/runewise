@@ -20,6 +20,7 @@ import {
   findUpgradePathUnderBudget,
   type LeftoverUpgrade,
 } from "./leftoverUpgrade";
+import { parseBudgetInput } from "./parseBudget";
 import type { CombatStyle } from "../dps-calc/dpsTypes";
 
 const BUDGETS: { id: string; label: string; gp: number }[] = [
@@ -28,6 +29,7 @@ const BUDGETS: { id: string; label: string; gp: number }[] = [
   { id: "50m", label: "50M", gp: 50_000_000 },
   { id: "100m", label: "100M", gp: 100_000_000 },
   { id: "500m", label: "500M", gp: 500_000_000 },
+  { id: "custom", label: "Custom", gp: -1 },
   { id: "any", label: "Any", gp: 0 },
 ];
 
@@ -205,6 +207,7 @@ export default function LoadoutFinder({ hiscores }: Props) {
 
   const [targetName, setTargetName] = useState(FINDER_TARGETS[0]!.name);
   const [budgetId, setBudgetId] = useState("50m");
+  const [customBudgetText, setCustomBudgetText] = useState("75m");
   const [styleFilter, setStyleFilter] = useState<StyleFilter>("all");
   const [customDef, setCustomDef] = useState(100);
   const [customDefBonus, setCustomDefBonus] = useState(0);
@@ -237,7 +240,12 @@ export default function LoadoutFinder({ hiscores }: Props) {
     return base;
   }, [targetName, customDef, customDefBonus, customHp]);
 
-  const budget = BUDGETS.find((b) => b.id === budgetId)?.gp ?? 50_000_000;
+  const budget = useMemo(() => {
+    if (budgetId === "custom") {
+      return parseBudgetInput(customBudgetText) ?? 0;
+    }
+    return BUDGETS.find((b) => b.id === budgetId)?.gp ?? 50_000_000;
+  }, [budgetId, customBudgetText]);
 
   const priceOf = useMemo(
     () => (name: string) => priceByName.get(name.toLowerCase()) ?? null,
@@ -414,6 +422,21 @@ export default function LoadoutFinder({ hiscores }: Props) {
               onChange={setBudgetId}
               items={BUDGETS.map((b) => ({ id: b.id, label: b.label }))}
             />
+            {budgetId === "custom" && (
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <input
+                  type="text"
+                  value={customBudgetText}
+                  onChange={(e) => setCustomBudgetText(e.target.value)}
+                  placeholder="e.g. 75m, 1.5b, 250k"
+                  aria-label="Custom budget"
+                  className="w-40 rounded-lg border border-border bg-bg-primary px-2.5 py-1.5 text-sm num"
+                />
+                <span className="text-xs text-text-secondary">
+                  {budget > 0 ? `= ${formatGp(budget)}` : "Enter amount (k / m / b)"}
+                </span>
+              </div>
+            )}
           </div>
 
           <div>
