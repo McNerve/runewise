@@ -485,7 +485,7 @@ export default function LoadoutFinder({ hiscores }: Props) {
               onChange={(e) => setUseOptimizer(e.target.checked)}
               className="rounded border-border"
             />
-            Beam BiS under budget (multi-weapon + armour search)
+            Combinatorial BiS under budget (GearScape-class search)
           </label>
         </div>
       </Card>

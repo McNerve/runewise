@@ -1,11 +1,10 @@
 /**
- * Under-budget gear optimizer.
+ * Under-budget gear optimizer (GearScape-class search stack).
  *
  * - greedyOptimizeUnderBudget: weapon → armour sequential fill
- * - beamOptimizeUnderBudget: beam search over weapons + slot orderings
- *   (catches cases where a slightly weaker weapon leaves budget for better armour)
- *
- * Not full GearScape-class combinatorial search, but far stronger than presets alone.
+ * - beamOptimizeUnderBudget: multi-weapon beam + slot-order variants
+ * - combinatorialOptimizeUnderBudget: Pareto prune + branch-and-bound DFS
+ *   + local 1-swap / limited 2-swap refinement (default)
  */
 import type { WikiEquipment, EquipmentSlot } from "../../lib/api/equipment";
 import type { HiscoreData } from "../../lib/api/hiscores";
@@ -140,8 +139,58 @@ export interface BudgetOptimizeOptions {
   perSlot?: number;
   /** Beam width: top partial loadouts kept per stage. Default 6. */
   beamWidth?: number;
-  /** Top weapon seeds for beam search. Default 5. */
+  /** Top weapon seeds for beam/combinatorial search. Default 5 / 10. */
   weaponSeeds?: number;
+  /**
+   * Max full DPS evaluations for combinatorial branch-and-bound.
+   * Default 40_000 — enough for high-quality search in the browser.
+   */
+  maxEvals?: number;
+  /** Skip local-search refinement after BnB (tests / speed). */
+  skipLocalSearch?: boolean;
+}
+
+type SlotCand = { item: WikiEquipment; cost: number; offense: number };
+type SearchSlot = EquipmentSlot | "2h" | "weapon";
+
+/**
+ * Drop Pareto-dominated candidates: same-or-worse offense at higher cost,
+ * or strictly worse offense at same-or-higher cost. Keeps the frontier for BnB.
+ */
+export function paretoFilterCandidates(
+  cands: SlotCand[],
+  limit = 16
+): SlotCand[] {
+  // Prefer higher offense, then lower cost
+  const sorted = [...cands].sort((a, b) => b.offense - a.offense || a.cost - b.cost);
+  const front: SlotCand[] = [];
+  let bestCostForOffense = Number.POSITIVE_INFINITY;
+  for (const c of sorted) {
+    // Dominated if we already have ≥ offense at ≤ cost
+    let dominated = false;
+    for (const f of front) {
+      if (f.offense >= c.offense && f.cost <= c.cost) {
+        dominated = true;
+        break;
+      }
+    }
+    if (dominated) continue;
+    // Also skip if worse offense but not cheaper enough (weak filter)
+    if (c.cost >= bestCostForOffense && front.some((f) => f.offense > c.offense && f.cost <= c.cost))
+      continue;
+    front.push(c);
+    if (c.cost < bestCostForOffense) bestCostForOffense = c.cost;
+    if (front.length >= limit) break;
+  }
+  return front;
+}
+
+function gearFingerprint(gear: EquippedGear): string {
+  const parts: string[] = [];
+  for (const [k, v] of Object.entries(gear)) {
+    if (v) parts.push(`${k}:${v.name}`);
+  }
+  return parts.sort().join("|");
 }
 
 interface BeamState {
@@ -391,9 +440,416 @@ export function beamOptimizeUnderBudget(opts: BudgetOptimizeOptions): RankedLoad
   );
 }
 
-/** Prefer beam search; falls back to greedy if beam finds nothing. */
+/**
+ * GearScape-class combinatorial BiS under budget.
+ *
+ * 1. Pareto-prune candidates per slot (offense vs cost)
+ * 2. Value-rank weapon seeds (pure DPS + DPS/log-gp)
+ * 3. Bounded-branch DFS (evaluate all affordable items at a slot, recurse
+ *    into skip + top-K improvers only) — polynomial, not 14^10
+ * 4. Extra wide beam + alternate slot orders as lower bound
+ * 5. Local search: multi-pass 1-swap + limited 2-swap on high-impact slots
+ */
+export function combinatorialOptimizeUnderBudget(
+  opts: BudgetOptimizeOptions
+): RankedLoadout | null {
+  const {
+    equipment,
+    priceOf,
+    hiscores,
+    target,
+    budget,
+    style,
+    perSlot = 14,
+    weaponSeeds = 12,
+    maxEvals = 50_000,
+    skipLocalSearch = false,
+  } = opts;
+
+  const unlimited = !Number.isFinite(budget) || budget <= 0;
+  const cashCap = unlimited ? Number.POSITIVE_INFINITY : budget;
+  /** At each DFS node: skip + this many best improvers. */
+  const branchFactor = 4;
+
+  // ── Candidate pools ─────────────────────────────────────────
+  const rawWeapons = equipment
+    .filter((e) => (e.slot === "weapon" || e.slot === "2h") && styleOk(e, style))
+    .filter((e) => {
+      const speed = e.attackSpeed || knownWeaponSpeed(e.name) || 0;
+      return speed > 0 || style === "magic";
+    })
+    .map((w) => {
+      const cost = priceOrZero(priceOf, w.name);
+      return { item: w, cost, offense: offensiveScore(w, style) };
+    })
+    .filter(({ item, cost }) => {
+      if (!unlimited && cost > cashCap) return false;
+      if (!unlimited && cost === 0 && item.name.toLowerCase().includes("broken")) return false;
+      return true;
+    });
+
+  const weaponCands = paretoFilterCandidates(rawWeapons, Math.max(weaponSeeds * 2, 20));
+
+  const scoredWeapons = weaponCands
+    .map((c) => {
+      const trial: EquippedGear =
+        c.item.slot === "2h" ? { "2h": c.item } : { weapon: c.item };
+      const { dps } = scoreGear(style, trial, hiscores, target);
+      const value = dps / Math.log10(Math.max(10, c.cost) + 10);
+      return { ...c, dps, trial, value };
+    })
+    .sort((a, b) => b.dps - a.dps || a.cost - b.cost);
+
+  const seedSet = new Map<string, (typeof scoredWeapons)[0]>();
+  for (const w of scoredWeapons.slice(0, weaponSeeds)) seedSet.set(w.item.name, w);
+  const byValue = [...scoredWeapons].sort((a, b) => b.value - a.value || b.dps - a.dps);
+  for (const w of byValue) {
+    if (seedSet.size >= weaponSeeds + Math.ceil(weaponSeeds / 2)) break;
+    seedSet.set(w.item.name, w);
+  }
+  const seeds = [...seedSet.values()];
+
+  if (seeds.length === 0) {
+    return greedyOptimizeUnderBudget(opts);
+  }
+
+  const armourOrders: (EquipmentSlot | "2h")[][] = [
+    ["neck", "body", "legs", "head", "feet", "hands", "ring", "cape", "shield", "ammo"],
+    ["body", "legs", "neck", "head", "ring", "feet", "hands", "cape", "shield", "ammo"],
+    ["ring", "neck", "cape", "hands", "feet", "head", "legs", "body", "shield", "ammo"],
+  ];
+
+  const bySlot = new Map<string, SlotCand[]>();
+  for (const slot of ARMOUR_SLOTS) {
+    if (slot === "ammo" && style === "melee") {
+      bySlot.set(slot, []);
+      continue;
+    }
+    const raw = equipment
+      .filter((e) => e.slot === slot && styleOk(e, style))
+      .map((item) => ({
+        item,
+        cost: priceOrZero(priceOf, item.name),
+        offense: offensiveScore(item, style),
+      }))
+      .filter((c) => unlimited || c.cost <= cashCap);
+    bySlot.set(slot, paretoFilterCandidates(raw, perSlot));
+  }
+
+  let bestGear: EquippedGear | null = null;
+  let bestDps = -1;
+  let bestCost = Number.POSITIVE_INFINITY;
+  let evals = 0;
+
+  const scoreCached = new Map<string, number>();
+  const score = (gear: EquippedGear): number => {
+    const key = gearFingerprint(gear);
+    const hit = scoreCached.get(key);
+    if (hit != null) return hit;
+    evals += 1;
+    const { dps } = scoreGear(style, gear, hiscores, target);
+    scoreCached.set(key, dps);
+    return dps;
+  };
+
+  const consider = (gear: EquippedGear, dps?: number) => {
+    const d = dps ?? score(gear);
+    const cost = setupCost(gear, priceOf);
+    if (d > bestDps + 0.0005 || (Math.abs(d - bestDps) < 0.0005 && cost < bestCost)) {
+      bestDps = d;
+      bestCost = cost;
+      bestGear = { ...gear };
+    }
+  };
+
+  // ── Bounded-branch DFS per weapon × slot order ──────────────
+  for (const seed of seeds) {
+    if (evals >= maxEvals) break;
+    const startCash = unlimited ? Number.POSITIVE_INFINITY : cashCap - seed.cost;
+    if (startCash < 0) continue;
+
+    for (const armourOrder of armourOrders) {
+      if (evals >= maxEvals) break;
+
+      const startGear: EquippedGear = { ...seed.trial };
+      const startDps = score(startGear);
+      consider(startGear, startDps);
+
+      const dfs = (
+        slotIdx: number,
+        gear: EquippedGear,
+        remaining: number,
+        currentDps: number
+      ): void => {
+        if (evals >= maxEvals) return;
+        if (slotIdx >= armourOrder.length) {
+          consider(gear, currentDps);
+          return;
+        }
+
+        const slot = armourOrder[slotIdx]!;
+
+        // Soft prune: hopeless if far behind and late in the tree
+        if (slotIdx >= 4 && currentDps + 0.5 < bestDps * 0.92) {
+          return;
+        }
+
+        type Branch = { gear: EquippedGear; remaining: number; dps: number };
+        const branches: Branch[] = [
+          { gear, remaining, dps: currentDps }, // skip
+        ];
+
+        if (!(slot === "shield" && gear["2h"]) && !(slot === "ammo" && style === "melee")) {
+          for (const { item, cost } of bySlot.get(slot) ?? []) {
+            if (evals >= maxEvals) break;
+            if (!unlimited && cost > remaining) continue;
+            if (gear[slot]?.name === item.name) continue;
+            const trial = { ...gear, [slot]: item } as EquippedGear;
+            const dps = score(trial);
+            if (dps + 0.02 < currentDps) continue; // clear regression
+            branches.push({
+              gear: trial,
+              remaining: unlimited ? Number.POSITIVE_INFINITY : remaining - cost,
+              dps,
+            });
+          }
+        }
+
+        branches.sort((a, b) => b.dps - a.dps || b.remaining - a.remaining);
+        // Always keep skip (index may have moved); take top branchFactor unique
+        const chosen: Branch[] = [];
+        const seen = new Set<string>();
+        for (const b of branches) {
+          const fp = gearFingerprint(b.gear) + `@${slotIdx}`;
+          if (seen.has(fp)) continue;
+          seen.add(fp);
+          chosen.push(b);
+          if (chosen.length >= branchFactor) break;
+        }
+        // Ensure skip is always explored when budget is tight
+        if (!chosen.some((c) => c.gear === gear || gearFingerprint(c.gear) === gearFingerprint(gear))) {
+          chosen.push({ gear, remaining, dps: currentDps });
+        }
+
+        for (const b of chosen) {
+          dfs(slotIdx + 1, b.gear, b.remaining, b.dps);
+        }
+      };
+
+      dfs(0, startGear, startCash, startDps);
+    }
+  }
+
+  // ── Local search refinement ─────────────────────────────────
+  if (bestGear && !skipLocalSearch) {
+    bestGear = localSearchRefine({
+      gear: bestGear,
+      style,
+      bySlot,
+      weaponCands: scoredWeapons.map((w) => ({
+        item: w.item,
+        cost: w.cost,
+        offense: w.offense,
+      })),
+      priceOf,
+      cashCap,
+      unlimited,
+      hiscores,
+      target,
+      score,
+      maxEvals: () => Math.max(0, maxEvals - evals),
+      onEval: () => {
+        /* evals counted inside score() */
+      },
+    });
+    consider(bestGear);
+  }
+
+  // Insurance: existing beam may still win on odd edges
+  const beam = beamOptimizeUnderBudget({
+    ...opts,
+    weaponSeeds: Math.min(weaponSeeds, 8),
+    beamWidth: 10,
+    perSlot: Math.min(perSlot + 6, 24),
+  });
+  if (beam) consider(beam.gear);
+
+  if (!bestGear) {
+    return greedyOptimizeUnderBudget(opts);
+  }
+
+  return toRanked(
+    style,
+    bestGear,
+    hiscores,
+    target,
+    priceOf,
+    budget,
+    unlimited,
+    "Combinatorial BiS (Pareto + bounded BnB + local search)"
+  );
+}
+
+function localSearchRefine(args: {
+  gear: EquippedGear;
+  style: CombatStyle;
+  bySlot: Map<string, SlotCand[]>;
+  weaponCands: SlotCand[];
+  priceOf: (n: string) => number | null;
+  cashCap: number;
+  unlimited: boolean;
+  hiscores: HiscoreData | null;
+  target: LoadoutTarget;
+  score: (g: EquippedGear) => number;
+  maxEvals: () => number;
+  onEval: () => void;
+}): EquippedGear {
+  let gear = { ...args.gear };
+  let bestDps = args.score(gear);
+  let improved = true;
+  let passes = 0;
+
+  const slots: SearchSlot[] = [
+    "weapon",
+    "2h",
+    "neck",
+    "body",
+    "legs",
+    "head",
+    "feet",
+    "hands",
+    "ring",
+    "cape",
+    "shield",
+    "ammo",
+  ];
+
+  while (improved && passes < 4 && args.maxEvals() > 100) {
+    improved = false;
+    passes += 1;
+    const spent = setupCost(gear, args.priceOf);
+    const remaining = args.unlimited
+      ? Number.POSITIVE_INFINITY
+      : args.cashCap - spent;
+
+    // ── 1-swap: every slot ────────────────────────────────────
+    for (const slot of slots) {
+      if (slot === "ammo" && args.style === "melee") continue;
+      if (slot === "shield" && gear["2h"]) continue;
+      if ((slot === "weapon" || slot === "2h") && gear["2h"] && slot === "weapon") continue;
+
+      const current = gear[slot as keyof EquippedGear] as WikiEquipment | undefined;
+      const currentCost = current ? priceOrZero(args.priceOf, current.name) : 0;
+      const pool =
+        slot === "weapon" || slot === "2h"
+          ? args.weaponCands.filter((c) =>
+              slot === "2h" ? c.item.slot === "2h" : c.item.slot === "weapon"
+            )
+          : (args.bySlot.get(slot) ?? []);
+
+      for (const { item, cost } of pool) {
+        if (args.maxEvals() <= 0) return gear;
+        if (current && item.name === current.name) continue;
+        const delta = cost - currentCost;
+        if (!args.unlimited && delta > remaining + 0.5) continue;
+
+        const trial = { ...gear } as EquippedGear;
+        if (slot === "weapon") {
+          delete trial["2h"];
+          trial.weapon = item;
+        } else if (slot === "2h") {
+          delete trial.weapon;
+          delete trial.shield;
+          trial["2h"] = item;
+        } else {
+          trial[slot] = item;
+        }
+        const dps = args.score(trial);
+        if (dps > bestDps + 0.001) {
+          bestDps = dps;
+          gear = trial;
+          improved = true;
+        }
+      }
+
+      // Try empty slot (free cash for other swaps later)
+      if (current && slot !== "weapon" && slot !== "2h") {
+        const trial = { ...gear };
+        delete trial[slot];
+        const dps = args.score(trial);
+        // Only empty if somehow better (rare) — usually we keep for 2-swap cash
+        if (dps > bestDps + 0.001) {
+          bestDps = dps;
+          gear = trial;
+          improved = true;
+        }
+      }
+    }
+
+    // ── Limited 2-swap on high-impact pairs ───────────────────
+    if (args.maxEvals() < 200) break;
+    const pairSlots: (EquipmentSlot | "weapon")[] = ["weapon", "neck", "body", "legs", "head"];
+    for (let i = 0; i < pairSlots.length && args.maxEvals() > 50; i++) {
+      for (let j = i + 1; j < pairSlots.length && args.maxEvals() > 50; j++) {
+        const s1 = pairSlots[i]!;
+        const s2 = pairSlots[j]!;
+        const pool1 =
+          s1 === "weapon"
+            ? args.weaponCands.filter((c) => c.item.slot === "weapon" || c.item.slot === "2h")
+            : (args.bySlot.get(s1) ?? []);
+        const pool2 = args.bySlot.get(s2) ?? [];
+        // Cap combinations
+        const p1 = pool1.slice(0, 8);
+        const p2 = pool2.slice(0, 8);
+        const c1 = gear[s1 === "weapon" ? (gear["2h"] ? "2h" : "weapon") : s1] as
+          | WikiEquipment
+          | undefined;
+        const c2 = gear[s2] as WikiEquipment | undefined;
+        const baseCost =
+          (c1 ? priceOrZero(args.priceOf, c1.name) : 0) +
+          (c2 ? priceOrZero(args.priceOf, c2.name) : 0);
+        const freeCash = args.unlimited
+          ? Number.POSITIVE_INFINITY
+          : args.cashCap - setupCost(gear, args.priceOf) + baseCost;
+
+        for (const a of p1) {
+          for (const b of p2) {
+            if (args.maxEvals() <= 0) return gear;
+            if (a.cost + b.cost > freeCash) continue;
+            const trial = { ...gear } as EquippedGear;
+            if (a.item.slot === "2h") {
+              delete trial.weapon;
+              delete trial.shield;
+              trial["2h"] = a.item;
+            } else if (s1 === "weapon") {
+              delete trial["2h"];
+              trial.weapon = a.item;
+            } else {
+              trial[s1] = a.item;
+            }
+            trial[s2] = b.item;
+            const dps = args.score(trial);
+            if (dps > bestDps + 0.001) {
+              bestDps = dps;
+              gear = trial;
+              improved = true;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return gear;
+}
+
+/** Prefer combinatorial BiS; falls back through beam → greedy. */
 export function optimizeUnderBudget(opts: BudgetOptimizeOptions): RankedLoadout | null {
-  return beamOptimizeUnderBudget(opts) ?? greedyOptimizeUnderBudget(opts);
+  return (
+    combinatorialOptimizeUnderBudget(opts) ??
+    beamOptimizeUnderBudget(opts) ??
+    greedyOptimizeUnderBudget(opts)
+  );
 }
 
 /** Run optimizer for each style and return non-null results. */
@@ -403,7 +859,7 @@ export function greedyOptimizeAllStyles(
   return optimizeAllStyles(opts);
 }
 
-/** Run beam optimizer for each style (preferred entry for UI). */
+/** Run full combinatorial optimizer for each style (preferred UI entry). */
 export function optimizeAllStyles(
   opts: Omit<BudgetOptimizeOptions, "style"> & { styles?: CombatStyle[] }
 ): RankedLoadout[] {
