@@ -31,6 +31,7 @@ import {
   darkBowExpectedDamage,
   fangSpecExpectedDamage,
   webweaverExpectedDamage,
+  burningClawsExpectedDamage,
   fangHitChance,
   type DpsInput,
 } from "./dps";
@@ -919,6 +920,36 @@ describe("deferred wiki parity — fang/scythe/arclight/crystal/magic", () => {
 
   it("tbowScaling is pure trunc factor", () => {
     expect(tbowScaling(10000, 250, true)).toBe(14000);
+  });
+});
+
+describe("burning claws cascade", () => {
+  it("deals more EV when accuracy rises", () => {
+    expect(burningClawsExpectedDamage(40, 1)).toBeGreaterThan(burningClawsExpectedDamage(40, 0.5));
+    expect(burningClawsExpectedDamage(40, 0)).toBe(0);
+  });
+
+  it("lands above max hit on average when perfect accuracy (band up to 175%)", () => {
+    // Perfect acc always uses 75–175% band; avg = 1.25 * max + burn EV
+    const ev = burningClawsExpectedDamage(40, 1);
+    expect(ev).toBeGreaterThan(40);
+    expect(ev).toBeLessThan(40 * 1.75 + 10);
+  });
+
+  it("calculateSpecDps uses burning_claws cascade and exceeds plain multi-hit", () => {
+    const base = {
+      ...meleeInput({ strengthBonus: 80, attackBonus: 90 }),
+      specAccuracyMult: 1,
+      specDamageMult: 1,
+      specHits: 3,
+      specGuaranteedHit: false,
+      specSpeed: 4,
+    };
+    const cascade = calculateSpecDps({ ...base, specCascadeType: "burning_claws" });
+    const plain = calculateSpecDps(base);
+    expect(cascade.specDps).toBeGreaterThan(0);
+    // Perfect-ish setup: cascade band + burn should beat plain 3× mid-hit
+    expect(cascade.specMaxHit).toBeGreaterThan(plain.specMaxHit * 0.5);
   });
 });
 

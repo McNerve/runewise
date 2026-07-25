@@ -103,6 +103,72 @@ jobs:
           prerelease: false
           args: --target ${{ matrix.target }}
 
+      # Authenticode (optional). Skipped when WINDOWS_CERTIFICATE is unset.
+      # Signs on-disk bundle outputs then re-uploads them to the release
+      # (tauri-action may have uploaded unsigned copies first).
+      # See docs/WINDOWS-SIGNING.md.
+      - name: Authenticode sign Windows installers
+        if: runner.os == 'Windows' && secrets.WINDOWS_CERTIFICATE != ''
+        shell: pwsh
+        env:
+          WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
+          WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ env.RELEASE_TAG }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          $pfxPath = Join-Path $env:RUNNER_TEMP "codesign.pfx"
+          $bytes = [Convert]::FromBase64String($env:WINDOWS_CERTIFICATE)
+          [IO.File]::WriteAllBytes($pfxPath, $bytes)
+
+          $signtool = Get-ChildItem -Path "${env:ProgramFiles(x86)}\Windows Kits\10\bin" -Recurse -Filter signtool.exe -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -match '\\x64\\' } |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1 -ExpandProperty FullName
+          if (-not $signtool) {
+            Write-Error "signtool.exe not found — install Windows SDK on the runner image"
+          }
+
+          $roots = @(
+            "src-tauri\target\${{ matrix.target }}\release\bundle",
+            "src-tauri\target\release\bundle"
+          ) | Where-Object { Test-Path $_ }
+
+          $files = @()
+          foreach ($root in $roots) {
+            $files += Get-ChildItem -Path $root -Recurse -Include *.exe,*.msi -ErrorAction SilentlyContinue
+          }
+          $files = @($files | Select-Object -ExpandProperty FullName -Unique)
+          if ($files.Count -eq 0) {
+            Write-Host "No exe/msi artifacts found to sign; continuing unsigned."
+            exit 0
+          }
+
+          $timestamps = @(
+            "http://timestamp.digicert.com",
+            "http://timestamp.sectigo.com"
+          )
+          foreach ($path in $files) {
+            Write-Host "Signing $path"
+            $ok = $false
+            foreach ($ts in $timestamps) {
+              & $signtool sign /f $pfxPath /p $env:WINDOWS_CERTIFICATE_PASSWORD /fd SHA256 /tr $ts /td SHA256 $path
+              if ($LASTEXITCODE -eq 0) { $ok = $true; break }
+              Write-Warning "Timestamp $ts failed; trying next"
+            }
+            if (-not $ok) { throw "Failed to sign $path" }
+            & $signtool verify /pa $path
+            if ($LASTEXITCODE -ne 0) { throw "Verify failed for $path" }
+          }
+          Remove-Item $pfxPath -Force -ErrorAction SilentlyContinue
+
+          # Replace release assets with signed copies
+          foreach ($path in $files) {
+            $name = Split-Path $path -Leaf
+            Write-Host "Uploading signed $name to release $env:TAG"
+            gh release upload $env:TAG $path --clobber
+          }
+
   release-notes:
     needs: build
     runs-on: ubuntu-latest
