@@ -28,7 +28,8 @@ export const FEATURE_REGISTRY = {
     title: "Collection Log",
     navLabel: "Collection Log",
     family: "Player",
-    sidebar: true,
+    // Temple sync stays available via search / Profile deep links.
+    sidebar: false,
     search: true,
     aliases: ["collection log", "collection", "log", "obtained"],
   },
@@ -43,7 +44,7 @@ export const FEATURE_REGISTRY = {
   "skill-calc": {
     title: "Skill Calculator",
     navLabel: "Skill Calculator",
-    family: "Calculators",
+    family: "Plan",
     sidebar: true,
     search: true,
     aliases: ["skills", "skill calculator", "training", "xp", "level", "training method", "construction"],
@@ -56,10 +57,27 @@ export const FEATURE_REGISTRY = {
     search: true,
     aliases: ["dps", "damage", "max hit", "combat", "accuracy", "monster", "loadout"],
   },
+  "loadout-finder": {
+    title: "Budget Loadout Finder",
+    navLabel: "Loadout Finder",
+    family: "Combat",
+    // Search + What next / DPS deep links; rail stays on daily drivers.
+    sidebar: false,
+    search: true,
+    aliases: [
+      "loadout finder",
+      "budget gear",
+      "budget loadout",
+      "best setup",
+      "gear finder",
+      "bis budget",
+      "under budget",
+    ],
+  },
   "dry-calc": {
     title: "Dry Calculator",
     navLabel: "Dry Calculator",
-    family: "Calculators",
+    family: "Plan",
     // Search + home tool grid; keeps the sidebar focused on daily drivers.
     sidebar: false,
     search: true,
@@ -68,7 +86,7 @@ export const FEATURE_REGISTRY = {
   "training-plan": {
     title: "Training Plan",
     navLabel: "Training Plan",
-    family: "Calculators",
+    family: "Plan",
     sidebar: false,
     search: true,
     aliases: ["training plan", "level plan", "goal", "targets", "efficient", "xp per hour"],
@@ -77,14 +95,15 @@ export const FEATURE_REGISTRY = {
     title: "Gear Compare",
     navLabel: "Gear Compare",
     family: "Combat",
-    sidebar: true,
+    // Prefer DPS loadouts + Upgrade Finder; compare stays in search.
+    sidebar: false,
     search: true,
     aliases: ["gear", "equipment", "compare", "bis", "best in slot"],
   },
   "pet-calc": {
     title: "Pet Calculator",
     navLabel: "Pet Calculator",
-    family: "Calculators",
+    family: "Plan",
     sidebar: false,
     search: true,
     aliases: ["pet", "pet chance", "pet calculator"],
@@ -101,7 +120,8 @@ export const FEATURE_REGISTRY = {
     title: "Raid Guides",
     navLabel: "Raid Guides",
     family: "Combat",
-    sidebar: true,
+    // Reach from Boss Guides / search; keeps Combat hub focused.
+    sidebar: false,
     search: true,
     aliases: ["raids", "cox", "tob", "toa", "chambers", "theatre", "tombs", "raid guide"],
   },
@@ -133,7 +153,8 @@ export const FEATURE_REGISTRY = {
     title: "GE Flip Journal",
     navLabel: "Flip Journal",
     family: "Market",
-    sidebar: true,
+    // Logging stays available via search; Market owns flips.
+    sidebar: false,
     search: true,
     aliases: ["flip", "flipping", "flip journal", "ge flipping", "profit journal", "flip log"],
   },
@@ -157,7 +178,7 @@ export const FEATURE_REGISTRY = {
     title: "Clue Helper",
     navLabel: "Clue Helper",
     family: "Live",
-    sidebar: true,
+    sidebar: false,
     search: true,
     aliases: ["clues", "clue helper"],
   },
@@ -172,7 +193,7 @@ export const FEATURE_REGISTRY = {
   "production-calc": {
     title: "Recipe Calculator",
     navLabel: "Recipe Calculator",
-    family: "Calculators",
+    family: "Plan",
     sidebar: false,
     search: true,
     aliases: ["production", "crafting", "recipes", "cost calculator", "profit calculator", "herblore", "smithing"],
@@ -188,7 +209,7 @@ export const FEATURE_REGISTRY = {
   kingdom: {
     title: "Kingdom of Miscellania",
     navLabel: "Kingdom Calculator",
-    family: "Calculators",
+    family: "Plan",
     sidebar: false,
     search: true,
     aliases: ["kingdom", "miscellania", "managing miscellania", "throne of miscellania", "workers", "kingdom calculator"],
@@ -236,7 +257,7 @@ export const FEATURE_REGISTRY = {
   timers: {
     title: "Farm Timers",
     navLabel: "Farming Timers",
-    family: "Calculators",
+    family: "Plan",
     sidebar: true,
     search: true,
     aliases: ["timers", "farm timers", "farming", "crops", "birdhouse", "farm run", "farm profit"],
@@ -244,7 +265,7 @@ export const FEATURE_REGISTRY = {
   "xp-table": {
     title: "XP Table",
     navLabel: "XP Table",
-    family: "Calculators",
+    family: "Plan",
     sidebar: false,
     search: true,
     aliases: ["xp table", "levels"],
@@ -299,14 +320,14 @@ export const SIDEBAR_FEATURES = FEATURE_LIST.filter((feature) => feature.sidebar
 
 export const SEARCHABLE_FEATURES = FEATURE_LIST.filter((feature) => feature.search);
 
-// Sidebar hub order (5 coherent groups). Home renders without a header
-// since it's a single item; every sidebar:true feature maps to one of these.
+// Sidebar hub order. Home is a single item (no header); secondary tools live
+// in search only so the rail stays daily-driver focused.
 export const FEATURE_FAMILIES: FeatureFamily[] = [
   "Home",
   "Player",
   "Combat",
   "Market",
-  "Calculators",
+  "Plan",
   "Live",
 ];
 

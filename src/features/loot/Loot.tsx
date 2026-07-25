@@ -720,19 +720,22 @@ function ProfitCalculatorTab({
 
 // --- Main Loot component ---
 
-function resolveLootTab(raw: string | undefined): LootTab {
-  return raw === "profit" || raw === "ranking" ? raw : "drops";
+function resolveLootTab(raw: string | undefined, monster?: string): LootTab {
+  if (raw === "profit" || raw === "ranking" || raw === "drops") return raw;
+  // Deep-link with a monster → drop tables; otherwise lead with rankings (best content).
+  if (monster) return "drops";
+  return "ranking";
 }
 
 export default function Loot() {
   const { params, navigate } = useNavigation();
   const { mapping, prices, loading, fetchIfNeeded } = useGEData();
-  const [tab, setTab] = useState<LootTab>(() => resolveLootTab(params.tab));
+  const [tab, setTab] = useState<LootTab>(() => resolveLootTab(params.tab, params.monster));
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- sync tab from nav params
-    setTab(resolveLootTab(params.tab));
-  }, [params.tab]);
+    setTab(resolveLootTab(params.tab, params.monster));
+  }, [params.tab, params.monster]);
 
   useEffect(() => { fetchIfNeeded(); }, [fetchIfNeeded]);
 

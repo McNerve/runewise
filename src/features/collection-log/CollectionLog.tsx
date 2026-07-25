@@ -11,6 +11,8 @@ import {
 import { clearCacheKey } from "../../lib/api/cache";
 import { useNavigation } from "../../lib/NavigationContext";
 import FreshnessStrip from "../../components/FreshnessStrip";
+import { loadJSON, saveJSON } from "../../lib/localStorage";
+import { COLLECTION_CATEGORIES } from "./data/slots";
 
 function ProgressRing({
   obtained,
@@ -454,6 +456,125 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
   );
 }
 
+const MANUAL_CLOG_KEY = "runewise_clog_manual";
+
+/** Offline checklist when Temple has no data — marks persist locally. */
+function ManualClogView({ rsn }: { rsn: string }) {
+  const { navigate } = useNavigation();
+  const storageKey = `${MANUAL_CLOG_KEY}:${rsn.toLowerCase() || "guest"}`;
+  const [obtained, setObtained] = useState<Set<string>>(
+    () => new Set(loadJSON<string[]>(storageKey, []))
+  );
+  const [category, setCategory] = useState(COLLECTION_CATEGORIES[0]?.name ?? "");
+
+  const persist = useCallback(
+    (next: Set<string>) => {
+      setObtained(next);
+      saveJSON(storageKey, [...next]);
+    },
+    [storageKey]
+  );
+
+  const toggle = (name: string) => {
+    const next = new Set(obtained);
+    if (next.has(name)) next.delete(name);
+    else next.add(name);
+    persist(next);
+  };
+
+  const cat = COLLECTION_CATEGORIES.find((c) => c.name === category) ?? COLLECTION_CATEGORIES[0]!;
+  const totalSlots = COLLECTION_CATEGORIES.reduce((n, c) => n + c.slots.length, 0);
+  const obtainedCount = obtained.size;
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-xl border border-border/60 bg-bg-secondary/40 px-4 py-3 space-y-2">
+        <p className="text-sm font-medium text-text-primary">Manual checklist</p>
+        <p className="text-xs text-text-secondary leading-relaxed">
+          Temple has no clog for this account. Tick items offline — progress saves on this device.
+          Sync Temple later for a full live log.
+        </p>
+        <div className="flex flex-wrap items-center gap-3 text-xs">
+          <span className="num text-accent font-semibold">
+            {obtainedCount} / {totalSlots}
+          </span>
+          <span className="text-text-secondary/60">marked obtained</span>
+          {obtainedCount > 0 && (
+            <button
+              type="button"
+              className="text-danger/80 hover:text-danger text-xs"
+              onClick={() => persist(new Set())}
+            >
+              Clear all
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-1.5">
+        {COLLECTION_CATEGORIES.map((c) => {
+          const n = c.slots.filter((s) => obtained.has(s)).length;
+          return (
+            <button
+              key={c.name}
+              type="button"
+              onClick={() => setCategory(c.name)}
+              className={`rounded-lg border px-2.5 py-1 text-xs ${
+                category === c.name
+                  ? "border-accent/50 bg-accent/10 text-accent"
+                  : "border-border bg-bg-tertiary text-text-secondary"
+              }`}
+            >
+              {c.name}
+              <span className="ml-1 num opacity-70">
+                {n}/{c.slots.length}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
+        {cat.slots.map((name) => {
+          const has = obtained.has(name);
+          return (
+            <button
+              key={name}
+              type="button"
+              onClick={() => toggle(name)}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                navigate("market", { query: name, select: "1" });
+              }}
+              title={`${name} — click to toggle, right-click to open market`}
+              className={`group flex flex-col items-center gap-1 p-2 rounded-lg transition-all ${
+                has
+                  ? "bg-success/10 border border-success/25"
+                  : "bg-bg-tertiary/30 border border-border/40 opacity-70 hover:opacity-100"
+              }`}
+            >
+              <img
+                src={itemIcon(name)}
+                alt=""
+                className={`w-8 h-8 object-contain ${has ? "" : "grayscale"}`}
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                }}
+              />
+              <span className="text-[10px] text-center leading-tight truncate max-w-full">
+                {name}
+              </span>
+              <span className={`text-[9px] ${has ? "text-success" : "text-text-secondary/50"}`}>
+                {has ? "Obtained" : "Missing"}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 interface Props {
   rsn: string;
 }
@@ -580,14 +701,15 @@ export default function CollectionLog({ rsn }: Props) {
       )}
 
       {!templeLoading && !templeError && rsn && templeSynced === false && (
-        <div className="bg-bg-secondary/50 rounded-lg px-4 py-3 mb-4 space-y-2">
+        <div className="space-y-4 mb-4">
+        <div className="bg-bg-secondary/50 rounded-lg px-4 py-3 space-y-2">
           <p className="text-sm font-medium text-text-primary">
             No collection log data found for {rsn}
           </p>
           <p className="text-xs text-text-secondary leading-relaxed">
             To see your live collection log, install the <strong>Temple OSRS</strong> plugin
             in RuneLite and open your Collection Log in-game. Your data will be sent to Temple
-            automatically.
+            automatically. Or use the manual checklist below.
           </p>
           <div className="flex gap-2 pt-1">
             <a
@@ -629,6 +751,8 @@ export default function CollectionLog({ rsn }: Props) {
               Check Again
             </button>
           </div>
+        </div>
+        <ManualClogView rsn={rsn} />
         </div>
       )}
 

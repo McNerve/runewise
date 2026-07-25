@@ -12,6 +12,12 @@ After the e2e wiki-parity + reliability + CI lint pass on `feat/e2e-improve`.
 - Windows SmartScreen notes (`docs/WINDOWS-SIGNING.md`)
 - Wiki golden + spot-check fixtures
 
+## Shipped after 2.5.7 (product IA)
+
+- Sidebar hubs: Player · Combat · Market · Plan · Live (secondary tools search-only)
+- Home **What next** (`whatNext.ts`) + Combat/Money hub cards
+- Money deep-links: rankings tab + `forMe` level filter
+
 ## Still open (optional follow-ups)
 
 ### Combat
@@ -23,8 +29,8 @@ After the e2e wiki-parity + reliability + CI lint pass on `feat/e2e-improve`.
 ### Product
 
 - Deeper gear-string paste / one-click import everywhere
-- Account-aware “what to do next”
-- Upgrade finder as default hero path on home
+- Upgrade finder open-by-default when landing on DPS from What next
+- Fold training-plan fully into skill-calc path
 
 ### Growth
 

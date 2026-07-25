@@ -489,6 +489,19 @@ export default function XpTracker({ rsn }: Props) {
           <h2 className="text-2xl font-semibold tracking-tight">XP Tracker</h2>
           <p className="text-sm text-text-secondary">
             Track XP gains, boss kills, achievements, and records via Wise Old Man.
+            {rsn ? (
+              <>
+                {" "}
+                <a
+                  href={`https://wiseoldman.net/players/${encodeURIComponent(rsn)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-accent hover:text-accent-hover"
+                >
+                  Open {rsn} on WOM ↗
+                </a>
+              </>
+            ) : null}
           </p>
         </div>
         <div className="shrink-0 pt-1.5">

@@ -4,6 +4,12 @@ All notable changes to RuneWise are documented here. Versions follow [Semantic V
 
 ## [Unreleased]
 
+### Product / IA
+
+- **Focused sidebar hubs** — Player · Combat · Market · Plan · Live; demoted gear-compare, raids, flip journal, clues, collection log to search-only.
+- **Home “What next”** — RSN-aware suggestions (max 3): train, DPS/upgrades, money rankings, live timers/stars.
+- **Combat & Money hub cards** on Home for loadout→DPS→upgrades and profit rankings / GE flips.
+
 ## [2.5.7] - 2026-07-25
 
 ### Combat / DPS (wiki parity)

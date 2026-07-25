@@ -61,17 +61,43 @@ describe("findFlips", () => {
 
   it("sorts by the requested key and respects the result cap", () => {
     const mapping = [item(1, { limit: 1 }), item(2, { limit: 1000 })];
-    // item1: big per-item margin, tiny limit; item2: small margin, huge limit
-    const prices = { "1": price(100, 1000), "2": price(900, 1000) };
-    expect(findFlips(mapping, prices, {}, { sort: "margin" })[0].item.id).toBe(1);
-    expect(findFlips(mapping, prices, {}, { sort: "perLimit" })[0].item.id).toBe(2);
-    expect(findFlips(mapping, prices, {}, { limit: 1 })).toHaveLength(1);
+    // item1: bigger per-item margin, tiny limit; item2: smaller margin, huge limit
+    // Both stay under default maxRoi=1.0
+    const prices = { "1": price(1000, 1900), "2": price(900, 1000) };
+    const opts = { minBuy: 0, minVolume: 0 } as const;
+    expect(findFlips(mapping, prices, {}, { ...opts, sort: "margin" })[0].item.id).toBe(1);
+    expect(findFlips(mapping, prices, {}, { ...opts, sort: "perLimit" })[0].item.id).toBe(2);
+    expect(findFlips(mapping, prices, {}, { ...opts, limit: 1 })).toHaveLength(1);
   });
 
   it("reports perLimit 0 when the buy limit is unknown", () => {
     const [flip] = findFlips([item(1, { limit: null })], { "1": price(1000, 2000) }, {});
     expect(flip.limit).toBe(0);
     expect(flip.perLimit).toBe(0);
+  });
+
+  it("excludes absurd ROI and poison variants by default", () => {
+    const mapping = [
+      item(1, { name: "Adamant javelin(p)", limit: 11_000 }),
+      item(2, { name: "Cup of water", limit: 13_000 }),
+      item(3, { name: "Abyssal whip", limit: 70 }),
+    ];
+    // javelin: buy 200 sell 90k → insane ROI; cup: buy 50 < minBuy 100; whip sane
+    const prices = {
+      "1": price(200, 90_000),
+      "2": price(50, 5_000),
+      "3": price(1_000_000, 1_050_000),
+    };
+    const vols = { "1": 500, "2": 4000, "3": 300 };
+    const flips = findFlips(mapping, prices, vols, { minVolume: 100 });
+    expect(flips.map((f) => f.item.name)).toEqual(["Abyssal whip"]);
+  });
+
+  it("allows high ROI when maxRoi is raised", () => {
+    const mapping = [item(1, { name: "Wide spread", limit: 100 })];
+    const prices = { "1": price(1000, 5000) }; // ~4x before tax, roi > 1
+    const flips = findFlips(mapping, prices, { "1": 200 }, { maxRoi: 5, minVolume: 0 });
+    expect(flips).toHaveLength(1);
   });
 });
 
@@ -96,12 +122,13 @@ describe("flip finder hero path", () => {
       item(3, { name: "Loser", limit: 100, members: false }),
     ];
     const prices = {
-      "1": price(100, 1000), // large margin, tiny limit → wins topMargin
+      "1": price(1000, 1900), // larger margin, tiny limit → wins topMargin
       "2": price(800, 1000), // smaller margin, huge limit → wins perLimit
       "3": price(1000, 1000), // zero margin → excluded
     };
     const flips = findFlips(mapping, prices, { "1": 200, "2": 5000, "3": 999 }, {
       minVolume: 50,
+      minBuy: 0,
       sort: "perLimit",
     });
     const hero = heroMetrics(flips);

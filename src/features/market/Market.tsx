@@ -322,31 +322,30 @@ export default function Market({
             </StatGrid>
           </div>
         ) : tab === "search" && query.trim().length < 2 ? (
-          <div className="mb-4 grid gap-3 md:grid-cols-3">
-            <div className="rounded-xl border border-border-subtle bg-bg-tertiary px-4 py-3">
-              <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
-                Search Flow
-              </div>
-              <div className="mt-1 text-sm text-text-secondary">
-                Find a specific item to inspect live prices, charts, and wiki context.
-              </div>
-            </div>
-            <div className="rounded-xl border border-border-subtle bg-bg-tertiary px-4 py-3">
-              <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
-                Browse Flow
-              </div>
-              <div className="mt-1 text-sm text-text-secondary">
-                Switch to Browse All for the full catalogue with members filtering.
-              </div>
-            </div>
-            <div className="rounded-xl border border-border-subtle bg-bg-tertiary px-4 py-3">
-              <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
-                Workspace Goal
-              </div>
-              <div className="mt-1 text-sm text-text-secondary">
-                Use this as your hub for pricing, alch checks, watchlist adds, and wiki jumps.
-              </div>
-            </div>
+          <div className="mb-4 flex flex-wrap gap-2">
+            {[
+              "Abyssal whip",
+              "Twisted bow",
+              "Nature rune",
+              "Dragon bones",
+              "Ranarr weed",
+            ].map((name) => (
+              <button
+                key={name}
+                type="button"
+                onClick={() => setQuery(name)}
+                className="rounded-lg border border-border bg-bg-tertiary px-2.5 py-1 text-xs text-text-secondary hover:border-accent/40 hover:text-text-primary"
+              >
+                {name}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => setTab("flips")}
+              className="rounded-lg border border-accent/40 bg-accent/10 px-2.5 py-1 text-xs text-accent hover:bg-accent/15"
+            >
+              Open Flip Finder →
+            </button>
           </div>
         ) : null}
 
@@ -438,7 +437,10 @@ export default function Market({
         )}
 
         {tab === "search" && query.length < 2 && (
-          <EmptyState title="Start searching" description="Type at least 2 characters to search, or switch to Browse All." />
+          <EmptyState
+            title="Search items or open Flip Finder"
+            description="Type a name above, pick a popular chip, or jump to live flip margins."
+          />
         )}
 
         {/* Results table */}

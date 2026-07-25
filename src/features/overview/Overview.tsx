@@ -237,7 +237,7 @@ export default function Overview({ hiscores, rsn, lastFetched = null, onRefresh 
       </StatGrid>
 
       {/* Efficiency card — Rank + EHP + EHB in one row */}
-      {(overallRank > 0 || (womPlayer?.ehp ?? 0) > 0 || (womPlayer?.ehb ?? 0) > 0) && (
+      {(overallRank > 0 || (womPlayer?.ehp ?? 0) > 0 || (womPlayer?.ehb ?? 0) > 0 || Boolean(rsn)) && (
         <div className="rounded-lg border border-border/60 bg-bg-primary/30 px-4 py-3 mb-6 flex flex-wrap items-center gap-4">
           <span className="text-[10px] uppercase tracking-wider text-text-secondary/50">Efficiency</span>
           {overallRank > 0 && (
@@ -257,6 +257,17 @@ export default function Overview({ hiscores, rsn, lastFetched = null, onRefresh 
               <span className="text-sm font-semibold num">{womPlayer.ehb.toFixed(0)}</span>
               <span className="text-[10px] text-text-secondary/60">EHB</span>
             </div>
+          )}
+          {rsn && (
+            <a
+              href={`https://wiseoldman.net/players/${encodeURIComponent(rsn)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="ml-auto text-xs text-accent hover:text-accent-hover"
+              title="Open this player on Wise Old Man"
+            >
+              Open on WOM ↗
+            </a>
           )}
         </div>
       )}
