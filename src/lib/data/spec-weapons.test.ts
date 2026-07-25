@@ -31,11 +31,16 @@ describe("spec weapon damage multipliers", () => {
     expect(spec("dragon_warhammer").damageMult).toBe(1.5);
   });
 
-  it("Voidwaker averages full max hit via a guaranteed hit", () => {
+  it("Voidwaker uses dedicated cascade (50–150% band), guaranteed hit", () => {
     const vw = spec("voidwaker");
-    // 50-150% uniform => avg 100% of max hit. The model uses specMaxHit/2,
-    // so damageMult must be 2.0 to recover the full-max-hit average.
-    expect(vw.damageMult).toBe(2.0);
+    expect(vw.cascadeType).toBe("voidwaker");
     expect(vw.guaranteedHit).toBe(true);
+    expect(vw.damageMult).toBe(1.0);
+  });
+
+  it("dark bow and fang specs use dedicated cascades", () => {
+    expect(spec("dark_bow").cascadeType).toBe("dark_bow");
+    expect(spec("osmumtens_fang").cascadeType).toBe("fang_spec");
+    expect(spec("webweaver_bow").cascadeType).toBe("webweaver");
   });
 });

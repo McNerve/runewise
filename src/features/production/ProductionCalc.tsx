@@ -119,10 +119,13 @@ export default function ProductionCalc() {
 
   useEffect(() => {
     let cancelled = false;
+    setRecipesLoading(true);
+    setLoadError(null);
     fetchAllRecipes()
       .then((r) => {
         if (cancelled) return;
         setRecipes(r);
+        setLoadError(null);
         setRecipesLoading(false);
       })
       .catch((err: unknown) => {
@@ -303,6 +306,7 @@ export default function ProductionCalc() {
             <div className="section-kicker mb-2">Materials</div>
             <div className="space-y-1">
               {(Array.isArray(selected.materials) ? selected.materials : []).map((mat) => {
+                const qty = mat.quantity ?? 1;
                 const price = getItemPrice(mat.name, itemMap, prices);
                 return (
                   <div
@@ -325,13 +329,13 @@ export default function ProductionCalc() {
                       </button>
                     </ItemTooltip>
                     <span className="text-xs text-text-secondary num">
-                      x{mat.quantity}
+                      x{qty}
                     </span>
                     <span className="text-xs text-text-secondary num w-16 text-right">
                       {price != null ? formatGp(price) : "—"}
                     </span>
                     <span className="text-xs text-text-secondary num w-20 text-right">
-                      {price != null ? formatGp(price * mat.quantity) : "—"}
+                      {price != null ? formatGp(price * qty) : "—"}
                     </span>
                   </div>
                 );
@@ -347,6 +351,7 @@ export default function ProductionCalc() {
             <div className="section-kicker mb-2">Output</div>
             <div className="space-y-1">
               {(Array.isArray(selected.output) ? selected.output : []).map((out) => {
+                const qty = out.quantity ?? 1;
                 const price = getItemPrice(out.name, itemMap, prices);
                 return (
                   <div
@@ -361,7 +366,7 @@ export default function ProductionCalc() {
                     />
                     <span className="text-sm flex-1">{out.name}</span>
                     <span className="text-xs text-text-secondary num">
-                      x{out.quantity}
+                      x{qty}
                     </span>
                     <span className="text-xs text-text-secondary num w-16 text-right">
                       {price != null ? formatGp(price) : "—"}

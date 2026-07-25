@@ -1,24 +1,50 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { FARM_CROPS, CROP_CATEGORIES } from "../../lib/data/farming-crops";
 import { fetchLatestPrices, type ItemPrice } from "../../lib/api/ge";
 import { formatGp } from "../../lib/format";
 import { postTaxPrice } from "../../lib/tax";
 import { WIKI_IMG } from "../../lib/sprites";
+import ErrorState from "../../components/ErrorState";
 
 export default function FarmProfit() {
   const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
   const [pricesLoaded, setPricesLoaded] = useState(false);
+  const [priceError, setPriceError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [sortBy, setSortBy] = useState<"profit" | "profitPerHr" | "level">(
     "profitPerHr"
   );
 
-  useEffect(() => {
-    fetchLatestPrices().then((p) => {
-      setPrices(p);
-      setPricesLoaded(true);
-    });
+  const loadPrices = useCallback(() => {
+    setPricesLoaded(false);
+    setPriceError(null);
+    setRetryCount((n) => n + 1);
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    setPricesLoaded(false);
+    setPriceError(null);
+    fetchLatestPrices()
+      .then((p) => {
+        if (cancelled) return;
+        setPrices(p);
+        setPricesLoaded(true);
+        setPriceError(null);
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        setPrices({});
+        setPricesLoaded(true);
+        setPriceError(
+          err instanceof Error ? err.message : "Failed to load GE prices",
+        );
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [retryCount]);
 
   const crops = useMemo(() => {
     return FARM_CROPS.map((crop) => {
@@ -61,6 +87,16 @@ export default function FarmProfit() {
     <div>
       {!pricesLoaded && (
         <p className="text-xs text-text-secondary mb-4">Loading live GE prices...</p>
+      )}
+
+      {pricesLoaded && priceError && (
+        <div className="mb-4">
+          <ErrorState
+            title="Couldn't load GE prices"
+            error={priceError}
+            onRetry={loadPrices}
+          />
+        </div>
       )}
 
       <div className="flex items-center gap-3 mb-4 flex-wrap">

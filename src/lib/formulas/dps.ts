@@ -1035,9 +1035,16 @@ export interface SpecDpsInput extends DpsInput {
   specHits: number;
   specGuaranteedHit: boolean;
   specSpeed: number;
-  specCascadeType?: "dragon_claws";
+  specCascadeType?:
+    | "dragon_claws"
+    | "voidwaker"
+    | "dark_bow"
+    | "fang_spec"
+    | "webweaver";
   /** Accuracy multiplier for the 2nd hit's roll (e.g. halberd sweep: 0.75). */
   specSecondHitAccuracyMult?: number;
+  /** Dark bow with dragon arrows (min 8, ×1.5) vs other (min 5, ×1.3). */
+  darkBowDragonArrows?: boolean;
   /** Override attack bonus with the selected spec weapon's gear (not main loadout). */
   specAttackBonus?: number;
   /** Override strength / ranged str / magic dmg % for the spec weapon. */
@@ -1080,6 +1087,41 @@ export function dragonClawsExpectedDamage(maxHit: number, accuracy: number): num
   return total;
 }
 
+/** Voidwaker Disrupt: guaranteed hit, uniform roll in [floor(max/2), floor(max*1.5)]. */
+export function voidwakerExpectedDamage(maxHit: number): number {
+  const m = Math.max(0, Math.floor(maxHit));
+  const lo = Math.floor(m / 2);
+  const hi = Math.floor(m * 1.5);
+  if (hi < lo) return m;
+  return (lo + hi) / 2;
+}
+
+/** Dark bow Descent: two independent hits with min damage floor and mult. */
+export function darkBowExpectedDamage(
+  maxHit: number,
+  accuracy: number,
+  dragonArrows: boolean
+): number {
+  const mult = dragonArrows ? 1.5 : 1.3;
+  const minDmg = dragonArrows ? 8 : 5;
+  const hitMax = Math.max(minDmg, Math.floor(maxHit * mult));
+  // Connecting hit uniform [minDmg, hitMax]; miss = 0
+  const avgConnect = (minDmg + hitMax) / 2;
+  return accuracy * avgConnect * 2;
+}
+
+/** Fang special: double accuracy, full 0..max band (no 15–85% clamp). */
+export function fangSpecExpectedDamage(maxHit: number, accuracy: number): number {
+  const a = 1 - (1 - Math.min(1, Math.max(0, accuracy))) ** 2;
+  return (a * Math.max(0, maxHit)) / 2;
+}
+
+/** Webweaver: 4 hits at 2× acc path already applied; each ~40% max. */
+export function webweaverExpectedDamage(maxHit: number, accuracy: number): number {
+  const hitMax = Math.max(0, Math.floor(maxHit * 0.4));
+  return 4 * ((accuracy * hitMax) / 2);
+}
+
 export function calculateSpecDps(input: SpecDpsInput) {
   // When spec weapon overrides are provided, recompute the base roll/max from
   // those gear bonuses/speed rather than the main loadout.
@@ -1116,6 +1158,26 @@ export function calculateSpecDps(input: SpecDpsInput) {
       + Math.max(0, Math.floor(effectiveSpecMax / 2) - 1)
       + Math.max(0, Math.floor(effectiveSpecMax / 4) - 1)
       + Math.floor(effectiveSpecMax / 4);
+  } else if (input.specCascadeType === "voidwaker") {
+    // Guaranteed; band is relative to unboosted max (damageMult should be 1).
+    const baseMax = base.maxHit;
+    specTotalDamage = voidwakerExpectedDamage(baseMax);
+    specTotalMaxHit = Math.floor(baseMax * 1.5);
+  } else if (input.specCascadeType === "dark_bow") {
+    specTotalDamage = darkBowExpectedDamage(
+      base.maxHit,
+      specAccuracy,
+      input.darkBowDragonArrows ?? true
+    );
+    const mult = input.darkBowDragonArrows === false ? 1.3 : 1.5;
+    specTotalMaxHit = Math.floor(base.maxHit * mult) * 2;
+  } else if (input.specCascadeType === "fang_spec") {
+    // Accuracy mult already on roll; double-roll + full damage band.
+    specTotalDamage = fangSpecExpectedDamage(effectiveSpecMax, specAccuracy);
+    specTotalMaxHit = effectiveSpecMax;
+  } else if (input.specCascadeType === "webweaver") {
+    specTotalDamage = webweaverExpectedDamage(base.maxHit, specAccuracy);
+    specTotalMaxHit = Math.floor(base.maxHit * 0.4) * 4;
   } else if (input.specHits === 2 && input.specSecondHitAccuracyMult != null) {
     const secondRoll = Math.floor(specAttackRoll * input.specSecondHitAccuracyMult);
     const secondAccuracy = input.specGuaranteedHit ? 1 : hitChance(secondRoll, base.defenseRoll);

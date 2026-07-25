@@ -18,6 +18,7 @@ import {
   type DpsModifier,
   type DpsInput,
 } from "../../../lib/formulas/dps";
+import { lookupMonsterMeta } from "../../../lib/data/monster-attributes";
 import { PRAYERS, type Prayer } from "../../../lib/data/prayers";
 import { MONSTERS } from "../../../lib/data/monsters";
 import { fetchAllMonsters, type WikiMonster } from "../../../lib/api/monsters";
@@ -406,30 +407,35 @@ export function useDpsState({ hiscores }: Props) {
     : toaInvocation > 0
       ? toaHpScale(baseHp, toaInvocation)
       : baseHp;
+  // Curated wiki attributes (size, Xerician, demon vuln) with name heuristics as fallback.
+  const monsterMeta = useMemo(
+    () => lookupMonsterMeta(selectedMonster?.name, selectedMonster?.version),
+    [selectedMonster?.name, selectedMonster?.version]
+  );
+
   // TBow magic cap 350 only for Xerician (CoX) targets — ToA is NOT Xerician (wiki).
   const tbowRaidCap = useMemo(() => {
     if (coxPartySize > 1) return true;
+    if (monsterMeta.attributes.includes("xerician")) return true;
     return isXericianMonster(selectedMonster?.name);
-  }, [coxPartySize, selectedMonster?.name]);
+  }, [coxPartySize, selectedMonster?.name, monsterMeta.attributes]);
 
-  const monsterSize = useMemo(
-    () => inferMonsterSize(selectedMonster?.name),
-    [selectedMonster?.name]
-  );
+  const monsterSize = useMemo(() => {
+    if (monsterMeta.size > 1) return monsterMeta.size;
+    return inferMonsterSize(selectedMonster?.name);
+  }, [monsterMeta.size, selectedMonster?.name]);
 
   const p2Wardens = useMemo(
     () => isP2Wardens(selectedMonster?.name) || isP2Wardens(selectedMonster?.version ?? undefined),
     [selectedMonster?.name, selectedMonster?.version]
   );
 
-  // Demonbane vulnerability heuristics (wiki defaults 100; special cases).
+  // Demonbane vulnerability from curated meta (default 100).
   const demonbaneVulnerability = useMemo(() => {
-    const n = (selectedMonster?.name ?? "").toLowerCase();
-    if (n.includes("duke sucellus")) return 70;
-    if (n.includes("yama")) return 120;
-    if (n.includes("k'ril") || n.includes("kril")) return 100;
+    if (monsterMeta.demonbaneVulnerability != null) return monsterMeta.demonbaneVulnerability;
+    if (monsterMeta.attributes.includes("demon")) return 100;
     return 100;
-  }, [selectedMonster?.name]);
+  }, [monsterMeta]);
 
   const weaponName = weaponItem?.name;
   const crystalPieces = useMemo(

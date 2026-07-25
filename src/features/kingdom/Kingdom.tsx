@@ -4,6 +4,7 @@ import { useGEData } from "../../hooks/useGEData";
 import { formatGp } from "../../lib/format";
 import { itemIcon } from "../../lib/sprites";
 import { weightedHerbPrice } from "../../lib/data/kingdom";
+import ErrorState from "../../components/ErrorState";
 
 interface Resource {
   name: string;
@@ -43,7 +44,7 @@ function getPrice(
 }
 
 export default function Kingdom() {
-  const { prices, loading, fetchIfNeeded } = useGEData();
+  const { prices, loading, error, pricesLoaded, fetchIfNeeded } = useGEData();
   const [resources, setResources] = useState<Resource[]>(
     DEFAULT_RESOURCES.map((r) => ({ ...r, workers: 0 })),
   );
@@ -100,7 +101,17 @@ export default function Kingdom() {
     return sum + r.dailyGp;
   }, 0);
 
-  const netProfit = totalDailyGp - dailyUpkeep;
+  // Workers allocated to resources without a GE price → incomplete income.
+  // Don't present gross=0 − upkeep as a definitive large loss.
+  const allocatedMissingPrices = rows.some(
+    (r) => r.workers > 0 && r.price == null,
+  );
+  const pricesUnavailable =
+    Boolean(error) ||
+    (totalWorkers > 0 && allocatedMissingPrices) ||
+    (totalWorkers > 0 && !pricesLoaded && Object.keys(prices).length === 0);
+
+  const netProfit = pricesUnavailable ? null : totalDailyGp - dailyUpkeep;
 
   const optimize = useCallback(() => {
     // Output is linear in workers, so the optimum is a greedy fill: best
@@ -143,6 +154,36 @@ export default function Kingdom() {
       <p className="text-xs text-text-secondary mb-4">
         Allocate {maxWorkers} workers across resources to maximize daily profit from Managing Miscellania
       </p>
+
+      {error && !pricesLoaded && (
+        <div className="mb-4">
+          <ErrorState
+            title="Couldn't load GE prices"
+            error={error}
+            onRetry={() => { void fetchIfNeeded(); }}
+          />
+        </div>
+      )}
+
+      {pricesUnavailable && (pricesLoaded || Object.keys(prices).length > 0 || totalWorkers > 0) && (
+        <div
+          role="status"
+          className="mb-4 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning"
+        >
+          {error
+            ? `GE prices unavailable (${error}). Net profit is not shown until prices load.`
+            : "GE prices missing for one or more allocated resources. Net profit is incomplete and hidden until prices are available."}
+          {error && (
+            <button
+              type="button"
+              onClick={() => { void fetchIfNeeded(); }}
+              className="ml-2 underline hover:no-underline"
+            >
+              Retry
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Controls */}
       <div className="flex items-center gap-3 mb-4 flex-wrap">
@@ -255,7 +296,9 @@ export default function Kingdom() {
             Gross Income
           </div>
           <div className="text-sm font-semibold num mt-0.5">
-            {formatGp(Math.round(totalDailyGp))}
+            {pricesUnavailable && totalWorkers > 0
+              ? "\u2014"
+              : formatGp(Math.round(totalDailyGp))}
           </div>
         </div>
         <div className="bg-bg-tertiary rounded-lg px-3 py-2">
@@ -273,8 +316,18 @@ export default function Kingdom() {
           <div className="text-[11px] text-text-secondary uppercase tracking-wider">
             Net Profit
           </div>
-          <div className={`text-sm font-semibold num mt-0.5 ${netProfit >= 0 ? "text-success" : "text-danger"}`}>
-            {netProfit >= 0 ? "" : "-"}{formatGp(Math.round(Math.abs(netProfit)))}
+          <div
+            className={`text-sm font-semibold num mt-0.5 ${
+              netProfit == null
+                ? "text-text-secondary"
+                : netProfit >= 0
+                  ? "text-success"
+                  : "text-danger"
+            }`}
+          >
+            {netProfit == null
+              ? "\u2014"
+              : `${netProfit >= 0 ? "" : "-"}${formatGp(Math.round(Math.abs(netProfit)))}`}
           </div>
         </div>
       </div>

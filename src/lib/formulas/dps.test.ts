@@ -27,6 +27,10 @@ import {
   tbowScaling,
   inferBoltEnchant,
   boltEnchantExpectedHit,
+  voidwakerExpectedDamage,
+  darkBowExpectedDamage,
+  fangSpecExpectedDamage,
+  webweaverExpectedDamage,
   type DpsInput,
 } from "./dps";
 
@@ -954,5 +958,26 @@ describe("bolt enchant and ZCB", () => {
     const zcb = calculateDps({ ...base, zcbSpec: true });
     expect(zcb.accuracy).toBe(1);
     expect(zcb.dps).toBeGreaterThan(normal.dps);
+  });
+});
+
+describe("expanded spec EV models", () => {
+  it("voidwaker EV equals mid of 50-150% band", () => {
+    expect(voidwakerExpectedDamage(40)).toBe((20 + 60) / 2);
+  });
+
+  it("dark bow two hits with dragon arrow floor", () => {
+    const dmg = darkBowExpectedDamage(40, 1, true);
+    // hitMax = 60, min 8, avg 34, *2 = 68
+    expect(dmg).toBeCloseTo(68, 5);
+  });
+
+  it("fang spec uses full band with double accuracy", () => {
+    const d = fangSpecExpectedDamage(40, 0.5);
+    expect(d).toBeCloseTo(0.75 * 20, 5);
+  });
+
+  it("webweaver four reduced hits", () => {
+    expect(webweaverExpectedDamage(50, 1)).toBeCloseTo(4 * (20 / 2), 5);
   });
 });
