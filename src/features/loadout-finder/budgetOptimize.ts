@@ -103,7 +103,7 @@ export function greedyOptimizeUnderBudget(opts: BudgetOptimizeOptions): RankedLo
     .filter((e) => (e.slot === "weapon" || e.slot === "2h") && styleOk(e, style))
     .filter((e) => {
       if (e.slot === "weapon" || e.slot === "2h") {
-        const speed = e.attackSpeed || knownWeaponSpeed(e.name);
+        const speed = e.attackSpeed || knownWeaponSpeed(e.name) || 0;
         return speed > 0 || style === "magic"; // magic often staff speed 4 default
       }
       return true;
