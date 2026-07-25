@@ -79,17 +79,15 @@ export default function SkillCalculator({ hiscores }: Props) {
     if (!selectedSkill) return;
     if (hiscores) {
       const xp = getSkillXp(hiscores, selectedSkill);
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- sync from external hiscores data
-      setCurrentXp(xp);
+      setCurrentXp(xp); // eslint-disable-line react-hooks/set-state-in-effect -- sync from external hiscores data
       hadHiscores.current = true;
     } else if (hadHiscores.current) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- clear sticky XP after RSN clear
-      setCurrentXp(0);
+      setCurrentXp(0);  
       hadHiscores.current = false;
     }
 
     const saved = customTargets.current.get(selectedSkill);
-    setTargetLevel(defaultTargetLevel(currentLevel, saved));
+    setTargetLevel(defaultTargetLevel(currentLevel, saved));  
   }, [hiscores, selectedSkill]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load wiki recipes for selected skill

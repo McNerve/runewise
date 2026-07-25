@@ -1,3 +1,19 @@
+import {
+  type BoltEnchant,
+  BOLT_PROC_CHANCE,
+  inferBoltEnchant,
+  boltEnchantExpectedFromPmf,
+  boltEnchantHitDistribution,
+} from "./boltDist";
+
+export type { BoltEnchant };
+export {
+  BOLT_PROC_CHANCE,
+  inferBoltEnchant,
+  boltEnchantHitDistribution,
+  boltEnchantExpectedFromPmf as boltEnchantExpectedHit,
+};
+
 export type AttackShape = "standard" | "fang" | "scythe";
 
 export interface DpsInput {
@@ -100,91 +116,10 @@ export interface DpsInput {
   scorcherVsDemon?: boolean;
 }
 
-/** Enchanted bolt types with non-trivial DPS impact. */
-export type BoltEnchant =
-  | "none"
-  | "diamond"
-  | "ruby"
-  | "dragonstone"
-  | "onyx"
-  | "opal"
-  | "emerald";
-
-/** Wiki PvM enchant proc chances (approximate public rates). */
-export const BOLT_PROC_CHANCE: Record<Exclude<BoltEnchant, "none">, number> = {
-  diamond: 0.1, // ignore defence
-  ruby: 0.11, // 20% current HP, cap 100
-  dragonstone: 0.06, // special damage (modelled as +max hit on proc)
-  onyx: 0.11, // life steal — same damage EV as a normal hit + heal (dmg only)
-  opal: 0.05, // visible + ranged-level based extra
-  emerald: 0.54, // poison — damage over time not full max; small EV bump
-};
-
-/**
- * Expected damage contribution from an enchanted bolt special.
- * `normalExpected` is the no-proc hit EV; `maxHit` / `accuracy` / `targetHp` are current state.
- */
-export function boltEnchantExpectedHit(opts: {
-  enchant: BoltEnchant;
-  maxHit: number;
-  accuracy: number;
-  targetHp: number;
-  rangedLevel: number;
-  /** Force 100% proc (ZCB special). */
-  guaranteedProc?: boolean;
-}): number {
-  const { enchant, maxHit, accuracy, targetHp, rangedLevel, guaranteedProc } = opts;
-  if (enchant === "none") return (accuracy * maxHit) / 2;
-
-  const p = guaranteedProc ? 1 : BOLT_PROC_CHANCE[enchant];
-  const normal = (accuracy * maxHit) / 2;
-
-  switch (enchant) {
-    case "diamond": {
-      // Proc: ignore defence → accuracy 1, same damage roll 0..max
-      const proc = maxHit / 2;
-      return (1 - p) * normal + p * proc;
-    }
-    case "ruby": {
-      // Proc: flat damage = min(floor(hp * 0.2), 100), independent of max hit
-      const proc = Math.min(100, Math.floor(targetHp * 0.2));
-      return (1 - p) * normal + p * proc;
-    }
-    case "dragonstone": {
-      // Simplified: proc deals maxHit (visible special) at full accuracy path
-      const proc = maxHit;
-      return (1 - p) * normal + p * proc * accuracy;
-    }
-    case "onyx": {
-      // Damage EV same as normal; heal is out of band for DPS
-      return normal;
-    }
-    case "opal": {
-      // Extra visible damage ~ rangedLevel / 10 on proc (wiki-ish)
-      const extra = Math.floor(rangedLevel / 10);
-      const proc = (accuracy * (maxHit + extra)) / 2;
-      return (1 - p) * normal + p * proc;
-    }
-    case "emerald": {
-      // Poison EV is small; model as +2 average damage on proc
-      return normal + p * 2;
-    }
-    default:
-      return normal;
-  }
-}
-
-/** Infer bolt enchant from ammo item name. */
-export function inferBoltEnchant(ammoName?: string): BoltEnchant {
-  const n = (ammoName ?? "").toLowerCase();
-  if (!n.includes("bolt")) return "none";
-  if (n.includes("diamond")) return "diamond";
-  if (n.includes("ruby")) return "ruby";
-  if (n.includes("dragonstone")) return "dragonstone";
-  if (n.includes("onyx")) return "onyx";
-  if (n.includes("opal")) return "opal";
-  if (n.includes("emerald")) return "emerald";
-  return "none";
+function boltEnchantExpectedHit(
+  opts: Parameters<typeof boltEnchantExpectedFromPmf>[0]
+): number {
+  return boltEnchantExpectedFromPmf(opts);
 }
 
 export interface DpsModifier {

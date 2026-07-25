@@ -119,8 +119,8 @@ export default function ProductionCalc() {
 
   useEffect(() => {
     let cancelled = false;
-    setRecipesLoading(true);
-    setLoadError(null);
+    setRecipesLoading(true); // eslint-disable-line react-hooks/set-state-in-effect -- loading gate before fetch
+    setLoadError(null);  
     fetchAllRecipes()
       .then((r) => {
         if (cancelled) return;

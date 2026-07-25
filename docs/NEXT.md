@@ -1,44 +1,37 @@
 # NEXT — living product backlog
 
-Short opportunities after the e2e wiki-parity + reliability pass on `feat/e2e-improve`.
-Not a commitment; reorder freely.
+After the e2e wiki-parity + reliability + CI lint pass on `feat/e2e-improve`.
 
-## Done recently (this branch)
+## Shipped on this branch
 
-- Wiki-aligned DPS core (void levels, tbowScaling, melee trunc pipeline, fang/scythe, Shadow, bolts/ZCB, …)
-- Curated `monster-attributes` (size, Xerician, demonbane vuln, tags)
-- Flagship golden fixtures in `src/lib/formulas/dps.wiki-fixtures.test.ts`
-- Expanded spec EV models (voidwaker, dark bow, fang spec, webweaver, claws)
-- GE/hiscores fail UX (skill calc, kingdom, alch, farm profit, production, prefill clear)
+- Wiki-aligned DPS core + spot-check fixes (fang accuracy, magic +9, tbow, void, shadow, …)
+- Bolt **PMF** mixture (`boltDist.ts`) + EV parity
+- Monster attributes table; expanded specs
+- GE context unification for farm profit, profit rankings, boss profit ranking
+- Reliability UX (skill/kingdom/alch/farm/production/prefill)
+- Windows SmartScreen notes (`docs/WINDOWS-SIGNING.md`)
+- Wiki golden + spot-check fixtures
 
-## Still open
+## Still open (optional follow-ups)
 
-### Combat accuracy
+### Combat
 
-- More HitDist specs: burning claws, AGS multi-path, ballista,MSB true ammo-only with equipped ammo str table
-- Bolt PMF (not only EV blend); Kandarin diary bolt proc rates
-- Pull size/attributes from wiki/bucket API when available; keep curated table as fallback
-- Optional: external golden vectors scraped/approved from wiki calc for CI
+- Remaining obscure specs (burning claws full matrix, ballista, true MSB ammo table)
+- Kandarin diary bolt proc rate variants
+- Live wiki/bucket **monster size/attributes** API when fields exist
 
-### Data / platform
+### Product
 
-- Unify remaining local GE fetchers (ProfitRankings, BossProfitRanking) onto `useGEData`
-- `useBossGuideData` / `useWikiDocument` hooks (see `docs/REVIEW-BACKLOG.md`)
-- Powered-staff max-hit auto from weapon name without spell picker
-
-### Product differentiators
-
-- Deeper RSN → all-tools prefill + gear-string paste
-- “What to do next” for mains
-- Upgrade finder with live GE + wiki-accurate DPS as default path
+- Deeper gear-string paste / one-click import everywhere
+- Account-aware “what to do next”
+- Upgrade finder as default hero path on home
 
 ### Growth
 
-- One short demo clip (RSN → DPS vs boss → upgrade finder)
-- Community post focused on a single problem
-- Windows SmartScreen / code-signing notes for installers
+- Short demo clip + community post
+- Authenticode signing in CI (see WINDOWS-SIGNING.md)
 
-## Ownership notes
+## Ownership
 
-- **Formula goldens**: `src/lib/formulas/dps.wiki-fixtures.test.ts` + `dps.golden.test.ts` — update only with intentional formula changes and a commit note citing wiki behaviour.
-- **Monster meta**: `src/lib/data/monster-attributes.ts` — longest substring match; prefer longer keys for specificity.
+- Formula goldens: `dps.wiki-fixtures.test.ts`, `dps.wiki-spotcheck.test.ts`
+- Monster meta: `src/lib/data/monster-attributes.ts`

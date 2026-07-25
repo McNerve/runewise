@@ -25,6 +25,12 @@ All notable changes to RuneWise are documented here. Versions follow [Semantic V
 ### Docs
 
 - **`docs/NEXT.md`** — living backlog after the e2e pass (what shipped vs still open).
+- **`docs/WINDOWS-SIGNING.md`** — SmartScreen / Authenticode guidance for Windows installers.
+
+### Platform
+
+- **GE data** — Farm profit, profit rankings, and boss profit ranking use shared `useGEData` (error/retry + single fetch).
+- **Lint / CI** — fix `react-hooks/set-state-in-effect` violations blocking the PR check.
 
 ## [2.5.6] - 2026-07-16
 

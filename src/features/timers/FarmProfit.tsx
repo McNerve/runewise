@@ -1,50 +1,32 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { FARM_CROPS, CROP_CATEGORIES } from "../../lib/data/farming-crops";
-import { fetchLatestPrices, type ItemPrice } from "../../lib/api/ge";
 import { formatGp } from "../../lib/format";
 import { postTaxPrice } from "../../lib/tax";
 import { WIKI_IMG } from "../../lib/sprites";
 import ErrorState from "../../components/ErrorState";
+import { useGEData } from "../../hooks/useGEData";
 
 export default function FarmProfit() {
-  const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
-  const [pricesLoaded, setPricesLoaded] = useState(false);
-  const [priceError, setPriceError] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
+  const {
+    prices,
+    pricesLoaded,
+    loading: geLoading,
+    error: priceError,
+    fetchIfNeeded,
+    refreshPrices,
+  } = useGEData();
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [sortBy, setSortBy] = useState<"profit" | "profitPerHr" | "level">(
     "profitPerHr"
   );
 
-  const loadPrices = useCallback(() => {
-    setPricesLoaded(false);
-    setPriceError(null);
-    setRetryCount((n) => n + 1);
-  }, []);
-
   useEffect(() => {
-    let cancelled = false;
-    setPricesLoaded(false);
-    setPriceError(null);
-    fetchLatestPrices()
-      .then((p) => {
-        if (cancelled) return;
-        setPrices(p);
-        setPricesLoaded(true);
-        setPriceError(null);
-      })
-      .catch((err: unknown) => {
-        if (cancelled) return;
-        setPrices({});
-        setPricesLoaded(true);
-        setPriceError(
-          err instanceof Error ? err.message : "Failed to load GE prices",
-        );
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [retryCount]);
+    void fetchIfNeeded();
+  }, [fetchIfNeeded]);
+
+  const loadPrices = () => {
+    void refreshPrices();
+  };
 
   const crops = useMemo(() => {
     return FARM_CROPS.map((crop) => {
@@ -85,11 +67,11 @@ export default function FarmProfit() {
 
   return (
     <div>
-      {!pricesLoaded && (
+      {(geLoading || !pricesLoaded) && !priceError && (
         <p className="text-xs text-text-secondary mb-4">Loading live GE prices...</p>
       )}
 
-      {pricesLoaded && priceError && (
+      {priceError && (
         <div className="mb-4">
           <ErrorState
             title="Couldn't load GE prices"

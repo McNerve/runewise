@@ -121,8 +121,8 @@ export default function WorldMap() {
   // When a deep-linked location matches a POI, open its popup once map is ready
   useEffect(() => {
     if (!focusedPoi || loading) return;
-    setOpenPoi(focusedPoi);
-    setFilter(
+    setOpenPoi(focusedPoi); // eslint-disable-line react-hooks/set-state-in-effect -- deep-link focus
+    setFilter(  
       focusedPoi.category === "farming" ||
         focusedPoi.category === "fairy-ring" ||
         focusedPoi.category === "slayer" ||
@@ -132,7 +132,7 @@ export default function WorldMap() {
         : "all"
     );
     // Center-ish: POIs are % of image; approximate pan toward marker at zoom 0.8
-    setView({ zoom: 0.85, pan: { x: 0, y: 0 } });
+    setView({ zoom: 0.85, pan: { x: 0, y: 0 } });  
   }, [focusedPoi?.id, loading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Cursor-anchored zoom: the map point under the cursor stays under the

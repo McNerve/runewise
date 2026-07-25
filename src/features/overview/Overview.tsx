@@ -67,10 +67,10 @@ export default function Overview({ hiscores, rsn, lastFetched = null, onRefresh 
 
   useEffect(() => {
     if (!rsn) {
-      setWomPlayer(null);
+      setWomPlayer(null); // eslint-disable-line react-hooks/set-state-in-effect -- clear WOM when RSN empty
       return;
     }
-    setWomPlayer(null);
+    setWomPlayer(null);  
     let cancelled = false;
     fetchWomPlayer(rsn)
       .then((p) => {

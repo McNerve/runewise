@@ -85,6 +85,30 @@ const LOADOUTS_V2_KEY = "runewise_loadouts_v2";
 const SETUPS_KEY = "runewise_dps_setups_v1";
 const SETUP_SLOTS = 3;
 
+/** Spec weapon attack speeds (ticks) — not the main loadout speed. */
+const SPEC_WEAPON_SPEEDS: Record<string, number> = {
+  dragon_claws: 4,
+  dragon_dagger: 4,
+  dragon_warhammer: 6,
+  bandos_godsword: 6,
+  armadyl_godsword: 6,
+  saradomin_godsword: 6,
+  ancient_godsword: 6,
+  voidwaker: 4,
+  elder_maul: 6,
+  dragon_halberd: 7,
+  crystal_halberd: 7,
+  toxic_blowpipe: 3,
+  webweaver_bow: 4,
+  zaryte_crossbow: 6,
+  dark_bow: 9,
+  magic_shortbow: 3,
+  magic_longbow: 5,
+  seercull: 5,
+};
+
+const SPEC_AMMO_ONLY = new Set(["magic_shortbow", "magic_longbow", "seercull"]);
+
 interface StoredSetups {
   setups: (SetupSnapshot | null)[];
   activeSetup: number;
@@ -748,29 +772,6 @@ export function useDpsState({ hiscores }: Props) {
 
   // Spec weapons: use the selected weapon's attack speed when known, not the
   // main loadout speed (e.g. claws are 4t while a scythe loadout is 5t).
-  const SPEC_WEAPON_SPEEDS: Record<string, number> = {
-    dragon_claws: 4,
-    dragon_dagger: 4,
-    dragon_warhammer: 6,
-    bandos_godsword: 6,
-    armadyl_godsword: 6,
-    saradomin_godsword: 6,
-    ancient_godsword: 6,
-    voidwaker: 4,
-    elder_maul: 6,
-    dragon_halberd: 7,
-    crystal_halberd: 7,
-    toxic_blowpipe: 3,
-    webweaver_bow: 4,
-    zaryte_crossbow: 6,
-    dark_bow: 9,
-    magic_shortbow: 3,
-    magic_longbow: 5,
-    seercull: 5,
-  };
-
-  const SPEC_AMMO_ONLY = new Set(["magic_shortbow", "magic_longbow", "seercull"]);
-
   const specResult = useMemo(() => {
     if (!selectedSpec) return null;
     const specSpeed =
@@ -827,7 +828,7 @@ export function useDpsState({ hiscores }: Props) {
       // Ammo-only specials: use current ranged strength as ammo proxy when equipped.
       specAmmoRangedStr: ammoOnly ? effectiveStrengthBonus : undefined,
     });
-  }, [selectedSpec, attackLevel, strengthLevel, rangedLevel, magicLevel, effectiveAttackBonus, effectiveStrengthBonus, prayerAttackMult, prayerStrengthMult, stanceAttackBonus, stanceStrengthBonus, effectiveAttackSpeed, combatStyle, targetDefLevel, targetDefBonus, targetHp, targetMagicForTbow, selectedMonster?.magicLevel, modifierList, defReductions, tbowRaidCap, activeSpellBase, inToA, prayer.magicDamagePct, selectedSpell?.element, stance.attackType, weaponName, monsterSize, demonbaneVulnerability]);
+  }, [selectedSpec, attackLevel, strengthLevel, rangedLevel, magicLevel, effectiveAttackBonus, effectiveStrengthBonus, prayerAttackMult, prayerStrengthMult, stanceAttackBonus, stanceStrengthBonus, effectiveAttackSpeed, combatStyle, targetDefLevel, targetDefBonus, targetHp, targetMagicForTbow, selectedMonster, modifierList, defReductions, tbowRaidCap, activeSpellBase, inToA, prayer, selectedSpell, stance, weaponName, monsterSize, demonbaneVulnerability]);
 
   const toggleModifier = useCallback((id: string) => {
     setActiveModifiers((prev) => {

@@ -60,8 +60,8 @@ export default function FlipFinder({ mapping, prices }: FlipFinderProps) {
 
   useEffect(() => {
     let cancelled = false;
-    setVolLoaded(false);
-    setVolError(false);
+    setVolLoaded(false); // eslint-disable-line react-hooks/set-state-in-effect -- reset before async volume fetch
+    setVolError(false);  
     fetchVolumes()
       .then((v) => {
         if (!cancelled) {

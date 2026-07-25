@@ -174,13 +174,12 @@ export default function PetCalculator({ hiscores, rsn }: Props) {
   // Manual overrides (countTouched / levelTouched) are preserved.
   useEffect(() => {
     if (hiscores) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- clear sticky prior-account prefill
     if (!countTouched) {
-      setKillCount(0);
-      setActionCount(0);
-      setXpInput(0);
+      setKillCount(0); // eslint-disable-line react-hooks/set-state-in-effect -- clear sticky prior-account prefill
+      setActionCount(0);  
+      setXpInput(0);  
     }
-    if (!levelTouched) setSkillLevel(99);
+    if (!levelTouched) setSkillLevel(99);  
   }, [hiscores, countTouched, levelTouched]);
 
   const ownedCount = ownedPets.size;
