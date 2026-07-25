@@ -42,7 +42,12 @@ async function fetchMonth(year: number, month: number): Promise<NewsPost[]> {
     : `/api/news/archive?oldschool=1&year=${year}&month=${month}`;
 
   try {
-    const res = await apiFetch(proxyUrl);
+    const res = await Promise.race([
+      apiFetch(proxyUrl),
+      new Promise<Response>((_, reject) =>
+        setTimeout(() => reject(new Error("News fetch timeout")), 12_000)
+      ),
+    ]);
     if (!res.ok) return [];
 
     const html = await res.text();
@@ -260,16 +265,28 @@ export default function News() {
   const [refreshKey, setRefreshKey] = useState(0);
   const articleRequestId = useRef(0);
 
+  const [loadError, setLoadError] = useState(false);
+
   useEffect(() => {
     let cancelled = false;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- loading state for async fetch
     setLoading(true);
-    fetchBlogPosts().then((p) => {
-      if (!cancelled) {
-        setPosts(p);
-        setLoading(false);
-      }
-    });
+    setLoadError(false);
+    fetchBlogPosts()
+      .then((p) => {
+        if (!cancelled) {
+          setPosts(p);
+          setLoadError(p.length === 0);
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setPosts([]);
+          setLoadError(true);
+          setLoading(false);
+        }
+      });
     return () => {
       cancelled = true;
     };
@@ -431,11 +448,32 @@ export default function News() {
         {loading && <TableSkeleton rows={6} cols={2} />}
 
         {!loading && filtered.length === 0 && (
-          <EmptyState
-            icon={NAV_ICONS.news}
-            title={posts.length === 0 ? "Could not load news" : "No posts match this filter"}
-            description={posts.length === 0 ? "Try again later." : "Try a different filter."}
-          />
+          <div className="space-y-3">
+            <EmptyState
+              icon={NAV_ICONS.news}
+              title={
+                posts.length === 0 || loadError
+                  ? "Could not load news"
+                  : "No posts match this filter"
+              }
+              description={
+                posts.length === 0 || loadError
+                  ? "The Jagex news feed timed out or is unavailable."
+                  : "Try a different filter."
+              }
+            />
+            {(posts.length === 0 || loadError) && (
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => setRefreshKey((k) => k + 1)}
+                  className="text-sm text-accent hover:text-accent-hover"
+                >
+                  Retry
+                </button>
+              </div>
+            )}
+          </div>
         )}
 
         {filtered.length > 0 && (

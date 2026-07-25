@@ -525,7 +525,10 @@ export default function BossGuide({ hiscores }: Props) {
               </div>
 
               {(() => {
-                const packs = getMetaPacksForBoss(selectedBoss.name);
+                const packs = getMetaPacksForBoss(
+                  selectedBoss.name,
+                  selectedBoss.weakness
+                );
                 if (packs.length === 0) return null;
                 return (
                   <div className="mt-4 rounded-xl border border-accent/20 bg-accent/5 px-3 py-2.5">

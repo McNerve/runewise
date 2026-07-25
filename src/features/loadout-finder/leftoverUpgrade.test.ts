@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { findNextUpgradeUnderBudget } from "./leftoverUpgrade";
+import { findNextUpgradeUnderBudget, findUpgradePathUnderBudget } from "./leftoverUpgrade";
 import { findUpgrades } from "../dps-calc/upgradeFinder";
 import type { WikiEquipment, EquipmentSlot } from "../../lib/api/equipment";
 import type { EquippedGear } from "../dps-calc/dpsTypes";
@@ -109,5 +109,27 @@ describe("findNextUpgradeUnderBudget", () => {
       baseInput,
     });
     expect(next).toBeNull();
+  });
+
+  it("builds a multi-step path under budget", () => {
+    const gear: EquippedGear = { head: helm, neck: glory };
+    const prices: Record<string, number> = {
+      "amulet of glory": 12_000,
+      "amulet of fury": 100_000,
+      "amulet of torture": 500_000,
+      "rune full helm": 20_000,
+    };
+    const path = findUpgradePathUnderBudget({
+      gear,
+      combatStyle: "melee",
+      equipment: catalog,
+      priceOf: (n) => prices[n.toLowerCase()] ?? null,
+      remainingBudget: 2_000_000,
+      baseInput,
+      meleeAttackType: "slash",
+      maxSteps: 3,
+    });
+    expect(path.length).toBeGreaterThanOrEqual(1);
+    expect(path[0]!.item.name).toMatch(/torture|fury/i);
   });
 });

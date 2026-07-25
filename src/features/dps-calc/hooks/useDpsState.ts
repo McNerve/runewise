@@ -260,6 +260,70 @@ export function useDpsState({ hiscores }: Props) {
     if (preset) void applyPreset(preset);
   }, [params.preset, applyPreset]);
 
+  // Apply upgrade path pieces once after preset deep-link (upgradeItem / upgradePath)
+  const upgradePathApplied = useRef<string | null>(null);
+  useEffect(() => {
+    const single = params.upgradeItem;
+    const slot = params.upgradeSlot;
+    const path = params.upgradePath;
+    if (!single && !path) return;
+    const key = `${params.preset ?? ""}|${path ?? ""}|${slot ?? ""}|${single ?? ""}`;
+    if (upgradePathApplied.current === key) return;
+    // Wait until preset gear has landed when a preset is also requested
+    if (params.preset && Object.keys(equippedGear).length === 0) return;
+
+    upgradePathApplied.current = key;
+    let cancelled = false;
+    (async () => {
+      const equipment = allEquipment.length > 0 ? allEquipment : await fetchAllEquipment();
+      if (cancelled) return;
+      if (allEquipment.length === 0) setAllEquipment(equipment);
+
+      const applyOne = (slotName: string, itemName: string, gear: EquippedGear): EquippedGear => {
+        const match = equipment.find((e) => e.name.toLowerCase() === itemName.toLowerCase());
+        if (!match) return gear;
+        const next = { ...gear };
+        if (slotName === "2h") {
+          delete next.weapon;
+          delete next.shield;
+          next["2h"] = match;
+        } else if (slotName === "weapon") {
+          delete next["2h"];
+          next.weapon = match;
+        } else {
+          next[slotName as EquipmentSlot] = match;
+        }
+        return next;
+      };
+
+      setEquippedGear((prev) => {
+        let gear = { ...prev };
+        if (path) {
+          for (const part of path.split("|")) {
+            const [s, ...rest] = part.split(":");
+            const itemName = rest.join(":");
+            if (s && itemName) gear = applyOne(s, itemName, gear);
+          }
+        } else if (single && slot) {
+          gear = applyOne(slot, single, gear);
+        }
+        return gear;
+      });
+      setBonusMode("equipment");
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    params.upgradeItem,
+    params.upgradeSlot,
+    params.upgradePath,
+    params.preset,
+    allEquipment,
+    equippedGear,
+  ]);
+
   // Handle monster param from cross-nav. Syncing state from an external URL
   // param is a legitimate effect use. An optional `version` param selects a
   // specific phase (e.g. Verzik P2) directly.

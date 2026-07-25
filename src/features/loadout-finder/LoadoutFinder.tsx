@@ -16,7 +16,10 @@ import {
   type LoadoutTarget,
   type RankedLoadout,
 } from "./budgetLoadoutFinder";
-import { findNextUpgradeUnderBudget, type LeftoverUpgrade } from "./leftoverUpgrade";
+import {
+  findUpgradePathUnderBudget,
+  type LeftoverUpgrade,
+} from "./leftoverUpgrade";
 import type { CombatStyle } from "../dps-calc/dpsTypes";
 
 const BUDGETS: { id: string; label: string; gp: number }[] = [
@@ -52,15 +55,17 @@ function ResultRow({
   row,
   bestDps,
   onOpen,
-  nextUpgrade,
+  upgradePath,
   leftover,
+  onApplyPath,
 }: {
   rank: number;
   row: RankedLoadout;
   bestDps: number;
   onOpen: () => void;
-  nextUpgrade?: LeftoverUpgrade | null;
+  upgradePath?: LeftoverUpgrade[];
   leftover?: number;
+  onApplyPath?: () => void;
 }) {
   const pctOfBest = bestDps > 0 ? (row.dps / bestDps) * 100 : 0;
   const slotEntries = Object.entries(row.gear).filter(([, item]) => item != null);
@@ -157,24 +162,32 @@ function ResultRow({
         </p>
       )}
 
-      {nextUpgrade && leftover != null && leftover > 0 && (
-        <div className="mt-3 rounded-lg border border-accent/20 bg-accent/5 px-2.5 py-2 text-xs">
-          <div className="text-[10px] uppercase tracking-wide text-accent/80 mb-0.5">
-            Next buy under leftover {formatGp(leftover)}
+      {upgradePath && upgradePath.length > 0 && leftover != null && leftover > 0 && (
+        <div className="mt-3 rounded-lg border border-accent/20 bg-accent/5 px-2.5 py-2 text-xs space-y-1.5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="text-[10px] uppercase tracking-wide text-accent/80">
+              Upgrade path under leftover {formatGp(leftover)}
+            </div>
+            {onApplyPath && (
+              <button
+                type="button"
+                onClick={onApplyPath}
+                className="text-[10px] font-medium text-accent hover:text-accent-hover"
+              >
+                Open path in DPS →
+              </button>
+            )}
           </div>
-          <div className="flex flex-wrap items-center gap-2 text-text-secondary">
-            <img
-              src={itemIcon(nextUpgrade.item.name)}
-              alt=""
-              className="w-5 h-5 object-contain"
-            />
-            <span className="text-text-primary font-medium">{nextUpgrade.item.name}</span>
-            <span className="text-text-secondary/60">({nextUpgrade.slot})</span>
-            <span className="num text-accent">{formatGp(nextUpgrade.price)}</span>
-            <span className="text-success">
-              +{nextUpgrade.dpsGain.toFixed(2)} DPS
-            </span>
-          </div>
+          {upgradePath.map((u, i) => (
+            <div key={`${u.item.name}-${i}`} className="flex flex-wrap items-center gap-2 text-text-secondary">
+              <span className="text-text-secondary/50 num w-3">{i + 1}.</span>
+              <img src={itemIcon(u.item.name)} alt="" className="w-5 h-5 object-contain" />
+              <span className="text-text-primary font-medium">{u.item.name}</span>
+              <span className="text-text-secondary/60">({u.slot})</span>
+              <span className="num text-accent">{formatGp(u.price)}</span>
+              <span className="text-success">+{u.dpsGain.toFixed(2)} DPS</span>
+            </div>
+          ))}
         </div>
       )}
     </li>
@@ -247,14 +260,14 @@ export default function LoadoutFinder({ hiscores }: Props) {
     });
   }, [equipment, priceOf, hiscores, target, budget, styleFilter]);
 
-  /** Best upgrade under leftover cash for top setups (budget mode only). */
+  /** Multi-step upgrade path under leftover cash for top setups (budget mode only). */
   const leftoverByPreset = useMemo(() => {
-    const map = new Map<string, { upgrade: LeftoverUpgrade | null; leftover: number }>();
+    const map = new Map<string, { path: LeftoverUpgrade[]; leftover: number }>();
     if (!equipment || budget <= 0) return map;
     for (const row of results.slice(0, 5)) {
       const leftover = Math.max(0, budget - row.totalCost);
       if (leftover <= 0) {
-        map.set(row.preset.name, { upgrade: null, leftover: 0 });
+        map.set(row.preset.name, { path: [], leftover: 0 });
         continue;
       }
       const baseInput = buildDpsInput(
@@ -264,7 +277,7 @@ export default function LoadoutFinder({ hiscores }: Props) {
         target,
         row.preset.prayer
       );
-      const upgrade = findNextUpgradeUnderBudget({
+      const path = findUpgradePathUnderBudget({
         gear: row.gear,
         combatStyle: row.style,
         equipment,
@@ -272,11 +285,29 @@ export default function LoadoutFinder({ hiscores }: Props) {
         remainingBudget: leftover,
         baseInput,
         meleeAttackType: baseInput.attackType ?? "slash",
+        maxSteps: 3,
       });
-      map.set(row.preset.name, { upgrade, leftover });
+      map.set(row.preset.name, { path, leftover });
     }
     return map;
   }, [results, equipment, budget, hiscores, target, priceOf]);
+
+  const openPathInDps = (row: RankedLoadout, path: LeftoverUpgrade[]) => {
+    const params: Record<string, string> = {
+      preset: row.preset.name,
+      style: row.style,
+    };
+    if (target.name !== "Custom / Dummy") params.monster = target.name;
+    if (path[0]) {
+      params.upgradeItem = path[0].item.name;
+      params.upgradeSlot = path[0].slot;
+    }
+    // Encode full path as optional comma list for future steps
+    if (path.length > 1) {
+      params.upgradePath = path.map((u) => `${u.slot}:${u.item.name}`).join("|");
+    }
+    navigate("dps-calc", params);
+  };
 
   const bestDps = results[0]?.dps ?? 0;
   const loading = equipLoading || (geLoading && mapping.length === 0);
@@ -449,8 +480,13 @@ export default function LoadoutFinder({ hiscores }: Props) {
                   row={row}
                   bestDps={bestDps}
                   onOpen={() => openInDps(row)}
-                  nextUpgrade={lo?.upgrade}
+                  upgradePath={lo?.path}
                   leftover={lo?.leftover}
+                  onApplyPath={
+                    lo?.path?.length
+                      ? () => openPathInDps(row, lo.path)
+                      : undefined
+                  }
                 />
               );
             })}

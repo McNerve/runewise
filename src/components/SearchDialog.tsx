@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigation } from "../lib/NavigationContext";
 import { isMac } from "../lib/env";
-import { buildSearchIndex, recordSearchClick, sortByFrequency, type SearchResult } from "../lib/search";
+import { buildSearchIndex, recordSearchClick, type SearchResult } from "../lib/search";
+import { rankSearchResults } from "../lib/searchRank";
+import { loadJSON } from "../lib/localStorage";
 import { loadRecentEntities } from "../lib/recentEntities";
 
 const MAX_PER_CATEGORY = 5;
@@ -87,12 +89,19 @@ export default function SearchDialog({ onClose }: SearchDialogProps) {
       return haystack.includes(q);
     });
 
-    const deduped = [...shortcuts, ...matchingRecent, ...sortByFrequency(flat)].filter(
-      (item, index, items) =>
-        items.findIndex((candidate) => candidate.view === item.view && JSON.stringify(candidate.params) === JSON.stringify(item.params) && candidate.name === item.name) === index
+    // Features/index first; player/wiki/item shortcuts ranked last via score.
+    const merged = [...flat, ...matchingRecent, ...shortcuts].filter(
+      (item, idx, items) =>
+        items.findIndex(
+          (candidate) =>
+            candidate.view === item.view &&
+            JSON.stringify(candidate.params) === JSON.stringify(item.params) &&
+            candidate.name === item.name
+        ) === idx
     );
 
-    return deduped.slice(0, MAX_TOTAL);
+    const freq = loadJSON<Record<string, number>>("runewise_search_frequency", {});
+    return rankSearchResults(merged, trimmed, freq).slice(0, MAX_TOTAL);
   }, [query, index, recentEntities]);
 
   const select = useCallback(
