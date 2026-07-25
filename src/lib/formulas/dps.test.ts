@@ -922,6 +922,32 @@ describe("deferred wiki parity — fang/scythe/arclight/crystal/magic", () => {
   });
 });
 
+describe("Kandarin hard diary bolt proc", () => {
+  it("raises diamond bolt EV when diary is on", () => {
+    const base = {
+      attackLevel: 99,
+      strengthLevel: 99,
+      rangedLevel: 99,
+      magicLevel: 99,
+      attackBonus: 120,
+      strengthBonus: 90,
+      prayerAttackMult: 1,
+      prayerStrengthMult: 1,
+      stanceAttackBonus: 0,
+      stanceStrengthBonus: 0,
+      attackSpeed: 5,
+      combatStyle: "ranged" as const,
+      targetDefLevel: 100,
+      targetDefBonus: 50,
+      targetHp: 200,
+      boltEnchant: "diamond" as const,
+    };
+    const plain = calculateDps(base);
+    const diary = calculateDps({ ...base, kandarinHardDiary: true });
+    expect(diary.dps).toBeGreaterThan(plain.dps);
+  });
+});
+
 describe("bolt enchant and ZCB", () => {
   it("infers bolt enchant from ammo names", () => {
     expect(inferBoltEnchant("Diamond bolts (e)")).toBe("diamond");

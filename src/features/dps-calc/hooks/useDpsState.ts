@@ -271,6 +271,7 @@ export function useDpsState({ hiscores }: Props) {
     if (upgradePathApplied.current === key) return;
     // Wait until preset gear has landed when a preset is also requested
     if (params.preset && Object.keys(equippedGear).length === 0) return;
+    // Optimized loadouts send only upgradePath — apply onto empty/current gear
 
     upgradePathApplied.current = key;
     let cancelled = false;
@@ -663,6 +664,7 @@ export function useDpsState({ hiscores }: Props) {
       isDemonbaneSpell: spellFlags.isDemonbaneSpell || undefined,
       boltEnchant,
       zcbSpec: zcbSpec || undefined,
+      kandarinHardDiary: activeModifiers.has("kandarin_hard") || undefined,
       scorcherVsDemon: scorcherVsDemon || undefined,
     }),
     [
@@ -698,6 +700,7 @@ export function useDpsState({ hiscores }: Props) {
       spellFlags,
       boltEnchant,
       zcbSpec,
+      activeModifiers,
       scorcherVsDemon,
     ]
   );

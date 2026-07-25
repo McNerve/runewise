@@ -50,6 +50,16 @@ const MODIFIER_GROUPS: { label: string; ids: string[] }[] = [
   },
 ];
 
+/** Diary / account flags stored in the modifier set but not float mults. */
+const DIARY_TOGGLES: { id: string; name: string; styles: CombatStyle[]; description: string }[] = [
+  {
+    id: "kandarin_hard",
+    name: "Kandarin hard diary",
+    styles: ["ranged"],
+    description: "×1.1 enchanted bolt special proc chance (PvM). Wiki diary reward.",
+  },
+];
+
 // Short 1-2 line descriptions shown on hover. Effect summary + when it applies.
 const MODIFIER_DESCRIPTIONS: Record<string, string> = {
   void_melee: "+10% effective Attack and Strength levels (×11/10 before max hit/roll). Full Void with melee helm.",
@@ -82,6 +92,52 @@ function isRelevant(mod: DpsModifier, style: CombatStyle): boolean {
   return !mod.condition || mod.condition === style;
 }
 
+function ToggleChip({
+  id,
+  name,
+  active,
+  description,
+  onToggle,
+}: {
+  id: string;
+  name: string;
+  active: boolean;
+  description?: string;
+  onToggle: (id: string) => void;
+}) {
+  const button = (
+    <button
+      type="button"
+      onClick={() => onToggle(id)}
+      className={`px-2.5 py-1 rounded text-xs transition-colors ${
+        active
+          ? "bg-accent/20 text-accent border border-accent/30"
+          : "bg-bg-tertiary text-text-secondary border border-transparent hover:border-border"
+      }`}
+    >
+      {name}
+    </button>
+  );
+  if (!description) return <span key={id}>{button}</span>;
+  return (
+    <Tooltip.Root key={id} delayDuration={200}>
+      <Tooltip.Trigger asChild>{button}</Tooltip.Trigger>
+      <Tooltip.Content
+        className="item-tooltip-content"
+        sideOffset={6}
+        side="top"
+        collisionPadding={8}
+      >
+        <div className="max-w-[240px]">
+          <div className="font-semibold text-text-primary text-xs">{name}</div>
+          <div className="text-[11px] text-text-secondary/80 mt-0.5 leading-snug">{description}</div>
+        </div>
+        <Tooltip.Arrow className="fill-[var(--color-bg-tertiary)]" />
+      </Tooltip.Content>
+    </Tooltip.Root>
+  );
+}
+
 export default memo(function ModifierToggles({
   activeIds,
   onToggle,
@@ -94,7 +150,9 @@ export default memo(function ModifierToggles({
       .filter((m): m is DpsModifier => m != null && isRelevant(m, combatStyle)),
   })).filter((g) => g.mods.length > 0);
 
-  if (relevantGroups.length === 0) return null;
+  const diaries = DIARY_TOGGLES.filter((d) => d.styles.includes(combatStyle));
+
+  if (relevantGroups.length === 0 && diaries.length === 0) return null;
 
   return (
     <div className="space-y-3">
@@ -104,44 +162,38 @@ export default memo(function ModifierToggles({
             {group.label}
           </div>
           <div className="flex flex-wrap gap-1.5">
-            {group.mods.map((mod) => {
-              const description = MODIFIER_DESCRIPTIONS[mod.id];
-              const button = (
-                <button
-                  onClick={() => onToggle(mod.id)}
-                  className={`px-2.5 py-1 rounded text-xs transition-colors ${
-                    activeIds.has(mod.id)
-                      ? "bg-accent/20 text-accent border border-accent/30"
-                      : "bg-bg-tertiary text-text-secondary border border-transparent hover:border-border"
-                  }`}
-                >
-                  {mod.name}
-                </button>
-              );
-              if (!description) return <span key={mod.id}>{button}</span>;
-              return (
-                <Tooltip.Root key={mod.id} delayDuration={200}>
-                  <Tooltip.Trigger asChild>{button}</Tooltip.Trigger>
-                  <Tooltip.Content
-                    className="item-tooltip-content"
-                    sideOffset={6}
-                    side="top"
-                    collisionPadding={8}
-                  >
-                    <div className="max-w-[240px]">
-                      <div className="font-semibold text-text-primary text-xs">{mod.name}</div>
-                      <div className="text-[11px] text-text-secondary/80 mt-0.5 leading-snug">
-                        {description}
-                      </div>
-                    </div>
-                    <Tooltip.Arrow className="fill-[var(--color-bg-tertiary)]" />
-                  </Tooltip.Content>
-                </Tooltip.Root>
-              );
-            })}
+            {group.mods.map((mod) => (
+              <ToggleChip
+                key={mod.id}
+                id={mod.id}
+                name={mod.name}
+                active={activeIds.has(mod.id)}
+                description={MODIFIER_DESCRIPTIONS[mod.id]}
+                onToggle={onToggle}
+              />
+            ))}
           </div>
         </div>
       ))}
+      {diaries.length > 0 && (
+        <div>
+          <div className="text-[10px] uppercase tracking-wider text-text-secondary/40 mb-1.5">
+            Diaries
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {diaries.map((d) => (
+              <ToggleChip
+                key={d.id}
+                id={d.id}
+                name={d.name}
+                active={activeIds.has(d.id)}
+                description={d.description}
+                onToggle={onToggle}
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 });

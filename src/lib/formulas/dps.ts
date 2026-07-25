@@ -112,6 +112,11 @@ export interface DpsInput {
    * effect is guaranteed (100% proc). Models the "ZCB guarantee" for that hit's EV.
    */
   zcbSpec?: boolean;
+  /**
+   * Kandarin hard diary: ×1.1 enchanted bolt special proc chance (wiki).
+   * Soft-capped at 100% when combined with base rates.
+   */
+  kandarinHardDiary?: boolean;
   /** Scorching bow vs demon: add-factor demonbane + burn DoT EV (simplified). */
   scorcherVsDemon?: boolean;
 }
@@ -939,6 +944,8 @@ export function calculateDps(input: DpsInput) {
 
   // Enchanted bolts / ZCB special — EV blend after base hit math.
   // ZCB special: accuracy = 1 and enchant proc is guaranteed for that attack.
+  // Kandarin hard diary multiplies PvM proc rates by 1.1 (wiki).
+  const boltProcMult = input.kandarinHardDiary ? 1.1 : 1;
   if (input.combatStyle === "ranged" && input.boltEnchant && input.boltEnchant !== "none") {
     if (input.zcbSpec) {
       displayAccuracy = 1;
@@ -958,6 +965,7 @@ export function calculateDps(input: DpsInput) {
         accuracy: baseAccuracy,
         targetHp: input.targetHp,
         rangedLevel: input.rangedLevel,
+        procMult: boltProcMult,
       });
     }
   }
