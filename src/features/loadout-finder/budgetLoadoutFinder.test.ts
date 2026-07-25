@@ -2,6 +2,11 @@ import { describe, it, expect } from "vitest";
 import {
   findBudgetLoadouts,
   FINDER_TARGETS,
+  resolveTargetDefBonus,
+  filterPassivesForTarget,
+  bestMeleeAttackType,
+  withOwnedPrices,
+  filterExcludedEquipment,
   type LoadoutTarget,
 } from "./budgetLoadoutFinder";
 import type { WikiEquipment, EquipmentSlot } from "../../lib/api/equipment";
@@ -196,8 +201,100 @@ describe("findBudgetLoadouts", () => {
     expect(ranged.every((r) => r.style === "ranged")).toBe(true);
   });
 
-  it("exposes curated boss targets", () => {
+  it("exposes curated boss targets with multi-def", () => {
     expect(FINDER_TARGETS.length).toBeGreaterThanOrEqual(5);
-    expect(FINDER_TARGETS.some((t) => t.name === "Vorkath")).toBe(true);
+    const vork = FINDER_TARGETS.find((t) => t.name === "Vorkath");
+    expect(vork).toBeTruthy();
+    expect(vork!.defStab).toBe(26);
+    expect(vork!.defSlash).toBeGreaterThan(vork!.defStab!);
+    expect(FINDER_TARGETS.some((t) => t.name === "Cerberus")).toBe(true);
+  });
+
+  it("owned items count as free under budget", () => {
+    const priceOf = (n: string) => {
+      const p: Record<string, number> = {
+        "dragon scimitar": 100_000,
+        "fire cape": 0, // untradeable normally unpriced
+        "abyssal whip": 1_500_000,
+      };
+      return p[n.toLowerCase()] ?? 50_000;
+    };
+    const free = withOwnedPrices(priceOf, ["Abyssal whip"]);
+    expect(free("Abyssal whip")).toBe(0);
+    expect(free("Dragon scimitar")).toBe(100_000);
+  });
+
+  it("excludes banned items from catalog", () => {
+    const filtered = filterExcludedEquipment(catalog(), ["Abyssal whip", "Torva full helm"]);
+    expect(filtered.some((e) => e.name === "Abyssal whip")).toBe(false);
+    expect(filtered.some((e) => e.name === "Dragon scimitar")).toBe(true);
+  });
+});
+
+describe("resolveTargetDefBonus", () => {
+  const multi: LoadoutTarget = {
+    name: "Cerberus",
+    defLevel: 100,
+    defBonus: 100,
+    defStab: 100,
+    defSlash: 100,
+    defCrush: 50,
+    defRanged: 100,
+    defMagic: 100,
+    hp: 600,
+  };
+
+  it("uses crush def when melee crush", () => {
+    expect(resolveTargetDefBonus(multi, "melee", "crush")).toBe(50);
+    expect(resolveTargetDefBonus(multi, "melee", "slash")).toBe(100);
+  });
+
+  it("uses ranged/magic columns", () => {
+    expect(resolveTargetDefBonus(multi, "ranged")).toBe(100);
+    expect(resolveTargetDefBonus({ ...multi, defMagic: 20 }, "magic")).toBe(20);
+  });
+});
+
+describe("filterPassivesForTarget", () => {
+  it("keeps salve only vs undead and DHL only vs dragon", () => {
+    expect(filterPassivesForTarget(["salve_ei", "dhl", "void_melee"], ["undead"], false)).toEqual([
+      "salve_ei",
+      "void_melee",
+    ]);
+    expect(filterPassivesForTarget(["salve_ei", "dhl", "void_melee"], ["dragon"], false)).toEqual([
+      "dhl",
+      "void_melee",
+    ]);
+    expect(filterPassivesForTarget(["slayer_helm"], [], true)).toEqual(["slayer_helm"]);
+    expect(filterPassivesForTarget(["slayer_helm"], [], false)).toEqual([]);
+  });
+});
+
+describe("bestMeleeAttackType", () => {
+  it("prefers crush vs Cerberus-style multi-def when weapon is general", () => {
+    const t = bestMeleeAttackType(
+      null,
+      { attackStab: 80, attackSlash: 80, attackCrush: 80 },
+      {
+        name: "Cerberus",
+        defLevel: 100,
+        defBonus: 100,
+        defStab: 100,
+        defSlash: 100,
+        defCrush: 50,
+        hp: 600,
+      }
+    );
+    expect(t).toBe("crush");
+  });
+
+  it("locks rapier to stab", () => {
+    expect(
+      bestMeleeAttackType(
+        item("Ghrazi rapier", "weapon", { attackStab: 94, combatStyle: "stab" }),
+        { attackStab: 94, attackSlash: 0, attackCrush: 0 },
+        null
+      )
+    ).toBe("stab");
   });
 });

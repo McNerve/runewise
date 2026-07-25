@@ -4,6 +4,17 @@ All notable changes to RuneWise are documented here. Versions follow [Semantic V
 
 ## [Unreleased]
 
+## [2.5.13] - 2026-07-25
+
+### Loadout Finder (GearScape parity)
+
+- **Per-style NPC defence** — stab/slash/crush/ranged/magic on targets; attack type chosen vs lowest relevant def (e.g. crush on Cerberus).
+- **I already own** — free chips + free-text; owned gear is 0 gp in the budget.
+- **Exclude items** — ban scythe/shadow/etc. from the search.
+- **On-task** — slayer helm / black mask when worn.
+- **Target-aware passives** — salve only vs undead, DHL/DHCB vs dragon, arclight vs demon, etc.
+- More boss targets (Kree'arra, Duke, Muspah) with multi-def stats.
+
 ## [2.5.12] - 2026-07-25
 
 ### Combat / loadout

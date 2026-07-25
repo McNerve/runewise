@@ -11,7 +11,13 @@ import type { HiscoreData } from "../../lib/api/hiscores";
 import type { CombatStyle, EquippedGear } from "../dps-calc/dpsTypes";
 import { calculateDps } from "../../lib/formulas/dps";
 import { knownWeaponSpeed } from "../../lib/data/weapon-speeds";
-import { buildDpsInput, type LoadoutTarget, type RankedLoadout } from "./budgetLoadoutFinder";
+import {
+  buildDpsInput,
+  filterExcludedEquipment,
+  withOwnedPrices,
+  type LoadoutTarget,
+  type RankedLoadout,
+} from "./budgetLoadoutFinder";
 import type { GearPreset } from "../../lib/data/gear-presets";
 
 const ARMOUR_SLOTS: (EquipmentSlot | "2h")[] = [
@@ -74,9 +80,10 @@ function scoreGear(
   style: CombatStyle,
   gear: EquippedGear,
   hiscores: HiscoreData | null,
-  target: LoadoutTarget
+  target: LoadoutTarget,
+  onTask = false
 ): { dps: number; maxHit: number; accuracy: number; ttk: number } {
-  const input = buildDpsInput(style, gear, hiscores, target);
+  const input = buildDpsInput(style, gear, hiscores, target, { onTask });
   const r = calculateDps(input);
   return { dps: r.dps, maxHit: r.maxHit, accuracy: r.accuracy, ttk: r.ttk };
 }
@@ -95,10 +102,11 @@ function toRanked(
   priceOf: (n: string) => number | null,
   budget: number,
   unlimited: boolean,
-  description: string
+  description: string,
+  onTask = false
 ): RankedLoadout | null {
   if (Object.keys(gear).length === 0) return null;
-  const scored = scoreGear(style, gear, hiscores, target);
+  const scored = scoreGear(style, gear, hiscores, target, onTask);
   const totalCost = setupCost(gear, priceOf);
   const slotsFilled = Object.values(gear).filter(Boolean).length;
   const styleLabel = `${style[0]!.toUpperCase()}${style.slice(1)}`;
@@ -148,6 +156,21 @@ export interface BudgetOptimizeOptions {
   maxEvals?: number;
   /** Skip local-search refinement after BnB (tests / speed). */
   skipLocalSearch?: boolean;
+  /** Owned items count as 0 gp. */
+  ownedItems?: string[];
+  /** Never equip these items. */
+  excludeItems?: string[];
+  /** On-task: enable slayer helm when worn. */
+  onTask?: boolean;
+}
+
+/** Apply owned/exclude filters once at the start of an optimize run. */
+function normalizeOptimizeOpts(opts: BudgetOptimizeOptions): BudgetOptimizeOptions {
+  return {
+    ...opts,
+    equipment: filterExcludedEquipment(opts.equipment, opts.excludeItems),
+    priceOf: withOwnedPrices(opts.priceOf, opts.ownedItems),
+  };
 }
 
 type SlotCand = { item: WikiEquipment; cost: number; offense: number };
@@ -203,7 +226,8 @@ interface BeamState {
  * Greedy: pick best weapon under budget, then best item per armour slot
  * while cash remains. Returns a synthetic RankedLoadout.
  */
-export function greedyOptimizeUnderBudget(opts: BudgetOptimizeOptions): RankedLoadout | null {
+export function greedyOptimizeUnderBudget(raw: BudgetOptimizeOptions): RankedLoadout | null {
+  const opts = normalizeOptimizeOpts(raw);
   const {
     equipment,
     priceOf,
@@ -212,6 +236,7 @@ export function greedyOptimizeUnderBudget(opts: BudgetOptimizeOptions): RankedLo
     budget,
     style,
     perSlot = 40,
+    onTask = false,
   } = opts;
 
   const unlimited = !Number.isFinite(budget) || budget <= 0;
@@ -230,7 +255,7 @@ export function greedyOptimizeUnderBudget(opts: BudgetOptimizeOptions): RankedLo
     });
 
   let bestW: { item: WikiEquipment; dps: number; cost: number } | null = null;
-  const emptyScore = scoreGear(style, {}, hiscores, target).dps;
+  const emptyScore = scoreGear(style, {}, hiscores, target, onTask).dps;
 
   for (const w of weapons) {
     const cost = priceOrZero(priceOf, w.name);
@@ -239,7 +264,7 @@ export function greedyOptimizeUnderBudget(opts: BudgetOptimizeOptions): RankedLo
     if (!unlimited && cost === 0 && w.name.toLowerCase().includes("broken")) continue;
     const trial: EquippedGear =
       w.slot === "2h" ? { "2h": w } : { weapon: w };
-    const { dps } = scoreGear(style, trial, hiscores, target);
+    const { dps } = scoreGear(style, trial, hiscores, target, onTask);
     if (!bestW || dps > bestW.dps || (dps === bestW.dps && cost < bestW.cost)) {
       bestW = { item: w, dps, cost };
     }
@@ -257,7 +282,7 @@ export function greedyOptimizeUnderBudget(opts: BudgetOptimizeOptions): RankedLo
     if (slot === "ammo" && style === "melee") continue;
 
     const current = gear[slot] ?? null;
-    const base = scoreGear(style, gear, hiscores, target).dps;
+    const base = scoreGear(style, gear, hiscores, target, onTask).dps;
 
     const candidates = equipment
       .filter((e) => e.slot === slot && styleOk(e, style))
@@ -274,7 +299,7 @@ export function greedyOptimizeUnderBudget(opts: BudgetOptimizeOptions): RankedLo
       if (current && item.name === current.name) continue;
       const trial = { ...gear, [slot]: item } as EquippedGear;
       if (slot === "weapon") delete trial["2h"];
-      const { dps } = scoreGear(style, trial, hiscores, target);
+      const { dps } = scoreGear(style, trial, hiscores, target, onTask);
       if (dps <= base + 0.005) continue;
       if (!best || dps > best.dps || (Math.abs(dps - best.dps) < 0.01 && cost < best.cost)) {
         best = { item, dps, cost };
@@ -294,7 +319,8 @@ export function greedyOptimizeUnderBudget(opts: BudgetOptimizeOptions): RankedLo
     priceOf,
     budget,
     unlimited,
-    "Greedy under-budget fill (weapon → armour)"
+    "Greedy under-budget fill (weapon → armour)",
+    onTask
   );
 }
 
@@ -305,7 +331,8 @@ export function greedyOptimizeUnderBudget(opts: BudgetOptimizeOptions): RankedLo
  * expands a beam of partial loadouts. Keeps the best final gear. Catches
  * "cheap weapon + better armour" tradeoffs that pure greedy misses.
  */
-export function beamOptimizeUnderBudget(opts: BudgetOptimizeOptions): RankedLoadout | null {
+export function beamOptimizeUnderBudget(raw: BudgetOptimizeOptions): RankedLoadout | null {
+  const opts = normalizeOptimizeOpts(raw);
   const {
     equipment,
     priceOf,
@@ -316,6 +343,7 @@ export function beamOptimizeUnderBudget(opts: BudgetOptimizeOptions): RankedLoad
     perSlot = 24,
     beamWidth = 6,
     weaponSeeds = 5,
+    onTask = false,
   } = opts;
 
   const unlimited = !Number.isFinite(budget) || budget <= 0;
@@ -341,7 +369,7 @@ export function beamOptimizeUnderBudget(opts: BudgetOptimizeOptions): RankedLoad
   const weaponRanked = weapons
     .map(({ w, cost }) => {
       const trial: EquippedGear = w.slot === "2h" ? { "2h": w } : { weapon: w };
-      const { dps } = scoreGear(style, trial, hiscores, target);
+      const { dps } = scoreGear(style, trial, hiscores, target, onTask);
       return { w, cost, dps, trial };
     })
     .sort((a, b) => b.dps - a.dps || a.cost - b.cost)
@@ -349,7 +377,7 @@ export function beamOptimizeUnderBudget(opts: BudgetOptimizeOptions): RankedLoad
 
   if (weaponRanked.length === 0) {
     // Fall back to greedy (may still fill armour-only in edge cases)
-    return greedyOptimizeUnderBudget(opts);
+    return greedyOptimizeUnderBudget(raw);
   }
 
   // Pre-index candidates per slot for style
@@ -368,7 +396,7 @@ export function beamOptimizeUnderBudget(opts: BudgetOptimizeOptions): RankedLoad
   let bestCost = Number.POSITIVE_INFINITY;
 
   const consider = (gear: EquippedGear) => {
-    const { dps } = scoreGear(style, gear, hiscores, target);
+    const { dps } = scoreGear(style, gear, hiscores, target, onTask);
     const cost = setupCost(gear, priceOf);
     if (dps > bestDps + 0.001 || (Math.abs(dps - bestDps) < 0.001 && cost < bestCost)) {
       bestDps = dps;
@@ -401,7 +429,7 @@ export function beamOptimizeUnderBudget(opts: BudgetOptimizeOptions): RankedLoad
             if (!unlimited && cost > state.remaining) continue;
             if (state.gear[slot]?.name === item.name) continue;
             const trial = { ...state.gear, [slot]: item } as EquippedGear;
-            const { dps } = scoreGear(style, trial, hiscores, target);
+            const { dps } = scoreGear(style, trial, hiscores, target, onTask);
             // Only expand if not worse than parent (small epsilon for noise)
             if (dps + 0.002 < state.dps) continue;
             next.push({
@@ -423,7 +451,7 @@ export function beamOptimizeUnderBudget(opts: BudgetOptimizeOptions): RankedLoad
   }
 
   // Also compare pure greedy (cheap insurance)
-  const greedy = greedyOptimizeUnderBudget(opts);
+  const greedy = greedyOptimizeUnderBudget(raw);
   if (greedy) consider(greedy.gear);
 
   if (!bestGear) return greedy;
@@ -436,7 +464,8 @@ export function beamOptimizeUnderBudget(opts: BudgetOptimizeOptions): RankedLoad
     priceOf,
     budget,
     unlimited,
-    "Beam search under budget (multi-weapon + slot orders)"
+    "Beam search under budget (multi-weapon + slot orders)",
+    onTask
   );
 }
 
@@ -451,8 +480,9 @@ export function beamOptimizeUnderBudget(opts: BudgetOptimizeOptions): RankedLoad
  * 5. Local search: multi-pass 1-swap + limited 2-swap on high-impact slots
  */
 export function combinatorialOptimizeUnderBudget(
-  opts: BudgetOptimizeOptions
+  raw: BudgetOptimizeOptions
 ): RankedLoadout | null {
+  const opts = normalizeOptimizeOpts(raw);
   const {
     equipment,
     priceOf,
@@ -464,6 +494,7 @@ export function combinatorialOptimizeUnderBudget(
     weaponSeeds = 12,
     maxEvals = 50_000,
     skipLocalSearch = false,
+    onTask = false,
   } = opts;
 
   const unlimited = !Number.isFinite(budget) || budget <= 0;
@@ -494,7 +525,7 @@ export function combinatorialOptimizeUnderBudget(
     .map((c) => {
       const trial: EquippedGear =
         c.item.slot === "2h" ? { "2h": c.item } : { weapon: c.item };
-      const { dps } = scoreGear(style, trial, hiscores, target);
+      const { dps } = scoreGear(style, trial, hiscores, target, onTask);
       const value = dps / Math.log10(Math.max(10, c.cost) + 10);
       return { ...c, dps, trial, value };
     })
@@ -510,7 +541,7 @@ export function combinatorialOptimizeUnderBudget(
   const seeds = [...seedSet.values()];
 
   if (seeds.length === 0) {
-    return greedyOptimizeUnderBudget(opts);
+    return greedyOptimizeUnderBudget(raw);
   }
 
   const armourOrders: (EquipmentSlot | "2h")[][] = [
@@ -547,7 +578,7 @@ export function combinatorialOptimizeUnderBudget(
     const hit = scoreCached.get(key);
     if (hit != null) return hit;
     evals += 1;
-    const { dps } = scoreGear(style, gear, hiscores, target);
+    const { dps } = scoreGear(style, gear, hiscores, target, onTask);
     scoreCached.set(key, dps);
     return dps;
   };
@@ -667,7 +698,7 @@ export function combinatorialOptimizeUnderBudget(
 
   // Insurance: existing beam may still win on odd edges
   const beam = beamOptimizeUnderBudget({
-    ...opts,
+    ...raw,
     weaponSeeds: Math.min(weaponSeeds, 8),
     beamWidth: 10,
     perSlot: Math.min(perSlot + 6, 24),
@@ -675,7 +706,7 @@ export function combinatorialOptimizeUnderBudget(
   if (beam) consider(beam.gear);
 
   if (!bestGear) {
-    return greedyOptimizeUnderBudget(opts);
+    return greedyOptimizeUnderBudget(raw);
   }
 
   return toRanked(
@@ -686,7 +717,8 @@ export function combinatorialOptimizeUnderBudget(
     priceOf,
     budget,
     unlimited,
-    "Combinatorial BiS (Pareto + bounded BnB + local search)"
+    "Combinatorial BiS (Pareto + bounded BnB + local search)",
+    onTask
   );
 }
 
