@@ -13,7 +13,7 @@ describe("feature registry", () => {
       "Player",
       "Combat",
       "Market",
-      "Calculators",
+      "Plan",
       "Live",
     ]);
   });
@@ -36,6 +36,11 @@ describe("feature registry", () => {
       "spells",
       "world-map",
       "news",
+      "gear-compare",
+      "raids",
+      "flip-journal",
+      "clue-helper",
+      "collection-log",
     ] as const;
     for (const id of secondary) {
       expect(getFeature(id).sidebar).toBe(false);
@@ -45,6 +50,10 @@ describe("feature registry", () => {
     expect(SIDEBAR_FEATURES.some((f) => f.id === "dps-calc")).toBe(true);
     expect(SIDEBAR_FEATURES.some((f) => f.id === "market")).toBe(true);
     expect(SIDEBAR_FEATURES.some((f) => f.id === "bosses")).toBe(true);
-    expect(SIDEBAR_FEATURES.length).toBeLessThanOrEqual(20);
+    expect(SIDEBAR_FEATURES.some((f) => f.id === "money-making")).toBe(true);
+    expect(SIDEBAR_FEATURES.some((f) => f.id === "skill-calc")).toBe(true);
+    // Focused rail: daily drivers only (Home + hubs).
+    expect(SIDEBAR_FEATURES.length).toBeLessThanOrEqual(16);
   });
 });
+

@@ -66,14 +66,20 @@ export default function MoneyMaking({ hiscores }: Props) {
   const [category, setCategory] = useState<Category>("All");
   const [search, setSearch] = useState("");
   const [membersOnly, setMembersOnly] = useState(true);
-  const [bestForMe, setBestForMe] = useState(false);
+  // Deep-link ?forMe=1 from Home "What next" / Money hub enables level filter.
+  const [bestForMe, setBestForMe] = useState(() => params.forMe === "1");
   const [wikiMethods, setWikiMethods] = useState<WikiMoneyMethod[]>([]);
   const [mainTab, setMainTab] = useState<MainTab>(() => resolveMainTab(params.tab));
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync tab from nav params
-    setMainTab(resolveMainTab(params.tab));
+    setMainTab(resolveMainTab(params.tab)); // eslint-disable-line react-hooks/set-state-in-effect -- sync tab from nav params
   }, [params.tab]);
+
+  useEffect(() => {
+    if (params.forMe === "1") {
+      setBestForMe(true); // eslint-disable-line react-hooks/set-state-in-effect -- deep-link forMe
+    }
+  }, [params.forMe]);
 
   useEffect(() => {
     void fetchIfNeeded();
