@@ -102,7 +102,8 @@ function setupCost(
   return { total, unpriced };
 }
 
-function buildDpsInput(
+/** Build engine input for a resolved gear set (also used by leftover-upgrade scan). */
+export function buildDpsInput(
   style: CombatStyle,
   gear: EquippedGear,
   hiscores: HiscoreData | null,

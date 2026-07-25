@@ -67,6 +67,7 @@ import {
   groupTasksByTier,
   raidTopUniqueName,
 } from "./bossGuideSelectors";
+import { getMetaPacksForBoss } from "../../lib/data/boss-meta-packs";
 
 interface Props {
   hiscores?: HiscoreData | null;
@@ -522,6 +523,50 @@ export default function BossGuide({ hiscores }: Props) {
                   />
                 </div>
               </div>
+
+              {(() => {
+                const packs = getMetaPacksForBoss(selectedBoss.name);
+                if (packs.length === 0) return null;
+                return (
+                  <div className="mt-4 rounded-xl border border-accent/20 bg-accent/5 px-3 py-2.5">
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                      <div className="text-[10px] uppercase tracking-[0.14em] text-accent/80 font-medium">
+                        Meta loadouts
+                      </div>
+                      <button
+                        type="button"
+                        className="text-[10px] text-text-secondary hover:text-accent"
+                        onClick={() =>
+                          navigate("loadout-finder")
+                        }
+                      >
+                        Budget finder →
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {packs.map((pack) => (
+                        <button
+                          key={`${pack.preset}-${pack.style}`}
+                          type="button"
+                          title={pack.note ?? pack.preset}
+                          onClick={() =>
+                            navigate("dps-calc", {
+                              monster: selectedBoss.name,
+                              preset: pack.preset,
+                              style: pack.style,
+                            })
+                          }
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-bg-tertiary px-2.5 py-1.5 text-xs text-text-primary hover:border-accent/40 transition"
+                        >
+                          <span className="font-medium">{pack.label ?? pack.style}</span>
+                          <span className="text-text-secondary/70">{pack.preset}</span>
+                          <span className="text-accent">DPS →</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
 
               <div className="mt-4 flex items-stretch gap-2 overflow-x-auto pb-1 sidebar-scroll">
                 {BOSS_WORKSPACE_TABS.map((tab) => (

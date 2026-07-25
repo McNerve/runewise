@@ -12,9 +12,11 @@ import { Button, Card, FilterPills, StatCard, StatGrid } from "../../components/
 import {
   FINDER_TARGETS,
   findBudgetLoadouts,
+  buildDpsInput,
   type LoadoutTarget,
   type RankedLoadout,
 } from "./budgetLoadoutFinder";
+import { findNextUpgradeUnderBudget, type LeftoverUpgrade } from "./leftoverUpgrade";
 import type { CombatStyle } from "../dps-calc/dpsTypes";
 
 const BUDGETS: { id: string; label: string; gp: number }[] = [
@@ -50,11 +52,15 @@ function ResultRow({
   row,
   bestDps,
   onOpen,
+  nextUpgrade,
+  leftover,
 }: {
   rank: number;
   row: RankedLoadout;
   bestDps: number;
   onOpen: () => void;
+  nextUpgrade?: LeftoverUpgrade | null;
+  leftover?: number;
 }) {
   const pctOfBest = bestDps > 0 ? (row.dps / bestDps) * 100 : 0;
   const slotEntries = Object.entries(row.gear).filter(([, item]) => item != null);
@@ -150,6 +156,27 @@ function ResultRow({
           {row.missingItems.length > 4 ? "…" : ""}
         </p>
       )}
+
+      {nextUpgrade && leftover != null && leftover > 0 && (
+        <div className="mt-3 rounded-lg border border-accent/20 bg-accent/5 px-2.5 py-2 text-xs">
+          <div className="text-[10px] uppercase tracking-wide text-accent/80 mb-0.5">
+            Next buy under leftover {formatGp(leftover)}
+          </div>
+          <div className="flex flex-wrap items-center gap-2 text-text-secondary">
+            <img
+              src={itemIcon(nextUpgrade.item.name)}
+              alt=""
+              className="w-5 h-5 object-contain"
+            />
+            <span className="text-text-primary font-medium">{nextUpgrade.item.name}</span>
+            <span className="text-text-secondary/60">({nextUpgrade.slot})</span>
+            <span className="num text-accent">{formatGp(nextUpgrade.price)}</span>
+            <span className="text-success">
+              +{nextUpgrade.dpsGain.toFixed(2)} DPS
+            </span>
+          </div>
+        </div>
+      )}
     </li>
   );
 }
@@ -199,13 +226,18 @@ export default function LoadoutFinder({ hiscores }: Props) {
 
   const budget = BUDGETS.find((b) => b.id === budgetId)?.gp ?? 50_000_000;
 
+  const priceOf = useMemo(
+    () => (name: string) => priceByName.get(name.toLowerCase()) ?? null,
+    [priceByName]
+  );
+
   const results = useMemo(() => {
     if (!equipment || equipment.length === 0) return [];
     const styles: CombatStyle[] | undefined =
       styleFilter === "all" ? undefined : [styleFilter];
     return findBudgetLoadouts({
       equipment,
-      priceOf: (name) => priceByName.get(name.toLowerCase()) ?? null,
+      priceOf,
       hiscores,
       target,
       budget,
@@ -213,7 +245,38 @@ export default function LoadoutFinder({ hiscores }: Props) {
       requirePriced: false,
       limit: 10,
     });
-  }, [equipment, priceByName, hiscores, target, budget, styleFilter]);
+  }, [equipment, priceOf, hiscores, target, budget, styleFilter]);
+
+  /** Best upgrade under leftover cash for top setups (budget mode only). */
+  const leftoverByPreset = useMemo(() => {
+    const map = new Map<string, { upgrade: LeftoverUpgrade | null; leftover: number }>();
+    if (!equipment || budget <= 0) return map;
+    for (const row of results.slice(0, 5)) {
+      const leftover = Math.max(0, budget - row.totalCost);
+      if (leftover <= 0) {
+        map.set(row.preset.name, { upgrade: null, leftover: 0 });
+        continue;
+      }
+      const baseInput = buildDpsInput(
+        row.style,
+        row.gear,
+        hiscores,
+        target,
+        row.preset.prayer
+      );
+      const upgrade = findNextUpgradeUnderBudget({
+        gear: row.gear,
+        combatStyle: row.style,
+        equipment,
+        priceOf,
+        remainingBudget: leftover,
+        baseInput,
+        meleeAttackType: baseInput.attackType ?? "slash",
+      });
+      map.set(row.preset.name, { upgrade, leftover });
+    }
+    return map;
+  }, [results, equipment, budget, hiscores, target, priceOf]);
 
   const bestDps = results[0]?.dps ?? 0;
   const loading = equipLoading || (geLoading && mapping.length === 0);
@@ -377,15 +440,20 @@ export default function LoadoutFinder({ hiscores }: Props) {
         )}
         {!loading && results.length > 0 && (
           <ol className="space-y-2 list-none p-0 m-0">
-            {results.map((row, i) => (
-              <ResultRow
-                key={row.preset.name}
-                rank={i + 1}
-                row={row}
-                bestDps={bestDps}
-                onOpen={() => openInDps(row)}
-              />
-            ))}
+            {results.map((row, i) => {
+              const lo = leftoverByPreset.get(row.preset.name);
+              return (
+                <ResultRow
+                  key={row.preset.name}
+                  rank={i + 1}
+                  row={row}
+                  bestDps={bestDps}
+                  onOpen={() => openInDps(row)}
+                  nextUpgrade={lo?.upgrade}
+                  leftover={lo?.leftover}
+                />
+              );
+            })}
           </ol>
         )}
       </Card>
