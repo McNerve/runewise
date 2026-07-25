@@ -245,7 +245,14 @@ export default function CombatTasks() {
                 >
                   <div className="flex items-start gap-3">
                     <button
+                      type="button"
                       onClick={(e) => { e.stopPropagation(); toggleTask(task.name); }}
+                      aria-label={
+                        completedTasks.has(task.name)
+                          ? `Mark ${task.name} incomplete`
+                          : `Mark ${task.name} complete`
+                      }
+                      aria-pressed={completedTasks.has(task.name)}
                       className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center text-[10px] transition-colors mt-0.5 ${
                         completedTasks.has(task.name)
                           ? "bg-success/20 border-success text-success"

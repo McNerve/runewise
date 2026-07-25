@@ -14,6 +14,7 @@ import WikiRecipeTable from "./components/WikiRecipeTable";
 import ConstructionPlanner from "./components/ConstructionPlanner";
 import { useSettings } from "../../hooks/useSettings";
 import AccountPrefillBanner from "../../components/AccountPrefillBanner";
+import ErrorState from "../../components/ErrorState";
 import {
   SKILLS,
   clampTargetLevel,
@@ -51,6 +52,8 @@ export default function SkillCalculator({ hiscores }: Props) {
   const [currentXp, setCurrentXp] = useState(0);
   const [targetLevel, setTargetLevel] = useState(99);
   const [wikiRecipes, setWikiRecipes] = useState<WikiRecipe[]>([]);
+  const [recipeError, setRecipeError] = useState<string | null>(null);
+  const [recipeRetry, setRecipeRetry] = useState(0);
   // Remember custom targets per skill
   const customTargets = useRef<Map<string, number>>(new Map());
 
@@ -69,30 +72,46 @@ export default function SkillCalculator({ hiscores }: Props) {
 
   const currentLevel = selectedSkill ? getLevel(selectedSkill) : null;
 
-  // When skill changes: load XP from hiscores + restore or default target
+  // When skill changes: load XP from hiscores + restore or default target.
+  // When RSN is cleared, drop sticky prior-account XP (not on every skill switch).
+  const hadHiscores = useRef(Boolean(hiscores));
   useEffect(() => {
     if (!selectedSkill) return;
     if (hiscores) {
       const xp = getSkillXp(hiscores, selectedSkill);
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- sync from external hiscores data
-      setCurrentXp(xp);
+      setCurrentXp(xp); // eslint-disable-line react-hooks/set-state-in-effect -- sync from external hiscores data
+      hadHiscores.current = true;
+    } else if (hadHiscores.current) {
+      setCurrentXp(0);  
+      hadHiscores.current = false;
     }
 
     const saved = customTargets.current.get(selectedSkill);
-    setTargetLevel(defaultTargetLevel(currentLevel, saved));
+    setTargetLevel(defaultTargetLevel(currentLevel, saved));  
   }, [hiscores, selectedSkill]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load wiki recipes for selected skill
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- clear stale recipes when skill changes or clears
     setWikiRecipes([]);
+    setRecipeError(null);
     if (!selectedSkill) return;
     let cancelled = false;
-    fetchRecipesForSkill(selectedSkill).then((recipes) => {
-      if (!cancelled) setWikiRecipes(recipes);
-    });
+    fetchRecipesForSkill(selectedSkill)
+      .then((recipes) => {
+        if (cancelled) return;
+        setWikiRecipes(recipes);
+        setRecipeError(null);
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        setWikiRecipes([]);
+        setRecipeError(
+          err instanceof Error ? err.message : "Failed to load recipes",
+        );
+      });
     return () => { cancelled = true; };
-  }, [selectedSkill]);
+  }, [selectedSkill, recipeRetry]);
 
   const handleTargetChange = (value: number) => {
     const clamped = clampTargetLevel(value);
@@ -470,7 +489,17 @@ export default function SkillCalculator({ hiscores }: Props) {
           </div>
           )}
 
-          {wikiRecipes.length > 0 && xpNeeded > 0 && (
+          {recipeError && (
+            <div className="mt-4">
+              <ErrorState
+                title="Couldn't load wiki recipes"
+                error={recipeError}
+                onRetry={() => setRecipeRetry((n) => n + 1)}
+              />
+            </div>
+          )}
+
+          {!recipeError && wikiRecipes.length > 0 && xpNeeded > 0 && (
             <WikiRecipeTable
               recipes={wikiRecipes}
               prices={prices}
@@ -480,6 +509,7 @@ export default function SkillCalculator({ hiscores }: Props) {
             />
           )}
 
+          {/* Static recipe tables: used when wiki data is empty or failed */}
           {wikiRecipes.length === 0 && selectedSkill === "Herblore" && xpNeeded > 0 && (
             <RecipeCostTable
               recipes={HERBLORE_RECIPES}

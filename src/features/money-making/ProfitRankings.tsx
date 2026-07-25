@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { MONEY_METHODS, type MoneyMethod } from "../../lib/data/money-methods";
 import { BOSS_DROP_TABLES } from "../../lib/data/boss-drops";
-import { fetchLatestPrices, type ItemPrice } from "../../lib/api/ge";
+import { useGEData } from "../../hooks/useGEData";
+import type { ItemPrice } from "../../lib/api/ge";
 import { formatGp } from "../../lib/format";
 import { postTaxPrice } from "../../lib/tax";
 import { useNavigation } from "../../lib/NavigationContext";
@@ -51,17 +52,13 @@ function methodToEntry(m: MoneyMethod): ProfitEntry {
 
 export default function ProfitRankings() {
   const { navigate } = useNavigation();
-  const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
-  const [pricesLoaded, setPricesLoaded] = useState(false);
+  const { prices, pricesLoaded, fetchIfNeeded } = useGEData();
   const [sourceFilter, setSourceFilter] = useState<Source>("all");
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    fetchLatestPrices().then((p) => {
-      setPrices(p);
-      setPricesLoaded(true);
-    });
-  }, []);
+    void fetchIfNeeded();
+  }, [fetchIfNeeded]);
 
   const entries = useMemo<ProfitEntry[]>(() => {
     const result: ProfitEntry[] = [];

@@ -97,7 +97,3 @@ export const COLLECTION_CATEGORIES: CollectionCategory[] = [
     ],
   },
 ];
-
-export function getTotalSlots(): number {
-  return COLLECTION_CATEGORIES.reduce((sum, cat) => sum + cat.slots.length, 0);
-}

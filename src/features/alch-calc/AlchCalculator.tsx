@@ -5,6 +5,8 @@ import { useGEData } from "../../hooks/useGEData";
 import { formatGp } from "../../lib/format";
 import { alchProfit, natureRunePrice } from "../../lib/alch";
 import ItemTooltip from "../../components/ItemTooltip";
+import ErrorState from "../../components/ErrorState";
+import EmptyState from "../../components/EmptyState";
 
 type MembersFilter = "all" | "f2p" | "p2p";
 type SortKey = "profit" | "roi" | "name" | "buyPrice" | "highalch" | "limit";
@@ -21,8 +23,14 @@ interface AlchRow {
 const PAGE_SIZE = 50;
 
 export default function AlchCalculator() {
-  const { mapping: items, prices, loading, fetchIfNeeded } = useGEData();
-  const [error] = useState<string | null>(null);
+  const {
+    mapping: items,
+    prices,
+    loading,
+    error,
+    pricesLoaded,
+    fetchIfNeeded,
+  } = useGEData();
 
   const [minProfit, setMinProfitRaw] = useState(0);
   const [membersFilter, setMembersFilterRaw] = useState<MembersFilter>("all");
@@ -140,11 +148,28 @@ export default function AlchCalculator() {
     );
   }
 
-  if (error) {
+  if (error && items.length === 0) {
     return (
       <div className="max-w-4xl">
         <h2 className="text-xl font-semibold mb-4">High Alchemy Profits</h2>
-        <p className="text-sm text-danger">{error}</p>
+        <ErrorState
+          title="Couldn't load GE data"
+          error={error}
+          onRetry={() => { void fetchIfNeeded(); }}
+        />
+      </div>
+    );
+  }
+
+  if (!loading && pricesLoaded && items.length === 0) {
+    return (
+      <div className="max-w-4xl">
+        <h2 className="text-xl font-semibold mb-4">High Alchemy Profits</h2>
+        <EmptyState
+          title="No GE items loaded"
+          description="Item mapping came back empty. Retry the fetch or check your connection."
+          action={{ label: "Retry", onClick: () => { void fetchIfNeeded(); } }}
+        />
       </div>
     );
   }
@@ -160,7 +185,19 @@ export default function AlchCalculator() {
       </p>
 
       {error && (
-        <p className="text-xs text-danger mb-2">{error}</p>
+        <div
+          role="status"
+          className="mb-3 flex items-center gap-2 rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger"
+        >
+          <span className="flex-1">{error}</span>
+          <button
+            type="button"
+            onClick={() => { void fetchIfNeeded(); }}
+            className="shrink-0 underline hover:no-underline"
+          >
+            Retry
+          </button>
+        </div>
       )}
 
       <div className="flex flex-wrap gap-3 mb-4 items-end">
@@ -226,6 +263,24 @@ export default function AlchCalculator() {
           </>
         )}
       </p>
+
+      {!loading && filtered.length === 0 && rows.length === 0 && (
+        <EmptyState
+          title="No alchable items with prices"
+          description={
+            error
+              ? "GE prices failed to load — retry to populate the table."
+              : "No items with both a high alch value and a live GE buy price matched the data."
+          }
+        />
+      )}
+
+      {!loading && filtered.length === 0 && rows.length > 0 && (
+        <EmptyState
+          title="No items match these filters"
+          description="Try lowering min profit / buy limit or switching members filter."
+        />
+      )}
 
       {filtered.length > 0 && (
         <div className="bg-bg-tertiary rounded-lg overflow-hidden">

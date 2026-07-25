@@ -39,7 +39,10 @@ function RoomCard({
 }) {
   return (
     <button
+      type="button"
       onClick={onToggle}
+      aria-expanded={expanded}
+      aria-label={`${expanded ? "Collapse" : "Expand"} tips for ${room.name}`}
       className={`w-full text-left rounded-lg border p-4 transition-colors ${TYPE_COLORS[room.type] ?? "border-border"} hover:brightness-110`}
     >
       <div className="flex items-center justify-between gap-3 mb-2">

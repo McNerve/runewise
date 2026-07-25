@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { BOSS_DROP_TABLES } from "../../../lib/data/boss-drops";
 import { BOSSES } from "../../../lib/data/bosses";
-import { fetchLatestPrices, type ItemPrice } from "../../../lib/api/ge";
 import { formatGp } from "../../../lib/format";
 import { postTaxPrice } from "../../../lib/tax";
 import { bossIconSmall } from "../../../lib/sprites";
@@ -9,6 +8,7 @@ import WikiImage from "../../../components/WikiImage";
 import { Skeleton } from "../../../components/Skeleton";
 import ItemTooltip from "../../../components/ItemTooltip";
 import type { View } from "../../../lib/features";
+import { useGEData } from "../../../hooks/useGEData";
 
 interface BossProfit {
   name: string;
@@ -28,19 +28,13 @@ export default function BossProfitRanking({
 }: {
   navigate: (view: View, params?: Record<string, string>) => void;
 }) {
-  const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
-  const [pricesLoaded, setPricesLoaded] = useState(false);
+  const { prices, pricesLoaded, fetchIfNeeded } = useGEData();
   const [sortKey, setSortKey] = useState<SortKey>("gpPerHour");
   const [sortAsc, setSortAsc] = useState(false);
 
   useEffect(() => {
-    fetchLatestPrices()
-      .then((p) => {
-        setPrices(p);
-        setPricesLoaded(true);
-      })
-      .catch(() => setPricesLoaded(true));
-  }, []);
+    void fetchIfNeeded();
+  }, [fetchIfNeeded]);
 
   const rankings = useMemo<BossProfit[]>(() => {
     const dropTablesByName = new Map(

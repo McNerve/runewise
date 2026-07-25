@@ -501,14 +501,19 @@ export default function FarmTimers() {
                     className={`relative bg-bg-tertiary border border-border rounded-lg p-3 flex flex-col items-center gap-2 transition-all ${ready ? "border-success/40 shadow-[0_0_8px_rgba(34,197,94,0.15)]" : ""}`}
                   >
                     <button
+                      type="button"
                       onClick={() => toggleRepeat(timer.id)}
                       className={`absolute top-1.5 right-8 text-xs transition-colors ${timer.repeat ? "text-accent" : "text-text-secondary/40 hover:text-accent"}`}
                       title={timer.repeat ? "Auto-repeat on" : "Auto-repeat off"}
+                      aria-label={timer.repeat ? `Disable auto-repeat for ${timer.patchName}` : `Enable auto-repeat for ${timer.patchName}`}
+                      aria-pressed={Boolean(timer.repeat)}
                     >
                       ↻
                     </button>
                     <button
+                      type="button"
                       onClick={() => removeTimer(timer.id)}
+                      aria-label={`Remove timer for ${timer.patchName}`}
                       className="absolute top-1.5 right-2 text-text-secondary/40 hover:text-danger text-xs transition-colors"
                     >
                       x

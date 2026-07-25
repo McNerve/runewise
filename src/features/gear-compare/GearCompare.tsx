@@ -119,6 +119,10 @@ export default function GearCompare() {
   const filtered = useMemo(() => {
     return searchEquipment(allEquipment, query, selectedSlot, 500)
       .sort((a, b) => {
+        if (sortKey === "name") {
+          const cmp = a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
+          return sortAsc ? cmp : -cmp;
+        }
         const aVal = a[sortKey] as number;
         const bVal = b[sortKey] as number;
         if (typeof aVal === "number" && typeof bVal === "number") {

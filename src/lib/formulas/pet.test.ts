@@ -86,3 +86,17 @@ describe("skillingPetRate (Magic trees B=72_321)", () => {
     expect(with200m / without).toBeCloseTo(15, 10);
   });
 });
+
+/** Flat-rate path used by PetCalculator for xpPerAction === 0 methods. */
+function flatSkillingRate(baseChance: number, has200m: boolean): number {
+  return has200m ? baseChance / 15 : baseChance;
+}
+
+describe("flat-rate skilling pet (200M headline parity)", () => {
+  it("applies 15× boost for flat methods at 200M", () => {
+    const base = 5000;
+    expect(flatSkillingRate(base, false)).toBe(5000);
+    expect(flatSkillingRate(base, true)).toBeCloseTo(5000 / 15, 10);
+  });
+});
+

@@ -482,25 +482,25 @@ export default function CollectionLog({ rsn }: Props) {
 
     (async () => {
       try {
-        const [info, clog] = await Promise.all([
+        const [, clog] = await Promise.all([
           fetchTemplePlayerInfo(rsn),
           fetchTempleCollectionLog(rsn),
         ]);
         if (cancelled) return;
 
-        // Check clog data directly — clog_synced flag may be missing from player_info
+        // Only treat non-empty categories as success. clog_synced=true with
+        // empty categories used to leave a blank page (no TempleView, no empty UI).
         const hasClogData = clog && Object.keys(clog.categories).length > 0;
 
-        if (!hasClogData && (!info || !info.clog_synced)) {
+        if (!hasClogData) {
           setTempleSynced(false);
+          setTempleData(null);
           setTempleLoading(false);
           return;
         }
 
         setTempleSynced(true);
-        if (hasClogData) {
-          setTempleData(clog);
-        }
+        setTempleData(clog);
         setTempleLastFetched(new Date());
         setTempleLoading(false);
       } catch (err: unknown) {
@@ -527,17 +527,15 @@ export default function CollectionLog({ rsn }: Props) {
     setTempleError(null);
     setTempleSynced(null);
     Promise.all([fetchTemplePlayerInfo(rsn), fetchTempleCollectionLog(rsn)])
-      .then(([info, clog]) => {
+      .then(([, clog]) => {
         const hasClog = clog && Object.keys(clog.categories).length > 0;
         if (hasClog) {
           setTempleSynced(true);
           setTempleData(clog);
           setTempleLastFetched(new Date());
-        } else if (info?.clog_synced) {
-          setTempleSynced(true);
-          setTempleLastFetched(new Date());
         } else {
           setTempleSynced(false);
+          setTempleData(null);
         }
         setTempleLoading(false);
       })
@@ -609,15 +607,14 @@ export default function CollectionLog({ rsn }: Props) {
                 setTempleError(null);
                 setTempleSynced(null);
                 Promise.all([fetchTemplePlayerInfo(rsn), fetchTempleCollectionLog(rsn)])
-                  .then(([info, clog]) => {
+                  .then(([, clog]) => {
                     const hasClog = clog && Object.keys(clog.categories).length > 0;
                     if (hasClog) {
                       setTempleSynced(true);
                       setTempleData(clog);
-                    } else if (info?.clog_synced) {
-                      setTempleSynced(true);
                     } else {
                       setTempleSynced(false);
+                      setTempleData(null);
                     }
                     setTempleLoading(false);
                   })

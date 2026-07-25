@@ -215,7 +215,7 @@ export default function SlayerHelper() {
           ...task,
           blocked,
           locked,
-          probability: blocked || locked
+          probability: blocked || locked || totalWeight <= 0
             ? 0
             : (task.weight / totalWeight) * 100,
         };
@@ -349,6 +349,11 @@ export default function SlayerHelper() {
             <StatCard label="Total Weight" value={totalWeight} />
             <StatCard label="Points / Task" value={selectedMaster.pointsPerTask} accent="text-accent" />
           </StatGrid>
+          {totalWeight <= 0 && (
+            <p className="mt-2 text-xs text-warning">
+              All tasks are blocked or locked — probabilities are 0% until some tasks are available.
+            </p>
+          )}
         </div>
       </div>
 
@@ -381,6 +386,11 @@ export default function SlayerHelper() {
 
       {activeTab === "tasks" ? (
         <>
+          {totalWeight === 0 && (
+            <div className="rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-sm text-warning">
+              All tasks are blocked or locked — unblock tasks or purchase required unlocks to see assignment chances.
+            </div>
+          )}
           {/* Controls */}
           <div className="flex items-center justify-between">
             <label className="flex items-center gap-2 text-xs text-text-secondary cursor-pointer">

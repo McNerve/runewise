@@ -10,11 +10,19 @@ export interface SpecWeapon {
   guaranteedHit: boolean;
   notes: string;
   // When set, DPS uses a bespoke cascade formula instead of (accuracy × maxHit/2 × hits).
-  cascadeType?: "dragon_claws";
+  cascadeType?: SpecCascadeType;
   // Accuracy multiplier applied to the SECOND hit's attack roll, for multi-hit
   // specs whose later hit is less accurate (e.g. halberd sweep: 0.75 = -25%).
   secondHitAccuracyMult?: number;
 }
+
+/** Bespoke expected-damage models for special attacks. */
+export type SpecCascadeType =
+  | "dragon_claws"
+  | "voidwaker"
+  | "dark_bow"
+  | "fang_spec"
+  | "webweaver";
 
 export const SPEC_WEAPONS: SpecWeapon[] = [
   // Melee
@@ -110,12 +118,11 @@ export const SPEC_WEAPONS: SpecWeapon[] = [
     combatStyle: "melee",
     specCost: 50,
     accuracyMult: 1.0,
-    // Deals 50–150% of max hit (avg 100%). The generic spec formula computes
-    // expected damage as specMaxHit/2, so 2.0 yields the correct full-max-hit average.
-    damageMult: 2.0,
+    damageMult: 1.0,
     hits: 1,
     guaranteedHit: true,
-    notes: "Guaranteed hit. Deals 50–150% of max melee hit as magic damage.",
+    cascadeType: "voidwaker",
+    notes: "Guaranteed hit. Uniform 50–150% of max melee hit as magic damage (avg = max).",
   },
   {
     id: "dragon_halberd",
@@ -165,7 +172,8 @@ export const SPEC_WEAPONS: SpecWeapon[] = [
     damageMult: 1.0,
     hits: 1,
     guaranteedHit: false,
-    notes: "Removes 85% damage cap. +50% accuracy. Effective ~17.6% more damage.",
+    cascadeType: "fang_spec",
+    notes: "Removes 15–85% band (full 0–max). +50% accuracy. Double-rolls accuracy.",
   },
 
   // Ranged
@@ -179,7 +187,7 @@ export const SPEC_WEAPONS: SpecWeapon[] = [
     damageMult: 1.0,
     hits: 1,
     guaranteedHit: false,
-    notes: "2× accuracy. Guarantees enchanted bolt proc on hit.",
+    notes: "2× accuracy. Guarantees enchanted bolt proc on hit (enable ZCB special in results).",
   },
   {
     id: "toxic_blowpipe",
@@ -192,6 +200,32 @@ export const SPEC_WEAPONS: SpecWeapon[] = [
     hits: 1,
     guaranteedHit: false,
     notes: "2× accuracy, +50% damage. Heals 50% of damage dealt.",
+  },
+  {
+    id: "dark_bow",
+    name: "Dark bow",
+    specName: "Descent of Dragons",
+    combatStyle: "ranged",
+    specCost: 55,
+    accuracyMult: 1.0,
+    damageMult: 1.0,
+    hits: 2,
+    guaranteedHit: false,
+    cascadeType: "dark_bow",
+    notes: "Two hits. Dragon arrows: min 8 each, ×1.5 damage. Other: min 5, ×1.3.",
+  },
+  {
+    id: "webweaver_bow",
+    name: "Webweaver bow",
+    specName: "Special",
+    combatStyle: "ranged",
+    specCost: 50,
+    accuracyMult: 2.0,
+    damageMult: 1.0,
+    hits: 4,
+    guaranteedHit: false,
+    cascadeType: "webweaver",
+    notes: "4 rapid hits at 2× accuracy; each hit uses reduced max (wiki 0.4×).",
   },
 
   // Magic

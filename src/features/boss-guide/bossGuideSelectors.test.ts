@@ -27,6 +27,12 @@ describe("getBossKc", () => {
     activities: [
       { id: 1, name: "Zulrah", rank: 1, score: 42 },
       { id: 2, name: "Vorkath", rank: 2, score: 0 },
+      { id: 3, name: "Theatre of Blood", rank: 3, score: 100 },
+      { id: 4, name: "Theatre of Blood: Hard Mode", rank: 4, score: 25 },
+      { id: 5, name: "Chambers of Xeric", rank: 5, score: 200 },
+      { id: 6, name: "Chambers of Xeric: Challenge Mode", rank: 6, score: 15 },
+      { id: 7, name: "Tombs of Amascut", rank: 7, score: 80 },
+      { id: 8, name: "Tombs of Amascut: Expert Mode", rank: 8, score: 12 },
     ],
   };
 
@@ -44,6 +50,23 @@ describe("getBossKc", () => {
     expect(
       getBossKc(hiscores, boss({ name: "Snek", hiscoresName: "Zulrah" }))
     ).toBe(42);
+  });
+
+  it("does not attribute normal-mode KC to Hard/Challenge/Expert variants", () => {
+    expect(
+      getBossKc(hiscores, boss({ name: "Theatre of Blood: Hard Mode" }))
+    ).toBe(25);
+    expect(
+      getBossKc(hiscores, boss({ name: "Chambers of Xeric: Challenge Mode" }))
+    ).toBe(15);
+    expect(
+      getBossKc(hiscores, boss({ name: "Tombs of Amascut: Expert Mode" }))
+    ).toBe(12);
+  });
+
+  it("still matches base raid names exactly", () => {
+    expect(getBossKc(hiscores, boss({ name: "Theatre of Blood" }))).toBe(100);
+    expect(getBossKc(hiscores, boss({ name: "Chambers of Xeric" }))).toBe(200);
   });
 });
 

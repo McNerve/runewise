@@ -1,24 +1,32 @@
 import { useState, useEffect, useMemo } from "react";
 import { FARM_CROPS, CROP_CATEGORIES } from "../../lib/data/farming-crops";
-import { fetchLatestPrices, type ItemPrice } from "../../lib/api/ge";
 import { formatGp } from "../../lib/format";
 import { postTaxPrice } from "../../lib/tax";
 import { WIKI_IMG } from "../../lib/sprites";
+import ErrorState from "../../components/ErrorState";
+import { useGEData } from "../../hooks/useGEData";
 
 export default function FarmProfit() {
-  const [prices, setPrices] = useState<Record<string, ItemPrice>>({});
-  const [pricesLoaded, setPricesLoaded] = useState(false);
+  const {
+    prices,
+    pricesLoaded,
+    loading: geLoading,
+    error: priceError,
+    fetchIfNeeded,
+    refreshPrices,
+  } = useGEData();
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [sortBy, setSortBy] = useState<"profit" | "profitPerHr" | "level">(
     "profitPerHr"
   );
 
   useEffect(() => {
-    fetchLatestPrices().then((p) => {
-      setPrices(p);
-      setPricesLoaded(true);
-    });
-  }, []);
+    void fetchIfNeeded();
+  }, [fetchIfNeeded]);
+
+  const loadPrices = () => {
+    void refreshPrices();
+  };
 
   const crops = useMemo(() => {
     return FARM_CROPS.map((crop) => {
@@ -59,8 +67,18 @@ export default function FarmProfit() {
 
   return (
     <div>
-      {!pricesLoaded && (
+      {(geLoading || !pricesLoaded) && !priceError && (
         <p className="text-xs text-text-secondary mb-4">Loading live GE prices...</p>
+      )}
+
+      {priceError && (
+        <div className="mb-4">
+          <ErrorState
+            title="Couldn't load GE prices"
+            error={priceError}
+            onRetry={loadPrices}
+          />
+        </div>
       )}
 
       <div className="flex items-center gap-3 mb-4 flex-wrap">

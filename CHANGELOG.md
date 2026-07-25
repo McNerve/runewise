@@ -4,6 +4,34 @@ All notable changes to RuneWise are documented here. Versions follow [Semantic V
 
 ## [Unreleased]
 
+### Combat / DPS (wiki parity)
+
+- **Wiki-aligned combat pipeline** — void on effective levels, `tbowScaling`, ordered melee truncs, Tumeken’s shadow 3×/4× ToA, fang/scythe shapes, overkill-aware TTK, bolt enchants + ZCB guarantee, scorcher vs demons.
+- **Spot-check fixes vs weirdgloop** — Osmumten’s fang uses wiki `getFangAccuracyRoll` (not naive 1−(1−p)²); magic effective level uses **+9** base (not +8); ice demon demonbane vuln 115.
+- **Monster attributes table** — size, Xerician, demon/dragon/undead tags, demonbane vulnerability (Duke/Yama/Ice) for scythe hits and tbow cap.
+- **Spec EV models** — voidwaker 50–150% band, dark bow, fang eviscerate, webweaver, claws cascade; dark bow + fang added to the picker.
+- **Golden + spot-check fixtures** — `dps.wiki-fixtures.test.ts` and `dps.wiki-spotcheck.test.ts` lock flagship numbers to wiki formulas.
+
+### Fixes
+
+- **Skill Calculator recipes** — `fetchRecipesForSkill` failures surface an `ErrorState` with retry; in-flight skill switches stay cancel-safe.
+- **Kingdom net profit** — missing/failed GE prices no longer show a definitive large negative net (upkeep with zero priced income); prices-unavailable banner + retry when the GE context errors.
+- **Alch profit table** — GE load failure / empty mapping show error or empty state with retry instead of a silent “0 items” table.
+- **Farm profit** — GE fetch failure clears “Loading live GE prices…” and offers error + retry (no perpetual spinner).
+- **Recipe calculator** — material/output GP cells use `(quantity ?? 1)` so missing quantity no longer yields NaN; recipe load retry clears prior error.
+- **Account prefill stickiness** — Skill Calculator drops prior-RSN XP when hiscores are cleared; Pet Calculator clears auto-filled KC/XP/level when hiscores go away (manual overrides kept).
+- **GE context** — `useGEData` exposes `error` so tools can surface fetch/refresh failures.
+
+### Docs
+
+- **`docs/NEXT.md`** — living backlog after the e2e pass (what shipped vs still open).
+- **`docs/WINDOWS-SIGNING.md`** — SmartScreen / Authenticode guidance for Windows installers.
+
+### Platform
+
+- **GE data** — Farm profit, profit rankings, and boss profit ranking use shared `useGEData` (error/retry + single fetch).
+- **Lint / CI** — fix `react-hooks/set-state-in-effect` violations blocking the PR check.
+
 ## [2.5.6] - 2026-07-16
 
 ### UI / design

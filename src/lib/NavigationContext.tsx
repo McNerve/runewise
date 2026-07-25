@@ -1,7 +1,8 @@
-import { createContext, useContext, useState, useCallback, useEffect } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
 import { FEATURE_REGISTRY, type View } from "./features";
 import { saveRecentEntity } from "./recentEntities";
 import { recordToolHit } from "./toolUsage";
+import { resolveCanGoBack, resolveGoBackAction } from "./navigationBack";
 
 export type { View } from "./features";
 
@@ -102,12 +103,18 @@ const NavigationContext = createContext<NavigationContextValue>({
 
 export function NavigationProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<NavState>(loadInitialState);
+  // In-app push depth since this session's first entry (deep link = 0).
+  // Prevents goBack → history.back() from leaving the app on first entry.
+  const [inAppDepth, setInAppDepth] = useState(0);
+  const pendingNav = useRef<"push" | "back" | null>(null);
 
   const navigate = useCallback((view: View, params?: Record<string, string>) => {
     const nextState = { view, params: params ?? {} };
     const nextHash = serializeHash(nextState);
 
     if (window.location.hash !== nextHash) {
+      pendingNav.current = "push";
+      setInAppDepth((d) => d + 1);
       window.location.hash = nextHash;
       return;
     }
@@ -116,15 +123,27 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
   }, []);
 
   const goBack = useCallback(() => {
-    if (state.view === "home" && Object.keys(state.params).length === 0) return;
+    const action = resolveGoBackAction(inAppDepth, state.view, state.params);
 
-    if (window.location.hash) {
+    if (action === "history-back") {
+      pendingNav.current = "back";
+      setInAppDepth((d) => Math.max(0, d - 1));
       window.history.back();
       return;
     }
 
-    setState({ view: "home", params: {} });
-  }, [state.view, state.params]);
+    if (action === "navigate-home") {
+      // Replace so we don't create a history entry that history.back() could
+      // leave the app through on the next press.
+      const home: NavState = { view: "home", params: {} };
+      setState(home);
+      const homeHash = serializeHash(home);
+      if (window.location.hash !== homeHash) {
+        window.history.replaceState(null, "", homeHash);
+      }
+      return;
+    }
+  }, [inAppDepth, state.view, state.params]);
 
   const goForward = useCallback(() => {
     window.history.forward();
@@ -145,6 +164,13 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
 
   useEffect(() => {
     const handleHashChange = () => {
+      // Browser chrome back/forward (not via our goBack/navigate): keep depth
+      // non-negative. push/back already adjusted depth before the event.
+      if (pendingNav.current === null) {
+        setInAppDepth((d) => Math.max(0, d - 1));
+      }
+      pendingNav.current = null;
+
       const next = parseHash(window.location.hash);
       if (next) {
         setState(next);
@@ -166,7 +192,7 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
         navigate,
         goBack,
         goForward,
-        canGoBack: state.view !== "home" || Object.keys(state.params).length > 0,
+        canGoBack: resolveCanGoBack(inAppDepth, state.view, state.params),
         // Browser history API does not expose a reliable forward-stack size.
         // Keep the flag conservative so UI never pretends forward is available.
         canGoForward: false,

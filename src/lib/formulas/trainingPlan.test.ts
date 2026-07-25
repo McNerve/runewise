@@ -76,4 +76,23 @@ describe("generatePlan", () => {
       5
     );
   });
+
+  it("uses actual current XP when provided (partial level progress)", () => {
+    const current = 91;
+    const target = 92;
+    const floorOnly = generatePlan({ Attack: current }, { Attack: target }, "fastest");
+    // Nearly at 92: only 1 XP remaining after level-floor
+    const almostDone = generatePlan(
+      { Attack: current },
+      { Attack: target },
+      "fastest",
+      false,
+      { Attack: xpForLevel(target) - 1 }
+    );
+    expect(floorOnly.steps).toHaveLength(1);
+    expect(almostDone.steps).toHaveLength(1);
+    expect(almostDone.steps[0]!.xpNeeded).toBe(1);
+    expect(almostDone.steps[0]!.xpNeeded).toBeLessThan(floorOnly.steps[0]!.xpNeeded);
+    expect(almostDone.totalHours).toBeLessThan(floorOnly.totalHours);
+  });
 });

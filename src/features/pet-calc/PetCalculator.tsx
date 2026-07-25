@@ -170,6 +170,18 @@ export default function PetCalculator({ hiscores, rsn }: Props) {
     setManualOwned(new Set(loadJSON<string[]>(ownedKey(rsn), [])));
   }, [rsn]);
 
+  // Drop sticky auto-filled KC / XP / level when RSN is cleared or hiscores fail.
+  // Manual overrides (countTouched / levelTouched) are preserved.
+  useEffect(() => {
+    if (hiscores) return;
+    if (!countTouched) {
+      setKillCount(0); // eslint-disable-line react-hooks/set-state-in-effect -- clear sticky prior-account prefill
+      setActionCount(0);  
+      setXpInput(0);  
+    }
+    if (!levelTouched) setSkillLevel(99);  
+  }, [hiscores, countTouched, levelTouched]);
+
   const ownedCount = ownedPets.size;
 
   const categoryCounts = useMemo(() => {
@@ -242,11 +254,15 @@ export default function PetCalculator({ hiscores, rsn }: Props) {
     }
   }, [hiscoreSkill, selectedAction, countTouched, hiscores]);
 
+  // Flat-rate skilling methods (xpPerAction 0) still get the 200M 15× boost —
+  // keep headline chance/milestones in sync with methodRows.
   const effectiveRate = useMemo(() => (
     isSkilling && selectedAction
       ? (selectedAction.xpPerAction > 0
         ? skillingPetRate(selectedAction.baseChance, skillLevel, has200m)
-        : selectedAction.baseChance)
+        : has200m
+          ? selectedAction.baseChance / 15
+          : selectedAction.baseChance)
       : (modifierEntry ? modifierEntry.rate(modifierState, selected.baseRate) : selected.baseRate)
   ), [isSkilling, selectedAction, skillLevel, has200m, modifierEntry, modifierState, selected]);
 

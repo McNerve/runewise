@@ -194,12 +194,12 @@ export default function Market({
   const selectedSummary = selectedItem
     ? [
         {
-          label: "Buy Price",
+          label: "Instabuy",
           value: formatGp(selectedPrice?.high ?? null),
           tone: "text-success",
         },
         {
-          label: "Sell Price",
+          label: "Instasell",
           value: formatGp(selectedPrice?.low ?? null),
           tone: "text-danger",
         },
@@ -410,13 +410,15 @@ export default function Market({
           className="w-full bg-bg-tertiary border border-border rounded-lg px-4 py-2.5 text-sm mb-3"
         />
 
-        {/* Status messages */}
+        {/* Status messages — sticky so Retry stays visible while scrolling results */}
         {error && (
-          <div className="flex items-center gap-2 mb-2">
-            <p className="text-xs text-danger">{error}</p>
+          <div className="sticky top-0 z-10 flex items-center gap-2 mb-2 rounded-lg border border-danger/30 bg-bg-secondary/95 px-3 py-2 backdrop-blur-sm">
+            <p className="text-xs text-danger flex-1">{error}</p>
             <button
+              type="button"
               onClick={loadPrices}
-              className="text-xs text-accent hover:text-accent-hover transition-colors"
+              aria-label="Retry loading market prices"
+              className="text-xs text-accent hover:text-accent-hover transition-colors shrink-0"
             >
               Retry
             </button>
@@ -446,9 +448,9 @@ export default function Market({
               <thead className="sticky-thead">
                 <tr className="border-b border-border text-text-secondary text-xs">
                   <th scope="col" className="text-left px-4 py-2">Item</th>
-                  <th scope="col" className="text-right px-4 py-2">Buy</th>
-                  <th scope="col" className="text-right px-4 py-2">Sell</th>
-                  <th scope="col" className="text-right px-4 py-2">Net Margin</th>
+                  <th scope="col" className="text-right px-4 py-2" title="GE high — pay this to buy immediately">Instabuy</th>
+                  <th scope="col" className="text-right px-4 py-2" title="GE low — receive this when selling immediately">Instasell</th>
+                  <th scope="col" className="text-right px-4 py-2" title="Post-tax instasell − instabuy (offer flip uses the reverse book side)">Net Margin</th>
                   <th scope="col" className="text-right px-4 py-2">Volume</th>
                   <th scope="col" className="text-right px-4 py-2">High Alch</th>
                   <th scope="col" className="text-right px-4 py-2">Alch Profit</th>

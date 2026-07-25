@@ -66,8 +66,22 @@ export default function Overview({ hiscores, rsn, lastFetched = null, onRefresh 
   const [showAllBosses, setShowAllBosses] = useState<boolean>(false);
 
   useEffect(() => {
-    if (!rsn) return;
-    fetchWomPlayer(rsn).then(setWomPlayer).catch(() => { /* WOM data is optional */ });
+    if (!rsn) {
+      setWomPlayer(null); // eslint-disable-line react-hooks/set-state-in-effect -- clear WOM when RSN empty
+      return;
+    }
+    setWomPlayer(null);  
+    let cancelled = false;
+    fetchWomPlayer(rsn)
+      .then((p) => {
+        if (!cancelled) setWomPlayer(p);
+      })
+      .catch(() => {
+        if (!cancelled) setWomPlayer(null);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [rsn]);
   const totalLevel = hiscores.skills
     .filter((s) => s.name !== "Overall")

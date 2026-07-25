@@ -137,6 +137,7 @@ export function snapshotDpsInput(
     targetDefBonusFor: (style: CombatStyle, attackType: string) => number;
     defReductions: number;
     tbowRaidCap: boolean;
+    inToA?: boolean;
   }
 ): DpsInput {
   const weapon = snap.gear["weapon"] ?? snap.gear["2h"] ?? null;
@@ -203,5 +204,9 @@ export function snapshotDpsInput(
     defReductions: ctx.defReductions,
     spellBaseMaxHit,
     tbowRaidCap: ctx.tbowRaidCap,
+    inToA: ctx.inToA,
+    prayerMagicDamagePct: prayer.magicDamagePct ?? 0,
+    spellElement: spell?.element,
+    attackType: stance.attackType,
   };
 }

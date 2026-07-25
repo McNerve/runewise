@@ -47,16 +47,29 @@ export function getBossKc(
   if (!boss || !hiscores?.activities) return null;
   const bossName = boss.name.toLowerCase();
   const altName = boss.hiscoresName?.toLowerCase();
-  const activity = hiscores.activities.find((item) => {
+
+  // Prefer exact name / hiscoresName so shorter base activities
+  // (e.g. "Theatre of Blood") never steal Hard/Challenge/Expert variants.
+  const exact = hiscores.activities.find((item) => {
     const actName = item.name.toLowerCase();
-    return (
-      actName === bossName ||
-      (altName && actName === altName) ||
-      bossName.includes(actName) ||
-      actName.includes(bossName)
-    );
+    return actName === bossName || (altName != null && actName === altName);
   });
-  return activity && activity.score > 0 ? activity.score : null;
+  if (exact) return exact.score > 0 ? exact.score : null;
+
+  // Fallback: longest activity name that contains the boss name (or equal
+  // length). Never let a shorter activity name steal a longer boss variant
+  // (HM/CM/Expert).
+  let best: { score: number; len: number } | null = null;
+  for (const item of hiscores.activities) {
+    const actName = item.name.toLowerCase();
+    if (item.score <= 0) continue;
+    if (actName.length < bossName.length) continue;
+    if (!(actName.includes(bossName) || bossName.includes(actName))) continue;
+    if (!best || actName.length > best.len) {
+      best = { score: item.score, len: actName.length };
+    }
+  }
+  return best?.score ?? null;
 }
 
 export function getBossTasks(boss: BossInfo | null): CombatTask[] {

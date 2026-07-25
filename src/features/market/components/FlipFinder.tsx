@@ -50,6 +50,8 @@ function NumberField({
 export default function FlipFinder({ mapping, prices }: FlipFinderProps) {
   const [volumes, setVolumes] = useState<Record<string, number>>({});
   const [volLoaded, setVolLoaded] = useState(false);
+  const [volError, setVolError] = useState(false);
+  const [volRetry, setVolRetry] = useState(0);
   const [budget, setBudget] = useState<number | "">("");
   const [minMargin, setMinMargin] = useState<number | "">("");
   const [minVolume, setMinVolume] = useState<number | "">(100);
@@ -58,30 +60,46 @@ export default function FlipFinder({ mapping, prices }: FlipFinderProps) {
 
   useEffect(() => {
     let cancelled = false;
+    setVolLoaded(false); // eslint-disable-line react-hooks/set-state-in-effect -- reset before async volume fetch
+    setVolError(false);  
     fetchVolumes()
       .then((v) => {
         if (!cancelled) {
           setVolumes(v);
           setVolLoaded(true);
+          setVolError(false);
         }
       })
-      .catch(() => !cancelled && setVolLoaded(true));
+      .catch(() => {
+        if (!cancelled) {
+          setVolumes({});
+          setVolLoaded(true);
+          setVolError(true);
+        }
+      });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [volRetry]);
+
+  const geReady = mapping.length > 0 && Object.keys(prices).length > 0;
+  // When volumes failed, ignore the default min-volume filter so results still show.
+  const effectiveMinVolume =
+    volError ? 0 : typeof minVolume === "number" ? minVolume : undefined;
 
   const flips = useMemo(
     () =>
-      findFlips(mapping, prices, volumes, {
-        budget: typeof budget === "number" ? budget : undefined,
-        minMargin: typeof minMargin === "number" ? minMargin : undefined,
-        minVolume: typeof minVolume === "number" ? minVolume : undefined,
-        members,
-        sort,
-        limit: RESULT_CAP,
-      }),
-    [mapping, prices, volumes, budget, minMargin, minVolume, members, sort]
+      !geReady
+        ? []
+        : findFlips(mapping, prices, volumes, {
+            budget: typeof budget === "number" ? budget : undefined,
+            minMargin: typeof minMargin === "number" ? minMargin : undefined,
+            minVolume: effectiveMinVolume,
+            members,
+            sort,
+            limit: RESULT_CAP,
+          }),
+    [mapping, prices, volumes, budget, minMargin, effectiveMinVolume, members, sort, geReady]
   );
 
   const topByLimit = useMemo(() => {
@@ -182,17 +200,44 @@ export default function FlipFinder({ mapping, prices }: FlipFinderProps) {
 
       {/* Honesty note — accuracy is the point */}
       <p className="text-2xs text-text-tertiary mb-3 leading-relaxed">
-        Net margin already subtracts the 2% GE sell tax. Prices are OSRS Wiki real-time
+        Net margin already subtracts the 2% GE sell tax. Buy (low) / Sell (high) are offer-side
+        prices (opposite of Market Instabuy/Instasell). Prices are OSRS Wiki real-time
         (completed RuneLite trades, ~5 min refresh) — low-volume items are easy to manipulate, so
         the volume filter defaults to 100/day. <span className="text-text-secondary">Profit / limit</span> is
         the most you can clear per 4-hour buy-limit cycle.
       </p>
+      {volError && volLoaded && (
+        <div className="mb-3 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning flex items-center justify-between gap-2">
+          <span>Volume data failed to load — min volume filter disabled until retry.</span>
+          <button
+            type="button"
+            onClick={() => setVolRetry((n) => n + 1)}
+            className="shrink-0 underline hover:no-underline"
+          >
+            Retry
+          </button>
+        </div>
+      )}
 
-      {!volLoaded ? (
+      {!volLoaded || !geReady ? (
         <div className="space-y-2">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="h-9 rounded-lg bg-bg-tertiary/50 animate-pulse" />
           ))}
+        </div>
+      ) : volError && flips.length === 0 ? (
+        <div className="py-10 text-center space-y-3">
+          <p className="text-sm text-danger">Could not load trade volumes.</p>
+          <p className="text-xs text-text-secondary">
+            Without volume data the min-volume filter cannot run. Retry, or wait for GE prices.
+          </p>
+          <button
+            type="button"
+            onClick={() => setVolRetry((n) => n + 1)}
+            className="px-3 py-1.5 rounded-lg text-xs bg-danger/10 text-danger border border-danger/20 hover:bg-danger/20 transition-colors"
+          >
+            Retry volumes
+          </button>
         </div>
       ) : flips.length === 0 ? (
         <div className="py-10 text-center text-sm text-text-secondary">
@@ -204,8 +249,8 @@ export default function FlipFinder({ mapping, prices }: FlipFinderProps) {
             <thead>
               <tr className="text-2xs uppercase tracking-wider text-text-tertiary border-b border-border-subtle">
                 <th className="text-left font-medium px-3 py-2">Item</th>
-                <th className="text-right font-medium px-3 py-2">Buy</th>
-                <th className="text-right font-medium px-3 py-2">Sell</th>
+                <th className="text-right font-medium px-3 py-2" title="GE low — place buy offer near this">Buy (low)</th>
+                <th className="text-right font-medium px-3 py-2" title="GE high — place sell offer near this">Sell (high)</th>
                 <th className="text-right font-medium px-3 py-2">Margin</th>
                 <th className="text-right font-medium px-3 py-2">ROI</th>
                 <th className="text-right font-medium px-3 py-2 hidden sm:table-cell">Vol/day</th>

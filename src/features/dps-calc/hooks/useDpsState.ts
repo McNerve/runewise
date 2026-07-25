@@ -11,9 +11,14 @@ import {
   coxHpScale,
   coxScale,
   poisonDps,
+  inferMonsterSize,
+  isXericianMonster,
+  isP2Wardens,
+  inferBoltEnchant,
   type DpsModifier,
   type DpsInput,
 } from "../../../lib/formulas/dps";
+import { lookupMonsterMeta } from "../../../lib/data/monster-attributes";
 import { PRAYERS, type Prayer } from "../../../lib/data/prayers";
 import { MONSTERS } from "../../../lib/data/monsters";
 import { fetchAllMonsters, type WikiMonster } from "../../../lib/api/monsters";
@@ -49,6 +54,13 @@ import {
   snapshotDpsInput,
   sumGearBonuses,
 } from "../dpsGearMath";
+import {
+  detectGearPassives,
+  countCrystalPieces,
+  countInquisitorBonus,
+  hasSmokeStaff,
+  hasChaosGauntlets,
+} from "../gearPassives";
 
 // Re-export pure types/helpers so existing import paths keep working.
 export type {
@@ -72,6 +84,30 @@ const LOADOUTS_KEY = "runewise_dps_loadouts";
 const LOADOUTS_V2_KEY = "runewise_loadouts_v2";
 const SETUPS_KEY = "runewise_dps_setups_v1";
 const SETUP_SLOTS = 3;
+
+/** Spec weapon attack speeds (ticks) — not the main loadout speed. */
+const SPEC_WEAPON_SPEEDS: Record<string, number> = {
+  dragon_claws: 4,
+  dragon_dagger: 4,
+  dragon_warhammer: 6,
+  bandos_godsword: 6,
+  armadyl_godsword: 6,
+  saradomin_godsword: 6,
+  ancient_godsword: 6,
+  voidwaker: 4,
+  elder_maul: 6,
+  dragon_halberd: 7,
+  crystal_halberd: 7,
+  toxic_blowpipe: 3,
+  webweaver_bow: 4,
+  zaryte_crossbow: 6,
+  dark_bow: 9,
+  magic_shortbow: 3,
+  magic_longbow: 5,
+  seercull: 5,
+};
+
+const SPEC_AMMO_ONLY = new Set(["magic_shortbow", "magic_longbow", "seercull"]);
 
 interface StoredSetups {
   setups: (SetupSnapshot | null)[];
@@ -143,6 +179,8 @@ export function useDpsState({ hiscores }: Props) {
   const [loadoutName, setLoadoutName] = useState("");
   const [selectedSpec, setSelectedSpec] = useState<SpecWeapon | null>(null);
   const [selectedSpell, setSelectedSpell] = useState<CombatSpell | null>(null);
+  /** Zaryte crossbow special — next hit guaranteed + bolt proc guaranteed. */
+  const [zcbSpec, setZcbSpec] = useState(false);
   const pendingSnapshot = useRef<SetupSnapshot | null>(null);
 
   // Setup tabs: full configurations switched in place, persisted across runs.
@@ -312,6 +350,24 @@ export function useDpsState({ hiscores }: Props) {
 
   const gearBonuses = useMemo(() => sumGearBonuses(equippedGear), [equippedGear]);
 
+  // Auto-enable set/weapon passives from equipped gear (void, crystal, tbow, shadow, …).
+  // Only ADDS — never strips user/loadout toggles (slayer helm stays fully manual).
+  useEffect(() => {
+    if (bonusMode !== "equipment") return;
+    const detected = detectGearPassives(equippedGear, combatStyle);
+    if (detected.length === 0) return;
+    setActiveModifiers((prev) => {
+      const missing = detected.filter((id) => !prev.has(id));
+      if (missing.length === 0) return prev;
+      const next = new Set(prev);
+      for (const id of detected) {
+        addModifierExclusive(next, id);
+      }
+      // If user had slayer helm and we just auto-enabled salve, exclusivity already wins.
+      return next;
+    });
+  }, [equippedGear, combatStyle, bonusMode]);
+
   // Get weapon-specific stances from equipped weapon's combat_style
   const weaponItem = equippedGear["weapon"] ?? equippedGear["2h"] ?? null;
   const weaponCombatStyle = weaponItem?.combatStyle ?? undefined;
@@ -375,8 +431,87 @@ export function useDpsState({ hiscores }: Props) {
     : toaInvocation > 0
       ? toaHpScale(baseHp, toaInvocation)
       : baseHp;
-  // Both CoX and ToA raise the twisted bow's target-magic clamp to 350.
-  const tbowRaidCap = coxPartySize > 1 || toaInvocation > 0;
+  // Curated wiki attributes (size, Xerician, demon vuln) with name heuristics as fallback.
+  const monsterMeta = useMemo(
+    () => lookupMonsterMeta(selectedMonster?.name, selectedMonster?.version),
+    [selectedMonster?.name, selectedMonster?.version]
+  );
+
+  // TBow magic cap 350 only for Xerician (CoX) targets — ToA is NOT Xerician (wiki).
+  const tbowRaidCap = useMemo(() => {
+    if (coxPartySize > 1) return true;
+    if (monsterMeta.attributes.includes("xerician")) return true;
+    return isXericianMonster(selectedMonster?.name);
+  }, [coxPartySize, selectedMonster?.name, monsterMeta.attributes]);
+
+  const monsterSize = useMemo(() => {
+    if (monsterMeta.size > 1) return monsterMeta.size;
+    return inferMonsterSize(selectedMonster?.name);
+  }, [monsterMeta.size, selectedMonster?.name]);
+
+  const p2Wardens = useMemo(
+    () => isP2Wardens(selectedMonster?.name) || isP2Wardens(selectedMonster?.version ?? undefined),
+    [selectedMonster?.name, selectedMonster?.version]
+  );
+
+  // Demonbane vulnerability from curated meta (default 100).
+  const demonbaneVulnerability = useMemo(() => {
+    if (monsterMeta.demonbaneVulnerability != null) return monsterMeta.demonbaneVulnerability;
+    if (monsterMeta.attributes.includes("demon")) return 100;
+    return 100;
+  }, [monsterMeta]);
+
+  const weaponName = weaponItem?.name;
+  const crystalPieces = useMemo(
+    () => (bonusMode === "equipment" ? countCrystalPieces(equippedGear) : undefined),
+    [bonusMode, equippedGear]
+  );
+  const inquisitorBonus = useMemo(
+    () => (bonusMode === "equipment" ? countInquisitorBonus(equippedGear) : undefined),
+    [bonusMode, equippedGear]
+  );
+  const smokeStaff = bonusMode === "equipment" && hasSmokeStaff(equippedGear);
+  const chaosGauntlets = bonusMode === "equipment" && hasChaosGauntlets(equippedGear);
+  const ammoName = bonusMode === "equipment" ? equippedGear.ammo?.name : undefined;
+  // Wiki equipment may use slot "ammo" — EquippedGear keys vary; also check common names.
+  const boltEnchant = useMemo(() => {
+    if (combatStyle !== "ranged") return undefined;
+    const fromAmmo = inferBoltEnchant(ammoName);
+    if (fromAmmo !== "none") return fromAmmo;
+    // Fallback: scan any equipped piece named *bolts*
+    if (bonusMode === "equipment") {
+      for (const piece of Object.values(equippedGear)) {
+        if (piece?.name && piece.name.toLowerCase().includes("bolt")) {
+          const e = inferBoltEnchant(piece.name);
+          if (e !== "none") return e;
+        }
+      }
+    }
+    return undefined;
+  }, [combatStyle, ammoName, bonusMode, equippedGear]);
+
+  const scorcherVsDemon = useMemo(() => {
+    const w = (weaponName ?? "").toLowerCase();
+    if (!w.includes("scorching bow")) return false;
+    const n = (selectedMonster?.name ?? "").toLowerCase();
+    return (
+      n.includes("demon") ||
+      n.includes("k'ril") ||
+      n.includes("skotizo") ||
+      n.includes("abyssal sire") ||
+      n.includes("duke sucellus") ||
+      n.includes("yama")
+    );
+  }, [weaponName, selectedMonster?.name]);
+
+  // Inside ToA — Tumeken's shadow gear mult is 4×.
+  const inToA = toaInvocation > 0;
+
+  // Wiki: tbow magic input = min(cap, max(skills.magic, offensive.magic)).
+  const targetMagicForTbow = useMemo(() => {
+    if (!selectedMonster) return undefined;
+    return Math.max(selectedMonster.magicLevel, selectedMonster.magicAttackBonus ?? 0);
+  }, [selectedMonster]);
 
   const modifierList = useMemo<DpsModifier[]>(
     () =>
@@ -393,6 +528,27 @@ export function useDpsState({ hiscores }: Props) {
     if (selectedSpell.levelScaling) return selectedSpell.levelScaling(magicLevel);
     return selectedSpell.baseMaxHit;
   }, [combatStyle, selectedSpell, magicLevel]);
+
+  const spellFlags = useMemo(() => {
+    const name = (selectedSpell?.name ?? "").toLowerCase();
+    const id = selectedSpell?.id ?? "";
+    return {
+      isBoltSpell: name.includes("bolt") || id.includes("bolt"),
+      isGodSpell:
+        name.includes("saradomin") ||
+        name.includes("guthix") ||
+        name.includes("zamorak") ||
+        id.includes("saradomin") ||
+        id.includes("guthix") ||
+        id.includes("zamorak"),
+      isDemonbaneSpell:
+        name.includes("demonbane") ||
+        name.includes("inferior demonbane") ||
+        name.includes("superior demonbane") ||
+        name.includes("dark demonbane") ||
+        id.includes("demonbane"),
+    };
+  }, [selectedSpell]);
 
   const dpsInput = useMemo<DpsInput>(
     () => ({
@@ -411,11 +567,29 @@ export function useDpsState({ hiscores }: Props) {
       targetDefLevel,
       targetDefBonus,
       targetHp,
-      targetMagicLevel: selectedMonster?.magicLevel,
+      targetMagicLevel: targetMagicForTbow ?? selectedMonster?.magicLevel,
       modifiers: modifierList,
       defReductions,
       spellBaseMaxHit: activeSpellBase,
       tbowRaidCap,
+      inToA,
+      prayerMagicDamagePct: prayer.magicDamagePct ?? 0,
+      spellElement: selectedSpell?.element,
+      attackType: stance.attackType,
+      weaponName,
+      monsterSize,
+      p2Wardens,
+      demonbaneVulnerability,
+      crystalPieces: crystalPieces && crystalPieces > 0 ? crystalPieces : undefined,
+      inquisitorBonus: inquisitorBonus && inquisitorBonus > 0 ? inquisitorBonus : undefined,
+      smokeStaff: smokeStaff || undefined,
+      chaosGauntlets: chaosGauntlets || undefined,
+      isBoltSpell: spellFlags.isBoltSpell || undefined,
+      isGodSpell: spellFlags.isGodSpell || undefined,
+      isDemonbaneSpell: spellFlags.isDemonbaneSpell || undefined,
+      boltEnchant,
+      zcbSpec: zcbSpec || undefined,
+      scorcherVsDemon: scorcherVsDemon || undefined,
     }),
     [
       attackLevel,
@@ -431,11 +605,26 @@ export function useDpsState({ hiscores }: Props) {
       targetDefLevel,
       targetDefBonus,
       targetHp,
+      targetMagicForTbow,
       selectedMonster?.magicLevel,
       modifierList,
       defReductions,
       activeSpellBase,
       tbowRaidCap,
+      inToA,
+      selectedSpell?.element,
+      weaponName,
+      monsterSize,
+      p2Wardens,
+      demonbaneVulnerability,
+      crystalPieces,
+      inquisitorBonus,
+      smokeStaff,
+      chaosGauntlets,
+      spellFlags,
+      boltEnchant,
+      zcbSpec,
+      scorcherVsDemon,
     ]
   );
 
@@ -467,12 +656,29 @@ export function useDpsState({ hiscores }: Props) {
         targetDefLevel: monster.defenceLevel,
         targetDefBonus: getDefBonus(monster, combatStyle, stance.attackType),
         targetHp: monster.hitpoints,
-        targetMagicLevel: monster.magicLevel,
+        targetMagicLevel: Math.max(monster.magicLevel, monster.magicAttackBonus ?? 0),
         modifiers: modifierList,
         defReductions,
+        spellBaseMaxHit: activeSpellBase,
+        tbowRaidCap,
+        inToA,
+        prayerMagicDamagePct: prayer.magicDamagePct ?? 0,
+        spellElement: selectedSpell?.element,
+        attackType: stance.attackType,
+        weaponName,
+        monsterSize: inferMonsterSize(monster.name),
+        p2Wardens: isP2Wardens(monster.name) || isP2Wardens(monster.version ?? undefined),
+        demonbaneVulnerability,
+        crystalPieces: crystalPieces && crystalPieces > 0 ? crystalPieces : undefined,
+        inquisitorBonus: inquisitorBonus && inquisitorBonus > 0 ? inquisitorBonus : undefined,
+        smokeStaff: smokeStaff || undefined,
+        chaosGauntlets: chaosGauntlets || undefined,
+        isBoltSpell: spellFlags.isBoltSpell || undefined,
+        isGodSpell: spellFlags.isGodSpell || undefined,
+        isDemonbaneSpell: spellFlags.isDemonbaneSpell || undefined,
       }),
     }));
-  }, [phaseMonsters, attackLevel, strengthLevel, rangedLevel, magicLevel, effectiveAttackBonus, effectiveStrengthBonus, prayerAttackMult, prayerStrengthMult, stanceAttackBonus, stanceStrengthBonus, stance.attackType, effectiveAttackSpeed, combatStyle, modifierList, defReductions]);
+  }, [phaseMonsters, attackLevel, strengthLevel, rangedLevel, magicLevel, effectiveAttackBonus, effectiveStrengthBonus, prayerAttackMult, prayerStrengthMult, stanceAttackBonus, stanceStrengthBonus, stance.attackType, effectiveAttackSpeed, combatStyle, modifierList, defReductions, activeSpellBase, tbowRaidCap, inToA, prayer.magicDamagePct, selectedSpell?.element, weaponName, demonbaneVulnerability, crystalPieces, inquisitorBonus, smokeStaff, chaosGauntlets, spellFlags]);
 
   // Arsenal: every saved loadout computed against the current target at once.
   // Each loadout rolls against the defence bonus matching its own combat style
@@ -522,17 +728,20 @@ export function useDpsState({ hiscores }: Props) {
           targetDefLevel,
           targetDefBonus: loadoutDefBonus,
           targetHp,
-          targetMagicLevel: selectedMonster?.magicLevel,
+          targetMagicLevel: targetMagicForTbow ?? selectedMonster?.magicLevel,
           modifiers: [...loadout.modifiers]
             .map((id) => DPS_MODIFIERS[id])
             .filter((m): m is DpsModifier => m != null),
           defReductions,
           tbowRaidCap,
+          inToA,
+          prayerMagicDamagePct: loadoutPrayer.magicDamagePct ?? 0,
+          attackType: loadoutStance.attackType,
         };
         return { loadout, result: calculateDps(input) };
       })
       .sort((a, b) => b.result.dps - a.result.dps);
-  }, [loadouts, attackLevel, strengthLevel, rangedLevel, magicLevel, isCustom, customDef.defBonus, selectedMonster, targetDefLevel, targetHp, defReductions, tbowRaidCap]);
+  }, [loadouts, attackLevel, strengthLevel, rangedLevel, magicLevel, isCustom, customDef.defBonus, selectedMonster, targetDefLevel, targetHp, defReductions, tbowRaidCap, targetMagicForTbow, inToA]);
 
   // Live DPS per non-active setup tab against the current target.
   const setupResults = useMemo(() => {
@@ -545,23 +754,35 @@ export function useDpsState({ hiscores }: Props) {
         magicLevel,
         targetDefLevel,
         targetHp,
-        targetMagicLevel: selectedMonster?.magicLevel,
+        targetMagicLevel: targetMagicForTbow ?? selectedMonster?.magicLevel,
         targetDefBonusFor: (style, attackType) =>
           isCustom ? customDef.defBonus : getDefBonus(selectedMonster, style, attackType),
         defReductions,
         tbowRaidCap,
+        inToA,
       });
       return calculateDps(input);
     });
-  }, [setups, activeSetup, attackLevel, strengthLevel, rangedLevel, magicLevel, targetDefLevel, targetHp, selectedMonster, isCustom, customDef.defBonus, defReductions, tbowRaidCap]);
+  }, [setups, activeSetup, attackLevel, strengthLevel, rangedLevel, magicLevel, targetDefLevel, targetHp, selectedMonster, isCustom, customDef.defBonus, defReductions, tbowRaidCap, targetMagicForTbow, inToA]);
 
   const specWeapons = useMemo(
     () => getSpecWeaponsForStyle(combatStyle),
     [combatStyle]
   );
 
+  // Spec weapons: use the selected weapon's attack speed when known, not the
+  // main loadout speed (e.g. claws are 4t while a scythe loadout is 5t).
   const specResult = useMemo(() => {
     if (!selectedSpec) return null;
+    const specSpeed =
+      SPEC_WEAPON_SPEEDS[selectedSpec.id] ??
+      knownWeaponSpeed(selectedSpec.name) ??
+      effectiveAttackSpeed;
+    // Prefer equipped gear if the user is already wielding the same spec weapon.
+    const wieldingSpec =
+      weaponName &&
+      weaponName.toLowerCase().includes(selectedSpec.name.toLowerCase().split(" (")[0]);
+    const ammoOnly = SPEC_AMMO_ONLY.has(selectedSpec.id);
     return calculateSpecDps({
       attackLevel,
       strengthLevel,
@@ -578,19 +799,36 @@ export function useDpsState({ hiscores }: Props) {
       targetDefLevel,
       targetDefBonus,
       targetHp,
-      targetMagicLevel: selectedMonster?.magicLevel,
-      modifiers: modifierList,
+      targetMagicLevel: targetMagicForTbow ?? selectedMonster?.magicLevel,
+      modifiers: wieldingSpec ? modifierList : [],
       defReductions,
+      spellBaseMaxHit: activeSpellBase,
+      inToA,
+      prayerMagicDamagePct: prayer.magicDamagePct ?? 0,
+      spellElement: selectedSpell?.element,
+      attackType: stance.attackType,
       tbowRaidCap,
+      weaponName: selectedSpec.name,
+      monsterSize,
+      demonbaneVulnerability,
       specAccuracyMult: selectedSpec.accuracyMult,
       specDamageMult: selectedSpec.damageMult,
       specHits: selectedSpec.hits,
       specGuaranteedHit: selectedSpec.guaranteedHit,
-      specSpeed: effectiveAttackSpeed,
+      specSpeed,
+      specWeaponSpeed: specSpeed,
+      specWeaponName: selectedSpec.name,
+      // When not wielding the spec weapon, still use main offensive bonuses as a
+      // reasonable proxy (full BiS import would require a second gear set).
+      specAttackBonus: wieldingSpec ? effectiveAttackBonus : effectiveAttackBonus,
+      specStrengthBonus: wieldingSpec ? effectiveStrengthBonus : effectiveStrengthBonus,
       specCascadeType: selectedSpec.cascadeType,
       specSecondHitAccuracyMult: selectedSpec.secondHitAccuracyMult,
+      specAmmoOnly: ammoOnly || undefined,
+      // Ammo-only specials: use current ranged strength as ammo proxy when equipped.
+      specAmmoRangedStr: ammoOnly ? effectiveStrengthBonus : undefined,
     });
-  }, [selectedSpec, attackLevel, strengthLevel, rangedLevel, magicLevel, effectiveAttackBonus, effectiveStrengthBonus, prayerAttackMult, prayerStrengthMult, stanceAttackBonus, stanceStrengthBonus, effectiveAttackSpeed, combatStyle, targetDefLevel, targetDefBonus, targetHp, selectedMonster?.magicLevel, modifierList, defReductions, tbowRaidCap]);
+  }, [selectedSpec, attackLevel, strengthLevel, rangedLevel, magicLevel, effectiveAttackBonus, effectiveStrengthBonus, prayerAttackMult, prayerStrengthMult, stanceAttackBonus, stanceStrengthBonus, effectiveAttackSpeed, combatStyle, targetDefLevel, targetDefBonus, targetHp, targetMagicForTbow, selectedMonster, modifierList, defReductions, tbowRaidCap, activeSpellBase, inToA, prayer, selectedSpell, stance, weaponName, monsterSize, demonbaneVulnerability]);
 
   const toggleModifier = useCallback((id: string) => {
     setActiveModifiers((prev) => {
@@ -836,6 +1074,9 @@ export function useDpsState({ hiscores }: Props) {
     selectedSpec,
     setSelectedSpec,
     specResult,
+    zcbSpec,
+    setZcbSpec,
+    boltEnchant,
     // Loadouts
     loadouts,
     loadoutName,

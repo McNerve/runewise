@@ -10,6 +10,8 @@ interface GEDataState {
   /** When latest prices were last successfully fetched (local clock). */
   pricesUpdatedAt: Date | null;
   loading: boolean;
+  /** Last fetch/refresh failure message, if any. Cleared on success. */
+  error: string | null;
   fetchIfNeeded: () => Promise<void>;
   refreshPrices: () => Promise<void>;
   priceOf: (itemId: number) => number | null;
@@ -26,12 +28,14 @@ export function useGEDataProvider(): GEDataState {
   const [pricesLoaded, setPricesLoaded] = useState(false);
   const [pricesUpdatedAt, setPricesUpdatedAt] = useState<Date | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const fetchedRef = useRef(false);
 
   const fetchIfNeeded = useCallback(async () => {
     if (fetchedRef.current) return;
     fetchedRef.current = true;
     setLoading(true);
+    setError(null);
     try {
       const [m, p] = await Promise.all([fetchMapping(), fetchLatestPrices()]);
       setMapping(m);
@@ -39,10 +43,12 @@ export function useGEDataProvider(): GEDataState {
       setMappingLoaded(true);
       setPricesLoaded(true);
       setPricesUpdatedAt(new Date());
+      setError(null);
     } catch (err: unknown) {
       warn("GEData: fetch failed", err);
       // Allow a later retry if the first attempt failed offline.
       fetchedRef.current = false;
+      setError(err instanceof Error ? err.message : "Failed to load GE data");
     } finally {
       setLoading(false);
     }
@@ -54,8 +60,10 @@ export function useGEDataProvider(): GEDataState {
       setPrices(p);
       setPricesLoaded(true);
       setPricesUpdatedAt(new Date());
+      setError(null);
     } catch (err: unknown) {
       warn("GEData: refresh prices failed", err);
+      setError(err instanceof Error ? err.message : "Failed to refresh GE prices");
     }
   }, []);
 
@@ -74,6 +82,7 @@ export function useGEDataProvider(): GEDataState {
     pricesLoaded,
     pricesUpdatedAt,
     loading,
+    error,
     fetchIfNeeded,
     refreshPrices,
     priceOf,

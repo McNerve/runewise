@@ -1,9 +1,10 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { searchMonsters, fetchDropTable, type DropItem } from "../../lib/api/wiki";
 import { fetchDropsForMonster, fetchBossDropsFromWiki, type WikiDrop } from "../../lib/api/drops";
 import type { ItemPrice, ItemMapping } from "../../lib/api/ge";
 import { useGEData } from "../../hooks/useGEData";
 import { formatGp } from "../../lib/format";
+import { postTaxPrice } from "../../lib/tax";
 import { itemIcon } from "../../lib/sprites";
 import { parseRate } from "./parseRate";
 import { useDebounce } from "../../hooks/useDebounce";
@@ -112,6 +113,7 @@ function DropTablesTab({
   const [bucketDrops, setBucketDrops] = useState<WikiDrop[]>([]);
   const [loading, setLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const activeDropRequest = useRef(0);
   const selectedBoss = selectedMonster ? findBossByName(selectedMonster) : null;
 
   useEffect(() => {
@@ -135,10 +137,13 @@ function DropTablesTab({
     setShowSuggestions(false);
     setLoading(true);
     setBucketDrops([]);
+    setCategories([]);
+    const requestId = ++activeDropRequest.current;
     const [htmlData, bucketData] = await Promise.all([
       fetchDropTable(name).catch(() => ({ categories: [] })),
       fetchDropsForMonster(name).then((t) => t.drops).catch(() => [] as WikiDrop[]),
     ]);
+    if (requestId !== activeDropRequest.current) return;
     setCategories(htmlData.categories);
     setBucketDrops(bucketData);
     setLoading(false);
@@ -339,21 +344,18 @@ function ProfitCalculatorTab({
     return map;
   }, [mapping]);
 
+  /** Instasell (low) after GE tax — shared with Boss Rankings valuation. */
   const getPrice = (itemId: number, itemName?: string): number | null => {
-    const p = prices[String(itemId)];
-    if (p) {
-      if (p.high != null && p.low != null) return Math.round((p.high + p.low) / 2);
-      return p.high ?? p.low ?? null;
-    }
+    const resolve = (p: ItemPrice | undefined): number | null => {
+      if (!p) return null;
+      const sell = p.low ?? p.high;
+      return sell != null ? postTaxPrice(sell) : null;
+    };
+    const direct = resolve(prices[String(itemId)]);
+    if (direct != null) return direct;
     if (itemName) {
       const mapped = mappingByName.get(itemName.toLowerCase());
-      if (mapped) {
-        const p2 = prices[String(mapped.id)];
-        if (p2) {
-          if (p2.high != null && p2.low != null) return Math.round((p2.high + p2.low) / 2);
-          return p2.high ?? p2.low ?? null;
-        }
-      }
+      if (mapped) return resolve(prices[String(mapped.id)]);
     }
     return null;
   };
