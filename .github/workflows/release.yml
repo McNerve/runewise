@@ -103,34 +103,41 @@ jobs:
           prerelease: false
           args: --target ${{ matrix.target }}
 
-      # Authenticode (optional). Skipped when WINDOWS_CERTIFICATE is unset.
+      # Authenticode (optional). No-ops when WINDOWS_CERTIFICATE secret is empty.
       # Signs on-disk bundle outputs then re-uploads them to the release
       # (tauri-action may have uploaded unsigned copies first).
       # See docs/WINDOWS-SIGNING.md.
       - name: Authenticode sign Windows installers
-        if: runner.os == 'Windows' && secrets.WINDOWS_CERTIFICATE != ''
+        if: runner.os == 'Windows'
         shell: pwsh
         env:
           WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
           WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ env.RELEASE_TAG }}
+          MATRIX_TARGET: ${{ matrix.target }}
         run: |
           $ErrorActionPreference = "Stop"
+          if ([string]::IsNullOrWhiteSpace($env:WINDOWS_CERTIFICATE)) {
+            Write-Host "WINDOWS_CERTIFICATE not set; skipping Authenticode (see docs/WINDOWS-SIGNING.md)."
+            exit 0
+          }
+
           $pfxPath = Join-Path $env:RUNNER_TEMP "codesign.pfx"
           $bytes = [Convert]::FromBase64String($env:WINDOWS_CERTIFICATE)
           [IO.File]::WriteAllBytes($pfxPath, $bytes)
 
-          $signtool = Get-ChildItem -Path "${env:ProgramFiles(x86)}\Windows Kits\10\bin" -Recurse -Filter signtool.exe -ErrorAction SilentlyContinue |
+          $kitsRoot = "${env:ProgramFiles(x86)}\Windows Kits\10\bin"
+          $signtool = Get-ChildItem -Path $kitsRoot -Recurse -Filter signtool.exe -ErrorAction SilentlyContinue |
             Where-Object { $_.FullName -match '\\x64\\' } |
             Sort-Object FullName -Descending |
             Select-Object -First 1 -ExpandProperty FullName
           if (-not $signtool) {
-            Write-Error "signtool.exe not found — install Windows SDK on the runner image"
+            Write-Error "signtool.exe not found - install Windows SDK on the runner image"
           }
 
           $roots = @(
-            "src-tauri\target\${{ matrix.target }}\release\bundle",
+            "src-tauri\target\$($env:MATRIX_TARGET)\release\bundle",
             "src-tauri\target\release\bundle"
           ) | Where-Object { Test-Path $_ }
 
@@ -162,7 +169,6 @@ jobs:
           }
           Remove-Item $pfxPath -Force -ErrorAction SilentlyContinue
 
-          # Replace release assets with signed copies
           foreach ($path in $files) {
             $name = Split-Path $path -Leaf
             Write-Host "Uploading signed $name to release $env:TAG"
