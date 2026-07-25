@@ -4,6 +4,13 @@ All notable changes to RuneWise are documented here. Versions follow [Semantic V
 
 ## [Unreleased]
 
+## [2.5.12] - 2026-07-25
+
+### Combat / loadout
+
+- **GearScape-class combinatorial BiS** — Pareto-pruned candidates, value + DPS weapon seeds, bounded branch-and-bound over multiple slot orders, multi-pass 1-swap / limited 2-swap local search. Loadout Finder default.
+- **Melee attack-type aware scoring** — optimizer picks stab/slash/crush from weapon combat style / name / bonuses (rapier no longer scored as slash).
+
 ## [2.5.11] - 2026-07-25
 
 ### Combat / loadout

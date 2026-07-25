@@ -2,7 +2,9 @@ import { describe, it, expect } from "vitest";
 import {
   greedyOptimizeUnderBudget,
   beamOptimizeUnderBudget,
+  combinatorialOptimizeUnderBudget,
   optimizeUnderBudget,
+  paretoFilterCandidates,
 } from "./budgetOptimize";
 import type { WikiEquipment, EquipmentSlot } from "../../lib/api/equipment";
 import type { HiscoreData } from "../../lib/api/hiscores";
@@ -125,7 +127,7 @@ describe("beamOptimizeUnderBudget", () => {
     expect(r).not.toBeNull();
     expect(r!.totalCost).toBeLessThanOrEqual(5_000_000);
     expect(r!.dps).toBeGreaterThan(0);
-    expect((r!.preset.description ?? "").toLowerCase()).toMatch(/beam|greedy/);
+    expect((r!.preset.description ?? "").toLowerCase()).toMatch(/beam|greedy|combinatorial/);
   });
 
   it("matches or beats greedy DPS under the same budget", () => {
@@ -181,5 +183,130 @@ describe("beamOptimizeUnderBudget", () => {
     const r = optimizeUnderBudget({ ...commonOpts, budget: 10_000_000 });
     expect(r).not.toBeNull();
     expect(r!.dps).toBeGreaterThan(0);
+  });
+});
+
+describe("paretoFilterCandidates", () => {
+  it("drops strictly dominated (worse offense, higher cost) items", () => {
+    const front = paretoFilterCandidates(
+      [
+        { item: item("A", "neck", { strengthBonus: 10 }), cost: 100, offense: 10 },
+        { item: item("B", "neck", { strengthBonus: 5 }), cost: 200, offense: 5 },
+        { item: item("C", "neck", { strengthBonus: 12 }), cost: 150, offense: 12 },
+        { item: item("D", "neck", { strengthBonus: 12 }), cost: 300, offense: 12 },
+      ],
+      10
+    );
+    const names = front.map((c) => c.item.name);
+    expect(names).toContain("C");
+    expect(names).not.toContain("B"); // worse offense, higher cost than A
+    expect(names).not.toContain("D"); // same offense as C, higher cost
+  });
+});
+
+describe("combinatorialOptimizeUnderBudget", () => {
+  it("stays under budget and beats empty hands", () => {
+    const r = combinatorialOptimizeUnderBudget({
+      ...commonOpts,
+      budget: 5_000_000,
+    });
+    expect(r).not.toBeNull();
+    expect(r!.totalCost).toBeLessThanOrEqual(5_000_000);
+    expect(r!.dps).toBeGreaterThan(0);
+    expect((r!.preset.description ?? "").toLowerCase()).toMatch(/combinatorial|beam|greedy/);
+  });
+
+  it("matches or beats beam under the same budget", () => {
+    const beam = beamOptimizeUnderBudget({ ...commonOpts, budget: 2_000_000 });
+    const combo = combinatorialOptimizeUnderBudget({ ...commonOpts, budget: 2_000_000 });
+    expect(combo).not.toBeNull();
+    expect(beam).not.toBeNull();
+    expect(combo!.dps).toBeGreaterThanOrEqual(beam!.dps - 0.01);
+  });
+
+  /**
+   * Multi-slot greedy trap: best solo weapon + best solo body leaves no room
+   * for the high-value amulet. Optimal spends on mid weapon + body + amulet.
+   */
+  it("solves multi-slot budget tradeoffs greedy/beam may miss", () => {
+    const trap: WikiEquipment[] = [
+      item("Mid blade", "weapon", {
+        attackSlash: 75,
+        strengthBonus: 75,
+        attackSpeed: 4,
+        combatStyle: "slash",
+      }),
+      item("Top blade", "weapon", {
+        attackSlash: 90,
+        strengthBonus: 88,
+        attackSpeed: 4,
+        combatStyle: "slash",
+      }),
+      item("Mid body", "body", { attackSlash: 5, strengthBonus: 5 }),
+      item("Top body", "body", { attackSlash: 8, strengthBonus: 8 }),
+      item("God amulet", "neck", { attackSlash: 25, strengthBonus: 25 }),
+    ];
+    const trapPrices: Record<string, number> = {
+      "mid blade": 200_000,
+      "top blade": 800_000,
+      "mid body": 150_000,
+      "top body": 400_000,
+      "god amulet": 350_000,
+    };
+    const opts = {
+      equipment: trap,
+      priceOf: (n: string) => trapPrices[n.toLowerCase()] ?? null,
+      hiscores: maxStats,
+      target: { name: "Dummy", defLevel: 30, defBonus: 0, hp: 120 },
+      budget: 700_000,
+      style: "melee" as const,
+    };
+    // Optimal path: mid blade (200) + mid body (150) + god amulet (350) = 700
+    // Top blade alone is 800 — over budget. Top blade + anything fails.
+    // Top body + mid blade = 600, no amulet room for 350.
+    const combo = combinatorialOptimizeUnderBudget(opts);
+    expect(combo).not.toBeNull();
+    expect(combo!.totalCost).toBeLessThanOrEqual(700_000);
+    expect(combo!.gear.weapon?.name).toBe("Mid blade");
+    expect(combo!.gear.neck?.name).toBe("God amulet");
+    // Body optional but if present should be mid (top + amulet + mid blade = 950 > budget)
+    if (combo!.gear.body) {
+      expect(combo!.gear.body.name).toBe("Mid body");
+    }
+    const greedy = greedyOptimizeUnderBudget(opts);
+    expect(combo!.dps).toBeGreaterThanOrEqual(greedy!.dps - 0.01);
+  });
+
+  it("prefers rapier stab bonus over slash-default when scoring", () => {
+    // Rapier is pure stab; if we wrongly score as slash, its attack is 0 and loses to scim
+    const cat: WikiEquipment[] = [
+      item("Toy scimitar", "weapon", {
+        attackSlash: 50,
+        strengthBonus: 50,
+        attackSpeed: 4,
+        combatStyle: "slash",
+      }),
+      item("Toy rapier", "weapon", {
+        attackStab: 80,
+        strengthBonus: 55,
+        attackSpeed: 4,
+        combatStyle: "stab",
+      }),
+    ];
+    const prices: Record<string, number> = {
+      "toy scimitar": 1_000,
+      "toy rapier": 1_000,
+    };
+    const r = combinatorialOptimizeUnderBudget({
+      equipment: cat,
+      priceOf: (n) => prices[n.toLowerCase()] ?? null,
+      hiscores: maxStats,
+      target: { name: "Dummy", defLevel: 80, defBonus: 100, hp: 100 },
+      budget: 10_000,
+      style: "melee",
+    });
+    expect(r).not.toBeNull();
+    // High def target: accuracy from stab 80 should beat slash 50
+    expect(r!.gear.weapon?.name).toBe("Toy rapier");
   });
 });

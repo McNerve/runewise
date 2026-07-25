@@ -1,25 +1,25 @@
 # NEXT — living product backlog
 
-After **2.5.11** (beam BiS, obscure specs, monster attrs, Authenticode scaffold).
+After **2.5.12** (GearScape-class combinatorial BiS).
 
 ## Shipped recently
 
-### 2.5.8–2.5.10
-- Budget Loadout Finder, leftover path, meta packs, flip/search trust
-- Milestones, home icons, custom budget, clog I/O
-- Greedy under-budget BiS + Kandarin bolt diary
+### 2.5.12
+- **Combinatorial BiS** — Pareto filter, bounded BnB, local search; melee attack-type aware scoring
 
 ### 2.5.11
-- **Beam-search budget BiS** — multi-weapon seeds + slot-order variants (beats greedy traps)
-- **Obscure specs** — burning claws cascade, ballista, MSB(+i) in catalog
-- **Monster attributes** — expanded entries, name heuristics, live `mergeMonsterMeta`
-- **Authenticode scaffold** — optional `WINDOWS_CERTIFICATE` signing in release.yml + docs
+- Beam BiS, obscure specs, monster attrs, Authenticode scaffold
+
+### 2.5.8–2.5.10
+- Budget Loadout Finder, leftover path, greedy BiS, Kandarin, UX polish
 
 ## Still open (optional)
 
 ### Combat
-- Full GearScape-class combinatorial tree (beam is intermediate)
-- Wiki live size/attributes when bucket API exposes fields end-to-end
+- Set-effect / prayer / spell search space (beyond gear slots)
+- Per-monster defence style (stab/slash/crush) on LoadoutTarget from wiki
+- Wiki live size/attributes end-to-end when API fields exist
+- Exclude-owned-items / “I have X” inventory constraints (GearScape parity)
 
 ### Platform
 - Purchase cert + set `WINDOWS_CERTIFICATE` secrets (scaffold ready)

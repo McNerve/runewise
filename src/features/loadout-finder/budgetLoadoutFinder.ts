@@ -141,12 +141,16 @@ export function buildDpsInput(
     (weapon ? weapon.attackSpeed || knownWeaponSpeed(weapon.name) : 0) ||
     DEFAULT_SPEED[style];
 
+  // Melee: pick stab/slash/crush from weapon combatStyle, name, or highest bonus
+  const meleeType =
+    style === "melee" ? bestMeleeAttackType(weapon, bonuses) : stance.attackType;
+
   const attackBonus =
     style === "ranged"
       ? bonuses.rangedBonus
       : style === "magic"
         ? bonuses.magicBonus
-        : meleeAttackBonus(bonuses, stance.attackType);
+        : meleeAttackBonus(bonuses, meleeType);
   const strengthBonus =
     style === "ranged"
       ? bonuses.rangedStrength
@@ -160,6 +164,7 @@ export function buildDpsInput(
     .filter((m): m is NonNullable<typeof m> => m != null);
 
   const meta = lookupMonsterMeta(target.name);
+  // Prefer style-matched target def when target exposes per-style (LoadoutTarget is scalar today)
   const defBonus = target.defBonus;
 
   return {
@@ -181,12 +186,51 @@ export function buildDpsInput(
     targetMagicLevel: target.magicLevel,
     modifiers,
     prayerMagicDamagePct: prayer.magicDamagePct ?? 0,
-    attackType: stance.attackType,
+    attackType: meleeType,
     weaponName: weapon?.name,
     monsterSize: meta.size,
     tbowRaidCap: meta.attributes.includes("xerician"),
     demonbaneVulnerability: meta.demonbaneVulnerability,
   };
+}
+
+/** Infer best melee attack type for BiS scoring (weapon-aware). */
+function bestMeleeAttackType(
+  weapon: WikiEquipment | null,
+  bonuses: { attackStab: number; attackSlash: number; attackCrush: number }
+): "stab" | "slash" | "crush" {
+  const cs = weapon?.combatStyle?.toLowerCase();
+  if (cs === "stab" || cs === "slash" || cs === "crush") return cs;
+
+  const n = (weapon?.name ?? "").toLowerCase();
+  if (
+    n.includes("rapier") ||
+    n.includes("fang") ||
+    n.includes("dagger") ||
+    n.includes("hasta") ||
+    n.includes("spear") ||
+    n.includes("bayonet")
+  )
+    return "stab";
+  if (
+    n.includes("mace") ||
+    n.includes("warhammer") ||
+    n.includes("maul") ||
+    n.includes("bludgeon") ||
+    n.includes("bulwark") ||
+    n.includes("club") ||
+    n.includes("flail")
+  )
+    return "crush";
+  if (n.includes("scimitar") || n.includes("whip") || n.includes("scythe") || n.includes("sword"))
+    return "slash";
+
+  // Highest total attack bonus among the three
+  if (bonuses.attackStab >= bonuses.attackSlash && bonuses.attackStab >= bonuses.attackCrush)
+    return "stab";
+  if (bonuses.attackCrush >= bonuses.attackSlash && bonuses.attackCrush >= bonuses.attackStab)
+    return "crush";
+  return "slash";
 }
 
 /**
