@@ -20,6 +20,7 @@ import {
   findUpgradePathUnderBudget,
   type LeftoverUpgrade,
 } from "./leftoverUpgrade";
+import { greedyOptimizeAllStyles } from "./budgetOptimize";
 import { parseBudgetInput } from "./parseBudget";
 import type { CombatStyle } from "../dps-calc/dpsTypes";
 
@@ -252,11 +253,13 @@ export default function LoadoutFinder({ hiscores }: Props) {
     [priceByName]
   );
 
+  const [useOptimizer, setUseOptimizer] = useState(true);
+
   const results = useMemo(() => {
     if (!equipment || equipment.length === 0) return [];
     const styles: CombatStyle[] | undefined =
       styleFilter === "all" ? undefined : [styleFilter];
-    return findBudgetLoadouts({
+    const presets = findBudgetLoadouts({
       equipment,
       priceOf,
       hiscores,
@@ -266,7 +269,21 @@ export default function LoadoutFinder({ hiscores }: Props) {
       requirePriced: false,
       limit: 10,
     });
-  }, [equipment, priceOf, hiscores, target, budget, styleFilter]);
+    if (!useOptimizer) return presets;
+    const optimized = greedyOptimizeAllStyles({
+      equipment,
+      priceOf,
+      hiscores,
+      target,
+      budget,
+      styles,
+    });
+    // Merge: optimized first (dedupe by name), then presets by DPS
+    const seen = new Set(optimized.map((r) => r.preset.name));
+    const merged = [...optimized, ...presets.filter((p) => !seen.has(p.preset.name))];
+    merged.sort((a, b) => b.dps - a.dps);
+    return merged.slice(0, 12);
+  }, [equipment, priceOf, hiscores, target, budget, styleFilter, useOptimizer]);
 
   /** Multi-step upgrade path under leftover cash for top setups (budget mode only). */
   const leftoverByPreset = useMemo(() => {
@@ -331,9 +348,19 @@ export default function LoadoutFinder({ hiscores }: Props) {
 
   const openInDps = (row: RankedLoadout) => {
     const params: Record<string, string> = {
-      preset: row.preset.name,
       style: row.style,
     };
+    // Named presets deep-link by name; optimized gear is encoded as path
+    if (!row.preset.name.startsWith("Optimized ")) {
+      params.preset = row.preset.name;
+    } else {
+      // Build upgradePath of all slots so DPS can equip the full set
+      const parts: string[] = [];
+      for (const [slot, item] of Object.entries(row.gear)) {
+        if (item) parts.push(`${slot}:${item.name}`);
+      }
+      if (parts.length) params.upgradePath = parts.join("|");
+    }
     if (target.name !== "Custom / Dummy") {
       params.monster = target.name;
     }
@@ -450,6 +477,16 @@ export default function LoadoutFinder({ hiscores }: Props) {
               items={STYLE_PILLS}
             />
           </div>
+
+          <label className="flex items-center gap-2 text-xs text-text-secondary cursor-pointer">
+            <input
+              type="checkbox"
+              checked={useOptimizer}
+              onChange={(e) => setUseOptimizer(e.target.checked)}
+              className="rounded border-border"
+            />
+            Greedy BiS under budget (weapon → armour scan)
+          </label>
         </div>
       </Card>
 

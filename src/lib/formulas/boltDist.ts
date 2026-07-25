@@ -83,11 +83,17 @@ export function boltEnchantHitDistribution(opts: {
   targetHp: number;
   rangedLevel: number;
   guaranteedProc?: boolean;
+  /**
+   * Multiplier on base PvM proc chance (Kandarin hard diary = 1.1).
+   * Ignored when guaranteedProc is set.
+   */
+  procMult?: number;
 }): HitDistribution {
-  const { enchant, maxHit, accuracy, targetHp, rangedLevel, guaranteedProc } = opts;
+  const { enchant, maxHit, accuracy, targetHp, rangedLevel, guaranteedProc, procMult = 1 } = opts;
   if (enchant === "none") return hitDistribution(maxHit, accuracy);
 
-  const p = guaranteedProc ? 1 : BOLT_PROC_CHANCE[enchant];
+  const baseP = BOLT_PROC_CHANCE[enchant];
+  const p = guaranteedProc ? 1 : Math.min(1, baseP * procMult);
   const normal = hitDistribution(maxHit, accuracy);
 
   let procPmf: number[];
@@ -138,6 +144,7 @@ export function boltEnchantExpectedFromPmf(opts: {
   targetHp: number;
   rangedLevel: number;
   guaranteedProc?: boolean;
+  procMult?: number;
 }): number {
   return boltEnchantHitDistribution(opts).expectedHit;
 }

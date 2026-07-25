@@ -1,30 +1,25 @@
 # NEXT — living product backlog
 
-After **2.5.8** product polish pass (milestones, icons, custom budget, clog I/O).
+After **2.5.10** (greedy budget BiS + Kandarin bolt diary).
 
 ## Shipped recently
 
-### 2.5.8 core
-- Budget Loadout Finder + leftover multi-step path → DPS
-- Boss meta packs (curated + weakness fallback)
-- Flip sanity, search feature ranking, hubs / What next
-- Progress/Loot defaults; WOM links; manual clog; news timeout
+### 2.5.8–2.5.9
+- Budget Loadout Finder, leftover path, meta packs, flip/search trust
+- Milestones, home icons, custom budget, clog I/O
 
-### Post-2.5.8 polish (this pass)
-- Profile milestones skip untrained lvl-1 / base HP noise
-- Home tool grid uses AppIcon glyphs (no blank wiki tiles)
-- Loadout Finder **Custom** budget (75m, 1.5b, 250k, …)
-- Manual clog: more categories + Export / Import JSON
+### 2.5.10
+- **Greedy under-budget BiS** — weapon → armour scan merged into Loadout Finder (toggle)
+- **Kandarin hard diary** — ×1.1 enchanted bolt proc (DPS diary toggle)
 
 ## Still open (optional)
 
 ### Combat (large)
-- Full combinatorial budget BiS (GearScape-class) beyond presets + leftover path
-- Remaining obscure specs / Kandarin diary bolt rate variants
+- True full combinatorial BiS (GearScape-class search tree)
+- Remaining obscure specs (burning claws full matrix, etc.)
 - Live wiki monster size/attributes API when fields exist
 
-### Growth / platform
-- Demo clip + community post
+### Platform
 - Authenticode signing in CI (see WINDOWS-SIGNING.md)
 
 ## Ownership
