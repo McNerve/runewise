@@ -7,9 +7,10 @@ All notable changes to RuneWise are documented here. Versions follow [Semantic V
 ### Combat / DPS (wiki parity)
 
 - **Wiki-aligned combat pipeline** — void on effective levels, `tbowScaling`, ordered melee truncs, Tumeken’s shadow 3×/4× ToA, fang/scythe shapes, overkill-aware TTK, bolt enchants + ZCB guarantee, scorcher vs demons.
-- **Monster attributes table** — size, Xerician, demon/dragon/undead tags, demonbane vulnerability (Duke/Yama) for scythe hits and tbow cap.
+- **Spot-check fixes vs weirdgloop** — Osmumten’s fang uses wiki `getFangAccuracyRoll` (not naive 1−(1−p)²); magic effective level uses **+9** base (not +8); ice demon demonbane vuln 115.
+- **Monster attributes table** — size, Xerician, demon/dragon/undead tags, demonbane vulnerability (Duke/Yama/Ice) for scythe hits and tbow cap.
 - **Spec EV models** — voidwaker 50–150% band, dark bow, fang eviscerate, webweaver, claws cascade; dark bow + fang added to the picker.
-- **Golden fixtures** — `dps.wiki-fixtures.test.ts` locks flagship loadouts for regression.
+- **Golden + spot-check fixtures** — `dps.wiki-fixtures.test.ts` and `dps.wiki-spotcheck.test.ts` lock flagship numbers to wiki formulas.
 
 ### Fixes
 

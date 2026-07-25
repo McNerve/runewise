@@ -50,14 +50,13 @@ export function hitDistribution(maxHit: number, accuracy: number): HitDistributi
 }
 
 /**
- * Osmumten's fang: accuracy is rolled twice (1 - (1-p)²), and a successful
- * hit is re-rolled into the middle band [trunc(15% max), trunc(85% max)].
- * Wiki: linear min/max transform on the hit range.
+ * Osmumten's fang hit PMF given **already-computed fang accuracy**
+ * (wiki BaseCalc.getFangAccuracyRoll — not independent 1-(1-p)²).
+ * Successful hits re-roll into [trunc(15% max), trunc(85% max)].
  */
-export function fangHitDistribution(maxHit: number, accuracy: number): HitDistribution {
+export function fangHitDistribution(maxHit: number, fangAccuracy: number): HitDistribution {
   const m = Math.max(0, Math.floor(maxHit));
-  const baseAcc = Math.min(1, Math.max(0, accuracy));
-  const a = 1 - (1 - baseAcc) ** 2;
+  const a = Math.min(1, Math.max(0, fangAccuracy));
 
   if (m === 0) {
     return { pmf: [1], expectedHit: 0, zeroChance: 1, medianHit: 0 };
@@ -82,15 +81,18 @@ export function fangHitDistribution(maxHit: number, accuracy: number): HitDistri
   return finalizePmf(pmf);
 }
 
-/** Fang effective accuracy after the double roll. */
-export function fangAccuracy(accuracy: number): number {
-  const a = Math.min(1, Math.max(0, accuracy));
+/**
+ * @deprecated Independent double-roll approximation. Prefer fangHitChance(atk, def)
+ * from dps.ts (wiki closed form). Kept for call-site compatibility.
+ */
+export function fangAccuracy(singleRollAccuracy: number): number {
+  const a = Math.min(1, Math.max(0, singleRollAccuracy));
   return 1 - (1 - a) ** 2;
 }
 
-/** Expected damage for a fang hit (analytic). */
-export function fangExpectedHit(maxHit: number, accuracy: number): number {
-  return fangHitDistribution(maxHit, accuracy).expectedHit;
+/** Expected damage for a fang hit given fang accuracy (wiki formula already applied). */
+export function fangExpectedHit(maxHit: number, fangAccuracyValue: number): number {
+  return fangHitDistribution(maxHit, fangAccuracyValue).expectedHit;
 }
 
 /**

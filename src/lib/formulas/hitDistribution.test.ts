@@ -3,7 +3,6 @@ import {
   hitDistribution,
   killTimeStats,
   fangHitDistribution,
-  fangAccuracy,
   scytheHitDistribution,
   convolvePmfs,
   fangKillTimeStats,
@@ -114,10 +113,10 @@ describe("killTimeStats", () => {
 });
 
 describe("fang and scythe distributions", () => {
-  it("fang doubles accuracy and bands damage to 15-85%", () => {
-    const dist = fangHitDistribution(40, 0.5);
-    const a = fangAccuracy(0.5);
-    expect(a).toBeCloseTo(0.75, 10);
+  it("fang bands damage to 15-85% using provided fang accuracy", () => {
+    // fangAccuracy arg is already wiki fangHitChance (not single-roll)
+    const a = 0.84;
+    const dist = fangHitDistribution(40, a);
     const lo = Math.trunc(40 * 0.15);
     const hi = Math.trunc(40 * 0.85);
     expect(dist.expectedHit).toBeCloseTo((a * (lo + hi)) / 2, 8);

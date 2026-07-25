@@ -13,9 +13,11 @@ import {
   calculateDps,
   DPS_MODIFIERS,
   tbowScaling,
+  fangHitChance,
+  hitChance,
   type DpsInput,
 } from "./dps";
-import { fangExpectedHit, fangAccuracy } from "./hitDistribution";
+import { fangExpectedHit } from "./hitDistribution";
 import { lookupMonsterMeta } from "../data/monster-attributes";
 
 function base(overrides: Partial<DpsInput> = {}): DpsInput {
@@ -79,7 +81,7 @@ describe("wiki flagship fixtures", () => {
     expect(r.dps).toBeGreaterThan(0);
   });
 
-  it("fang double-rolls accuracy; EV uses 15-85% band", () => {
+  it("fang uses wiki closed-form accuracy + 15-85% band", () => {
     const r = calculateDps(
       base({
         attackBonus: 100,
@@ -90,11 +92,12 @@ describe("wiki flagship fixtures", () => {
       })
     );
     expect(r.attackShape).toBe("fang");
-    expect(r.accuracy).toBeCloseTo(fangAccuracy(r.baseAccuracy), 10);
-    expect(r.expectedHit).toBeCloseTo(
-      fangExpectedHit(r.maxHit, r.baseAccuracy),
-      8
-    );
+    // Wiki fangHitChance is strictly above independent double-roll of normal hit chance
+    // for the same rolls, and above single-roll hitChance.
+    const single = hitChance(r.attackRoll, r.defenseRoll);
+    expect(r.accuracy).toBe(fangHitChance(r.attackRoll, r.defenseRoll));
+    expect(r.accuracy).toBeGreaterThan(single);
+    expect(r.expectedHit).toBeCloseTo(fangExpectedHit(r.maxHit, r.accuracy), 8);
   });
 
   it("scythe size-3 expected hit > size-1 at same gear", () => {

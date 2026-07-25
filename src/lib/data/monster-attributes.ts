@@ -45,7 +45,7 @@ const ENTRIES: MetaEntry[] = [
   { match: "vanguard", size: 2, attributes: ["xerician"] },
   { match: "skeletal mystic", size: 1, attributes: ["xerician", "undead"] },
   { match: "lizardman shaman", size: 2, attributes: ["xerician"] },
-  { match: "ice demon", size: 2, attributes: ["xerician", "demon"] },
+  { match: "ice demon", size: 2, attributes: ["xerician", "demon"], demonbaneVulnerability: 115 },
   { match: "guardian", size: 2, attributes: ["xerician"] },
   { match: "deathly mage", size: 1, attributes: ["xerician"] },
   { match: "deathly ranger", size: 1, attributes: ["xerician"] },

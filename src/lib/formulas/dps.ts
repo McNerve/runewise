@@ -592,16 +592,24 @@ export function applyMeleeGearPipeline(
   return { attackRoll, maxHit };
 }
 
+/**
+ * Effective combat level.
+ * Melee/ranged: +8 base (wiki). Magic: +9 base (wiki PlayerVsNPCCalc).
+ * Prayer floors first, then stance, then style base.
+ */
 export function effectiveLevel(
   level: number,
   prayerMult: number,
-  stanceBonus: number
+  stanceBonus: number,
+  /** 8 melee/ranged, 9 magic (wiki). */
+  styleBase = 8
 ): number {
-  return Math.floor(level * prayerMult) + stanceBonus + 8;
+  return Math.floor(level * prayerMult) + stanceBonus + styleBase;
 }
 
+/** Wiki: trunc((effective * (bonus+64) + 320) / 640). */
 export function maxHit(effectiveStr: number, strBonus: number): number {
-  return Math.floor(0.5 + (effectiveStr * (strBonus + 64)) / 640);
+  return Math.trunc((effectiveStr * (strBonus + 64) + 320) / 640);
 }
 
 export function attackRoll(effectiveAtk: number, atkBonus: number): number {
@@ -612,11 +620,39 @@ export function defenseRoll(defLevel: number, defBonus: number): number {
   return (defLevel + 9) * (defBonus + 64);
 }
 
+/** Standard accuracy roll (wiki BaseCalc.getNormalAccuracyRoll, non-negative). */
 export function hitChance(atkRoll: number, defRoll: number): number {
   if (atkRoll > defRoll) {
     return 1 - (defRoll + 2) / (2 * (atkRoll + 1));
   }
   return atkRoll / (2 * (defRoll + 1));
+}
+
+/**
+ * Osmumten's fang accuracy (wiki BaseCalc.getFangAccuracyRoll).
+ * NOT independent double-roll 1-(1-p)² — uses the closed-form double-roll formula.
+ */
+export function fangHitChance(atkRoll: number, defRoll: number): number {
+  let atk = atkRoll;
+  let def = defRoll;
+  if (atk < 0) atk = Math.min(0, atk + 2);
+  if (def < 0) def = Math.min(0, def + 2);
+
+  const stdRoll = (attack: number, defence: number) =>
+    attack > defence
+      ? 1 - ((defence + 2) * (2 * defence + 3)) / (attack + 1) / (attack + 1) / 6
+      : (attack * (4 * attack + 5)) / 6 / (attack + 1) / (defence + 1);
+
+  const rvRoll = (attack: number, defence: number) =>
+    attack < defence
+      ? (attack * (defence * 6 - 2 * attack + 5)) / 6 / (defence + 1) / (defence + 1)
+      : 1 - ((defence + 2) * (2 * defence + 3)) / 6 / (defence + 1) / (attack + 1);
+
+  if (atk >= 0 && def >= 0) return stdRoll(atk, def);
+  if (atk >= 0 && def < 0) return 1 - 1 / (-def + 1) / (atk + 1);
+  if (atk < 0 && def >= 0) return 0;
+  if (atk < 0 && def < 0) return rvRoll(-def, -atk);
+  return 0;
 }
 
 export function dps(
@@ -734,6 +770,8 @@ export function calculateDps(input: DpsInput) {
   const shape = inferAttackShape(input.weaponName, input.attackShape);
   const monsterSize = inferMonsterSize(undefined, input.monsterSize ?? 1);
 
+  // Magic uses +9 style base (wiki); melee/ranged use +8.
+  const styleBase = input.combatStyle === "magic" ? 9 : 8;
   let effAtk = effectiveLevel(
     input.combatStyle === "melee"
       ? input.attackLevel
@@ -741,7 +779,8 @@ export function calculateDps(input: DpsInput) {
         ? input.rangedLevel
         : input.magicLevel,
     input.prayerAttackMult,
-    input.stanceAttackBonus
+    input.stanceAttackBonus,
+    styleBase
   );
   let effStr = effectiveLevel(
     input.combatStyle === "melee"
@@ -750,7 +789,8 @@ export function calculateDps(input: DpsInput) {
         ? input.rangedLevel
         : input.magicLevel,
     input.prayerStrengthMult,
-    input.stanceStrengthBonus
+    input.stanceStrengthBonus,
+    styleBase
   );
 
   // ── Void: effective-level factors (wiki) before max hit / attack roll ──
@@ -929,16 +969,18 @@ export function calculateDps(input: DpsInput) {
       ? input.targetMagicLevel
       : reducedDefLevel;
   const dr = defenseRoll(effectiveDefLevel, input.targetDefBonus);
-  let acc = hitChance(ar, dr);
+  // Fang uses wiki closed-form double-roll accuracy (not independent 1-(1-p)²).
+  let acc = shape === "fang" ? fangHitChance(ar, dr) : hitChance(ar, dr);
 
-  // Fang: double accuracy roll; DPS uses banded expected hit, not max/2.
+  // Fang damage band [15%, 85%]; scythe multi-hitsplat; else uniform 0..max.
   const baseAccuracy = acc;
   let expectedHit = (acc * mh) / 2;
   let displayAccuracy = acc;
   if (shape === "fang") {
-    const { fangAccuracy, fangExpectedHit } = requireFangHelpers();
-    displayAccuracy = fangAccuracy(acc);
-    expectedHit = fangExpectedHit(mh, acc);
+    displayAccuracy = acc;
+    const lo = Math.trunc(mh * 0.15);
+    const hi = Math.trunc(mh * 0.85);
+    expectedHit = acc * ((lo + hi) / 2);
   } else if (shape === "scythe") {
     // Multi-hitsplat independent rolls: full + half + quarter max by size.
     const hits = Math.max(1, Math.min(3, monsterSize));
@@ -1003,29 +1045,6 @@ export function calculateDps(input: DpsInput) {
     expectedHit,
     boltEnchant: input.boltEnchant ?? "none",
     zcbSpec: !!input.zcbSpec,
-  };
-}
-
-// Lazy import helpers avoid circular deps with hitDistribution at module init.
-function requireFangHelpers(): {
-  fangAccuracy: (a: number) => number;
-  fangExpectedHit: (m: number, a: number) => number;
-} {
-  // Inline to keep dps.ts self-contained for tree-shaking tests.
-  return {
-    fangAccuracy: (accuracy: number) => {
-      const a = Math.min(1, Math.max(0, accuracy));
-      return 1 - (1 - a) ** 2;
-    },
-    fangExpectedHit: (maxHit: number, accuracy: number) => {
-      const m = Math.max(0, Math.floor(maxHit));
-      const baseAcc = Math.min(1, Math.max(0, accuracy));
-      const a = 1 - (1 - baseAcc) ** 2;
-      if (m === 0) return 0;
-      const lo = Math.trunc(m * 0.15);
-      const hi = Math.trunc(m * 0.85);
-      return a * ((lo + hi) / 2);
-    },
   };
 }
 
@@ -1172,8 +1191,9 @@ export function calculateSpecDps(input: SpecDpsInput) {
     const mult = input.darkBowDragonArrows === false ? 1.3 : 1.5;
     specTotalMaxHit = Math.floor(base.maxHit * mult) * 2;
   } else if (input.specCascadeType === "fang_spec") {
-    // Accuracy mult already on roll; double-roll + full damage band.
-    specTotalDamage = fangSpecExpectedDamage(effectiveSpecMax, specAccuracy);
+    // Wiki fang accuracy on the (already 1.5×) attack roll; full 0..max band (no 15–85).
+    const fangAcc = fangHitChance(specAttackRoll, base.defenseRoll);
+    specTotalDamage = (fangAcc * effectiveSpecMax) / 2;
     specTotalMaxHit = effectiveSpecMax;
   } else if (input.specCascadeType === "webweaver") {
     specTotalDamage = webweaverExpectedDamage(base.maxHit, specAccuracy);

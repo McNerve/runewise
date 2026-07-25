@@ -69,12 +69,14 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
 
   // Exact kill time from the damage distribution — overkill-aware, unlike
   // the hp / dps figure inside `result.ttk`. Fang/scythe use specialized PMFs.
+  // Fang accuracy is already the wiki closed-form value on result.accuracy /
+  // baseAccuracy — do not re-double-roll when building TTK PMFs.
   const killStats = useMemo(
     () =>
       attackKillTimeStats(
         result.attackShape ?? "standard",
         result.maxHit,
-        result.baseAccuracy ?? result.accuracy,
+        result.accuracy,
         targetHp,
         effectiveAttackSpeed,
         result.monsterSize ?? 1
@@ -82,7 +84,6 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
     [
       result.attackShape,
       result.maxHit,
-      result.baseAccuracy,
       result.accuracy,
       result.monsterSize,
       targetHp,
@@ -96,7 +97,7 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
         attackKillTimeStats(
           pr.attackShape ?? "standard",
           pr.maxHit,
-          pr.baseAccuracy ?? pr.accuracy,
+          pr.accuracy,
           monster.hitpoints,
           effectiveAttackSpeed,
           pr.monsterSize ?? 1
@@ -335,7 +336,7 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
         <div className="mt-4">
           <HitDistributionChart
             maxHit={result.maxHit}
-            accuracy={result.baseAccuracy ?? result.accuracy}
+            accuracy={result.accuracy}
             attackShape={result.attackShape}
             monsterSize={result.monsterSize}
           />

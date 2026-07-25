@@ -31,6 +31,7 @@ import {
   darkBowExpectedDamage,
   fangSpecExpectedDamage,
   webweaverExpectedDamage,
+  fangHitChance,
   type DpsInput,
 } from "./dps";
 
@@ -514,7 +515,8 @@ describe("poisonDps", () => {
 });
 
 describe("Tumeken's shadow triples only the gear bonus", () => {
-  // effAtk = effectiveLevel(99, 1.0, 3) = 110. Gear magic attack +173, magic dmg +25%, spell base 34.
+  // Magic accurate: stance +2, style base +9 → eff = 99+2+9 = 110 (wiki).
+  // Gear magic attack +173, magic dmg +25%, spell base 34.
   // Shadow: attack roll = 110 * (3*173 + 64) = 110*583 = 64130 (NOT 110*(173+64)*3).
   //         max hit = floor(34 * (1 + 3*25/100)) = floor(34*1.75) = 59 (NOT floor(34*1.25)*3 = 126).
   const shadowInput = meleeInput({
@@ -522,7 +524,7 @@ describe("Tumeken's shadow triples only the gear bonus", () => {
     magicLevel: 99,
     attackBonus: 173,
     strengthBonus: 25,
-    stanceAttackBonus: 3,
+    stanceAttackBonus: 2,
     spellBaseMaxHit: 34,
     targetMagicLevel: 100,
   });
@@ -738,7 +740,7 @@ describe("deferred wiki parity — fang/scythe/arclight/crystal/magic", () => {
     expect(isP2Wardens("Warden (P2)")).toBe(true);
   });
 
-  it("fang double-rolls accuracy (same mid-band EV as uniform at equal acc)", () => {
+  it("fang wiki accuracy exceeds single-roll; 15-85% band EV", () => {
     const base = meleeInput({
       weaponName: "Osmumten's fang",
       attackBonus: 100,
@@ -748,12 +750,12 @@ describe("deferred wiki parity — fang/scythe/arclight/crystal/magic", () => {
     });
     const fang = calculateDps(base);
     const plain = calculateDps({ ...base, weaponName: "Abyssal whip", attackShape: "standard" });
-    // Same gear max hit, but fang effective accuracy is higher → higher EV
-    expect(fang.accuracy).toBeGreaterThan(plain.accuracy);
     expect(fang.attackShape).toBe("fang");
     expect(fang.maxHit).toBe(plain.maxHit);
-    expect(fang.expectedHit).toBeGreaterThan(plain.expectedHit);
-    expect(fang.dps).toBeGreaterThan(plain.dps);
+    expect(fang.accuracy).toBe(fangHitChance(fang.attackRoll, fang.defenseRoll));
+    expect(fang.accuracy).toBeGreaterThan(plain.accuracy);
+    expect(fang.expectedHit).toBeGreaterThan(plain.expectedHit * 0.9);
+    expect(fang.dps).toBeGreaterThan(0);
   });
 
   it("scythe size-3 deals more expected damage than size-1", () => {

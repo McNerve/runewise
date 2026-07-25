@@ -14,6 +14,7 @@ describe("lookupMonsterMeta", () => {
     expect(monsterHasAttribute("K'ril Tsutsaroth", "demon")).toBe(true);
     expect(lookupMonsterMeta("Duke Sucellus").demonbaneVulnerability).toBe(70);
     expect(lookupMonsterMeta("Yama").demonbaneVulnerability).toBe(120);
+    expect(lookupMonsterMeta("Ice demon").demonbaneVulnerability).toBe(115);
   });
 
   it("defaults unknown NPCs to size 1", () => {
