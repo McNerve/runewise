@@ -22,7 +22,8 @@ export type SpecCascadeType =
   | "voidwaker"
   | "dark_bow"
   | "fang_spec"
-  | "webweaver";
+  | "webweaver"
+  | "burning_claws";
 
 export const SPEC_WEAPONS: SpecWeapon[] = [
   // Melee
@@ -175,8 +176,70 @@ export const SPEC_WEAPONS: SpecWeapon[] = [
     cascadeType: "fang_spec",
     notes: "Removes 15–85% band (full 0–max). +50% accuracy. Double-rolls accuracy.",
   },
+  {
+    id: "burning_claws",
+    name: "Burning claws",
+    specName: "Burning barrage",
+    combatStyle: "melee",
+    specCost: 35,
+    accuracyMult: 1.0,
+    damageMult: 1.0,
+    hits: 3,
+    guaranteedHit: false,
+    cascadeType: "burning_claws",
+    notes:
+      "Up to 3 accuracy rolls. Damage bands 75–175% / 50–150% / 25–125% of max, split 25/25/50. Burn EV on hitsplats. Claws also +5% acc/dmg always.",
+  },
 
   // Ranged
+  {
+    id: "heavy_ballista",
+    name: "Heavy ballista",
+    specName: "Concentrated Shot",
+    combatStyle: "ranged",
+    specCost: 65,
+    accuracyMult: 1.25,
+    damageMult: 1.25,
+    hits: 1,
+    guaranteedHit: false,
+    notes: "+25% accuracy and damage for one shot. 65% energy.",
+  },
+  {
+    id: "light_ballista",
+    name: "Light ballista",
+    specName: "Concentrated Shot",
+    combatStyle: "ranged",
+    specCost: 65,
+    accuracyMult: 1.25,
+    damageMult: 1.25,
+    hits: 1,
+    guaranteedHit: false,
+    notes: "Same as heavy ballista special. Lower base stats.",
+  },
+  {
+    id: "magic_shortbow",
+    name: "Magic shortbow",
+    specName: "Snapshot",
+    combatStyle: "ranged",
+    specCost: 55,
+    accuracyMult: 1.0,
+    damageMult: 1.0,
+    hits: 2,
+    guaranteedHit: false,
+    notes: "Two quick hits. Second hit slightly less accurate in practice; modeled as two independent rolls.",
+  },
+  {
+    id: "magic_shortbow_i",
+    name: "Magic shortbow (i)",
+    specName: "Snapshot",
+    combatStyle: "ranged",
+    specCost: 50,
+    accuracyMult: 1.0,
+    damageMult: 1.0,
+    hits: 2,
+    guaranteedHit: false,
+    notes: "Imbued MSB: 50% energy for two hits.",
+  },
   {
     id: "zaryte_crossbow",
     name: "Zaryte crossbow",

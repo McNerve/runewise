@@ -1002,7 +1002,8 @@ export interface SpecDpsInput extends DpsInput {
     | "voidwaker"
     | "dark_bow"
     | "fang_spec"
-    | "webweaver";
+    | "webweaver"
+    | "burning_claws";
   /** Accuracy multiplier for the 2nd hit's roll (e.g. halberd sweep: 0.75). */
   specSecondHitAccuracyMult?: number;
   /** Dark bow with dragon arrows (min 8, ×1.5) vs other (min 5, ×1.3). */
@@ -1084,6 +1085,36 @@ export function webweaverExpectedDamage(maxHit: number, accuracy: number): numbe
   return 4 * ((accuracy * hitMax) / 2);
 }
 
+/**
+ * Burning claws "Burning barrage" (wiki):
+ * Up to 3 sequential accuracy rolls. First success uses a damage band that
+ * shrinks each miss: 75–175%, then 50–150%, then 25–125% of max hit.
+ * Damage is split across 3 hitsplats (25/25/50). Each hitsplat has 15% chance
+ * to apply burn (≈10 total burn damage EV per proc → 1.5 expected burn per splat).
+ * All three miss → 0.
+ */
+export function burningClawsExpectedDamage(maxHit: number, accuracy: number): number {
+  const m = Math.max(0, Math.floor(maxHit));
+  const a = Math.min(1, Math.max(0, accuracy));
+  const bands: [number, number][] = [
+    [Math.floor(m * 0.75), Math.floor(m * 1.75)],
+    [Math.floor(m * 0.5), Math.floor(m * 1.5)],
+    [Math.floor(m * 0.25), Math.floor(m * 1.25)],
+  ];
+  // Expected burn if the attack lands: 3 hitsplats × 15% × 10 burn dmg
+  const burnEv = 3 * 0.15 * 10;
+  let total = 0;
+  for (let k = 0; k < 3; k++) {
+    const pFirst = Math.pow(1 - a, k) * a;
+    const [lo, hi] = bands[k]!;
+    const loC = Math.max(0, lo);
+    const hiC = Math.max(loC, hi);
+    const avgDmg = (loC + hiC) / 2;
+    total += pFirst * (avgDmg + burnEv);
+  }
+  return total;
+}
+
 export function calculateSpecDps(input: SpecDpsInput) {
   // When spec weapon overrides are provided, recompute the base roll/max from
   // those gear bonuses/speed rather than the main loadout.
@@ -1141,6 +1172,13 @@ export function calculateSpecDps(input: SpecDpsInput) {
   } else if (input.specCascadeType === "webweaver") {
     specTotalDamage = webweaverExpectedDamage(base.maxHit, specAccuracy);
     specTotalMaxHit = Math.floor(base.maxHit * 0.4) * 4;
+  } else if (input.specCascadeType === "burning_claws") {
+    // Spec applies +5% acc/dmg on top of base before cascade (wiki passive on claws).
+    const clawMax = Math.floor(base.maxHit * 1.05 * input.specDamageMult);
+    const clawRoll = Math.floor(base.attackRoll * 1.05 * input.specAccuracyMult);
+    const clawAcc = input.specGuaranteedHit ? 1 : hitChance(clawRoll, base.defenseRoll);
+    specTotalDamage = burningClawsExpectedDamage(clawMax, clawAcc);
+    specTotalMaxHit = Math.floor(clawMax * 1.75);
   } else if (input.specHits === 2 && input.specSecondHitAccuracyMult != null) {
     const secondRoll = Math.floor(specAttackRoll * input.specSecondHitAccuracyMult);
     const secondAccuracy = input.specGuaranteedHit ? 1 : hitChance(secondRoll, base.defenseRoll);

@@ -43,4 +43,27 @@ describe("spec weapon damage multipliers", () => {
     expect(spec("osmumtens_fang").cascadeType).toBe("fang_spec");
     expect(spec("webweaver_bow").cascadeType).toBe("webweaver");
   });
+
+  it("burning claws uses cascade and 35% energy", () => {
+    const bc = spec("burning_claws");
+    expect(bc.cascadeType).toBe("burning_claws");
+    expect(bc.specCost).toBe(35);
+    expect(bc.hits).toBe(3);
+  });
+
+  it("ballistas use +25% acc/dmg at 65% energy", () => {
+    for (const id of ["heavy_ballista", "light_ballista"] as const) {
+      const b = spec(id);
+      expect(b.accuracyMult).toBe(1.25);
+      expect(b.damageMult).toBe(1.25);
+      expect(b.specCost).toBe(65);
+    }
+  });
+
+  it("MSB and MSB(i) are two-hit specs", () => {
+    expect(spec("magic_shortbow").hits).toBe(2);
+    expect(spec("magic_shortbow").specCost).toBe(55);
+    expect(spec("magic_shortbow_i").hits).toBe(2);
+    expect(spec("magic_shortbow_i").specCost).toBe(50);
+  });
 });

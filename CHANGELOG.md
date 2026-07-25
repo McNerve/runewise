@@ -4,6 +4,18 @@ All notable changes to RuneWise are documented here. Versions follow [Semantic V
 
 ## [Unreleased]
 
+## [2.5.11] - 2026-07-25
+
+### Combat / loadout
+
+- **Beam-search budget BiS** — multi-weapon seeds + multiple armour slot orders; catches “cheap weapon + better armour” cases greedy misses. Loadout Finder toggle updated.
+- **Obscure specs** — Burning claws cascade (bands + burn EV); heavy/light ballista and MSB(+i) in the special-weapon catalog.
+- **Monster attributes** — expanded curated table (wildy, wyverns, moons, etc.), name-heuristic tags for unlisted NPCs, `mergeMonsterMeta` for live wiki size/attrs.
+
+### Platform
+
+- **Authenticode scaffold** — optional `WINDOWS_CERTIFICATE` / password secrets in release workflow; re-upload signed installers. Docs in `docs/WINDOWS-SIGNING.md`.
+
 ## [2.5.10] - 2026-07-25
 
 ### Combat

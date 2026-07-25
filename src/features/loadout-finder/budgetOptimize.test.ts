@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { greedyOptimizeUnderBudget } from "./budgetOptimize";
+import {
+  greedyOptimizeUnderBudget,
+  beamOptimizeUnderBudget,
+  optimizeUnderBudget,
+} from "./budgetOptimize";
 import type { WikiEquipment, EquipmentSlot } from "../../lib/api/equipment";
 import type { HiscoreData } from "../../lib/api/hiscores";
 
@@ -80,15 +84,19 @@ const prices: Record<string, number> = {
   "primordial boots": 30_000_000,
 };
 
+const commonOpts = {
+  equipment: catalog,
+  priceOf: (n: string) => prices[n.toLowerCase()] ?? null,
+  hiscores: maxStats,
+  target: { name: "Dummy", defLevel: 50, defBonus: 0, hp: 100 },
+  style: "melee" as const,
+};
+
 describe("greedyOptimizeUnderBudget", () => {
   it("stays under budget and beats empty hands", () => {
     const r = greedyOptimizeUnderBudget({
-      equipment: catalog,
-      priceOf: (n) => prices[n.toLowerCase()] ?? null,
-      hiscores: maxStats,
-      target: { name: "Dummy", defLevel: 50, defBonus: 0, hp: 100 },
+      ...commonOpts,
       budget: 5_000_000,
-      style: "melee",
     });
     expect(r).not.toBeNull();
     expect(r!.totalCost).toBeLessThanOrEqual(5_000_000);
@@ -100,14 +108,78 @@ describe("greedyOptimizeUnderBudget", () => {
 
   it("picks expensive BiS when budget allows", () => {
     const r = greedyOptimizeUnderBudget({
-      equipment: catalog,
-      priceOf: (n) => prices[n.toLowerCase()] ?? null,
-      hiscores: maxStats,
-      target: { name: "Dummy", defLevel: 50, defBonus: 0, hp: 100 },
+      ...commonOpts,
       budget: 0, // unlimited
-      style: "melee",
     });
     expect(r).not.toBeNull();
     expect(r!.gear.weapon?.name ?? r!.gear["2h"]?.name).toMatch(/Ghrazi|whip/i);
+  });
+});
+
+describe("beamOptimizeUnderBudget", () => {
+  it("stays under budget and returns positive DPS", () => {
+    const r = beamOptimizeUnderBudget({
+      ...commonOpts,
+      budget: 5_000_000,
+    });
+    expect(r).not.toBeNull();
+    expect(r!.totalCost).toBeLessThanOrEqual(5_000_000);
+    expect(r!.dps).toBeGreaterThan(0);
+    expect((r!.preset.description ?? "").toLowerCase()).toMatch(/beam|greedy/);
+  });
+
+  it("matches or beats greedy DPS under the same budget", () => {
+    const greedy = greedyOptimizeUnderBudget({ ...commonOpts, budget: 2_000_000 });
+    const beam = beamOptimizeUnderBudget({ ...commonOpts, budget: 2_000_000 });
+    expect(beam).not.toBeNull();
+    expect(greedy).not.toBeNull();
+    expect(beam!.dps).toBeGreaterThanOrEqual(greedy!.dps - 0.01);
+  });
+
+  /**
+   * Classic greedy trap: a slightly better expensive weapon can leave too little
+   * cash for a high-str amulet. Beam keeps the cheap weapon seed and wins.
+   */
+  it("can pick cheaper weapon to afford better armour", () => {
+    const trapCatalog: WikiEquipment[] = [
+      item("Budget blade", "weapon", {
+        attackSlash: 70,
+        strengthBonus: 70,
+        attackSpeed: 4,
+        combatStyle: "slash",
+      }),
+      item("Pricey blade", "weapon", {
+        attackSlash: 72,
+        strengthBonus: 71,
+        attackSpeed: 4,
+        combatStyle: "slash",
+      }),
+      item("Power amulet", "neck", { attackSlash: 20, strengthBonus: 20 }),
+    ];
+    const trapPrices: Record<string, number> = {
+      "budget blade": 100_000,
+      "pricey blade": 900_000,
+      "power amulet": 500_000,
+    };
+    const opts = {
+      equipment: trapCatalog,
+      priceOf: (n: string) => trapPrices[n.toLowerCase()] ?? null,
+      hiscores: maxStats,
+      target: { name: "Dummy", defLevel: 20, defBonus: 0, hp: 100 },
+      budget: 1_000_000,
+      style: "melee" as const,
+    };
+    const beam = beamOptimizeUnderBudget(opts);
+    expect(beam).not.toBeNull();
+    // Optimal is budget blade + power amulet (600k) over pricey alone (900k)
+    expect(beam!.gear.weapon?.name).toBe("Budget blade");
+    expect(beam!.gear.neck?.name).toBe("Power amulet");
+    expect(beam!.totalCost).toBeLessThanOrEqual(1_000_000);
+  });
+
+  it("optimizeUnderBudget returns a usable loadout", () => {
+    const r = optimizeUnderBudget({ ...commonOpts, budget: 10_000_000 });
+    expect(r).not.toBeNull();
+    expect(r!.dps).toBeGreaterThan(0);
   });
 });

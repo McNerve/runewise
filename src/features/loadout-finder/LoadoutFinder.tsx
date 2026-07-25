@@ -20,7 +20,7 @@ import {
   findUpgradePathUnderBudget,
   type LeftoverUpgrade,
 } from "./leftoverUpgrade";
-import { greedyOptimizeAllStyles } from "./budgetOptimize";
+import { optimizeAllStyles } from "./budgetOptimize";
 import { parseBudgetInput } from "./parseBudget";
 import type { CombatStyle } from "../dps-calc/dpsTypes";
 
@@ -270,7 +270,7 @@ export default function LoadoutFinder({ hiscores }: Props) {
       limit: 10,
     });
     if (!useOptimizer) return presets;
-    const optimized = greedyOptimizeAllStyles({
+    const optimized = optimizeAllStyles({
       equipment,
       priceOf,
       hiscores,
@@ -485,7 +485,7 @@ export default function LoadoutFinder({ hiscores }: Props) {
               onChange={(e) => setUseOptimizer(e.target.checked)}
               className="rounded border-border"
             />
-            Greedy BiS under budget (weapon → armour scan)
+            Beam BiS under budget (multi-weapon + armour search)
           </label>
         </div>
       </Card>
