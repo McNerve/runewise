@@ -1,9 +1,15 @@
 import { memo, useMemo } from "react";
-import { hitDistribution } from "../../../lib/formulas/hitDistribution";
+import {
+  attackHitDistribution,
+  type AttackShape,
+} from "../../../lib/formulas/hitDistribution";
 
 interface HitDistributionChartProps {
   maxHit: number;
+  /** Single-roll accuracy (pre-fang double). */
   accuracy: number;
+  attackShape?: AttackShape;
+  monsterSize?: number;
 }
 
 const CHART_W = 300;
@@ -11,8 +17,16 @@ const CHART_H = 72;
 const LABEL_H = 14;
 
 /** Probability mass of every possible damage value for a single attack. */
-export default memo(function HitDistributionChart({ maxHit, accuracy }: HitDistributionChartProps) {
-  const dist = useMemo(() => hitDistribution(maxHit, accuracy), [maxHit, accuracy]);
+export default memo(function HitDistributionChart({
+  maxHit,
+  accuracy,
+  attackShape = "standard",
+  monsterSize = 1,
+}: HitDistributionChartProps) {
+  const dist = useMemo(
+    () => attackHitDistribution(attackShape, maxHit, accuracy, monsterSize),
+    [attackShape, maxHit, accuracy, monsterSize]
+  );
 
   if (maxHit <= 0) return null;
 

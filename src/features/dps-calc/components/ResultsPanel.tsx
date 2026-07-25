@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import MonsterSearch from "./MonsterSearch";
 import DpsBreakdown from "./DpsBreakdown";
 import HitDistributionChart from "./HitDistributionChart";
-import { killTimeStats } from "../../../lib/formulas/hitDistribution";
+import { attackKillTimeStats } from "../../../lib/formulas/hitDistribution";
 import { incomingDps, type ProtectionPrayer } from "../../../lib/formulas/incomingDps";
 import { Button, Card } from "../../../components/primitives";
 import type { DpsState } from "../hooks/useDpsState";
@@ -45,6 +45,9 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
     selectedSpec,
     setSelectedSpec,
     specResult,
+    zcbSpec,
+    setZcbSpec,
+    boltEnchant,
     result,
     totalDps,
     poisonType,
@@ -65,16 +68,39 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
   } = state;
 
   // Exact kill time from the damage distribution — overkill-aware, unlike
-  // the hp / dps figure inside `result.ttk`.
+  // the hp / dps figure inside `result.ttk`. Fang/scythe use specialized PMFs.
   const killStats = useMemo(
-    () => killTimeStats(result.maxHit, result.accuracy, targetHp, effectiveAttackSpeed),
-    [result.maxHit, result.accuracy, targetHp, effectiveAttackSpeed]
+    () =>
+      attackKillTimeStats(
+        result.attackShape ?? "standard",
+        result.maxHit,
+        result.baseAccuracy ?? result.accuracy,
+        targetHp,
+        effectiveAttackSpeed,
+        result.monsterSize ?? 1
+      ),
+    [
+      result.attackShape,
+      result.maxHit,
+      result.baseAccuracy,
+      result.accuracy,
+      result.monsterSize,
+      targetHp,
+      effectiveAttackSpeed,
+    ]
   );
 
   const phaseKillTimes = useMemo(
     () =>
       phaseResults.map(({ monster, result: pr }) =>
-        killTimeStats(pr.maxHit, pr.accuracy, monster.hitpoints, effectiveAttackSpeed)
+        attackKillTimeStats(
+          pr.attackShape ?? "standard",
+          pr.maxHit,
+          pr.baseAccuracy ?? pr.accuracy,
+          monster.hitpoints,
+          effectiveAttackSpeed,
+          pr.monsterSize ?? 1
+        )
       ),
     [phaseResults, effectiveAttackSpeed]
   );
@@ -202,6 +228,21 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
 
       {/* Spec Weapon */}
       <Card kicker="Special Attack">
+        {boltEnchant ? (
+          <div className="mb-2 text-[11px] text-text-secondary">
+            Bolt enchant: <span className="text-text-primary capitalize">{boltEnchant}</span>
+            {" "}(EV-blended procs)
+          </div>
+        ) : null}
+        <label className="mb-2 flex items-center gap-2 text-[11px] text-text-secondary cursor-pointer">
+          <input
+            type="checkbox"
+            checked={zcbSpec}
+            onChange={(e) => setZcbSpec(e.target.checked)}
+            className="rounded border-border"
+          />
+          Zaryte crossbow special (guaranteed hit + bolt proc)
+        </label>
         <select
           value={selectedSpec?.id ?? ""}
           onChange={(e) => {
@@ -292,7 +333,12 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
           </div>
         )}
         <div className="mt-4">
-          <HitDistributionChart maxHit={result.maxHit} accuracy={result.accuracy} />
+          <HitDistributionChart
+            maxHit={result.maxHit}
+            accuracy={result.baseAccuracy ?? result.accuracy}
+            attackShape={result.attackShape}
+            monsterSize={result.monsterSize}
+          />
         </div>
         {poisonType !== "none" && (
           <div className="mt-3 flex gap-6 items-start">

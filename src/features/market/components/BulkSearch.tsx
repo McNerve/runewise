@@ -84,8 +84,8 @@ export default function BulkSearch({ mapping, prices }: BulkSearchProps) {
               <tr className="border-b border-border">
                 <th className="px-2 py-2 text-xs text-text-secondary font-normal w-8" />
                 <th className="px-2 py-2 text-xs text-text-secondary font-normal">Item</th>
-                <th className="px-2 py-2 text-xs text-text-secondary font-normal text-right">Buy</th>
-                <th className="px-2 py-2 text-xs text-text-secondary font-normal text-right">Sell</th>
+                <th className="px-2 py-2 text-xs text-text-secondary font-normal text-right" title="GE high">Instabuy</th>
+                <th className="px-2 py-2 text-xs text-text-secondary font-normal text-right" title="GE low">Instasell</th>
                 <th className="px-2 py-2 text-xs text-text-secondary font-normal text-right">Net Margin</th>
                 <th className="px-2 py-2 text-xs text-text-secondary font-normal text-right">High Alch</th>
               </tr>

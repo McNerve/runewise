@@ -5,6 +5,12 @@ export interface Prayer {
   style: "melee" | "ranged" | "magic";
   icon?: string; // wiki image filename
   level?: number;
+  /**
+   * Magic damage contribution in percentage points for the primary magic-damage
+   * stage (wiki: Mystic Lore +1%, Might +2%, Vigour +3%, Augury +4%).
+   * Accuracy still uses attackMult on effective magic level.
+   */
+  magicDamagePct?: number;
 }
 
 export const PRAYERS: Prayer[] = [
@@ -23,9 +29,9 @@ export const PRAYERS: Prayer[] = [
   { name: "Hawk Eye", attackMult: 1.1, strengthMult: 1.1, style: "ranged", icon: "Hawk_Eye.png", level: 26 },
   { name: "Eagle Eye", attackMult: 1.15, strengthMult: 1.15, style: "ranged", icon: "Eagle_Eye.png", level: 44 },
   { name: "Rigour", attackMult: 1.2, strengthMult: 1.23, style: "ranged", icon: "Rigour.png", level: 74 },
-  // Magic
+  // Magic — accuracy mults + primary magic-damage % (wiki: Lore +1, Might +2, Augury +4)
   { name: "Mystic Will", attackMult: 1.05, strengthMult: 1, style: "magic", icon: "Mystic_Will.png", level: 9 },
-  { name: "Mystic Lore", attackMult: 1.1, strengthMult: 1, style: "magic", icon: "Mystic_Lore.png", level: 27 },
-  { name: "Mystic Might", attackMult: 1.15, strengthMult: 1, style: "magic", icon: "Mystic_Might.png", level: 45 },
-  { name: "Augury", attackMult: 1.25, strengthMult: 1, style: "magic", icon: "Augury.png", level: 77 },
+  { name: "Mystic Lore", attackMult: 1.1, strengthMult: 1, style: "magic", icon: "Mystic_Lore.png", level: 27, magicDamagePct: 1 },
+  { name: "Mystic Might", attackMult: 1.15, strengthMult: 1, style: "magic", icon: "Mystic_Might.png", level: 45, magicDamagePct: 2 },
+  { name: "Augury", attackMult: 1.25, strengthMult: 1, style: "magic", icon: "Augury.png", level: 77, magicDamagePct: 4 },
 ];

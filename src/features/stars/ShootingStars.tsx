@@ -12,6 +12,7 @@ import {
 } from "../../lib/data/stars";
 import WikiImage from "../../components/WikiImage";
 import { fetchLiveStars, type LiveStar } from "../../lib/api/stars";
+import { clearCacheKey } from "../../lib/api/cache";
 import { fetchStarLandingSites } from "../../lib/api/stars-reference";
 import { useNavigation } from "../../lib/NavigationContext";
 import { sendNotification } from "../../lib/notify";
@@ -19,6 +20,7 @@ import { useSettings } from "../../hooks/useSettings";
 import { loadJSON, saveJSON } from "../../lib/localStorage";
 import FreshnessStrip from "../../components/FreshnessStrip";
 import { Button } from "../../components/primitives";
+import ErrorState from "../../components/ErrorState";
 
 const STAR_ALERTS_KEY = "runewise_star_alerts";
 
@@ -235,6 +237,7 @@ export default function ShootingStars() {
   const [tab, setTab] = useState<Tab>("live");
   const [stars, setStars] = useState<LiveStar[]>([]);
   const [loading, setLoading] = useState(true);
+  const [starsError, setStarsError] = useState<string | null>(null);
   const [starsLastFetched, setStarsLastFetched] = useState<Date | null>(null);
   const [selectedStar, setSelectedStar] = useState<LiveStar | null>(null);
   const userDismissedRef = useRef(false);
@@ -257,29 +260,43 @@ export default function ShootingStars() {
 
   const loadStars = useCallback((forceRefresh = false) => {
     if (forceRefresh) {
-      // Manually clear in-memory star cache so we bypass the 30s TTL
-      import("../../lib/api/cache").then(({ clearCacheKey }) => {
-        clearCacheKey("live-stars:v3");
-      }).catch(() => undefined);
+      // Sync clear so force-refresh never races the 30s TTL cache
+      clearCacheKey("live-stars:v3");
     }
-    fetchLiveStars().then((data) => {
-      setStars(data);
-      setLoading(false);
-      setStarsLastFetched(new Date());
-    }).catch(() => { setLoading(false); });
+    setLoading(true);
+    setStarsError(null);
+    fetchLiveStars({ forceRefresh })
+      .then((data) => {
+        setStars(data);
+        setLoading(false);
+        setStarsError(null);
+        setStarsLastFetched(new Date());
+      })
+      .catch((err: unknown) => {
+        setLoading(false);
+        setStarsError(err instanceof Error ? err.message : "Failed to load stars");
+      });
   }, []);
 
   // Fetch live stars
   useEffect(() => {
     let cancelled = false;
     const load = () => {
-      fetchLiveStars().then((data) => {
-        if (!cancelled) {
-          setStars(data);
-          setLoading(false);
-          setStarsLastFetched(new Date());
-        }
-      });
+      fetchLiveStars()
+        .then((data) => {
+          if (!cancelled) {
+            setStars(data);
+            setLoading(false);
+            setStarsError(null);
+            setStarsLastFetched(new Date());
+          }
+        })
+        .catch((err: unknown) => {
+          if (!cancelled) {
+            setLoading(false);
+            setStarsError(err instanceof Error ? err.message : "Failed to load stars");
+          }
+        });
     };
     load();
     // Auto-refresh every 30 seconds
@@ -512,7 +529,15 @@ export default function ShootingStars() {
             <div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4" />
           )}
 
-          {!loading && stars.length === 0 && (
+          {!loading && starsError && (
+            <ErrorState
+              title="Could not load stars"
+              error={starsError}
+              onRetry={() => loadStars(true)}
+            />
+          )}
+
+          {!loading && !starsError && stars.length === 0 && (
             <div className="bg-bg-tertiary rounded-lg p-6 text-center">
               <p className="text-sm text-text-secondary">No active stars reported right now.</p>
               <p className="text-xs text-text-secondary/50 mt-1">Data from the 07.gg public stars API</p>

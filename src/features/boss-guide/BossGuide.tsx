@@ -46,6 +46,7 @@ import DropTable from "../../components/DropTable";
 import { Button } from "../../components/primitives";
 import { Skeleton, TableSkeleton, CardSkeleton } from "../../components/Skeleton";
 import EmptyState from "../../components/EmptyState";
+import ErrorState from "../../components/ErrorState";
 import { initWikiInteractive } from "../../lib/wiki/interactive";
 import {
   BOSS_WORKSPACE_TABS,
@@ -82,6 +83,7 @@ export default function BossGuide({ hiscores }: Props) {
   >([]);
   const [lootKillsPerHour, setLootKillsPerHour] = useState(20);
   const [loading, setLoading] = useState(false);
+  const [guideError, setGuideError] = useState<string | null>(null);
   const [dropsLoading, setDropsLoading] = useState(false);
   const [wikiDrops, setWikiDrops] = useState<WikiDrop[]>([]);
   const [bucketFallbackDrops, setBucketFallbackDrops] = useState<BossWikiDrop[]>([]);
@@ -166,6 +168,8 @@ export default function BossGuide({ hiscores }: Props) {
     setSelectedBoss(boss);
     setActiveTab("guide");
     setLoading(true);
+    setGuide(null);
+    setGuideError(null);
     if (window.innerWidth < 1280) {
       setTimeout(() => contentRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     }
@@ -179,22 +183,38 @@ export default function BossGuide({ hiscores }: Props) {
     );
     try {
       const dropsName = boss.dropsName ?? boss.name;
-      const [nextGuide, nextDrops, nextWikiDrops] = await Promise.all([
-        fetchBossGuideDocument(boss.wikiPage),
+      const [guideResult, nextDrops, nextWikiDrops] = await Promise.all([
+        fetchBossGuideDocument(boss.wikiPage).then(
+          (doc) => ({ ok: true as const, doc }),
+          (err: unknown) => ({
+            ok: false as const,
+            message: err instanceof Error ? err.message : "Failed to load boss guide",
+          })
+        ),
         fetchDropTable(boss.name).catch(() => ({ categories: [] })),
         fetchDropsForMonster(dropsName).then((t) => t.drops).catch(() => [] as WikiDrop[]),
       ]);
+      if (requestId !== activeRequest.current) return;
+      if (guideResult.ok) {
+        setGuide(guideResult.doc);
+        setGuideError(null);
+      } else {
+        setGuide(null);
+        setGuideError(guideResult.message);
+      }
+      setDropCategories(nextDrops.categories);
+      setWikiDrops(nextWikiDrops);
+      if (!hasStaticDrops && nextWikiDrops.length === 0) {
+        fetchBossDropsFromWiki(dropsName)
+          .then((rows) => {
+            if (requestId === activeRequest.current) setBucketFallbackDrops(rows);
+          })
+          .catch((err: unknown) => { warn("BossGuide: fetch bucket drops", err); });
+      }
+    } catch (err: unknown) {
       if (requestId === activeRequest.current) {
-        setGuide(nextGuide);
-        setDropCategories(nextDrops.categories);
-        setWikiDrops(nextWikiDrops);
-        if (!hasStaticDrops && nextWikiDrops.length === 0) {
-          fetchBossDropsFromWiki(dropsName)
-            .then((rows) => {
-              if (requestId === activeRequest.current) setBucketFallbackDrops(rows);
-            })
-            .catch((err: unknown) => { warn("BossGuide: fetch bucket drops", err); });
-        }
+        setGuide(null);
+        setGuideError(err instanceof Error ? err.message : "Failed to load boss guide");
       }
     } finally {
       if (requestId === activeRequest.current) {
@@ -593,7 +613,15 @@ export default function BossGuide({ hiscores }: Props) {
             </div>
           ) : null}
 
-          {selectedBoss && !loading && activeTab === "guide" && guide && guide.sections.length > 0 ? (
+          {selectedBoss && !loading && activeTab === "guide" && guideError ? (
+            <ErrorState
+              title="Guide failed to load"
+              error={guideError}
+              onRetry={() => void selectBoss(selectedBoss)}
+            />
+          ) : null}
+
+          {selectedBoss && !loading && activeTab === "guide" && !guideError && guide && guide.sections.length > 0 ? (
             <div>
               {BOSS_METADATA[selectedBoss.name] && (
                 <BossMetaCard

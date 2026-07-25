@@ -48,6 +48,8 @@ interface AppViewContext {
     ironmanType: IronmanType;
     lastFetched?: Date | null;
     onRefresh?: () => void;
+    loading?: boolean;
+    error?: string | null;
   };
 }
 
@@ -68,22 +70,52 @@ function renderComponent(Component: LazyExoticComponent<ComponentType>, name: st
 
 export const VIEW_RENDERERS: Record<View, ViewRenderer> = {
   home: withBoundary("Home", ({ hiscores }) => <Home hiscores={hiscores} />),
-  overview: withBoundary("Profile", ({ hiscores }) =>
-    hiscores.data ? (
-      <Overview
-        hiscores={hiscores.data}
-        rsn={hiscores.rsn}
-        lastFetched={hiscores.lastFetched ?? null}
-        onRefresh={hiscores.onRefresh}
-      />
-    ) : (
+  overview: withBoundary("Profile", ({ hiscores }) => {
+    if (hiscores.loading && hiscores.rsn) {
+      return (
+        <div className="py-12 space-y-3 max-w-xl">
+          <div className="animate-pulse bg-bg-tertiary/50 h-5 rounded w-1/3" />
+          <div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-2/3" />
+          <div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-1/2" />
+        </div>
+      );
+    }
+    if (hiscores.data) {
+      return (
+        <Overview
+          hiscores={hiscores.data}
+          rsn={hiscores.rsn}
+          lastFetched={hiscores.lastFetched ?? null}
+          onRefresh={hiscores.onRefresh}
+        />
+      );
+    }
+    if (hiscores.rsn && hiscores.error) {
+      return (
+        <EmptyState
+          icon={NAV_ICONS.overview}
+          title={`Could not load ${hiscores.rsn}`}
+          description={hiscores.error}
+        />
+      );
+    }
+    if (hiscores.rsn) {
+      return (
+        <EmptyState
+          icon={NAV_ICONS.overview}
+          title="Profile unavailable"
+          description="Hiscores data is not loaded yet. Retry from the player bar or check your connection."
+        />
+      );
+    }
+    return (
       <EmptyState
         icon={NAV_ICONS.overview}
         title="Set your RSN to get started"
         description="Enter your RuneScape name above to turn RuneWise into a personalized command center."
       />
-    )
-  ),
+    );
+  }),
   lookup: renderComponent(PlayerLookup, "Hiscores Lookup"),
   "skill-calc": withBoundary("Skill Calculator", ({ hiscores }) => (
     <SkillCalculator hiscores={hiscores.data} />

@@ -1,5 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { hitDistribution, killTimeStats } from "./hitDistribution";
+import {
+  hitDistribution,
+  killTimeStats,
+  fangHitDistribution,
+  fangAccuracy,
+  scytheHitDistribution,
+  convolvePmfs,
+  fangKillTimeStats,
+} from "./hitDistribution";
 
 describe("hitDistribution", () => {
   it("sums to 1", () => {
@@ -104,3 +112,39 @@ describe("killTimeStats", () => {
     expect(stats.expectedAttacks).toBeGreaterThan(0);
   });
 });
+
+describe("fang and scythe distributions", () => {
+  it("fang doubles accuracy and bands damage to 15-85%", () => {
+    const dist = fangHitDistribution(40, 0.5);
+    const a = fangAccuracy(0.5);
+    expect(a).toBeCloseTo(0.75, 10);
+    const lo = Math.trunc(40 * 0.15);
+    const hi = Math.trunc(40 * 0.85);
+    expect(dist.expectedHit).toBeCloseTo((a * (lo + hi)) / 2, 8);
+    for (let k = 1; k < lo; k++) expect(dist.pmf[k] ?? 0).toBe(0);
+    for (let k = hi + 1; k <= 40; k++) expect(dist.pmf[k] ?? 0).toBe(0);
+  });
+
+  it("scythe size 3 has higher expected hit than size 1", () => {
+    const s1 = scytheHitDistribution(40, 0.8, 1);
+    const s3 = scytheHitDistribution(40, 0.8, 3);
+    expect(s3.expectedHit).toBeGreaterThan(s1.expectedHit);
+  });
+
+  it("convolve of two hits matches independent sum expectation", () => {
+    const a = hitDistribution(2, 1);
+    const b = hitDistribution(2, 1);
+    const c = convolvePmfs(a.pmf, b.pmf);
+    const expected = a.expectedHit + b.expectedHit;
+    let e = 0;
+    for (let i = 0; i < c.length; i++) e += i * c[i];
+    expect(e).toBeCloseTo(expected, 10);
+  });
+
+  it("fangKillTimeStats returns finite overkill-aware TTK", () => {
+    const stats = fangKillTimeStats(30, 0.7, 100, 5)!;
+    expect(stats.expectedAttacks).toBeGreaterThan(1);
+    expect(stats.expectedSeconds).toBeCloseTo(stats.expectedAttacks * 5 * 0.6, 8);
+  });
+});
+

@@ -3,9 +3,9 @@ import { netMargin } from "../../lib/tax";
 
 export interface Flip {
   item: ItemMapping;
-  /** Instabuy price — what you place a buy offer near. */
+  /** GE low — place a buy offer near this (not Market Instabuy/high). */
   buy: number;
-  /** Instasell price. */
+  /** GE high — place a sell offer near this (not Market Instasell/low). */
   sell: number;
   /** Post-GE-tax margin per item. */
   margin: number;

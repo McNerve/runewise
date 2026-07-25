@@ -199,7 +199,9 @@ export async function buildSearchIndex(): Promise<SearchResult[]> {
       kind: `${clue.tier} ${clue.type}`,
       searchText: `${clue.text} ${clue.solution} ${clue.location} clue scroll ${clue.tier}`,
       view: "clue-helper",
-      params: { search: hash },
+      // Prefer human-readable query text so ClueHelper can prefill the search box.
+      // Hash kept as fallback for legacy bookmarks.
+      params: { query: clue.text, search: hash },
       icon: NAV_ICONS["clue-helper"],
     });
   }

@@ -123,5 +123,14 @@ describe("flip finder hero path", () => {
     expect(hero!.count).toBe(1);
     expect(hero!.topByLimit.item.id).toBe(2);
   });
+
+  it("empty volumes + default minVolume 100 yields no flips (filter-empty, not data-error)", () => {
+    const mapping = [item(1, { limit: 100 })];
+    const prices = { "1": price(1000, 2000) };
+    // Volumes failed/empty → every item volume defaults to 0 → filtered out
+    expect(findFlips(mapping, prices, {}, { minVolume: 100 })).toHaveLength(0);
+    // UI should disable minVolume on volError; with minVolume 0, flips still appear
+    expect(findFlips(mapping, prices, {}, { minVolume: 0 })).toHaveLength(1);
+  });
 });
 

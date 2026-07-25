@@ -1,3 +1,5 @@
+export type AttackShape = "standard" | "fang" | "scythe";
+
 export interface DpsInput {
   attackLevel: number;
   strengthLevel: number;
@@ -16,9 +18,173 @@ export interface DpsInput {
   targetHp: number;
   targetMagicLevel?: number;
   modifiers?: DpsModifier[];
-  defReductions?: number; // number of successful DWH / Elder maul specs (each reduces def by 30%); BGS drains by damage, not modelled here
+  /** Successful DWH / Elder maul specs (each −30% current Defence). */
+  defReductions?: number;
+  /** Absolute Defence level drained (e.g. BGS Warstrike damage dealt). Applied after % reductions. */
+  defLevelDrain?: number;
   spellBaseMaxHit?: number; // when set, overrides level-based max hit with spell-based formula
-  tbowRaidCap?: boolean; // CoX and ToA raise the twisted bow's target-magic clamp from 250 to 350
+  /** True when target is Xerician (CoX). Cap tbow magic at 350; ToA is NOT Xerician. */
+  tbowRaidCap?: boolean;
+  /** Inside Tombs of Amascut — Tumeken's shadow gear mult is 4× instead of 3×. */
+  inToA?: boolean;
+  /**
+   * Prayer magic-damage contribution in percentage points (Mystic Lore +1, Might +2,
+   * Vigour +3, Augury +4). Applied in the primary magic-damage stage, not as a level mult.
+   */
+  prayerMagicDamagePct?: number;
+  /** Spell element for tome gating (fire/water/earth). */
+  spellElement?: "fire" | "water" | "earth" | "air" | "none";
+  /** Melee attack type for inquisitor crush gate. */
+  attackType?: string;
+  /**
+   * Inquisitor piece bonus points: great helm +1, hauberk +2, plateskirt +2.
+   * When the inquisitor modifier is active and this is omitted, assumes full set (5).
+   */
+  inquisitorBonus?: number;
+  /**
+   * Crystal armour piece weight for Bofa/crystal bow: helm=1, legs=2, body=3 (full=6).
+   * When crystal_armour modifier is active and omitted, assumes full set (6).
+   */
+  crystalPieces?: number;
+  /**
+   * Demonbane vulnerability percent (default 100). Arclight uses trunc(70 * vuln / 100).
+   * Duke = 70, Yama = 120, etc.
+   */
+  demonbaneVulnerability?: number;
+  /**
+   * NPC size in tiles (1–5). Scythe hitsplats = min(3, size). Default 1.
+   */
+  monsterSize?: number;
+  /**
+   * Weapon attack shape. Auto-detected from weaponName when omitted.
+   * fang: double acc + 15–85% band; scythe: multi-hitsplat by size.
+   */
+  attackShape?: AttackShape;
+  /** Weapon display name for auto shape / passive detection. */
+  weaponName?: string;
+  /** P2 Wardens: tbow accuracy scaling applied twice (2023-06-21 game behaviour). */
+  p2Wardens?: boolean;
+  /** Elemental weakness severity % (wiki adds baseRoll * severity/100 to magic acc roll). */
+  elementalWeaknessSeverity?: number;
+  /** Element the NPC is weak to (must match spellElement for the bonus). */
+  elementalWeaknessElement?: "fire" | "water" | "earth" | "air";
+  /** Smoke battlestaff / mystic smoke staff: +10% magic accuracy on standard spells. */
+  smokeStaff?: boolean;
+  /** Mark of Darkness: doubles demonbane % for demonbane spells. */
+  markOfDarkness?: boolean;
+  /** Chaos gauntlets: +3 max hit on bolt spells. */
+  chaosGauntlets?: boolean;
+  /** Charge prayer: +10 max hit on god spells (Saradomin/Guthix/Zamorak strike/wave/surge). */
+  chargeActive?: boolean;
+  /** Spell is a bolt spell (for chaos gauntlets). */
+  isBoltSpell?: boolean;
+  /** Spell is a god spell (for Charge). */
+  isGodSpell?: boolean;
+  /** Spell is a demonbane spell (for Mark of Darkness). */
+  isDemonbaneSpell?: boolean;
+  /** Chinchompa distance tiles 1–7 for accuracy fuse tables. */
+  chinchompaDistance?: number;
+  /** Chinchompa fuse: short | medium | long (default medium). */
+  chinchompaFuse?: "short" | "medium" | "long";
+  /**
+   * Enchanted bolt special (ammo name inferred in UI). Applied as expected-value
+   * blend with normal hits — matches wiki EV approach for continuous DPS.
+   */
+  boltEnchant?: BoltEnchant;
+  /**
+   * Zaryte crossbow special: next attack is a guaranteed hit and the bolt enchant
+   * effect is guaranteed (100% proc). Models the "ZCB guarantee" for that hit's EV.
+   */
+  zcbSpec?: boolean;
+  /** Scorching bow vs demon: add-factor demonbane + burn DoT EV (simplified). */
+  scorcherVsDemon?: boolean;
+}
+
+/** Enchanted bolt types with non-trivial DPS impact. */
+export type BoltEnchant =
+  | "none"
+  | "diamond"
+  | "ruby"
+  | "dragonstone"
+  | "onyx"
+  | "opal"
+  | "emerald";
+
+/** Wiki PvM enchant proc chances (approximate public rates). */
+export const BOLT_PROC_CHANCE: Record<Exclude<BoltEnchant, "none">, number> = {
+  diamond: 0.1, // ignore defence
+  ruby: 0.11, // 20% current HP, cap 100
+  dragonstone: 0.06, // special damage (modelled as +max hit on proc)
+  onyx: 0.11, // life steal — same damage EV as a normal hit + heal (dmg only)
+  opal: 0.05, // visible + ranged-level based extra
+  emerald: 0.54, // poison — damage over time not full max; small EV bump
+};
+
+/**
+ * Expected damage contribution from an enchanted bolt special.
+ * `normalExpected` is the no-proc hit EV; `maxHit` / `accuracy` / `targetHp` are current state.
+ */
+export function boltEnchantExpectedHit(opts: {
+  enchant: BoltEnchant;
+  maxHit: number;
+  accuracy: number;
+  targetHp: number;
+  rangedLevel: number;
+  /** Force 100% proc (ZCB special). */
+  guaranteedProc?: boolean;
+}): number {
+  const { enchant, maxHit, accuracy, targetHp, rangedLevel, guaranteedProc } = opts;
+  if (enchant === "none") return (accuracy * maxHit) / 2;
+
+  const p = guaranteedProc ? 1 : BOLT_PROC_CHANCE[enchant];
+  const normal = (accuracy * maxHit) / 2;
+
+  switch (enchant) {
+    case "diamond": {
+      // Proc: ignore defence → accuracy 1, same damage roll 0..max
+      const proc = maxHit / 2;
+      return (1 - p) * normal + p * proc;
+    }
+    case "ruby": {
+      // Proc: flat damage = min(floor(hp * 0.2), 100), independent of max hit
+      const proc = Math.min(100, Math.floor(targetHp * 0.2));
+      return (1 - p) * normal + p * proc;
+    }
+    case "dragonstone": {
+      // Simplified: proc deals maxHit (visible special) at full accuracy path
+      const proc = maxHit;
+      return (1 - p) * normal + p * proc * accuracy;
+    }
+    case "onyx": {
+      // Damage EV same as normal; heal is out of band for DPS
+      return normal;
+    }
+    case "opal": {
+      // Extra visible damage ~ rangedLevel / 10 on proc (wiki-ish)
+      const extra = Math.floor(rangedLevel / 10);
+      const proc = (accuracy * (maxHit + extra)) / 2;
+      return (1 - p) * normal + p * proc;
+    }
+    case "emerald": {
+      // Poison EV is small; model as +2 average damage on proc
+      return normal + p * 2;
+    }
+    default:
+      return normal;
+  }
+}
+
+/** Infer bolt enchant from ammo item name. */
+export function inferBoltEnchant(ammoName?: string): BoltEnchant {
+  const n = (ammoName ?? "").toLowerCase();
+  if (!n.includes("bolt")) return "none";
+  if (n.includes("diamond")) return "diamond";
+  if (n.includes("ruby")) return "ruby";
+  if (n.includes("dragonstone")) return "dragonstone";
+  if (n.includes("onyx")) return "onyx";
+  if (n.includes("opal")) return "opal";
+  if (n.includes("emerald")) return "emerald";
+  return "none";
 }
 
 export interface DpsModifier {
@@ -36,36 +202,40 @@ export const DPS_MODIFIERS: Record<string, DpsModifier> = {
   void_melee: {
     id: "void_melee",
     name: "Void Knight (melee)",
-    accuracyMult: 1.10,
-    damageMult: 1.10,
+    // Applied as trunc(eff * 11/10) on effective levels — not as a post-roll product.
+    accuracyMult: 1.0,
+    damageMult: 1.0,
     condition: "melee",
   },
   void_ranged: {
     id: "void_ranged",
     name: "Void Knight (ranged)",
-    accuracyMult: 1.10,
-    damageMult: 1.10,
+    accuracyMult: 1.0,
+    damageMult: 1.0,
     condition: "ranged",
   },
   elite_void_ranged: {
     id: "elite_void_ranged",
     name: "Elite Void (ranged)",
-    accuracyMult: 1.10,
-    damageMult: 1.125,
+    // Acc 11/10, dmg 9/8 on effective levels.
+    accuracyMult: 1.0,
+    damageMult: 1.0,
     condition: "ranged",
   },
   void_magic: {
     id: "void_magic",
     name: "Void Knight (magic)",
-    accuracyMult: 1.45,
+    // Acc 29/20 on effective magic level.
+    accuracyMult: 1.0,
     damageMult: 1.0,
     condition: "magic",
   },
   elite_void_magic: {
     id: "elite_void_magic",
     name: "Elite Void (magic)",
-    accuracyMult: 1.45,
-    damageMult: 1.025,
+    // Acc 29/20 on eff level; +5% magic damage in primary stage (outside Shadow triple).
+    accuracyMult: 1.0,
+    damageMult: 1.0,
     condition: "magic",
   },
   slayer_helm: {
@@ -126,13 +296,15 @@ export const DPS_MODIFIERS: Record<string, DpsModifier> = {
   tome_of_fire: {
     id: "tome_of_fire",
     name: "Tome of fire",
+    // PvM: +10% on standard fire spells only (wiki); PvP +50% not modelled here.
     accuracyMult: 1.0,
-    damageMult: 1.50,
+    damageMult: 1.10,
     condition: "magic",
   },
   inquisitor: {
     id: "inquisitor",
     name: "Inquisitor's armour",
+    // Crush-only; factor = (200 + pieceBonus)/200 applied in melee pipeline.
     accuracyMult: 1.025,
     damageMult: 1.025,
     condition: "melee",
@@ -147,8 +319,9 @@ export const DPS_MODIFIERS: Record<string, DpsModifier> = {
   obsidian: {
     id: "obsidian",
     name: "Obsidian armour set",
-    accuracyMult: 1.10,
-    damageMult: 1.10,
+    // Additive trunc(base/10) from pre-gear-bonus base — not a product mult.
+    accuracyMult: 1.0,
+    damageMult: 1.0,
     condition: "melee",
   },
   berserker_necklace: {
@@ -168,7 +341,7 @@ export const DPS_MODIFIERS: Record<string, DpsModifier> = {
   leaf_bladed: {
     id: "leaf_bladed",
     name: "Leaf-bladed battleaxe",
-    // The passive vs turoths/kurasks is damage-only; no accuracy bonus.
+    // Passive vs turoths/kurasks is damage-only (47/40).
     accuracyMult: 1.0,
     damageMult: 1.175,
     condition: "melee",
@@ -176,9 +349,8 @@ export const DPS_MODIFIERS: Record<string, DpsModifier> = {
   tumekens_shadow: {
     id: "tumekens_shadow",
     name: "Tumeken's shadow",
-    // Shadow triples the GEAR magic attack bonus and magic damage %, not the
-    // base attack-roll constant or the spell's base hit. That gear-only
-    // tripling is handled in calculateDps; the generic mult stays a no-op.
+    // Shadow multiplies GEAR magic attack and magic damage % (3× / 4× in ToA),
+    // capped at 100% gear magic dmg. Handled in calculateDps; generic mult is a no-op.
     accuracyMult: 1.0,
     damageMult: 1.0,
     condition: "magic",
@@ -196,6 +368,22 @@ export const DPS_MODIFIERS: Record<string, DpsModifier> = {
     accuracyMult: 1.0,
     damageMult: 1.20,
     condition: "melee",
+  },
+  mark_of_darkness: {
+    id: "mark_of_darkness",
+    name: "Mark of Darkness",
+    // Doubles demonbane spell % (handled in calculateDps via flag from this mod).
+    accuracyMult: 1.0,
+    damageMult: 1.0,
+    condition: "magic",
+  },
+  charge: {
+    id: "charge",
+    name: "Charge",
+    // +10 base max on god spells (handled in calculateDps).
+    accuracyMult: 1.0,
+    damageMult: 1.0,
+    condition: "magic",
   },
 };
 
@@ -221,22 +409,72 @@ export function sanitizeModifierSet(ids: Iterable<string>): Set<string> {
   return set;
 }
 
-// OSRS Twisted bow scaling (canonical wiki formula): the bonus is a parabola in
-// the target's Magic level (clamped at 250, or 350 inside CoX), returned as a
-// multiplier 1 + bonus/100. Accuracy bonus caps at +140%, damage at +250%; both
-// fall off past their peak, so a magic-250 target gives 1.00x acc / 2.53x dmg.
-function twistedBowAccuracy(targetMagicLevel: number, magicCap: number): number {
-  const magic = Math.min(targetMagicLevel, magicCap);
-  const bonus = 140 + Math.floor((10 * magic - 10) / 100) - Math.floor(Math.pow(magic - 100, 2) / 100);
-  return 1 + Math.min(Math.max(bonus, 0), 140) / 100;
+/** Ids applied on effective levels (void), not as post-product mults. */
+const VOID_LEVEL_MOD_IDS = new Set([
+  "void_melee",
+  "void_ranged",
+  "elite_void_ranged",
+  "void_magic",
+  "elite_void_magic",
+]);
+
+/** Melee gear bonuses handled by the ordered trunc pipeline (not float product). */
+const MELEE_PIPELINE_IDS = new Set([
+  "slayer_helm",
+  "salve_e",
+  "salve_ei",
+  "arclight",
+  "obsidian",
+  "dhl",
+  "keris_partisan",
+  "leaf_bladed",
+  "inquisitor",
+  "berserker_necklace",
+  "dinhs_bulwark",
+]);
+
+/**
+ * Wiki tbowScaling (weirdgloop PlayerVsNPCCalc).
+ * bonus = clamp(base + trunc((3M-f)/100) - trunc((trunc(3M/10)-10f)^2/100))
+ * returns trunc(current * bonus / 100).
+ * Acc: base/clamp 140, f=10; Dmg: base/clamp 250, f=14.
+ */
+export function tbowScaling(current: number, magic: number, accuracyMode: boolean): number {
+  const factor = accuracyMode ? 10 : 14;
+  const base = accuracyMode ? 140 : 250;
+  const clamp = accuracyMode ? 140 : 250;
+  const t2 = Math.trunc((3 * magic - factor) / 100);
+  const t3 = Math.trunc((Math.trunc((3 * magic) / 10) - 10 * factor) ** 2 / 100);
+  const bonus = Math.max(0, Math.min(clamp, base + t2 - t3));
+  return Math.trunc((current * bonus) / 100);
 }
 
-function twistedBowDamage(targetMagicLevel: number, magicCap: number): number {
+/** Relative mult for tests / applyModifiers: tbowScaling(100, M, mode) / 100. */
+export function twistedBowAccuracyMult(targetMagicLevel: number, magicCap: number): number {
   const magic = Math.min(targetMagicLevel, magicCap);
-  const bonus = 250 + Math.floor((10 * magic - 14) / 100) - Math.floor(Math.pow(magic - 140, 2) / 100);
-  return 1 + Math.min(Math.max(bonus, 0), 250) / 100;
+  return tbowScaling(100, magic, true) / 100;
 }
 
+export function twistedBowDamageMult(targetMagicLevel: number, magicCap: number): number {
+  const magic = Math.min(targetMagicLevel, magicCap);
+  return tbowScaling(100, magic, false) / 100;
+}
+
+function styleMult(
+  mod: DpsModifier,
+  combatStyle: "melee" | "ranged" | "magic"
+): { accuracyMult: number; damageMult: number } {
+  const override = mod.styleOverrides?.[combatStyle];
+  return {
+    accuracyMult: override ? override.accuracyMult : mod.accuracyMult,
+    damageMult: override ? override.damageMult : mod.damageMult,
+  };
+}
+
+/**
+ * Product-of-floats path for non-pipeline modifiers (ranged/magic leftovers, legacy).
+ * Void and tbow are special-cased elsewhere; skip them here when flagged.
+ */
 export function applyModifiers(
   baseAccuracyMult: number,
   baseDamageMult: number,
@@ -250,18 +488,108 @@ export function applyModifiers(
 
   for (const mod of modifiers) {
     if (mod.condition && mod.condition !== combatStyle) continue;
+    // Void is an effective-level factor in calculateDps — leave product as 1×.
+    if (VOID_LEVEL_MOD_IDS.has(mod.id)) continue;
+    // Obsidian is additive from base in the melee pipeline.
+    if (mod.id === "obsidian") continue;
+    // Crystal armour uses per-piece trunc factors in calculateDps.
+    if (mod.id === "crystal_armour") continue;
 
     if (mod.id === "twisted_bow" && targetMagicLevel != null) {
-      accuracyMult *= twistedBowAccuracy(targetMagicLevel, tbowMagicCap);
-      damageMult *= twistedBowDamage(targetMagicLevel, tbowMagicCap);
+      accuracyMult *= twistedBowAccuracyMult(targetMagicLevel, tbowMagicCap);
+      damageMult *= twistedBowDamageMult(targetMagicLevel, tbowMagicCap);
     } else {
-      const override = mod.styleOverrides?.[combatStyle];
-      accuracyMult *= override ? override.accuracyMult : mod.accuracyMult;
-      damageMult *= override ? override.damageMult : mod.damageMult;
+      const m = styleMult(mod, combatStyle);
+      accuracyMult *= m.accuracyMult;
+      damageMult *= m.damageMult;
     }
   }
 
   return { accuracyMult, damageMult };
+}
+
+/**
+ * Ordered melee gear-bonus pipeline matching wiki PlayerVsNPCCalc
+ * getPlayerMaxMeleeHit / getPlayerMaxMeleeAttackRoll intermediate floors:
+ * salve/slayer exclusive → demonbane add-factor → obsidian +base/10 → DHL →
+ * keris/leafy → inquisitor (crush) → berserker necklace (dmg only).
+ */
+export function applyMeleeGearPipeline(
+  baseAttackRoll: number,
+  baseMaxHit: number,
+  modifiers: DpsModifier[],
+  opts: {
+    attackType?: string;
+    inquisitorBonus?: number;
+    /** Demonbane vulnerability % (default 100). */
+    demonbaneVulnerability?: number;
+  } = {}
+): { attackRoll: number; maxHit: number } {
+  const ids = new Set(modifiers.map((m) => m.id));
+  let attackRoll = baseAttackRoll;
+  let maxHit = baseMaxHit;
+
+  // Salve and slayer are exclusive — salve wins if both somehow present.
+  if (ids.has("salve_ei") || ids.has("salve_e")) {
+    // Both (e) and (ei) are 6/5 for melee.
+    attackRoll = Math.trunc((attackRoll * 6) / 5);
+    maxHit = Math.trunc((maxHit * 6) / 5);
+  } else if (ids.has("slayer_helm")) {
+    attackRoll = Math.trunc((attackRoll * 7) / 6);
+    maxHit = Math.trunc((maxHit * 7) / 6);
+  }
+
+  // Arclight/Emberlight demonbane: add-factor percent = trunc(70 * vuln / 100).
+  if (ids.has("arclight")) {
+    const vuln = opts.demonbaneVulnerability ?? 100;
+    const percent = Math.trunc((70 * vuln) / 100);
+    attackRoll = attackRoll + Math.trunc((attackRoll * percent) / 100);
+    maxHit = maxHit + Math.trunc((maxHit * percent) / 100);
+  }
+
+  // Obsidian: add trunc(base/10) from the pre-gear-bonus base (after salve/slayer in wiki
+  // the base used is the pre-gear roll/max — we snapshot pre-pipeline base).
+  if (ids.has("obsidian")) {
+    attackRoll = attackRoll + Math.trunc(baseAttackRoll / 10);
+    maxHit = maxHit + Math.trunc(baseMaxHit / 10);
+  }
+
+  // Dragon hunter lance: 6/5
+  if (ids.has("dhl")) {
+    attackRoll = Math.trunc((attackRoll * 6) / 5);
+    maxHit = Math.trunc((maxHit * 6) / 5);
+  }
+
+  // Keris partisan: damage 133/100 (accuracy only on breaching variant — skip acc)
+  if (ids.has("keris_partisan")) {
+    maxHit = Math.trunc((maxHit * 133) / 100);
+  }
+
+  // Leaf-bladed battleaxe: damage 47/40
+  if (ids.has("leaf_bladed")) {
+    maxHit = Math.trunc((maxHit * 47) / 40);
+  }
+
+  // Inquisitor: crush only, factor (200+bonus)/200
+  if (ids.has("inquisitor") && (opts.attackType == null || opts.attackType === "crush")) {
+    const bonus = opts.inquisitorBonus ?? 5; // full set default
+    if (bonus > 0) {
+      attackRoll = Math.trunc((attackRoll * (200 + bonus)) / 200);
+      maxHit = Math.trunc((maxHit * (200 + bonus)) / 200);
+    }
+  }
+
+  // Dinh's bulwark set-ish passive (simplified as late dmg mult)
+  if (ids.has("dinhs_bulwark")) {
+    maxHit = Math.trunc((maxHit * 6) / 5);
+  }
+
+  // Berserker necklace: damage-only 6/5
+  if (ids.has("berserker_necklace")) {
+    maxHit = Math.trunc((maxHit * 6) / 5);
+  }
+
+  return { attackRoll, maxHit };
 }
 
 export function effectiveLevel(
@@ -303,12 +631,110 @@ export function timeToKill(hp: number, dpsValue: number): number {
   return dpsValue > 0 ? hp / dpsValue : Infinity;
 }
 
-// Note: Magic DPS is approximate. OSRS magic damage is primarily spell-base + magic dmg %,
-// not level-based like melee/ranged. This uses the standard formula which is accurate for
-// powered staves (Trident, Sanguinesti, Tumeken's shadow) where level matters.
-// Standard spellbook spells have fixed max hits not modeled here.
+function hasMod(modifiers: DpsModifier[] | undefined, id: string): boolean {
+  return modifiers?.some((m) => m.id === id) ?? false;
+}
+
+/** Infer attack shape from weapon name when not explicitly set. */
+export function inferAttackShape(weaponName?: string, explicit?: AttackShape): AttackShape {
+  if (explicit) return explicit;
+  const n = (weaponName ?? "").toLowerCase();
+  if (n.includes("osmumten") && n.includes("fang")) return "fang";
+  if (n.includes("scythe") && n.includes("vitur")) return "scythe";
+  if (n.includes("holy scythe")) return "scythe";
+  return "standard";
+}
+
+/** Crystal armour piece weight from equipped names (helm 1, legs 2, body 3). */
+export function crystalPieceWeight(itemNames: string[]): number {
+  let w = 0;
+  for (const raw of itemNames) {
+    const n = raw.toLowerCase();
+    if (n.includes("crystal helm")) w += 1;
+    else if (n.includes("crystal body") || n.includes("crystal platebody")) w += 3;
+    else if (n.includes("crystal legs") || n.includes("crystal platelegs")) w += 2;
+  }
+  return w;
+}
+
+/** Inquisitor piece bonus points from equipped names. */
+export function inquisitorPieceBonus(itemNames: string[]): number {
+  let b = 0;
+  for (const raw of itemNames) {
+    const n = raw.toLowerCase();
+    if (n.includes("inquisitor's great helm") || n.includes("inquisitors great helm")) b += 1;
+    if (n.includes("inquisitor's hauberk") || n.includes("inquisitors hauberk")) b += 2;
+    if (n.includes("inquisitor's plateskirt") || n.includes("inquisitors plateskirt")) b += 2;
+  }
+  return b;
+}
+
+/**
+ * Heuristic NPC size (tiles) when wiki size is unavailable.
+ * Large bosses default to 3 so scythe multi-hit is honest for raid targets.
+ */
+export function inferMonsterSize(name?: string, explicit?: number): number {
+  if (explicit != null && explicit > 0) return Math.min(5, Math.floor(explicit));
+  const n = (name ?? "").toLowerCase();
+  if (!n) return 1;
+  const size3 = [
+    "corporeal beast", "great olm", "general graardor", "kree'arra", "k'ril",
+    "commander zilyana", "nex", "verzik", "warden", "zebak", "ba-ba", "kephri",
+    "akkha", "duke sucellus", "vardorvis", "the leviathan", "whisperer",
+    "kalphite queen", "king black dragon", "nightmare", "phosanis", "yama",
+    "araxxor", "amoxliatl", "hueycoatl",
+  ];
+  if (size3.some((s) => n.includes(s))) return 3;
+  const size2 = ["cerberus", "zulrah", "vorkath", "hydra", "sarachnis", "scurrius", "royal titans"];
+  if (size2.some((s) => n.includes(s))) return 2;
+  return 1;
+}
+
+/** Xerician (CoX) targets — tbow magic cap 350. */
+export function isXericianMonster(name?: string): boolean {
+  const n = (name ?? "").toLowerCase();
+  if (!n) return false;
+  const cox = [
+    "great olm", "tekton", "vespula", "vasa nistirio", "guardian", "muttadile",
+    "vanguard", "lizardman shaman", "skeletal mystic", "deathly mage", "deathly ranger",
+    "ice demon", "tightrope", "rope", "scavenger", "jewelled crab",
+  ];
+  return cox.some((s) => n.includes(s));
+}
+
+/** P2 Wardens name check for double tbow apply. */
+export function isP2Wardens(name?: string): boolean {
+  const n = (name ?? "").toLowerCase();
+  return n.includes("warden") && (n.includes("p2") || n.includes("phase 2") || n.includes("core"));
+}
+
+/** Chinchompa accuracy factor numerator (denom 4) from wiki fuse/distance table. */
+export function chinchompaAccuracyNumer(
+  distance: number,
+  fuse: "short" | "medium" | "long" = "medium"
+): number {
+  const d = Math.min(7, Math.max(1, Math.floor(distance)));
+  if (fuse === "short") {
+    if (d >= 7) return 2;
+    if (d >= 4) return 3;
+    return 4;
+  }
+  if (fuse === "long") {
+    if (d < 4) return 2;
+    if (d < 7) return 3;
+    return 4;
+  }
+  // medium
+  if (d < 4 || d >= 7) return 3;
+  return 4;
+}
+
 export function calculateDps(input: DpsInput) {
-  const effAtk = effectiveLevel(
+  const mods = input.modifiers ?? [];
+  const shape = inferAttackShape(input.weaponName, input.attackShape);
+  const monsterSize = inferMonsterSize(undefined, input.monsterSize ?? 1);
+
+  let effAtk = effectiveLevel(
     input.combatStyle === "melee"
       ? input.attackLevel
       : input.combatStyle === "ranged"
@@ -317,7 +743,7 @@ export function calculateDps(input: DpsInput) {
     input.prayerAttackMult,
     input.stanceAttackBonus
   );
-  const effStr = effectiveLevel(
+  let effStr = effectiveLevel(
     input.combatStyle === "melee"
       ? input.strengthLevel
       : input.combatStyle === "ranged"
@@ -327,53 +753,280 @@ export function calculateDps(input: DpsInput) {
     input.stanceStrengthBonus
   );
 
-  // Tumeken's shadow triples the gear magic attack bonus and magic damage %
-  // (the +64 base and spell base hit are untouched).
-  const shadowMult = input.combatStyle === "magic"
-    && input.modifiers?.some((m) => m.id === "tumekens_shadow") ? 3 : 1;
-  const gearAttackBonus = input.attackBonus * shadowMult;
-  const gearStrengthBonus = input.strengthBonus * shadowMult;
-
-  // When a spell is selected, use spell base max hit + magic damage %
-  // instead of level-based formula. strengthBonus holds magic damage % for magic style.
-  let mh = input.spellBaseMaxHit != null
-    ? Math.floor(input.spellBaseMaxHit * (1 + gearStrengthBonus / 100))
-    : maxHit(effStr, gearStrengthBonus);
-  let ar = attackRoll(effAtk, gearAttackBonus);
-
-  if (input.modifiers && input.modifiers.length > 0) {
-    const { accuracyMult, damageMult } = applyModifiers(
-      1,
-      1,
-      input.combatStyle,
-      input.modifiers,
-      input.targetMagicLevel,
-      input.tbowRaidCap ? 350 : 250
-    );
-    ar = Math.floor(ar * accuracyMult);
-    mh = Math.floor(mh * damageMult);
+  // ── Void: effective-level factors (wiki) before max hit / attack roll ──
+  if (input.combatStyle === "melee" && hasMod(mods, "void_melee")) {
+    effAtk = Math.trunc((effAtk * 11) / 10);
+    effStr = Math.trunc((effStr * 11) / 10);
+  }
+  if (input.combatStyle === "ranged") {
+    if (hasMod(mods, "elite_void_ranged") || hasMod(mods, "void_ranged")) {
+      effAtk = Math.trunc((effAtk * 11) / 10);
+    }
+    if (hasMod(mods, "elite_void_ranged")) {
+      effStr = Math.trunc((effStr * 9) / 8);
+    } else if (hasMod(mods, "void_ranged")) {
+      effStr = Math.trunc((effStr * 11) / 10);
+    }
+  }
+  if (
+    input.combatStyle === "magic" &&
+    (hasMod(mods, "void_magic") || hasMod(mods, "elite_void_magic"))
+  ) {
+    // Wiki: trunc(eff * 29/20) after stance/+9. We use the same factor on our +8 form.
+    effAtk = Math.trunc((effAtk * 29) / 20);
   }
 
-  // DWH/BGS specs reduce the target's Defence level — apply before any blend.
+  // ── Tumeken's shadow: 3× gear (4× in ToA); gear magic dmg contribution capped 100% ──
+  const shadowMult =
+    input.combatStyle === "magic" && hasMod(mods, "tumekens_shadow")
+      ? input.inToA
+        ? 4
+        : 3
+      : 1;
+  const gearAttackBonus = input.attackBonus * shadowMult;
+  const rawGearMagicDmg =
+    input.combatStyle === "magic" ? input.strengthBonus * shadowMult : input.strengthBonus * shadowMult;
+  const gearStrengthBonus =
+    input.combatStyle === "magic" && shadowMult > 1
+      ? Math.min(rawGearMagicDmg, 100)
+      : rawGearMagicDmg;
+
+  let mh: number;
+  let ar: number;
+
+  if (input.combatStyle === "magic" && input.spellBaseMaxHit != null) {
+    let primaryPct = gearStrengthBonus;
+    if (hasMod(mods, "elite_void_magic")) primaryPct += 5;
+    if (input.prayerMagicDamagePct) primaryPct += input.prayerMagicDamagePct;
+    if (hasMod(mods, "salve_ei")) primaryPct += 20;
+    if (hasMod(mods, "virtus")) primaryPct += 5;
+
+    let baseSpell = input.spellBaseMaxHit;
+    // Chaos gauntlets: +3 on bolt spells before magic damage %.
+    if (input.chaosGauntlets && input.isBoltSpell) baseSpell += 3;
+    // Charge: +10 on god spells before magic damage %.
+    if ((input.chargeActive || hasMod(mods, "charge")) && input.isGodSpell) baseSpell += 10;
+
+    mh = Math.floor(baseSpell * (1 + primaryPct / 100));
+    ar = attackRoll(effAtk, gearAttackBonus);
+
+    // Elemental weakness: additive accuracy from base roll × severity/100.
+    if (
+      input.elementalWeaknessSeverity &&
+      input.elementalWeaknessElement &&
+      input.spellElement === input.elementalWeaknessElement
+    ) {
+      const baseRoll = attackRoll(effAtk, gearAttackBonus);
+      const bonus = Math.trunc((baseRoll * input.elementalWeaknessSeverity) / 100);
+      ar = ar + bonus;
+    }
+
+    // Smoke staff: +10% magic accuracy on standard spellbook casts.
+    if (input.smokeStaff) {
+      ar = Math.trunc((ar * 11) / 10);
+    }
+
+    if (hasMod(mods, "slayer_helm") && !hasMod(mods, "salve_ei") && !hasMod(mods, "salve_e")) {
+      ar = Math.trunc((ar * 23) / 20);
+      mh = Math.trunc((mh * 23) / 20);
+    }
+    if (hasMod(mods, "tome_of_fire")) {
+      const element = input.spellElement;
+      if (element == null || element === "fire") {
+        mh = Math.trunc((mh * 11) / 10);
+      }
+    }
+    // Demonbane spells: base 20% (40% with Mark of Darkness).
+    if (input.isDemonbaneSpell) {
+      const demonPct =
+        input.markOfDarkness || hasMod(mods, "mark_of_darkness") ? 40 : 20;
+      mh = mh + Math.trunc((mh * demonPct) / 100);
+      ar = ar + Math.trunc((ar * demonPct) / 100);
+    }
+    if (hasMod(mods, "salve_ei")) {
+      ar = Math.trunc((ar * 6) / 5);
+    }
+  } else if (input.combatStyle === "melee") {
+    mh = maxHit(effStr, gearStrengthBonus);
+    ar = attackRoll(effAtk, gearAttackBonus);
+    const pipelineMods = mods.filter((m) => MELEE_PIPELINE_IDS.has(m.id));
+    const applied = applyMeleeGearPipeline(ar, mh, pipelineMods, {
+      attackType: input.attackType,
+      inquisitorBonus: input.inquisitorBonus,
+      demonbaneVulnerability: input.demonbaneVulnerability,
+    });
+    ar = applied.attackRoll;
+    mh = applied.maxHit;
+  } else {
+    // Ranged (and magic without a spell base — powered-staff fallback via maxHit).
+    mh = input.spellBaseMaxHit != null
+      ? Math.floor(input.spellBaseMaxHit * (1 + gearStrengthBonus / 100))
+      : maxHit(effStr, gearStrengthBonus);
+    ar = attackRoll(effAtk, gearAttackBonus);
+
+    // Crystal armour: piece-scaled trunc factors (wiki), not flat 1.30/1.15.
+    if (hasMod(mods, "crystal_armour")) {
+      const pieces = input.crystalPieces ?? 6;
+      ar = Math.trunc((ar * (20 + pieces)) / 20);
+      mh = Math.trunc((mh * (40 + pieces)) / 40);
+    }
+
+    const tbowCap = input.tbowRaidCap ? 350 : 250;
+    const tbowMagic = input.targetMagicLevel != null
+      ? Math.min(input.targetMagicLevel, tbowCap)
+      : undefined;
+
+    // Product mults excluding void, tbow, and crystal (crystal applied above).
+    const productMods = mods.filter(
+      (m) =>
+        !VOID_LEVEL_MOD_IDS.has(m.id) &&
+        m.id !== "twisted_bow" &&
+        m.id !== "crystal_armour"
+    );
+    if (productMods.length > 0) {
+      const { accuracyMult, damageMult } = applyModifiers(
+        1,
+        1,
+        input.combatStyle,
+        productMods,
+        input.targetMagicLevel,
+        tbowCap
+      );
+      ar = Math.floor(ar * accuracyMult);
+      mh = Math.floor(mh * damageMult);
+    }
+
+    // Chinchompa distance/fuse accuracy factor.
+    if (input.chinchompaDistance != null) {
+      const numer = chinchompaAccuracyNumer(input.chinchompaDistance, input.chinchompaFuse);
+      ar = Math.trunc((ar * numer) / 4);
+    }
+
+    // Twisted bow: wiki trunc scaling on roll and max hit.
+    if (hasMod(mods, "twisted_bow") && tbowMagic != null) {
+      ar = tbowScaling(ar, tbowMagic, true);
+      mh = tbowScaling(mh, tbowMagic, false);
+      // P2 Wardens: accuracy scaling applied twice (game update 2023-06-21).
+      if (input.p2Wardens) {
+        ar = tbowScaling(ar, tbowMagic, true);
+      }
+    }
+  }
+
+  // Defence reductions: DWH % stacks then absolute BGS-style drain.
   let reducedDefLevel = input.targetDefLevel;
   if (input.defReductions && input.defReductions > 0) {
     for (let i = 0; i < input.defReductions; i++) {
-      reducedDefLevel = Math.floor(reducedDefLevel * 0.7); // DWH: 30% reduction each
+      reducedDefLevel = Math.floor(reducedDefLevel * 0.7);
     }
   }
-  // Magic accuracy rolls against the NPC's Magic level only (defenseRoll adds the
-  // +9), using its magic-defence bonus — there is no Defence-level term in PvM,
-  // and DWH/BGS Defence drains don't affect a Magic-level-based roll.
+  if (input.defLevelDrain && input.defLevelDrain > 0) {
+    reducedDefLevel = Math.max(0, reducedDefLevel - Math.floor(input.defLevelDrain));
+  }
+
   const effectiveDefLevel =
     input.combatStyle === "magic" && input.targetMagicLevel != null
       ? input.targetMagicLevel
       : reducedDefLevel;
   const dr = defenseRoll(effectiveDefLevel, input.targetDefBonus);
-  const acc = hitChance(ar, dr);
-  const d = dps(mh, acc, input.attackSpeed);
+  let acc = hitChance(ar, dr);
+
+  // Fang: double accuracy roll; DPS uses banded expected hit, not max/2.
+  const baseAccuracy = acc;
+  let expectedHit = (acc * mh) / 2;
+  let displayAccuracy = acc;
+  if (shape === "fang") {
+    const { fangAccuracy, fangExpectedHit } = requireFangHelpers();
+    displayAccuracy = fangAccuracy(acc);
+    expectedHit = fangExpectedHit(mh, acc);
+  } else if (shape === "scythe") {
+    // Multi-hitsplat independent rolls: full + half + quarter max by size.
+    const hits = Math.max(1, Math.min(3, monsterSize));
+    const fracs = [1, 0.5, 0.25];
+    expectedHit = 0;
+    for (let i = 0; i < hits; i++) {
+      const hitMax = Math.floor(mh * fracs[i]);
+      expectedHit += (acc * hitMax) / 2;
+    }
+  }
+
+  // Scorching bow vs demons: +30% demonbane-style add-factor on max (wiki ~30)
+  // plus a small burn DoT EV (~1.5 dmg/attack average when applied).
+  if (input.scorcherVsDemon && input.combatStyle === "ranged") {
+    mh = mh + Math.trunc((mh * 30) / 100);
+    ar = ar + Math.trunc((ar * 30) / 100);
+    acc = hitChance(ar, dr);
+    displayAccuracy = acc;
+    expectedHit = (acc * mh) / 2 + 1.5;
+  }
+
+  // Enchanted bolts / ZCB special — EV blend after base hit math.
+  // ZCB special: accuracy = 1 and enchant proc is guaranteed for that attack.
+  if (input.combatStyle === "ranged" && input.boltEnchant && input.boltEnchant !== "none") {
+    if (input.zcbSpec) {
+      displayAccuracy = 1;
+      acc = 1;
+      expectedHit = boltEnchantExpectedHit({
+        enchant: input.boltEnchant,
+        maxHit: mh,
+        accuracy: 1,
+        targetHp: input.targetHp,
+        rangedLevel: input.rangedLevel,
+        guaranteedProc: true,
+      });
+    } else if (shape === "standard") {
+      expectedHit = boltEnchantExpectedHit({
+        enchant: input.boltEnchant,
+        maxHit: mh,
+        accuracy: baseAccuracy,
+        targetHp: input.targetHp,
+        rangedLevel: input.rangedLevel,
+      });
+    }
+  }
+
+  const d = expectedHit / (input.attackSpeed * 0.6);
   const ttk = timeToKill(input.targetHp, d);
 
-  return { maxHit: mh, accuracy: acc, dps: d, ttk, attackRoll: ar, defenseRoll: dr };
+  return {
+    maxHit: mh,
+    /** Effective hit chance shown in UI (fang = double-rolled / ZCB = 1). */
+    accuracy: displayAccuracy,
+    /** Single-roll accuracy before fang double-roll (for HitDist / TTK). */
+    baseAccuracy,
+    dps: d,
+    ttk,
+    attackRoll: ar,
+    defenseRoll: dr,
+    attackShape: shape,
+    monsterSize,
+    expectedHit,
+    boltEnchant: input.boltEnchant ?? "none",
+    zcbSpec: !!input.zcbSpec,
+  };
+}
+
+// Lazy import helpers avoid circular deps with hitDistribution at module init.
+function requireFangHelpers(): {
+  fangAccuracy: (a: number) => number;
+  fangExpectedHit: (m: number, a: number) => number;
+} {
+  // Inline to keep dps.ts self-contained for tree-shaking tests.
+  return {
+    fangAccuracy: (accuracy: number) => {
+      const a = Math.min(1, Math.max(0, accuracy));
+      return 1 - (1 - a) ** 2;
+    },
+    fangExpectedHit: (maxHit: number, accuracy: number) => {
+      const m = Math.max(0, Math.floor(maxHit));
+      const baseAcc = Math.min(1, Math.max(0, accuracy));
+      const a = 1 - (1 - baseAcc) ** 2;
+      if (m === 0) return 0;
+      const lo = Math.trunc(m * 0.15);
+      const hi = Math.trunc(m * 0.85);
+      return a * ((lo + hi) / 2);
+    },
+  };
 }
 
 export interface SpecDpsInput extends DpsInput {
@@ -385,6 +1038,17 @@ export interface SpecDpsInput extends DpsInput {
   specCascadeType?: "dragon_claws";
   /** Accuracy multiplier for the 2nd hit's roll (e.g. halberd sweep: 0.75). */
   specSecondHitAccuracyMult?: number;
+  /** Override attack bonus with the selected spec weapon's gear (not main loadout). */
+  specAttackBonus?: number;
+  /** Override strength / ranged str / magic dmg % for the spec weapon. */
+  specStrengthBonus?: number;
+  /** Spec weapon attack speed in ticks (defaults to specSpeed). */
+  specWeaponSpeed?: number;
+  /** Spec weapon name for shape detection. */
+  specWeaponName?: string;
+  /** MSB/MLB/Seercull: ignore armour, use ammo ranged str only. */
+  specAmmoOnly?: boolean;
+  specAmmoRangedStr?: number;
 }
 
 // Dragon claws' Slice and Dice rolls accuracy four times. The first successful
@@ -417,33 +1081,52 @@ export function dragonClawsExpectedDamage(maxHit: number, accuracy: number): num
 }
 
 export function calculateSpecDps(input: SpecDpsInput) {
-  const base = calculateDps(input);
+  // When spec weapon overrides are provided, recompute the base roll/max from
+  // those gear bonuses/speed rather than the main loadout.
+  const baseInput: DpsInput = {
+    ...input,
+    attackBonus: input.specAttackBonus ?? input.attackBonus,
+    strengthBonus: input.specStrengthBonus ?? input.strengthBonus,
+    attackSpeed: input.specWeaponSpeed ?? input.attackSpeed,
+    weaponName: input.specWeaponName ?? input.weaponName,
+    attackShape: input.specWeaponName ? inferAttackShape(input.specWeaponName) : input.attackShape,
+  };
+  const base = calculateDps(baseInput);
   const specMaxHit = Math.floor(base.maxHit * input.specDamageMult);
   const specAttackRoll = Math.floor(base.attackRoll * input.specAccuracyMult);
   const specAccuracy = input.specGuaranteedHit
     ? 1.0
     : hitChance(specAttackRoll, base.defenseRoll);
 
+  // Ammo-only specials (MSB/MLB/Seercull): ignore armour bonuses — model as
+  // re-rolling max hit from ammo strength alone at +10 effective level bump.
+  let effectiveSpecMax = specMaxHit;
+  if (input.specAmmoOnly && input.specAmmoRangedStr != null) {
+    const eff = (input.combatStyle === "ranged" ? input.rangedLevel : input.strengthLevel) + 10;
+    effectiveSpecMax = Math.floor(
+      Math.floor(0.5 + (eff * (input.specAmmoRangedStr + 64)) / 640) * input.specDamageMult
+    );
+  }
+
   let specTotalDamage: number;
   let specTotalMaxHit: number;
   if (input.specCascadeType === "dragon_claws") {
-    specTotalDamage = dragonClawsExpectedDamage(specMaxHit, specAccuracy);
-    // Theoretical max: first roll top + next three landing top slots.
-    specTotalMaxHit = (specMaxHit - 1)
-      + Math.max(0, Math.floor(specMaxHit / 2) - 1)
-      + Math.max(0, Math.floor(specMaxHit / 4) - 1)
-      + Math.floor(specMaxHit / 4);
+    specTotalDamage = dragonClawsExpectedDamage(effectiveSpecMax, specAccuracy);
+    specTotalMaxHit = (effectiveSpecMax - 1)
+      + Math.max(0, Math.floor(effectiveSpecMax / 2) - 1)
+      + Math.max(0, Math.floor(effectiveSpecMax / 4) - 1)
+      + Math.floor(effectiveSpecMax / 4);
   } else if (input.specHits === 2 && input.specSecondHitAccuracyMult != null) {
-    // Halberd sweep: 1st hit at full spec accuracy, 2nd hit on a reduced roll.
     const secondRoll = Math.floor(specAttackRoll * input.specSecondHitAccuracyMult);
     const secondAccuracy = input.specGuaranteedHit ? 1 : hitChance(secondRoll, base.defenseRoll);
-    specTotalDamage = (specAccuracy + secondAccuracy) * (specMaxHit / 2);
-    specTotalMaxHit = specMaxHit * input.specHits;
+    specTotalDamage = (specAccuracy + secondAccuracy) * (effectiveSpecMax / 2);
+    specTotalMaxHit = effectiveSpecMax * input.specHits;
   } else {
-    specTotalDamage = specAccuracy * (specMaxHit / 2) * input.specHits;
-    specTotalMaxHit = specMaxHit * input.specHits;
+    specTotalDamage = specAccuracy * (effectiveSpecMax / 2) * input.specHits;
+    specTotalMaxHit = effectiveSpecMax * input.specHits;
   }
-  const specTotalDps = specTotalDamage / (input.specSpeed * 0.6);
+  const specSpeed = input.specWeaponSpeed ?? input.specSpeed;
+  const specTotalDps = specTotalDamage / (specSpeed * 0.6);
 
   return {
     ...base,
@@ -452,6 +1135,7 @@ export function calculateSpecDps(input: SpecDpsInput) {
     specDps: specTotalDps,
     specTtk: input.targetHp > 0 && specTotalDps > 0 ? input.targetHp / specTotalDps : Infinity,
     specAttackRoll,
+    specSpeed,
   };
 }
 
@@ -502,3 +1186,94 @@ export function coxScale(baseDefLevel: number, partySize: number, challengeMode:
   const sizeScale = 1 + ((partySize - 1) * 0.5);
   return Math.floor(baseDefLevel * sizeScale * (challengeMode ? 1.5 : 1));
 }
+
+/**
+ * Infer passive set/weapon modifiers from equipped item names.
+ * Situational flags (on-task, undead-only intent) stay as explicit toggles;
+ * salve still auto-enables when worn (wiki applies only vs undead at formula level).
+ */
+export function detectModifiersFromGearNames(itemNames: string[]): string[] {
+  const names = itemNames.map((n) => n.toLowerCase());
+  const has = (sub: string) => names.some((n) => n.includes(sub));
+  const ids: string[] = [];
+
+  const voidTop = has("void knight top") || has("elite void top");
+  const voidRobe = has("void knight robe") || has("elite void robe");
+  const voidGloves = has("void knight gloves");
+  const eliteBody = has("elite void top");
+  const eliteLegs = has("elite void robe");
+  const elite = eliteBody && eliteLegs;
+  if (voidTop && voidRobe && voidGloves) {
+    if (has("void melee helm")) ids.push("void_melee");
+    else if (has("void ranger helm")) ids.push(elite ? "elite_void_ranged" : "void_ranged");
+    else if (has("void mage helm")) ids.push(elite ? "elite_void_magic" : "void_magic");
+  }
+
+  if (has("twisted bow")) ids.push("twisted_bow");
+  if (has("tumeken") && has("shadow")) ids.push("tumekens_shadow");
+  if (has("dragon hunter lance")) ids.push("dhl");
+  if (has("dragon hunter crossbow")) ids.push("dhcb");
+  if (has("arclight") || has("emberlight")) ids.push("arclight");
+  if (has("tome of fire")) ids.push("tome_of_fire");
+  if (has("leaf-bladed battleaxe") || has("leaf bladed battleaxe")) ids.push("leaf_bladed");
+  if (has("keris partisan")) ids.push("keris_partisan");
+  if (has("berserker necklace")) ids.push("berserker_necklace");
+  if (has("dinh") && has("bulwark")) ids.push("dinhs_bulwark");
+
+  // Salve: prefer ei over e.
+  if (has("salve amulet(ei)") || has("salve amulet (ei)") || names.some((n) => n.includes("salve") && n.includes("ei"))) {
+    ids.push("salve_ei");
+  } else if (has("salve amulet (e)") || has("salve amulet(e)") || (has("salve amulet") && has("(e)"))) {
+    ids.push("salve_e");
+  }
+
+  // Crystal armour + crystal bow / bowfa
+  const crystalWeapon = has("crystal bow") || has("bow of faerdhinen");
+  if (crystalWeapon && (has("crystal helm") || has("crystal body") || has("crystal legs"))) {
+    ids.push("crystal_armour");
+  }
+
+  // Inquisitor pieces (any) — full-set default in pipeline unless piece count wired later
+  if (has("inquisitor's great helm") || has("inquisitor's hauberk") || has("inquisitor's plateskirt")) {
+    ids.push("inquisitor");
+  }
+
+  // Obsidian set + tzhaar weapon (wiki: helmet + platebody + platelegs)
+  if (has("obsidian helmet") && has("obsidian platebody") && has("obsidian platelegs")) {
+    const tzhaar =
+      has("tzhaar-ket") || has("toktz-xil") || has("toktz-mej") || has("tzhaar");
+    if (tzhaar) ids.push("obsidian");
+  }
+
+  // Virtus (any piece) — simplified full-set flag
+  if (has("virtus mask") || has("virtus robe top") || has("virtus robe bottom")) {
+    ids.push("virtus");
+  }
+
+  return ids;
+}
+
+/** Modifier ids that are auto-derived from gear (cleared/reapplied on gear change). */
+export const GEAR_AUTO_MODIFIER_IDS = new Set([
+  "void_melee",
+  "void_ranged",
+  "elite_void_ranged",
+  "void_magic",
+  "elite_void_magic",
+  "obsidian",
+  "crystal_armour",
+  "inquisitor",
+  "arclight",
+  "dhcb",
+  "dhl",
+  "twisted_bow",
+  "tome_of_fire",
+  "berserker_necklace",
+  "keris_partisan",
+  "leaf_bladed",
+  "tumekens_shadow",
+  "virtus",
+  "dinhs_bulwark",
+  "salve_e",
+  "salve_ei",
+]);

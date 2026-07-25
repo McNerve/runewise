@@ -96,6 +96,45 @@ export default function WorldMap() {
   const [filter, setFilter] = useState<CategoryFilter>("all");
   const [openPoi, setOpenPoi] = useState<WorldMapPoi | null>(null);
 
+  /** Fuzzy-match a location string against curated POIs (longest token overlap). */
+  const focusedPoi = useMemo((): WorldMapPoi | null => {
+    if (!focusLocation) return null;
+    const q = focusLocation.toLowerCase();
+    const exact = WORLD_MAP_POIS.find((p) => p.name.toLowerCase() === q);
+    if (exact) return exact;
+    const tokens = q.split(/[^a-z0-9]+/).filter((t) => t.length > 2);
+    let best: { poi: WorldMapPoi; score: number } | null = null;
+    for (const poi of WORLD_MAP_POIS) {
+      const name = poi.name.toLowerCase();
+      const info = (poi.info ?? "").toLowerCase();
+      if (name.includes(q) || q.includes(name) || info.includes(q)) {
+        const score = Math.min(name.length, q.length);
+        if (!best || score > best.score) best = { poi, score };
+        continue;
+      }
+      const hits = tokens.filter((t) => name.includes(t) || info.includes(t)).length;
+      if (hits > 0 && (!best || hits > best.score)) best = { poi, score: hits };
+    }
+    return best?.poi ?? null;
+  }, [focusLocation]);
+
+  // When a deep-linked location matches a POI, open its popup once map is ready
+  useEffect(() => {
+    if (!focusedPoi || loading) return;
+    setOpenPoi(focusedPoi);
+    setFilter(
+      focusedPoi.category === "farming" ||
+        focusedPoi.category === "fairy-ring" ||
+        focusedPoi.category === "slayer" ||
+        focusedPoi.category === "altar" ||
+        focusedPoi.category === "teleport"
+        ? focusedPoi.category
+        : "all"
+    );
+    // Center-ish: POIs are % of image; approximate pan toward marker at zoom 0.8
+    setView({ zoom: 0.85, pan: { x: 0, y: 0 } });
+  }, [focusedPoi?.id, loading]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Cursor-anchored zoom: the map point under the cursor stays under the
   // cursor while zooming, so users don't "lose their place" when wheel-zooming.
   // Ratio-based scale factor gives smooth trackpad + mouse wheel feel.
@@ -209,7 +248,10 @@ export default function WorldMap() {
 
       {focusLocation && (
         <div className="mb-3 rounded-lg border border-accent/30 bg-accent/5 px-3 py-2 text-xs text-accent">
-          Looking for: <span className="font-medium">{focusLocation}</span> — pan the map to find this location.
+          Looking for: <span className="font-medium">{focusLocation}</span>
+          {focusedPoi
+            ? ` — matched “${focusedPoi.name}” (${CATEGORY_META[focusedPoi.category].label}).`
+            : " — no curated POI match; pan the map or open the full wiki map."}
         </div>
       )}
 

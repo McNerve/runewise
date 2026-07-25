@@ -4,6 +4,7 @@ import { TOB_ROOMS } from "../raids/data/tob";
 import { TOA_ROOMS } from "../raids/data/toa";
 import { loadJSON, saveJSON } from "../../lib/localStorage";
 import { Button } from "../../components/primitives";
+import { formatVsAvg, wikiAvgForRoom } from "./raidAverages";
 
 const RUNS_KEY = "runewise_raid_runs";
 
@@ -20,13 +21,6 @@ const RAIDS = [
   { id: "tob" as const, label: "Theatre of Blood", rooms: TOB_ROOMS },
   { id: "toa" as const, label: "Tombs of Amascut", rooms: TOA_ROOMS },
 ];
-
-// Wiki-approximate average times per raid (ms), room-by-room order
-const WIKI_AVERAGES: Record<string, number[]> = {
-  cox: [180000, 120000, 150000, 240000, 180000, 210000, 150000, 120000, 90000, 90000, 60000, 300000],
-  tob: [210000, 240000, 180000, 270000, 360000],
-  toa: [180000, 120000, 150000, 240000, 180000, 210000, 360000],
-};
 
 function formatTime(ms: number): string {
   if (ms < 0) return "-";
@@ -133,13 +127,17 @@ export default function RaidCompanion() {
 
   const pbTotal = raidRuns.length > 0 ? Math.min(...raidRuns.map((r) => r.totalMs)) : null;
 
-  const wikiAvgs = WIKI_AVERAGES[raidId] ?? [];
-
   return (
     <div className="space-y-5 max-w-3xl">
       <div>
         <h2 className="text-2xl font-semibold tracking-tight">Raid Companion</h2>
         <p className="text-sm text-text-secondary mt-1">Log split times room-by-room and track your PBs.</p>
+        {raidId === "cox" && (
+          <p className="text-xs text-text-secondary/60 mt-1.5 max-w-xl">
+            CoX caveat: room order is randomized and not every room appears every raid.
+            Wiki averages are mid-skill ballparks for common rooms only — treat vs-avg as rough guidance.
+          </p>
+        )}
       </div>
 
       {/* Raid selector */}
@@ -242,9 +240,9 @@ export default function RaidCompanion() {
               </tr>
             </thead>
             <tbody>
-              {rooms.map((room, i) => {
+              {rooms.map((room) => {
                 const pb = pbByRoom[room.name];
-                const avg = wikiAvgs[i];
+                const avg = wikiAvgForRoom(raidId, room.name);
                 const diff = pb != null && avg != null ? pb - avg : null;
                 return (
                   <tr key={room.name} className="border-b border-border/40 even:bg-bg-primary/20">
@@ -256,7 +254,7 @@ export default function RaidCompanion() {
                       {avg != null ? formatTime(avg) : "—"}
                     </td>
                     <td className={`px-4 py-2 text-right num text-xs ${diff == null ? "" : diff <= 0 ? "text-success" : "text-danger"}`}>
-                      {diff == null ? "—" : `${diff > 0 ? "+" : ""}${formatTime(Math.abs(diff))}`}
+                      {diff == null ? "—" : formatVsAvg(diff, formatTime)}
                     </td>
                   </tr>
                 );
@@ -280,7 +278,9 @@ export default function RaidCompanion() {
                   </span>
                 </div>
                 <button
+                  type="button"
                   onClick={() => deleteRun(run.id)}
+                  aria-label={`Delete run from ${new Date(run.date).toLocaleDateString()}`}
                   className="text-text-secondary/40 hover:text-danger text-xs transition-colors"
                 >
                   ✕

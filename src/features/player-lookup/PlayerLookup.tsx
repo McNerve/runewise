@@ -162,13 +162,13 @@ export default function PlayerLookup() {
 
     setLoading(true);
     setError(null);
+    setData(null);
+    setLookupRsn(trimmed);
     try {
       const result = await fetchHiscores(trimmed);
       setData(result);
-      setLookupRsn(trimmed);
     } catch (lookupError) {
       setData(null);
-      setLookupRsn(trimmed);
       setError(
         lookupError instanceof Error
           ? lookupError.message
@@ -329,7 +329,7 @@ export default function PlayerLookup() {
               </div>
             ) : null}
 
-            {loading && lookupRsn ? (
+            {loading ? (
               <div className="py-8 space-y-3">
                 <div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4" />
                 <div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-1/2" />
@@ -337,7 +337,7 @@ export default function PlayerLookup() {
               </div>
             ) : null}
 
-            {data && lookupRsn ? (
+            {!loading && data && lookupRsn ? (
               <>
                 {localStorage.getItem("runewise_rsn") !== lookupRsn && (
                   <div className="mt-2 flex justify-end">

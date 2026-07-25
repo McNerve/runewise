@@ -35,6 +35,7 @@ import {
   type WomSnapshot,
   type GainsPeriod,
 } from "../../lib/api/wom";
+import { loadJSON, saveJSON } from "../../lib/localStorage";
 
 interface Props {
   rsn: string;
@@ -391,6 +392,19 @@ export default function XpTracker({ rsn }: Props) {
   const [competitionsLoaded, setCompetitionsLoaded] = useState(false);
   const [fetchKey, setFetchKey] = useState(0);
   const notifiedAchievementKeys = useRef<Set<string>>(new Set());
+  const prevRsn = useRef<string | null>(null);
+
+  // Reset competitions + load persisted milestone keys whenever RSN changes
+  useEffect(() => {
+    if (!rsn) return;
+    if (prevRsn.current === rsn) return;
+    prevRsn.current = rsn;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setCompetitions([]);
+    setCompetitionsLoaded(false);
+    const stored = loadJSON<string[]>(`xp-milestones-notified:${rsn.toLowerCase()}`, []);
+    notifiedAchievementKeys.current = new Set(stored);
+  }, [rsn]);
 
   useEffect(() => {
     if (!rsn) return;
@@ -443,15 +457,23 @@ export default function XpTracker({ rsn }: Props) {
     return () => { cancelled = true; };
   }, [tab, rsn, competitionsLoaded]);
 
-  // Fire milestone notifications for newly-observed achievements
+  // Fire milestone notifications only for keys not yet persisted for this RSN
   useEffect(() => {
-    if (!settings.notifications.milestones) return;
+    if (!settings.notifications.milestones || !rsn) return;
+    let added = false;
     for (const a of achievements) {
       if (!isMilestoneAchievement(a)) continue;
       const key = `${a.metric}:${a.threshold}:${a.createdAt}`;
       if (notifiedAchievementKeys.current.has(key)) continue;
       notifiedAchievementKeys.current.add(key);
+      added = true;
       sendNotification("XP milestone", `${a.name} — ${rsn}`);
+    }
+    if (added) {
+      saveJSON(
+        `xp-milestones-notified:${rsn.toLowerCase()}`,
+        [...notifiedAchievementKeys.current]
+      );
     }
   }, [achievements, settings.notifications.milestones, rsn]);
 

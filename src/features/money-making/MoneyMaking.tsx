@@ -92,7 +92,7 @@ export default function MoneyMaking({ hiscores }: Props) {
       methods = methods.filter((m) => m.category === category);
     }
 
-    // "Members only" unchecked = F2P only
+    // includeMembers unchecked = F2P only; checked = F2P + P2P
     if (!membersOnly) {
       methods = methods.filter((m) => !m.members);
     }
@@ -155,11 +155,20 @@ export default function MoneyMaking({ hiscores }: Props) {
       <Tabs
         className="mb-4"
         activeId={mainTab}
-        onChange={setMainTab}
+        onChange={(id) => {
+          const next = resolveMainTab(id);
+          setMainTab(next);
+          navigate("money-making", next === "methods" ? {} : { tab: next });
+        }}
         ariaLabel="Money making sections"
         items={[
           { id: "methods" as MainTab, label: "Methods", icon: `${WIKI_IMG}/Coins_detail.png` },
           { id: "rankings" as MainTab, label: "Profit Rankings", icon: `${WIKI_IMG}/Coins_10000.png` },
+          {
+            id: "wiki" as MainTab,
+            label: wikiMethods.length > 0 ? `Wiki Methods (${wikiMethods.length})` : "Wiki Methods",
+            icon: NAV_ICONS.wiki ?? `${WIKI_IMG}/Wiki.png`,
+          },
         ]}
       />
 
@@ -181,8 +190,8 @@ export default function MoneyMaking({ hiscores }: Props) {
         </button>
       )}
 
-      {/* Filters — only for Methods tab */}
-      {mainTab === "methods" && (
+      {/* Filters — Methods + Wiki Methods tabs */}
+      {(mainTab === "methods" || mainTab === "wiki") && (
       <>
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <input
@@ -194,26 +203,28 @@ export default function MoneyMaking({ hiscores }: Props) {
           className="flex-1 min-w-[200px] px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
         />
 
-        <FilterPills
-          ariaLabel="Method category"
-          activeKey={category}
-          onChange={setCategory}
-          items={CATEGORIES.map((c) => ({ id: c, label: c }))}
-        />
+        {mainTab === "methods" && (
+          <FilterPills
+            ariaLabel="Method category"
+            activeKey={category}
+            onChange={setCategory}
+            items={CATEGORIES.map((c) => ({ id: c, label: c }))}
+          />
+        )}
       </div>
 
       <div className="flex gap-3 mb-4">
-        <label className="flex items-center gap-1.5 text-xs text-text-secondary cursor-pointer">
+        <label className="flex items-center gap-1.5 text-xs text-text-secondary cursor-pointer" title="When unchecked, only free-to-play methods are shown">
           <input
             type="checkbox"
             checked={membersOnly}
             onChange={(e) => setMembersOnly(e.target.checked)}
             className="rounded"
           />
-          Members only
+          Include members
         </label>
 
-        {hiscores && (
+        {mainTab === "methods" && hiscores && (
           <label className="flex items-center gap-1.5 text-xs text-text-secondary cursor-pointer">
             <input
               type="checkbox"

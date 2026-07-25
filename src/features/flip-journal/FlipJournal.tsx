@@ -50,14 +50,24 @@ function localDateTimeValue(d: Date): string {
 
 // ── Item search dropdown ──────────────────────────────────────────────────────
 
-function ItemSearch({ onSelect }: { onSelect: (item: ItemMapping) => void }) {
-  const [query, setQuery] = useState("");
+function ItemSearch({
+  onSelect,
+  onFreeType,
+  initialQuery = "",
+}: {
+  onSelect: (item: ItemMapping) => void;
+  /** Called on every keystroke so free-typed names (no GE match) still work. */
+  onFreeType?: (name: string) => void;
+  initialQuery?: string;
+}) {
+  const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState<ItemMapping[]>([]);
   const [open, setOpen] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleChange = (v: string) => {
     setQuery(v);
+    onFreeType?.(v);
     if (timerRef.current) clearTimeout(timerRef.current);
     if (v.length < 2) { setResults([]); setOpen(false); return; }
     timerRef.current = setTimeout(async () => {
@@ -80,7 +90,8 @@ function ItemSearch({ onSelect }: { onSelect: (item: ItemMapping) => void }) {
         type="text"
         value={query}
         onChange={(e) => handleChange(e.target.value)}
-        placeholder="Item name..."
+        placeholder="Item name (search or type freely)..."
+        aria-label="Item name"
         className="w-full bg-bg-tertiary border border-border rounded-lg px-3 py-1.5 text-sm"
         onFocus={() => results.length > 0 && setOpen(true)}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
@@ -90,6 +101,7 @@ function ItemSearch({ onSelect }: { onSelect: (item: ItemMapping) => void }) {
           {results.map((item) => (
             <button
               key={item.id}
+              type="button"
               onMouseDown={() => pick(item)}
               className="w-full text-left px-3 py-1.5 text-xs hover:bg-bg-secondary transition-colors flex items-center gap-2"
             >
@@ -150,9 +162,19 @@ function EntryForm({ initial, onSubmit, onCancel }: EntryFormProps) {
         <div>
           <label className="section-kicker mb-1 block">Item</label>
           <ItemSearch
+            initialQuery={initial?.itemName ?? ""}
             onSelect={(item) => { setItemId(item.id); setItemName(item.name); }}
+            onFreeType={(name) => {
+              setItemName(name);
+              // Clear mapped id when the user types freely (no GE pick).
+              setItemId(0);
+            }}
           />
-          {itemName && <div className="text-[11px] text-text-secondary/60 mt-0.5 truncate">{itemName}</div>}
+          {itemName && itemId > 0 && (
+            <div className="text-[11px] text-text-secondary/60 mt-0.5 truncate">
+              #{itemId} · {itemName}
+            </div>
+          )}
         </div>
         <div>
           <label className="section-kicker mb-1 block">Qty</label>

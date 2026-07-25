@@ -44,20 +44,22 @@ function toliveStar(raw: RawStar07gg): LiveStar {
   };
 }
 
-export async function fetchLiveStars(): Promise<LiveStar[]> {
+export async function fetchLiveStars(options?: {
+  forceRefresh?: boolean;
+}): Promise<LiveStar[]> {
   const cacheKey = "live-stars:v3";
-  const cached = getCached<LiveStar[]>(cacheKey, STARS_TTL);
-  if (cached) return cached;
-
-  try {
-    const res = await apiFetch(STARS_API);
-    if (!res.ok) return [];
-
-    const raw: RawStar07gg[] = await res.json();
-    const data = raw.map(toliveStar);
-    setCache(cacheKey, data);
-    return data;
-  } catch {
-    return [];
+  if (!options?.forceRefresh) {
+    const cached = getCached<LiveStar[]>(cacheKey, STARS_TTL);
+    if (cached) return cached;
   }
+
+  const res = await apiFetch(STARS_API);
+  if (!res.ok) {
+    throw new Error(`Stars API returned ${res.status}`);
+  }
+
+  const raw: RawStar07gg[] = await res.json();
+  const data = raw.map(toliveStar);
+  setCache(cacheKey, data);
+  return data;
 }

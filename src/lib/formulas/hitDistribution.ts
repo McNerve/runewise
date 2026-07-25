@@ -1,7 +1,6 @@
-// Single-attack damage distribution for standard OSRS combat: an attack
-// connects with probability `accuracy`, and a connecting hit rolls uniformly
-// in [0, maxHit]. A connecting roll of 0 is indistinguishable from a miss,
-// so both contribute to the zero bucket.
+// Single-attack and multi-hit damage distributions for OSRS combat.
+// Standard attacks: connect with probability `accuracy`, then roll uniform [0, maxHit].
+// Fang / scythe / claws use specialized shapes matching the wiki DPS calc.
 
 export interface HitDistribution {
   /** pmf[k] = probability the attack deals exactly k damage (index 0..maxHit). */
@@ -11,6 +10,28 @@ export interface HitDistribution {
   zeroChance: number;
   /** Smallest damage d such that P(damage <= d) >= 0.5. */
   medianHit: number;
+}
+
+function finalizePmf(pmf: number[]): HitDistribution {
+  let expectedHit = 0;
+  let cumulative = 0;
+  let medianHit = 0;
+  let foundMedian = false;
+  for (let k = 0; k < pmf.length; k++) {
+    expectedHit += k * pmf[k];
+    cumulative += pmf[k];
+    if (!foundMedian && cumulative >= 0.5) {
+      medianHit = k;
+      foundMedian = true;
+    }
+  }
+  if (!foundMedian) medianHit = Math.max(0, pmf.length - 1);
+  return {
+    pmf,
+    expectedHit,
+    zeroChance: pmf[0] ?? 1,
+    medianHit,
+  };
 }
 
 export function hitDistribution(maxHit: number, accuracy: number): HitDistribution {
@@ -25,22 +46,140 @@ export function hitDistribution(maxHit: number, accuracy: number): HitDistributi
   const pmf = new Array<number>(m + 1).fill(perRoll);
   pmf[0] = 1 - a + perRoll;
 
-  let cumulative = 0;
-  let medianHit = m;
-  for (let k = 0; k <= m; k++) {
-    cumulative += pmf[k];
-    if (cumulative >= 0.5) {
-      medianHit = k;
-      break;
+  return finalizePmf(pmf);
+}
+
+/**
+ * Osmumten's fang: accuracy is rolled twice (1 - (1-p)²), and a successful
+ * hit is re-rolled into the middle band [trunc(15% max), trunc(85% max)].
+ * Wiki: linear min/max transform on the hit range.
+ */
+export function fangHitDistribution(maxHit: number, accuracy: number): HitDistribution {
+  const m = Math.max(0, Math.floor(maxHit));
+  const baseAcc = Math.min(1, Math.max(0, accuracy));
+  const a = 1 - (1 - baseAcc) ** 2;
+
+  if (m === 0) {
+    return { pmf: [1], expectedHit: 0, zeroChance: 1, medianHit: 0 };
+  }
+
+  const lo = Math.trunc(m * 0.15);
+  const hi = Math.trunc(m * 0.85);
+  const span = hi - lo + 1;
+  const pmf = new Array<number>(m + 1).fill(0);
+  const miss = 1 - a;
+  pmf[0] += miss;
+
+  if (span <= 0) {
+    pmf[0] += a;
+    return finalizePmf(pmf);
+  }
+
+  const per = a / span;
+  for (let d = lo; d <= hi; d++) {
+    pmf[d] = (pmf[d] ?? 0) + per;
+  }
+  return finalizePmf(pmf);
+}
+
+/** Fang effective accuracy after the double roll. */
+export function fangAccuracy(accuracy: number): number {
+  const a = Math.min(1, Math.max(0, accuracy));
+  return 1 - (1 - a) ** 2;
+}
+
+/** Expected damage for a fang hit (analytic). */
+export function fangExpectedHit(maxHit: number, accuracy: number): number {
+  return fangHitDistribution(maxHit, accuracy).expectedHit;
+}
+
+/**
+ * Scythe of vitur multi-hitsplat: 1/2/3 independent rolls by NPC size.
+ * Hit 1: full max; hit 2: floor(max/2); hit 3: floor(max/4). Each uses full accuracy.
+ */
+export function scytheHitDistribution(
+  maxHit: number,
+  accuracy: number,
+  monsterSize: number
+): HitDistribution {
+  const hits = Math.max(1, Math.min(3, Math.floor(monsterSize)));
+  const m = Math.max(0, Math.floor(maxHit));
+  const fractions = [1, 0.5, 0.25];
+  let combined: number[] = [1]; // start with 0-damage certainty, convolve each splat
+
+  for (let i = 0; i < hits; i++) {
+    const hitMax = Math.floor(m * fractions[i]);
+    const part = hitDistribution(hitMax, accuracy).pmf;
+    combined = convolvePmfs(combined, part);
+  }
+  return finalizePmf(combined);
+}
+
+/** Discrete convolution of two non-negative PMFs. */
+export function convolvePmfs(a: number[], b: number[]): number[] {
+  const out = new Array(a.length + b.length - 1).fill(0);
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] === 0) continue;
+    for (let j = 0; j < b.length; j++) {
+      out[i + j] += a[i] * b[j];
+    }
+  }
+  return out;
+}
+
+/**
+ * Dragon claws Slice and Dice total-damage PMF (wiki dClawDist simplified to
+ * total damage mass). Used for expected damage and overkill-aware TTK of specs.
+ */
+export function dragonClawsHitDistribution(maxHit: number, accuracy: number): HitDistribution {
+  const m = Math.max(0, Math.floor(maxHit));
+  const a = Math.min(1, Math.max(0, accuracy));
+  if (m === 0) return { pmf: [1], expectedHit: 0, zeroChance: 1, medianHit: 0 };
+
+  // Max theoretical total from the four-splat cascade.
+  const maxTotal = (m - 1) + Math.max(0, Math.floor(m / 2) - 1)
+    + Math.max(0, Math.floor(m / 4) - 1) + Math.floor(m / 4);
+  const pmf = new Array(Math.max(maxTotal, 2) + 1).fill(0);
+
+  const addUniform = (chance: number, lo: number, hi: number, map: (dmg: number) => number) => {
+    if (chance <= 0 || hi < lo) return;
+    const span = hi - lo + 1;
+    const per = chance / span;
+    for (let d = lo; d <= hi; d++) {
+      const total = map(d);
+      const idx = Math.max(0, Math.min(pmf.length - 1, total));
+      pmf[idx] += per;
+    }
+  };
+
+  // First connecting roll k=0..3 with ranges matching wiki generateTotals(…, highOffset -1).
+  for (let accRoll = 0; accRoll < 4; accRoll++) {
+    const low = Math.trunc((m * (4 - accRoll)) / 4);
+    const high = m + low - 1;
+    const chance = (1 - a) ** accRoll * a;
+    if (accRoll === 0) {
+      addUniform(chance, low, high, (dmg) =>
+        Math.trunc(dmg / 2) + Math.trunc(dmg / 4) + Math.trunc(dmg / 8) + Math.trunc(dmg / 8) + 1
+      );
+    } else if (accRoll === 1) {
+      addUniform(chance, low, high, (dmg) =>
+        Math.trunc(dmg / 2) + Math.trunc(dmg / 4) + Math.trunc(dmg / 4) + 1
+      );
+    } else if (accRoll === 2) {
+      addUniform(chance, low, high, (dmg) =>
+        Math.trunc(dmg / 2) + Math.trunc(dmg / 2) + 1
+      );
+    } else {
+      addUniform(chance, low, high, (dmg) => dmg + 1);
     }
   }
 
-  return {
-    pmf,
-    expectedHit: (a * m) / 2,
-    zeroChance: pmf[0],
-    medianHit,
-  };
+  const allFail = (1 - a) ** 4;
+  // 2/3 chance deal 2 (1+1), 1/3 deal 0 — wiki dClawDist
+  pmf[2] = (pmf[2] ?? 0) + allFail * (2 / 3);
+  pmf[0] = (pmf[0] ?? 0) + allFail * (1 / 3);
+
+  return finalizePmf(pmf);
 }
 
 export interface KillTimeStats {
@@ -61,36 +200,34 @@ const PERCENTILE_OPS_BUDGET = 40_000_000;
 const MAX_PERCENTILE_ATTACKS = 3000;
 
 /**
- * Kill-time statistics from the true damage distribution. Unlike hp / dps,
- * this charges full attacks for partial overkill damage and models hit
- * variance, so it is exact for expected attacks and gives real percentiles.
+ * Kill-time statistics from an arbitrary per-attack damage PMF (overkill-aware).
  */
-export function killTimeStats(
-  maxHit: number,
-  accuracy: number,
+export function killTimeStatsFromPmf(
+  pmf: number[],
   hp: number,
   attackSpeedTicks: number
 ): KillTimeStats | null {
-  const m = Math.max(0, Math.floor(maxHit));
   const targetHp = Math.max(1, Math.floor(hp));
-  const { pmf } = hitDistribution(m, accuracy);
-  if (m === 0 || pmf[0] >= 1) return null;
+  if (pmf.length === 0) return null;
+  const zero = pmf[0] ?? 1;
+  if (zero >= 1 - 1e-15) return null;
 
+  const m = pmf.length - 1;
   const tickSeconds = attackSpeedTicks * 0.6;
 
-  // Expected attacks: E[h] = (1 + sum_{k>=1} pmf[k] * E[max(0, h - k)]) / (1 - pmf[0])
   const expected = new Array<number>(targetHp + 1).fill(0);
   for (let h = 1; h <= targetHp; h++) {
     let acc = 1;
     for (let k = 1; k <= m; k++) {
+      const p = pmf[k] ?? 0;
+      if (p === 0) continue;
       const rest = h - k;
-      if (rest > 0) acc += pmf[k] * expected[rest];
+      if (rest > 0) acc += p * expected[rest];
     }
-    expected[h] = acc / (1 - pmf[0]);
+    expected[h] = acc / (1 - zero);
   }
   const expectedAttacks = expected[targetHp];
 
-  // Percentiles: walk the distribution over remaining HP attack by attack.
   let medianAttacks: number | null = null;
   let p90Attacks: number | null = null;
   if (targetHp * m * Math.min(expectedAttacks * 4, MAX_PERCENTILE_ATTACKS) <= PERCENTILE_OPS_BUDGET) {
@@ -103,9 +240,11 @@ export function killTimeStats(
         const mass = alive[h];
         if (mass === 0) continue;
         for (let k = 0; k <= m; k++) {
+          const p = pmf[k] ?? 0;
+          if (p === 0) continue;
           const rest = h - k;
-          if (rest > 0) next[rest] += mass * pmf[k];
-          else dead += mass * pmf[k];
+          if (rest > 0) next[rest] += mass * p;
+          else dead += mass * p;
         }
       }
       alive = next;
@@ -122,4 +261,75 @@ export function killTimeStats(
     medianSeconds: medianAttacks !== null ? medianAttacks * tickSeconds : null,
     p90Seconds: p90Attacks !== null ? p90Attacks * tickSeconds : null,
   };
+}
+
+/**
+ * Kill-time statistics from the true damage distribution. Unlike hp / dps,
+ * this charges full attacks for partial overkill damage and models hit
+ * variance, so it is exact for expected attacks and gives real percentiles.
+ */
+export function killTimeStats(
+  maxHit: number,
+  accuracy: number,
+  hp: number,
+  attackSpeedTicks: number
+): KillTimeStats | null {
+  const m = Math.max(0, Math.floor(maxHit));
+  const { pmf } = hitDistribution(m, accuracy);
+  if (m === 0 || pmf[0] >= 1) return null;
+  return killTimeStatsFromPmf(pmf, hp, attackSpeedTicks);
+}
+
+/** Overkill-aware TTK for fang attacks. */
+export function fangKillTimeStats(
+  maxHit: number,
+  accuracy: number,
+  hp: number,
+  attackSpeedTicks: number
+): KillTimeStats | null {
+  const dist = fangHitDistribution(maxHit, accuracy);
+  if (dist.zeroChance >= 1) return null;
+  return killTimeStatsFromPmf(dist.pmf, hp, attackSpeedTicks);
+}
+
+/** Overkill-aware TTK for scythe multi-hitsplat attacks. */
+export function scytheKillTimeStats(
+  maxHit: number,
+  accuracy: number,
+  monsterSize: number,
+  hp: number,
+  attackSpeedTicks: number
+): KillTimeStats | null {
+  const dist = scytheHitDistribution(maxHit, accuracy, monsterSize);
+  if (dist.zeroChance >= 1) return null;
+  return killTimeStatsFromPmf(dist.pmf, hp, attackSpeedTicks);
+}
+
+export type AttackShape = "standard" | "fang" | "scythe";
+
+/** Pick the right per-attack distribution for UI charts and TTK. */
+export function attackHitDistribution(
+  shape: AttackShape,
+  maxHit: number,
+  accuracy: number,
+  monsterSize = 1
+): HitDistribution {
+  if (shape === "fang") return fangHitDistribution(maxHit, accuracy);
+  if (shape === "scythe") return scytheHitDistribution(maxHit, accuracy, monsterSize);
+  return hitDistribution(maxHit, accuracy);
+}
+
+export function attackKillTimeStats(
+  shape: AttackShape,
+  maxHit: number,
+  accuracy: number,
+  hp: number,
+  attackSpeedTicks: number,
+  monsterSize = 1
+): KillTimeStats | null {
+  if (shape === "fang") return fangKillTimeStats(maxHit, accuracy, hp, attackSpeedTicks);
+  if (shape === "scythe") {
+    return scytheKillTimeStats(maxHit, accuracy, monsterSize, hp, attackSpeedTicks);
+  }
+  return killTimeStats(maxHit, accuracy, hp, attackSpeedTicks);
 }

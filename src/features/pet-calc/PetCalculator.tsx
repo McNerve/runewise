@@ -242,11 +242,15 @@ export default function PetCalculator({ hiscores, rsn }: Props) {
     }
   }, [hiscoreSkill, selectedAction, countTouched, hiscores]);
 
+  // Flat-rate skilling methods (xpPerAction 0) still get the 200M 15× boost —
+  // keep headline chance/milestones in sync with methodRows.
   const effectiveRate = useMemo(() => (
     isSkilling && selectedAction
       ? (selectedAction.xpPerAction > 0
         ? skillingPetRate(selectedAction.baseChance, skillLevel, has200m)
-        : selectedAction.baseChance)
+        : has200m
+          ? selectedAction.baseChance / 15
+          : selectedAction.baseChance)
       : (modifierEntry ? modifierEntry.rate(modifierState, selected.baseRate) : selected.baseRate)
   ), [isSkilling, selectedAction, skillLevel, has200m, modifierEntry, modifierState, selected]);
 

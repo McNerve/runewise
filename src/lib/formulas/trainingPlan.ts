@@ -42,7 +42,9 @@ export function generatePlan(
   currentLevels: Record<string, number>,
   targetLevels: Record<string, number>,
   preference: TrainingPreference = "fastest",
-  ironmanMode = false
+  ironmanMode = false,
+  /** Actual current XP per skill; when omitted, uses level-floor XP (conservative overestimate). */
+  currentXp: Record<string, number> = {}
 ): TrainingPlan {
   const steps: PlanStep[] = [];
 
@@ -53,7 +55,9 @@ export function generatePlan(
     const methods = TRAINING_METHODS[skill];
     if (!methods || methods.length === 0) continue;
 
-    const xpNeeded = xpForLevel(target) - xpForLevel(current);
+    const levelFloorXp = xpForLevel(current);
+    const actualXp = Math.max(levelFloorXp, currentXp[skill] ?? levelFloorXp);
+    const xpNeeded = Math.max(0, xpForLevel(target) - actualXp);
     if (xpNeeded <= 0) continue;
 
     // Find the best available method at the current level given the preference

@@ -6,6 +6,7 @@ import { SKILL_ICONS } from "../../lib/sprites";
 import { formatGp } from "../../lib/format";
 import ExternalLink from "../../components/ExternalLink";
 import { useNavigation } from "../../lib/NavigationContext";
+import { checkRequirements } from "./questRequirements";
 
 
 function wikiToQuest(w: WikiQuest): Quest {
@@ -35,28 +36,6 @@ interface Props {
   hiscores: HiscoreData | null;
 }
 
-function checkRequirements(
-  quest: Quest,
-  hiscores: HiscoreData | null
-): { met: boolean; missing: { skill: string; required: number; current: number }[] } {
-  if (!hiscores || quest.skillRequirements.length === 0) {
-    return { met: true, missing: [] };
-  }
-
-  const missing: { skill: string; required: number; current: number }[] = [];
-  for (const req of quest.skillRequirements) {
-    const skill = hiscores.skills.find(
-      (s) => s.name.toLowerCase() === req.skill.toLowerCase()
-    );
-    const current = skill?.level ?? 1;
-    if (current < req.level) {
-      missing.push({ skill: req.skill, required: req.level, current });
-    }
-  }
-
-  return { met: missing.length === 0, missing };
-}
-
 export default function QuestTracker({ hiscores }: Props) {
   const { params } = useNavigation();
   const [filter, setFilter] = useState<"all" | "available" | "locked">("all");
@@ -84,8 +63,11 @@ export default function QuestTracker({ hiscores }: Props) {
   const filtered = useMemo(() => {
     let result = questsWithStatus;
 
-    if (filter === "available") result = result.filter((q) => q.met);
-    if (filter === "locked") result = result.filter((q) => !q.met);
+    // Available/Locked filters only apply when hiscores are loaded
+    if (hiscores) {
+      if (filter === "available") result = result.filter((q) => q.status === "met");
+      if (filter === "locked") result = result.filter((q) => q.status === "missing");
+    }
     if (diffFilter !== "all")
       result = result.filter((q) => q.quest.difficulty === diffFilter);
     if (search.length >= 2) {
@@ -96,9 +78,9 @@ export default function QuestTracker({ hiscores }: Props) {
     }
 
     return result;
-  }, [questsWithStatus, filter, diffFilter, search]);
+  }, [questsWithStatus, filter, diffFilter, search, hiscores]);
 
-  const available = questsWithStatus.filter((q) => q.met).length;
+  const available = questsWithStatus.filter((q) => q.status === "met").length;
   const total = questsWithStatus.length;
   // Derive the QP cap from the loaded quest list so the ratio can never exceed
   // 100% (the old hardcoded 300 was below the data's own ~333 total).
@@ -142,6 +124,8 @@ export default function QuestTracker({ hiscores }: Props) {
             <button
               key={f}
               onClick={() => setFilter(f)}
+              disabled={!hiscores && f !== "all"}
+              title={!hiscores && f !== "all" ? "Set your RSN to filter by requirements" : undefined}
               className={`px-2 py-1.5 rounded text-xs capitalize ${
                 filter === f
                   ? f === "available"
@@ -150,7 +134,7 @@ export default function QuestTracker({ hiscores }: Props) {
                       ? "bg-danger/20 text-danger"
                       : "bg-accent text-on-accent"
                   : "bg-bg-tertiary text-text-secondary"
-              }`}
+              } ${!hiscores && f !== "all" ? "opacity-40 cursor-not-allowed" : ""}`}
             >
               {f}
             </button>
@@ -198,10 +182,16 @@ export default function QuestTracker({ hiscores }: Props) {
           <span className="w-2 h-2 rounded-full bg-danger" aria-hidden />
           Requirements missing
         </span>
+        {!hiscores && (
+          <span className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-text-secondary/40" aria-hidden />
+            Unknown (set RSN)
+          </span>
+        )}
       </div>
 
       <div className="space-y-1.5">
-        {filtered.map(({ quest, met, missing }) => (
+        {filtered.map(({ quest, status, missing }) => (
           <div key={quest.name} className="relative group">
           <ExternalLink
             href={`https://oldschool.runescape.wiki/w/${encodeURIComponent(quest.name.replace(/ /g, "_"))}`}
@@ -212,7 +202,11 @@ export default function QuestTracker({ hiscores }: Props) {
                 <div className="flex items-center gap-2">
                   <span
                     className={`w-2 h-2 rounded-full ${
-                      met ? "bg-success" : "bg-danger"
+                      status === "met"
+                        ? "bg-success"
+                        : status === "missing"
+                          ? "bg-danger"
+                          : "bg-text-secondary/40"
                     }`}
                   />
                   <span className="text-sm font-medium">{quest.name}</span>

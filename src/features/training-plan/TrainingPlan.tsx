@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import type { HiscoreData } from "../../lib/api/hiscores";
+import { getSkillXp, type HiscoreData } from "../../lib/api/hiscores";
 import { generatePlan, type TrainingPreference } from "../../lib/formulas/trainingPlan";
 import { formatGp } from "../../lib/format";
 import { SKILL_ICONS } from "../../lib/sprites";
@@ -146,9 +146,18 @@ export default function TrainingPlan({ hiscores }: Props) {
     return levels;
   }, [hiscores]);
 
+  const currentXp = useMemo(() => {
+    const xp: Record<string, number> = {};
+    if (!hiscores) return xp;
+    for (const skill of SKILLS) {
+      xp[skill] = getSkillXp(hiscores, skill);
+    }
+    return xp;
+  }, [hiscores]);
+
   const plan = useMemo(
-    () => generatePlan(currentLevels, targets, preference, settings.ironmanMode),
-    [currentLevels, targets, preference, settings.ironmanMode]
+    () => generatePlan(currentLevels, targets, preference, settings.ironmanMode, currentXp),
+    [currentLevels, targets, preference, settings.ironmanMode, currentXp]
   );
 
   function setTarget(skill: string, level: number) {

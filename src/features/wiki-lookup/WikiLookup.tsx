@@ -187,6 +187,17 @@ export default function WikiLookup() {
     };
   }, [debouncedQuery]);
 
+  // Sync selected page when route params.page changes (browser history / hash edits)
+  useEffect(() => {
+    const routePage = params.page?.trim() ?? "";
+    if (!routePage) return;
+    if (routePage === selectedPage) return;
+    setLoadingDocument(true);
+    setError(null);
+    setSelectedPage(routePage);
+    recordVisit(routePage);
+  }, [params.page]); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     const routeQuery = params.query?.trim() ?? "";
     const routePage = params.page?.trim() ?? "";
@@ -493,7 +504,7 @@ export default function WikiLookup() {
         </div>
       ) : null}
 
-      {!loadingDocument && !document ? (
+      {!loadingDocument && !document && !error ? (
         <div className="py-10 text-center text-sm text-text-secondary space-y-4">
           <p>
             Search for something like <span className="text-text-primary">Dusuri&apos;s Star Shop</span>,

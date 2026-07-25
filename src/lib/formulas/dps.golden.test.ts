@@ -91,12 +91,63 @@ describe("golden DPS fixtures", () => {
       targetMagicLevel: 250,
       modifiers: [DPS_MODIFIERS.twisted_bow!],
     });
-    // Tbow damage bonus peaks near magic 250 → very high max hit relative to bare gear.
-    // Accuracy can still be mid-band when the target also has high ranged defence.
-    expect(r.maxHit).toBeGreaterThan(40);
+    // Wiki tbowScaling at M=250: acc 1.40×, dmg 2.15× on base roll/max.
+    // base max = floor(0.5 + 107*(80+64)/640) = 24; trunc(24*215/100)=51
+    expect(r.maxHit).toBe(51);
     expect(r.accuracy).toBeGreaterThan(0.2);
-    expect(r.accuracy).toBeLessThan(0.9);
+    expect(r.accuracy).toBeLessThan(0.95);
     expect(Number.isFinite(r.ttk)).toBe(true);
+  });
+
+  it("flagship: tbow chart points M=0/100/150/250 damage mults", () => {
+    const base = {
+      attackLevel: 99, strengthLevel: 99, rangedLevel: 99, magicLevel: 99,
+      attackBonus: 100, strengthBonus: 80,
+      prayerAttackMult: 1.0, prayerStrengthMult: 1.0,
+      stanceAttackBonus: 0, stanceStrengthBonus: 0,
+      attackSpeed: 5, combatStyle: "ranged" as const,
+      targetDefLevel: 1, targetDefBonus: 0, targetHp: 100,
+      modifiers: [DPS_MODIFIERS.twisted_bow!],
+    };
+    // bare max 24
+    expect(calculateDps({ ...base, targetMagicLevel: 0 }).maxHit).toBe(Math.trunc((24 * 54) / 100));
+    expect(calculateDps({ ...base, targetMagicLevel: 100 }).maxHit).toBe(Math.trunc((24 * 131) / 100));
+    expect(calculateDps({ ...base, targetMagicLevel: 150 }).maxHit).toBe(Math.trunc((24 * 164) / 100));
+    expect(calculateDps({ ...base, targetMagicLevel: 250 }).maxHit).toBe(Math.trunc((24 * 215) / 100));
+  });
+
+  it("flagship: piety + void melee max hit / roll", () => {
+    const r = calculateDps({
+      attackLevel: 99, strengthLevel: 99, rangedLevel: 99, magicLevel: 99,
+      attackBonus: 100, strengthBonus: 100,
+      prayerAttackMult: 1.2, prayerStrengthMult: 1.23,
+      stanceAttackBonus: 3, stanceStrengthBonus: 3,
+      attackSpeed: 4, combatStyle: "melee",
+      targetDefLevel: 100, targetDefBonus: 0, targetHp: 150,
+      modifiers: [DPS_MODIFIERS.void_melee!],
+    });
+    expect(r.maxHit).toBe(37);
+    expect(r.attackRoll).toBe(141 * 164);
+  });
+
+  it("flagship: Tumeken's shadow 4× in ToA with 100% gear-dmg cap", () => {
+    const shared = {
+      attackLevel: 99, strengthLevel: 99, rangedLevel: 99, magicLevel: 99,
+      attackBonus: 40, strengthBonus: 15,
+      prayerAttackMult: 1.0, prayerStrengthMult: 1.0,
+      stanceAttackBonus: 0, stanceStrengthBonus: 0,
+      attackSpeed: 5, combatStyle: "magic" as const,
+      targetDefLevel: 100, targetDefBonus: 0, targetHp: 200,
+      targetMagicLevel: 100, spellBaseMaxHit: 40,
+      modifiers: [DPS_MODIFIERS.tumekens_shadow!],
+    };
+    const out = calculateDps(shared);
+    const toa = calculateDps({ ...shared, inToA: true });
+    // outside: gear dmg min(45,100)=45 → floor(40*1.45)=58
+    expect(out.maxHit).toBe(58);
+    // ToA: min(60,100)=60 → floor(40*1.60)=64
+    expect(toa.maxHit).toBe(64);
+    expect(toa.attackRoll).toBeGreaterThan(out.attackRoll);
   });
 
   it("flagship: Tumeken's shadow gear tripling on powered staff-like input", () => {

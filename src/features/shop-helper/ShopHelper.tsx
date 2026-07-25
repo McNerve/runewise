@@ -5,25 +5,23 @@ import { useGEData } from "../../hooks/useGEData";
 import { useDebounce } from "../../hooks/useDebounce";
 import { encodeIconFilename, WIKI_IMG, itemIcon, npcIcon } from "../../lib/sprites";
 import { formatGp } from "../../lib/format";
-import { netMargin } from "../../lib/tax";
 import WikiImage from "../../components/WikiImage";
 import ItemTooltip from "../../components/ItemTooltip";
 import { Skeleton } from "../../components/Skeleton";
 import EmptyState from "../../components/EmptyState";
 import { useNavigation } from "../../lib/NavigationContext";
+import { geInstasell, shopSaving } from "./shopSaving";
 
 type MembersFilter = "all" | "f2p" | "p2p";
 type SortKey = "name" | "stock" | "sellPrice" | "value";
 
+/** GE instasell (low) for shop arbitrage — never high/instabuy. */
 function getGEPrice(
   itemName: string,
   prices: Record<string, ItemPrice>,
   nameToId: Map<string, number>
 ): number | null {
-  const id = nameToId.get(itemName.toLowerCase());
-  if (!id) return null;
-  const p = prices[String(id)];
-  return p?.high ?? p?.low ?? null;
+  return geInstasell(itemName, prices, nameToId);
 }
 
 /**
@@ -329,7 +327,7 @@ export default function ShopHelper() {
                 const deals = sortedItems
                   .map((item) => {
                     const ge = getGEPrice(item.name, prices, nameToId);
-                    const saving = item.sellPrice != null && ge != null ? netMargin(ge, item.sellPrice) : null;
+                    const saving = shopSaving(ge, item.sellPrice, item.currency);
                     return { ...item, ge, saving };
                   })
                   .filter((d) => d.saving != null && d.saving > 0)
@@ -385,8 +383,9 @@ export default function ShopHelper() {
                       <th
                         className="text-right px-3 py-2 cursor-pointer hover:text-text-primary"
                         onClick={() => handleSort("value")}
+                        title="GE instasell (low) — post-tax used for Save"
                       >
-                        GE Price{arrow("value")}
+                        GE Instasell{arrow("value")}
                       </th>
                       {showCurrencyCol && (
                         <th className="text-right px-3 py-2">Currency</th>
@@ -396,7 +395,7 @@ export default function ShopHelper() {
                   <tbody>
                     {sortedItems.map((item, i) => {
                       const gePrice = getGEPrice(item.name, prices, nameToId);
-                      const saving = item.sellPrice != null && gePrice != null ? netMargin(gePrice, item.sellPrice) : null;
+                      const saving = shopSaving(gePrice, item.sellPrice, item.currency);
                       return (
                         <tr
                           key={`${item.name}-${i}`}
@@ -426,7 +425,12 @@ export default function ShopHelper() {
                             </ItemTooltip>
                           </td>
                           <td className="px-3 py-1.5 text-right num text-text-secondary">
-                            {item.stock === "∞" ? "∞" : parseInt(item.stock).toLocaleString()}
+                            {item.stock === "∞"
+                              ? "∞"
+                              : (() => {
+                                  const n = parseInt(String(item.stock), 10);
+                                  return Number.isFinite(n) ? n.toLocaleString() : (item.stock || "—");
+                                })()}
                           </td>
                           <td className="px-3 py-1.5 text-right num">
                             {item.sellPrice != null ? (
@@ -456,7 +460,7 @@ export default function ShopHelper() {
               </div>
 
               <div className="text-[10px] text-text-secondary/40 text-right">
-                Data from OSRS Wiki · Shop Price = cost to buy from shop · GE Price = Grand Exchange value
+                Data from OSRS Wiki · Shop Price = cost to buy · GE Instasell = low (post-tax) · Save is coins-only
               </div>
             </div>
           ) : (

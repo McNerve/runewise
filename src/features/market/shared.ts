@@ -119,13 +119,13 @@ export function buildItemStats(item: ItemMapping, price?: ItemPrice) {
 
   return [
     {
-      label: "Buy Price",
+      label: "Instabuy",
       value: formatGp(price?.high ?? null),
       meta: timeAgo(price?.highTime ?? null),
       className: "text-success",
     },
     {
-      label: "Sell Price",
+      label: "Instasell",
       value: formatGp(price?.low ?? null),
       meta: timeAgo(price?.lowTime ?? null),
       className: "text-danger",

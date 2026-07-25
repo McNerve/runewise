@@ -29,10 +29,10 @@ function clueKey(clue: ClueEntry): string {
 }
 
 export default function ClueHelper() {
-  const { navigate } = useNavigation();
+  const { navigate, params } = useNavigation();
   const [clues, setClues] = useState<ClueEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(() => params.query ?? params.search ?? "");
   const debouncedQuery = useDebounce(query, 150);
   const [typeFilter, setTypeFilter] = useState<ClueType | "All">("All");
   const [tierFilter, setTierFilter] = useState<ClueTier | "All">("All");
@@ -45,9 +45,22 @@ export default function ClueHelper() {
       if (cancelled) return;
       setClues(module.CLUE_ENTRIES);
       setLoading(false);
+      // Deep-link: params.search may be a short hash of clue text from global search
+      const seed = params.query ?? params.search;
+      if (seed) {
+        const entries = module.CLUE_ENTRIES;
+        const hashMatch = entries.find((c) => {
+          try {
+            return btoa(c.text).replace(/=/g, "").slice(0, 16) === seed;
+          } catch {
+            return false;
+          }
+        });
+        setQuery(hashMatch?.text ?? seed);
+      }
     });
     return () => { cancelled = true; };
-  }, []);
+  }, [params.query, params.search]);
 
   useEffect(() => {
     setVisibleCount(50);
