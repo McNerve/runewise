@@ -4,6 +4,13 @@ All notable changes to RuneWise are documented here. Versions follow [Semantic V
 
 ## [Unreleased]
 
+## [2.5.10] - 2026-07-25
+
+### Combat
+
+- **Greedy under-budget BiS** — Loadout Finder can scan weapon → armour under your cash stack (toggle); opens full set in DPS.
+- **Kandarin hard diary** — ×1.1 enchanted bolt special proc chance on ranged DPS (Diaries toggle).
+
 ## [2.5.9] - 2026-07-25
 
 ### Product polish
