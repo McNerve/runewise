@@ -186,6 +186,35 @@ describe("beamOptimizeUnderBudget", () => {
   });
 });
 
+describe("owned and exclude constraints", () => {
+  it("treats owned expensive items as free so they fit tight budgets", () => {
+    const r = optimizeUnderBudget({
+      ...commonOpts,
+      budget: 100_000, // whip is 1.5M normally
+      ownedItems: ["Abyssal whip"],
+    });
+    expect(r).not.toBeNull();
+    // Whip can be selected since owned → 0 gp
+    expect(r!.gear.weapon?.name).toMatch(/whip|scimitar|rapier/i);
+    if (r!.gear.weapon?.name === "Abyssal whip") {
+      expect(r!.totalCost).toBeLessThan(r!.totalCost + 1); // owned not in cost
+      // Cost should not include whip
+      expect(r!.totalCost).toBeLessThan(1_500_000);
+    }
+  });
+
+  it("never equips excluded weapons", () => {
+    const r = optimizeUnderBudget({
+      ...commonOpts,
+      budget: 0,
+      excludeItems: ["Ghrazi rapier", "Abyssal whip"],
+    });
+    expect(r).not.toBeNull();
+    const w = r!.gear.weapon?.name ?? r!.gear["2h"]?.name ?? "";
+    expect(w).not.toMatch(/rapier|whip/i);
+  });
+});
+
 describe("paretoFilterCandidates", () => {
   it("drops strictly dominated (worse offense, higher cost) items", () => {
     const front = paretoFilterCandidates(

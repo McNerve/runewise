@@ -21,11 +21,27 @@ import { lookupMonsterMeta } from "../../lib/data/monster-attributes";
 export interface LoadoutTarget {
   name: string;
   defLevel: number;
+  /**
+   * Fallback single defence bonus when per-style values are omitted.
+   * Prefer defStab/defSlash/… when available.
+   */
   defBonus: number;
   hp: number;
   magicLevel?: number;
-  /** Prefer stab/slash/crush for melee defence pick. */
+  /** Per-style NPC defence bonuses (wiki). Used for attack-type BiS. */
+  defStab?: number;
+  defSlash?: number;
+  defCrush?: number;
+  defRanged?: number;
+  defMagic?: number;
+  /** Prefer stab/slash/crush for melee defence pick (hint only). */
   preferDefStyle?: "stab" | "slash" | "crush" | "ranged" | "magic";
+}
+
+export interface BuildDpsOptions {
+  prayerName?: string;
+  /** On-task: apply slayer helm (i) if equipped (or always model on-task for BiS). */
+  onTask?: boolean;
 }
 
 export interface BudgetFindOptions {
@@ -42,6 +58,53 @@ export interface BudgetFindOptions {
   requirePriced?: boolean;
   /** Max results. */
   limit?: number;
+  /** Item names treated as free (already owned). */
+  ownedItems?: string[];
+  /** Item names excluded from consideration. */
+  excludeItems?: string[];
+  /** On-task slayer helm boost. */
+  onTask?: boolean;
+}
+
+/** Treat owned gear as 0 gp when pricing setups. */
+export function withOwnedPrices(
+  priceOf: (itemName: string) => number | null,
+  ownedItems?: string[] | null
+): (itemName: string) => number | null {
+  if (!ownedItems?.length) return priceOf;
+  const owned = new Set(ownedItems.map((n) => n.toLowerCase().trim()).filter(Boolean));
+  return (name: string) => {
+    if (owned.has(name.toLowerCase())) return 0;
+    return priceOf(name);
+  };
+}
+
+/** Drop excluded item names from an equipment catalog. */
+export function filterExcludedEquipment(
+  equipment: WikiEquipment[],
+  excludeItems?: string[] | null
+): WikiEquipment[] {
+  if (!excludeItems?.length) return equipment;
+  const ban = new Set(excludeItems.map((n) => n.toLowerCase().trim()).filter(Boolean));
+  return equipment.filter((e) => !ban.has(e.name.toLowerCase()));
+}
+
+/** Resolve NPC defence bonus for a combat style / melee attack type. */
+export function resolveTargetDefBonus(
+  target: LoadoutTarget,
+  style: CombatStyle,
+  meleeType?: string
+): number {
+  if (style === "ranged") {
+    return target.defRanged ?? target.defBonus;
+  }
+  if (style === "magic") {
+    return target.defMagic ?? target.defBonus;
+  }
+  const t = (meleeType ?? target.preferDefStyle ?? "slash").toLowerCase();
+  if (t === "stab") return target.defStab ?? target.defBonus;
+  if (t === "crush") return target.defCrush ?? target.defBonus;
+  return target.defSlash ?? target.defBonus;
 }
 
 export interface RankedLoadout {
@@ -102,14 +165,24 @@ function setupCost(
   return { total, unpriced };
 }
 
+/** Normalize prayerName string or options bag. */
+function normalizeBuildOpts(
+  opts?: string | BuildDpsOptions
+): BuildDpsOptions {
+  if (opts == null) return {};
+  if (typeof opts === "string") return { prayerName: opts };
+  return opts;
+}
+
 /** Build engine input for a resolved gear set (also used by leftover-upgrade scan). */
 export function buildDpsInput(
   style: CombatStyle,
   gear: EquippedGear,
   hiscores: HiscoreData | null,
   target: LoadoutTarget,
-  prayerName?: string
+  opts?: string | BuildDpsOptions
 ): DpsInput {
+  const { prayerName, onTask } = normalizeBuildOpts(opts);
   const bonuses = sumGearBonuses(gear);
   const stances = GENERIC_STANCES[style];
   // Prefer aggressive for melee str, rapid for ranged, accurate for magic
@@ -141,9 +214,9 @@ export function buildDpsInput(
     (weapon ? weapon.attackSpeed || knownWeaponSpeed(weapon.name) : 0) ||
     DEFAULT_SPEED[style];
 
-  // Melee: pick stab/slash/crush from weapon combatStyle, name, or highest bonus
+  // Melee: weapon-aware + target defence (pick best attack type vs multi-def NPC)
   const meleeType =
-    style === "melee" ? bestMeleeAttackType(weapon, bonuses) : stance.attackType;
+    style === "melee" ? bestMeleeAttackType(weapon, bonuses, target) : stance.attackType;
 
   const attackBonus =
     style === "ranged"
@@ -158,14 +231,31 @@ export function buildDpsInput(
         ? bonuses.magicDamage
         : bonuses.strengthBonus;
 
-  const passiveIds = detectGearPassives(gear, style);
+  const meta = lookupMonsterMeta(target.name);
+  const passiveIds = filterPassivesForTarget(
+    detectGearPassives(gear, style),
+    meta.attributes,
+    onTask === true
+  );
+  // On-task without helm still models slayer helm if user checked on-task and
+  // wears a slayer helm — detectGearPassives does not auto-add slayer_helm.
+  if (onTask) {
+    const head = (gear.head?.name ?? "").toLowerCase();
+    if (
+      (head.includes("slayer") && head.includes("helm")) ||
+      head.includes("black mask")
+    ) {
+      if (!passiveIds.includes("slayer_helm") && !passiveIds.some((id) => id.startsWith("salve"))) {
+        passiveIds.push("slayer_helm");
+      }
+    }
+  }
+
   const modifiers = passiveIds
     .map((id) => DPS_MODIFIERS[id])
     .filter((m): m is NonNullable<typeof m> => m != null);
 
-  const meta = lookupMonsterMeta(target.name);
-  // Prefer style-matched target def when target exposes per-style (LoadoutTarget is scalar today)
-  const defBonus = target.defBonus;
+  const defBonus = resolveTargetDefBonus(target, style, meleeType);
 
   return {
     attackLevel: skillLevel(hiscores, "Attack"),
@@ -194,11 +284,75 @@ export function buildDpsInput(
   };
 }
 
-/** Infer best melee attack type for BiS scoring (weapon-aware). */
-function bestMeleeAttackType(
+/**
+ * Drop situational passives that do not apply to this NPC (GearScape honesty).
+ * Salve only vs undead; DHL/DHCB only vs dragon; arclight only vs demon; etc.
+ */
+export function filterPassivesForTarget(
+  passiveIds: string[],
+  attributes: string[],
+  onTask: boolean
+): string[] {
+  const attrs = new Set(attributes.map((a) => a.toLowerCase()));
+  const isUndead = attrs.has("undead");
+  const isDemon = attrs.has("demon");
+  const isDragon = attrs.has("dragon");
+  const isLeafy = attrs.has("leafy");
+  const isKalphite = attrs.has("kalphite");
+
+  return passiveIds.filter((id) => {
+    if (id === "salve_e" || id === "salve_ei") return isUndead;
+    if (id === "slayer_helm") return onTask;
+    if (id === "arclight") return isDemon;
+    if (id === "dhl" || id === "dhcb") return isDragon;
+    if (id === "leaf_bladed") return isLeafy;
+    if (id === "keris_partisan") return isKalphite;
+    return true;
+  });
+}
+
+/**
+ * Infer best melee attack type for BiS scoring.
+ * Prefer weapon natural style; otherwise maximize attackBonus − targetDef.
+ */
+export function bestMeleeAttackType(
   weapon: WikiEquipment | null,
-  bonuses: { attackStab: number; attackSlash: number; attackCrush: number }
+  bonuses: { attackStab: number; attackSlash: number; attackCrush: number },
+  target?: LoadoutTarget | null
 ): "stab" | "slash" | "crush" {
+  const types = ["stab", "slash", "crush"] as const;
+  const natural = naturalMeleeType(weapon);
+
+  // If weapon is locked to one style and has meaningful attack there, use it
+  if (natural) {
+    const atk = meleeAttackBonus(bonuses, natural);
+    if (atk > 0 || !weapon) return natural;
+  }
+
+  // Score each type: attack roll proxy minus NPC def
+  let best: "stab" | "slash" | "crush" = natural ?? "slash";
+  let bestScore = -Infinity;
+  for (const t of types) {
+    const atk = meleeAttackBonus(bonuses, t);
+    if (atk <= 0 && Math.max(bonuses.attackStab, bonuses.attackSlash, bonuses.attackCrush) > 0) {
+      continue; // skip unusable types when others work
+    }
+    const def = target
+      ? resolveTargetDefBonus(target, "melee", t)
+      : 0;
+    // Weight attack more than def (accuracy is attack/def interaction)
+    const score = atk * 1.5 - def;
+    if (score > bestScore) {
+      bestScore = score;
+      best = t;
+    }
+  }
+  return best;
+}
+
+function naturalMeleeType(
+  weapon: WikiEquipment | null
+): "stab" | "slash" | "crush" | null {
   const cs = weapon?.combatStyle?.toLowerCase();
   if (cs === "stab" || cs === "slash" || cs === "crush") return cs;
 
@@ -209,7 +363,8 @@ function bestMeleeAttackType(
     n.includes("dagger") ||
     n.includes("hasta") ||
     n.includes("spear") ||
-    n.includes("bayonet")
+    n.includes("bayonet") ||
+    n.includes("lance")
   )
     return "stab";
   if (
@@ -222,15 +377,15 @@ function bestMeleeAttackType(
     n.includes("flail")
   )
     return "crush";
-  if (n.includes("scimitar") || n.includes("whip") || n.includes("scythe") || n.includes("sword"))
+  if (
+    n.includes("scimitar") ||
+    n.includes("whip") ||
+    n.includes("scythe") ||
+    n.includes("sword") ||
+    n.includes("scim")
+  )
     return "slash";
-
-  // Highest total attack bonus among the three
-  if (bonuses.attackStab >= bonuses.attackSlash && bonuses.attackStab >= bonuses.attackCrush)
-    return "stab";
-  if (bonuses.attackCrush >= bonuses.attackSlash && bonuses.attackCrush >= bonuses.attackStab)
-    return "crush";
-  return "slash";
+  return null;
 }
 
 /**
@@ -238,15 +393,21 @@ function bestMeleeAttackType(
  */
 export function findBudgetLoadouts(opts: BudgetFindOptions): RankedLoadout[] {
   const {
-    equipment,
-    priceOf,
+    equipment: rawEquipment,
+    priceOf: rawPriceOf,
     hiscores,
     target,
     budget,
     styles,
     requirePriced = false,
     limit = 12,
+    ownedItems,
+    excludeItems,
+    onTask,
   } = opts;
+
+  const equipment = filterExcludedEquipment(rawEquipment, excludeItems);
+  const priceOf = withOwnedPrices(rawPriceOf, ownedItems);
 
   const unlimited = !Number.isFinite(budget) || budget <= 0;
   const styleFilter = styles && styles.length > 0 ? new Set(styles) : null;
@@ -264,7 +425,10 @@ export function findBudgetLoadouts(opts: BudgetFindOptions): RankedLoadout[] {
     // Soft: if budget set and everything unpriced, skip (can't validate)
     if (!unlimited && total === 0 && unpriced > 0 && requirePriced) continue;
 
-    const input = buildDpsInput(preset.style, gear, hiscores, target, preset.prayer);
+    const input = buildDpsInput(preset.style, gear, hiscores, target, {
+      prayerName: preset.prayer,
+      onTask,
+    });
     const result = calculateDps(input);
 
     ranked.push({
@@ -287,14 +451,150 @@ export function findBudgetLoadouts(opts: BudgetFindOptions): RankedLoadout[] {
   return ranked.slice(0, limit);
 }
 
-/** Default monster targets for the finder UI. */
+/** Default monster targets for the finder UI (per-style def from wiki data). */
 export const FINDER_TARGETS: LoadoutTarget[] = [
-  { name: "Vorkath", defLevel: 214, defBonus: 26, hp: 750, magicLevel: 150, preferDefStyle: "stab" },
-  { name: "Zulrah", defLevel: 300, defBonus: 50, hp: 500, magicLevel: 300, preferDefStyle: "magic" },
-  { name: "General Graardor", defLevel: 250, defBonus: 90, hp: 255, preferDefStyle: "slash" },
-  { name: "Cerberus", defLevel: 100, defBonus: 50, hp: 600, preferDefStyle: "crush" },
-  { name: "Alchemical Hydra", defLevel: 100, defBonus: 0, hp: 1100, preferDefStyle: "ranged" },
-  { name: "Corporeal Beast", defLevel: 310, defBonus: 200, hp: 2000, preferDefStyle: "stab" },
-  { name: "K'ril Tsutsaroth", defLevel: 270, defBonus: 20, hp: 255, preferDefStyle: "slash" },
+  {
+    name: "Vorkath",
+    defLevel: 214,
+    defBonus: 26,
+    defStab: 26,
+    defSlash: 108,
+    defCrush: 108,
+    defRanged: 26,
+    defMagic: 240,
+    hp: 750,
+    magicLevel: 150,
+    preferDefStyle: "stab",
+  },
+  {
+    name: "Zulrah",
+    defLevel: 300,
+    defBonus: 50,
+    defStab: 50,
+    defSlash: 50,
+    defCrush: 50,
+    defRanged: 50,
+    defMagic: 300,
+    hp: 500,
+    magicLevel: 300,
+    preferDefStyle: "magic",
+  },
+  {
+    name: "General Graardor",
+    defLevel: 250,
+    defBonus: 90,
+    defStab: 90,
+    defSlash: 90,
+    defCrush: 90,
+    defRanged: 90,
+    defMagic: 0,
+    hp: 255,
+    preferDefStyle: "slash",
+  },
+  {
+    name: "Cerberus",
+    defLevel: 100,
+    defBonus: 50,
+    defStab: 100,
+    defSlash: 100,
+    defCrush: 50,
+    defRanged: 100,
+    defMagic: 100,
+    hp: 600,
+    preferDefStyle: "crush",
+  },
+  {
+    name: "Alchemical Hydra",
+    defLevel: 100,
+    defBonus: 0,
+    defStab: 0,
+    defSlash: 0,
+    defCrush: 0,
+    defRanged: 0,
+    defMagic: 0,
+    hp: 1100,
+    preferDefStyle: "ranged",
+  },
+  {
+    name: "Corporeal Beast",
+    defLevel: 310,
+    defBonus: 200,
+    defStab: 200,
+    defSlash: 200,
+    defCrush: 200,
+    defRanged: 200,
+    defMagic: 200,
+    hp: 2000,
+    preferDefStyle: "stab",
+  },
+  {
+    name: "K'ril Tsutsaroth",
+    defLevel: 270,
+    defBonus: 20,
+    defStab: 20,
+    defSlash: 20,
+    defCrush: 20,
+    defRanged: 20,
+    defMagic: 0,
+    hp: 255,
+    preferDefStyle: "slash",
+  },
+  {
+    name: "Kree'arra",
+    defLevel: 260,
+    defBonus: 200,
+    defStab: 200,
+    defSlash: 200,
+    defCrush: 200,
+    defRanged: 0,
+    defMagic: 200,
+    hp: 255,
+    preferDefStyle: "ranged",
+  },
+  {
+    name: "Duke Sucellus",
+    defLevel: 310,
+    defBonus: 100,
+    defStab: 160,
+    defSlash: 200,
+    defCrush: 120,
+    defRanged: 200,
+    defMagic: 40,
+    hp: 440,
+    preferDefStyle: "crush",
+  },
+  {
+    name: "Phantom Muspah",
+    defLevel: 200,
+    defBonus: 50,
+    defStab: 50,
+    defSlash: 50,
+    defCrush: 50,
+    defRanged: 50,
+    defMagic: 50,
+    hp: 850,
+    magicLevel: 150,
+  },
   { name: "Custom / Dummy", defLevel: 100, defBonus: 0, hp: 150 },
 ];
+
+/** Common untradeables players already own (default free chips). */
+export const COMMON_OWNED_CHIPS = [
+  "Fire cape",
+  "Infernal cape",
+  "Fighter torso",
+  "Barrows gloves",
+  "Dragon defender",
+  "Avernic defender",
+  "Ava's assembler",
+  "Ava's accumulator",
+  "Slayer helmet (i)",
+  "Helm of neitiznot",
+  "Neitiznot faceguard",
+  "Void knight top",
+  "Void knight robe",
+  "Void knight gloves",
+  "Void melee helm",
+  "Elite void top",
+  "Elite void robe",
+] as const;

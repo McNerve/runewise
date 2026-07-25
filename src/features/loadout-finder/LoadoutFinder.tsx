@@ -11,6 +11,7 @@ import AccountPrefillBanner from "../../components/AccountPrefillBanner";
 import { Button, Card, FilterPills, StatCard, StatGrid } from "../../components/primitives";
 import {
   FINDER_TARGETS,
+  COMMON_OWNED_CHIPS,
   findBudgetLoadouts,
   buildDpsInput,
   type LoadoutTarget,
@@ -213,6 +214,10 @@ export default function LoadoutFinder({ hiscores }: Props) {
   const [customDef, setCustomDef] = useState(100);
   const [customDefBonus, setCustomDefBonus] = useState(0);
   const [customHp, setCustomHp] = useState(150);
+  const [ownedChips, setOwnedChips] = useState<string[]>([]);
+  const [ownedExtra, setOwnedExtra] = useState("");
+  const [excludeText, setExcludeText] = useState("");
+  const [onTask, setOnTask] = useState(false);
 
   useEffect(() => {
     void fetchIfNeeded();
@@ -253,37 +258,70 @@ export default function LoadoutFinder({ hiscores }: Props) {
     [priceByName]
   );
 
+  const ownedItems = useMemo(() => {
+    const extra = ownedExtra
+      .split(/[,;\n]/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    return [...new Set([...ownedChips, ...extra])];
+  }, [ownedChips, ownedExtra]);
+
+  const excludeItems = useMemo(
+    () =>
+      excludeText
+        .split(/[,;\n]/)
+        .map((s) => s.trim())
+        .filter(Boolean),
+    [excludeText]
+  );
+
+  const toggleOwnedChip = (name: string) => {
+    setOwnedChips((prev) =>
+      prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]
+    );
+  };
+
   const [useOptimizer, setUseOptimizer] = useState(true);
 
   const results = useMemo(() => {
     if (!equipment || equipment.length === 0) return [];
     const styles: CombatStyle[] | undefined =
       styleFilter === "all" ? undefined : [styleFilter];
-    const presets = findBudgetLoadouts({
+    const shared = {
       equipment,
       priceOf,
       hiscores,
       target,
       budget,
       styles,
+      ownedItems,
+      excludeItems,
+      onTask,
+    };
+    const presets = findBudgetLoadouts({
+      ...shared,
       requirePriced: false,
       limit: 10,
     });
     if (!useOptimizer) return presets;
-    const optimized = optimizeAllStyles({
-      equipment,
-      priceOf,
-      hiscores,
-      target,
-      budget,
-      styles,
-    });
+    const optimized = optimizeAllStyles(shared);
     // Merge: optimized first (dedupe by name), then presets by DPS
     const seen = new Set(optimized.map((r) => r.preset.name));
     const merged = [...optimized, ...presets.filter((p) => !seen.has(p.preset.name))];
     merged.sort((a, b) => b.dps - a.dps);
     return merged.slice(0, 12);
-  }, [equipment, priceOf, hiscores, target, budget, styleFilter, useOptimizer]);
+  }, [
+    equipment,
+    priceOf,
+    hiscores,
+    target,
+    budget,
+    styleFilter,
+    useOptimizer,
+    ownedItems,
+    excludeItems,
+    onTask,
+  ]);
 
   /** Multi-step upgrade path under leftover cash for top setups (budget mode only). */
   const leftoverByPreset = useMemo(() => {
@@ -295,13 +333,10 @@ export default function LoadoutFinder({ hiscores }: Props) {
         map.set(row.preset.name, { path: [], leftover: 0 });
         continue;
       }
-      const baseInput = buildDpsInput(
-        row.style,
-        row.gear,
-        hiscores,
-        target,
-        row.preset.prayer
-      );
+      const baseInput = buildDpsInput(row.style, row.gear, hiscores, target, {
+        prayerName: row.preset.prayer,
+        onTask,
+      });
       const path = findUpgradePathUnderBudget({
         gear: row.gear,
         combatStyle: row.style,
@@ -315,7 +350,7 @@ export default function LoadoutFinder({ hiscores }: Props) {
       map.set(row.preset.name, { path, leftover });
     }
     return map;
-  }, [results, equipment, budget, hiscores, target, priceOf]);
+  }, [results, equipment, budget, hiscores, target, priceOf, onTask]);
 
   const openPathInDps = (row: RankedLoadout, path: LeftoverUpgrade[]) => {
     const params: Record<string, string> = {
@@ -393,11 +428,17 @@ export default function LoadoutFinder({ hiscores }: Props) {
               value={targetName}
               onChange={(e) => setTargetName(e.target.value)}
             >
-              {FINDER_TARGETS.map((t) => (
-                <option key={t.name} value={t.name}>
-                  {t.name} (def {t.defLevel}, hp {t.hp})
-                </option>
-              ))}
+              {FINDER_TARGETS.map((t) => {
+                const defHint =
+                  t.defStab != null
+                    ? ` · S/L/C ${t.defStab}/${t.defSlash ?? "—"}/${t.defCrush ?? "—"}`
+                    : "";
+                return (
+                  <option key={t.name} value={t.name}>
+                    {t.name} (def {t.defLevel}{defHint}, hp {t.hp})
+                  </option>
+                );
+              })}
             </select>
           </div>
 
@@ -487,6 +528,63 @@ export default function LoadoutFinder({ hiscores }: Props) {
             />
             Combinatorial BiS under budget (GearScape-class search)
           </label>
+
+          <label className="flex items-center gap-2 text-xs text-text-secondary cursor-pointer">
+            <input
+              type="checkbox"
+              checked={onTask}
+              onChange={(e) => setOnTask(e.target.checked)}
+              className="rounded border-border"
+            />
+            On-task (slayer helm / black mask when worn)
+          </label>
+
+          <div>
+            <label className="text-2xs uppercase tracking-wide text-text-secondary/80 block mb-1.5">
+              I already own (free / 0 gp)
+            </label>
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {COMMON_OWNED_CHIPS.map((name) => {
+                const on = ownedChips.includes(name);
+                return (
+                  <button
+                    key={name}
+                    type="button"
+                    onClick={() => toggleOwnedChip(name)}
+                    className={`text-2xs px-2 py-1 rounded-full border transition-colors ${
+                      on
+                        ? "border-accent/50 bg-accent/15 text-accent"
+                        : "border-border-subtle bg-bg-primary/40 text-text-secondary hover:border-border"
+                    }`}
+                  >
+                    {name}
+                  </button>
+                );
+              })}
+            </div>
+            <input
+              type="text"
+              value={ownedExtra}
+              onChange={(e) => setOwnedExtra(e.target.value)}
+              placeholder="More items, comma-separated…"
+              aria-label="Additional owned items"
+              className="w-full rounded-lg border border-border bg-bg-primary px-2.5 py-1.5 text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="text-2xs uppercase tracking-wide text-text-secondary/80 block mb-1.5">
+              Exclude items
+            </label>
+            <input
+              type="text"
+              value={excludeText}
+              onChange={(e) => setExcludeText(e.target.value)}
+              placeholder="e.g. Scythe of vitur, Tumeken's shadow"
+              aria-label="Excluded items"
+              className="w-full rounded-lg border border-border bg-bg-primary px-2.5 py-1.5 text-sm"
+            />
+          </div>
         </div>
       </Card>
 
