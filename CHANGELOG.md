@@ -4,6 +4,15 @@ All notable changes to RuneWise are documented here. Versions follow [Semantic V
 
 ## [Unreleased]
 
+## [2.5.9] - 2026-07-25
+
+### Product polish
+
+- **Milestones** — skip untrained level-1 skills and base Hitpoints (no more “Ranged → 10” noise).
+- **Home tool grid** — reliable AppIcon glyphs (including Loadout Finder).
+- **Custom budget** on Loadout Finder — free text `75m` / `1.5b` / `250k`.
+- **Manual clog** — more categories; Export / Import JSON for offline progress.
+
 ## [2.5.8] - 2026-07-25
 
 ### Product / combat path
