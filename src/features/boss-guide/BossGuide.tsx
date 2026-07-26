@@ -98,6 +98,9 @@ export default function BossGuide({ hiscores }: Props) {
   const [summaryExpanded, setSummaryExpanded] = useState(false);
   const [bossQuery, setBossQuery] = useState("");
   const [tocExpanded, setTocExpanded] = useState<Record<string, boolean>>({});
+  const [linkCopied, setLinkCopied] = useState(false);
+  const [showBackTop, setShowBackTop] = useState(false);
+  const prefetching = useRef<Set<string>>(new Set());
 
   const filteredBosses = useMemo(() => {
     const byCat =
@@ -379,6 +382,34 @@ export default function BossGuide({ hiscores }: Props) {
     return () => window.removeEventListener("keydown", onKey);
   }, [guide, activeTab, activeSectionId]);
 
+  // Show "back to top" after the user scrolls the main content area.
+  useEffect(() => {
+    const scroller = document.querySelector("main.content-area");
+    if (!scroller) return;
+    function onScroll() {
+      setShowBackTop((scroller as HTMLElement).scrollTop > 480);
+    }
+    scroller.addEventListener("scroll", onScroll, { passive: true });
+    return () => scroller.removeEventListener("scroll", onScroll);
+  }, [selectedBoss?.name]);
+
+  function prefetchBossGuide(boss: BossInfo) {
+    if (prefetching.current.has(boss.wikiPage)) return;
+    prefetching.current.add(boss.wikiPage);
+    void fetchBossGuideDocument(boss.wikiPage).catch(() => {
+      prefetching.current.delete(boss.wikiPage);
+    });
+  }
+
+  function copyBossDeepLink() {
+    if (!selectedBoss) return;
+    const url = `${window.location.origin}${window.location.pathname}#bosses?boss=${encodeURIComponent(selectedBoss.name)}`;
+    void navigator.clipboard.writeText(url).then(() => {
+      setLinkCopied(true);
+      window.setTimeout(() => setLinkCopied(false), 1800);
+    });
+  }
+
   // Keep the active mobile chip scrolled into view.
   useEffect(() => {
     if (!activeSectionId) return;
@@ -405,6 +436,19 @@ export default function BossGuide({ hiscores }: Props) {
           hasHiscores={Boolean(hiscores)}
           context="boss kill counts and personalised task context"
         />
+      ) : null}
+      {showBackTop ? (
+        <button
+          type="button"
+          onClick={() => {
+            const scroller = document.querySelector("main.content-area");
+            scroller?.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+          className="fixed bottom-5 right-5 z-30 rounded-full border border-border/60 bg-bg-primary/95 px-3.5 py-2 text-xs font-medium text-text-secondary shadow-lg backdrop-blur transition hover:border-accent/40 hover:text-text-primary"
+          aria-label="Back to top"
+        >
+          ↑ Top
+        </button>
       ) : null}
       <div>
         <div
@@ -494,6 +538,8 @@ export default function BossGuide({ hiscores }: Props) {
                   type="button"
                   data-boss-name={boss.name}
                   onClick={() => void selectBoss(boss)}
+                  onMouseEnter={() => prefetchBossGuide(boss)}
+                  onFocus={() => prefetchBossGuide(boss)}
                   className={`w-full rounded-xl border px-3 py-3 text-left transition ${
                     active
                       ? "border-accent/35 bg-accent/10"
@@ -690,6 +736,11 @@ export default function BossGuide({ hiscores }: Props) {
                     icon="🔗"
                     href={`https://oldschool.runescape.wiki/w/${selectedBoss.wikiPage}`}
                   />
+                  <BossActionIcon
+                    label={linkCopied ? "Link copied!" : "Copy guide link"}
+                    icon={linkCopied ? "✓" : "📎"}
+                    onClick={copyBossDeepLink}
+                  />
                 </div>
               </div>
 
@@ -876,8 +927,16 @@ export default function BossGuide({ hiscores }: Props) {
             <div className="grid gap-4 xl:grid-cols-[220px_minmax(0,1fr)] min-w-0 items-start">
               {/* Desktop sticky TOC — hierarchical, collapsible for long raids */}
               <aside className="hidden xl:block h-fit xl:sticky xl:top-6 max-h-[calc(100vh-4rem)] overflow-y-auto scroll-fade sidebar-scroll rounded-xl border border-border/30 bg-bg-primary/20 p-2">
-                <div className="mb-2 px-2 text-[10px] uppercase tracking-[0.2em] text-text-secondary/45">
-                  Guide Sections
+                <div className="mb-2 flex items-center justify-between gap-2 px-2">
+                  <div className="text-[10px] uppercase tracking-[0.2em] text-text-secondary/45">
+                    Guide Sections
+                  </div>
+                  <div
+                    className="text-[9px] text-text-secondary/35"
+                    title="Keyboard: j next section, k previous"
+                  >
+                    j/k
+                  </div>
                 </div>
                 <div className="space-y-0.5">
                   {(() => {

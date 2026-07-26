@@ -61,6 +61,7 @@ export default function WikiLookup() {
   const contentRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
   const [geSnapshot, setGeSnapshot] = useState<GESnapshot | null>(null);
+  const [readProgress, setReadProgress] = useState(0);
   const { mapping, prices, fetchIfNeeded } = useGEData();
   // Reading history survives view switches via the module-level slot.
   const [pageHistory, setPageHistory] = useState<WikiHistory>(() => {
@@ -378,6 +379,24 @@ export default function WikiLookup() {
     }
   }, [loadingDocument, document]);
 
+  // Reading progress for long wiki articles (scroll within main content-area).
+  useEffect(() => {
+    if (!document) {
+      setReadProgress(0);
+      return;
+    }
+    const scroller = window.document.querySelector("main.content-area");
+    if (!scroller) return;
+    function onScroll() {
+      const el = scroller as HTMLElement;
+      const max = el.scrollHeight - el.clientHeight;
+      setReadProgress(max > 0 ? Math.min(100, Math.round((el.scrollTop / max) * 100)) : 0);
+    }
+    scroller.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => scroller.removeEventListener("scroll", onScroll);
+  }, [document?.title, loadingDocument]);
+
   const pageUrl = useMemo(
     () =>
       document
@@ -557,14 +576,25 @@ export default function WikiLookup() {
       ) : null}
 
       {document ? (
-        <div ref={contentRef} className="rounded-xl border border-border/40 bg-bg-primary/25 p-4 sm:p-5 min-w-0 overflow-hidden">
+        <div ref={contentRef} className="relative rounded-xl border border-border/40 bg-bg-primary/25 p-4 sm:p-5 min-w-0 overflow-hidden">
+        {/* Reading progress */}
+        <div
+          className="pointer-events-none absolute left-0 top-0 z-10 h-0.5 bg-accent/80 transition-[width] duration-150"
+          style={{ width: `${readProgress}%` }}
+          aria-hidden
+        />
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px] min-w-0">
           <section className="min-w-0 space-y-4 overflow-hidden">
             <div>
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div className="space-y-2">
-                  <div className="text-[10px] uppercase tracking-[0.2em] text-text-secondary/45">
-                    OSRS Wiki
+                  <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-text-secondary/45">
+                    <span>OSRS Wiki</span>
+                    {readProgress > 5 ? (
+                      <span className="normal-case tracking-normal text-text-secondary/35">
+                        · {readProgress}% read
+                      </span>
+                    ) : null}
                   </div>
                   <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-xs text-text-secondary/60">
                     <span className="flex items-center gap-0.5">

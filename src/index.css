@@ -1639,8 +1639,50 @@ body {
   padding: 0.75rem 0.85rem;
 }
 
-/* Accordion behavior helper: only one open tab when user prefers via JS;
- * default allows multiple open details for inventory comparisons. */
+/* Tile-marker copy affordance in boss strategy HTML */
+.article-content .tile-marker-wrapper {
+  margin: 0.75rem 0;
+}
+
+.article-content .tile-marker-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 0.65rem;
+  border: 1px solid color-mix(in srgb, var(--color-accent) 35%, transparent);
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  color: var(--color-accent);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+
+.article-content .tile-marker-copy:hover {
+  background: color-mix(in srgb, var(--color-accent) 18%, transparent);
+  border-color: color-mix(in srgb, var(--color-accent) 55%, transparent);
+}
+
+/* Wiki math / formula fragments that survive sanitization */
+.article-content .mwe-math-element,
+.article-content .mwe-math-fallback-image-inline,
+.article-content .mwe-math-fallback-image-display {
+  display: inline-block;
+  vertical-align: middle;
+  max-width: 100%;
+}
+
+.article-content .mwe-math-fallback-image-display {
+  display: block;
+  margin: 0.75rem auto;
+}
+
+.article-content .texhtml {
+  font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  font-style: italic;
+  color: var(--color-text-primary);
+}
 
 /* CSS tooltip for item images */
 .article-content td {
