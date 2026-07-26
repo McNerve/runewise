@@ -63,7 +63,13 @@ export function extractWeaknessFromInfobox(fullHtml: string): string | null {
 }
 
 interface WikiSection {
+  /** Hierarchical number from the TOC, e.g. "7.9.1" — used for parent links. */
   number: string;
+  /**
+   * Sequential section index for `action=parse&section=` — NOT the same as
+   * `number`. Nested headings only resolve when this field is used.
+   */
+  index: string;
   line: string;
   /** toclevel from the API: 1 = H2, 2 = H3, etc. */
   toclevel: number;
@@ -189,6 +195,33 @@ const SECTION_LABELS = [
   "defence reduction",
   "standard attacks",
   "dragonfire",
+  // Intermediate technique headings (often H4 under room Strategy)
+  "skipping",
+  "stacking",
+  "safespot",
+  "rotations",
+  "enrage phase",
+  "power blast",
+  "green ball",
+  "sticky webs",
+  "shadow maze",
+  "waves overview",
+  "nylocas",
+  "using melee",
+] as const;
+
+/**
+ * H2 containers that are pure indexes of rooms/encounters — include the H2
+ * and every non-meta child (CoX Combat → Tekton/Olm, ToB Bosses, puzzles…).
+ */
+const STRUCTURAL_PARENT_H2 = [
+  "combat",
+  "bosses",
+  "puzzles",
+  "encounters",
+  "rooms",
+  "paths",
+  "challenge mode",
 ] as const;
 
 /** Exact H2/H3 titles that are pure loot tables (Loot tab owns these). */
@@ -203,7 +236,8 @@ const DROP_SECTION_EXACT = new Set([
   "runes",
   "herbs",
   "seeds",
-  "resources",
+  // Note: plain "resources" is NOT here — CoX Strategies uses it for in-raid
+  // farming/herblore. Drop tables use more specific labels above.
   "shark drop table",
   "rare drop table",
   "tertiary",
@@ -214,6 +248,21 @@ const DROP_SECTION_EXACT = new Set([
   "gem drop table",
   "supplies",
 ]);
+
+/** End-matter / non-guide H2s we never surface in Strategy. */
+const META_SECTION_DENY = [
+  "references",
+  "changes",
+  "gallery",
+  "trivia",
+  "see also",
+  "external links",
+  "notes",
+  "history",
+  "further reading",
+  "sources",
+  "footnotes",
+];
 
 // -----------------------------------------------------------------------
 // Infobox field extractors (approach / team / combat / weakness)
@@ -330,6 +379,20 @@ function cleanSectionHtml(
     }
   }
 
+  // MediaWiki `section=` responses include the heading itself — remove the
+  // first H2–H4 that matches this section title so the card chrome title
+  // isn't doubled by a nested heading in the body.
+  const titleNorm = sectionTitle.trim().toLowerCase();
+  const leadHeading = content.querySelector(
+    ":scope > .mw-heading2, :scope > .mw-heading3, :scope > .mw-heading4, :scope > h2, :scope > h3, :scope > h4"
+  );
+  if (leadHeading) {
+    const leadText = (leadHeading.textContent ?? "").trim().toLowerCase();
+    if (leadText === titleNorm || leadText.replace(/\s+/g, " ") === titleNorm) {
+      leadHeading.remove();
+    }
+  }
+
   normalizeImages(content);
 
   const summaryParagraphs = Array.from(content.querySelectorAll("p"));
@@ -351,28 +414,45 @@ function cleanSectionHtml(
 async function fetchWikiSections(wikiPage: string): Promise<WikiSection[]> {
   return fetchJson<WikiSection[]>({
     url: `${WIKI_API}?action=parse&page=${wikiPage}&prop=sections&format=json&redirects=1`,
-    cacheKey: `boss-guide-sections:v4:${wikiPage}`,
+    cacheKey: `boss-guide-sections:v5:${wikiPage}`,
     ttlMs: GUIDE_TTL,
-    transform: (json) =>
-      typeof json === "object" &&
-      json !== null &&
-      "parse" in json &&
-      typeof json.parse === "object" &&
-      json.parse !== null &&
-      "sections" in json.parse &&
-      Array.isArray(json.parse.sections)
-        ? (json.parse.sections as WikiSection[])
-        : [],
+    transform: (json) => {
+      if (
+        typeof json !== "object" ||
+        json === null ||
+        !("parse" in json) ||
+        typeof json.parse !== "object" ||
+        json.parse === null ||
+        !("sections" in json.parse) ||
+        !Array.isArray(json.parse.sections)
+      ) {
+        return [];
+      }
+      return (json.parse.sections as Array<Record<string, unknown>>)
+        .map((raw): WikiSection | null => {
+          const line = typeof raw.line === "string" ? raw.line : "";
+          const number = typeof raw.number === "string" ? raw.number : "";
+          const index =
+            typeof raw.index === "string" || typeof raw.index === "number"
+              ? String(raw.index)
+              : "";
+          const toclevel =
+            typeof raw.toclevel === "number" ? raw.toclevel : 1;
+          if (!line || !number || !index) return null;
+          return { line, number, index, toclevel };
+        })
+        .filter((s): s is WikiSection => s !== null);
+    },
   });
 }
 
 async function fetchSectionHtml(
   wikiPage: string,
-  sectionNumber: string
+  sectionIndex: string
 ): Promise<string> {
   return fetchJson<string>({
-    url: `${WIKI_API}?action=parse&page=${wikiPage}&prop=text&section=${sectionNumber}&format=json&redirects=1`,
-    dedupeKey: `boss-guide:${wikiPage}:${sectionNumber}`,
+    url: `${WIKI_API}?action=parse&page=${wikiPage}&prop=text&section=${sectionIndex}&format=json&redirects=1`,
+    dedupeKey: `boss-guide:${wikiPage}:idx:${sectionIndex}`,
     transform: (json) =>
       ((json as WikiTextResponse).parse?.text?.["*"] ?? "").trim(),
   });
@@ -403,7 +483,8 @@ function normalizeHeadingMatch(input: string) {
  * Extract the HTML content that belongs to a given heading, stopping at the
  * next heading of equal or lesser depth.
  *
- * headingLevel: 2 for H2, 3 for H3
+ * headingLevel: 2 for H2, 3 for H3. When extracting H3 we also break on H4 so
+ * nested technique sections can be their own cards without double-rendering.
  */
 function extractSectionHtmlFromFullPage(
   fullHtml: string,
@@ -414,21 +495,22 @@ function extractSectionHtmlFromFullPage(
   const doc = parser.parseFromString(fullHtml, "text/html");
   const content = doc.querySelector(".mw-parser-output") || doc.body;
 
-  // Selectors for "this level" and "parent level" headings
+  // Selectors for "this level" and break boundaries (equal-or-higher headings)
   const thisSelector =
     headingLevel === 2
       ? ".mw-heading2, h2"
       : ".mw-heading3, h3";
+  // H3 extract also stops at H4 — those become separate guide cards.
   const breakSelector =
     headingLevel === 2
       ? ".mw-heading2, h2"
-      : ".mw-heading2, .mw-heading3, h2, h3";
+      : ".mw-heading2, .mw-heading3, .mw-heading4, h2, h3, h4";
 
   const headingContainer = Array.from(
     content.querySelectorAll(thisSelector)
   ).find((node) => {
     const heading =
-      node.matches("h2, h3") ? node : node.querySelector("h2, h3");
+      node.matches("h2, h3, h4") ? node : node.querySelector("h2, h3, h4");
     const text = heading?.textContent ?? node.textContent ?? "";
     return normalizeHeadingMatch(text) === normalizeHeadingMatch(sectionTitle);
   });
@@ -458,32 +540,104 @@ function isDropSection(line: string): boolean {
   return false;
 }
 
+function isMetaSection(line: string): boolean {
+  const lower = line.toLowerCase().trim();
+  return META_SECTION_DENY.some(
+    (d) => lower === d || lower.startsWith(d + " ") || lower.startsWith(d + ":")
+  );
+}
+
+function isStructuralParentH2(line: string): boolean {
+  const lower = line.toLowerCase().trim();
+  return STRUCTURAL_PARENT_H2.some(
+    (p) => lower === p || lower.startsWith(p + " ") || lower.includes(p)
+  );
+}
+
 function sectionMatchesLabel(line: string): boolean {
-  if (isDropSection(line)) return false;
+  if (isDropSection(line) || isMetaSection(line)) return false;
   const lower = line.toLowerCase();
   return SECTION_LABELS.some((l) => lower.includes(l));
 }
 
+function parentSectionNumber(number: string): string | null {
+  const parts = number.split(".");
+  if (parts.length <= 1) return null;
+  return parts.slice(0, -1).join(".");
+}
+
+function isDescendantOf(number: string, ancestor: string): boolean {
+  return number === ancestor || number.startsWith(ancestor + ".");
+}
+
 /**
- * Given raw wiki sections, return all H2s that match the label list PLUS
- * all H3s whose parent H2 also matches. Drop-table trees are excluded —
- * those live on the Loot tab.
+ * Pick guide sections from a wiki TOC.
+ *
+ * Rules:
+ *  - Skip drop tables and end-matter (References, Changes…).
+ *  - Include H2s that match strategy labels OR are structural indexes
+ *    (Combat, Bosses, Puzzles) OR have a matching strategy child.
+ *  - When an H2 is included, pull its full non-meta descendant tree
+ *    (H3 rooms + H4 techniques like Skipping / Safespotting / Phases).
+ *  - Orphan H3s that match labels (under a filtered-out parent) still come in.
  */
 function filterRelevantSections(sections: WikiSection[]): WikiSection[] {
-  const result: WikiSection[] = [];
-  let currentH2Included = false;
-  let currentH2IsDrops = false;
+  // Precompute which H2 numbers should expand their whole subtree.
+  const h2IncludeAll = new Set<string>();
+  const h2IncludeSelf = new Set<string>();
 
   for (const s of sections) {
+    if (s.toclevel !== 1) continue;
+    if (isDropSection(s.line) || isMetaSection(s.line)) continue;
+
+    const labelMatch = sectionMatchesLabel(s.line);
+    const structural = isStructuralParentH2(s.line);
+    const childMatch = sections.some(
+      (c) =>
+        c.toclevel > 1 &&
+        isDescendantOf(c.number, s.number) &&
+        !isDropSection(c.line) &&
+        !isMetaSection(c.line) &&
+        sectionMatchesLabel(c.line)
+    );
+
+    if (labelMatch || structural || childMatch) {
+      h2IncludeSelf.add(s.number);
+      // Always expand: room pages (Maiden) and indexes (Combat) both benefit
+      // from shipping their full technique tree.
+      h2IncludeAll.add(s.number);
+    }
+  }
+
+  const result: WikiSection[] = [];
+  const includedNumbers = new Set<string>();
+
+  for (const s of sections) {
+    if (isDropSection(s.line) || isMetaSection(s.line)) continue;
+
     if (s.toclevel === 1) {
-      currentH2IsDrops = isDropSection(s.line);
-      currentH2Included = !currentH2IsDrops && sectionMatchesLabel(s.line);
-      if (currentH2Included) result.push(s);
-    } else if (s.toclevel === 2) {
-      if (currentH2IsDrops || isDropSection(s.line)) continue;
-      if (currentH2Included || sectionMatchesLabel(s.line)) {
+      if (!h2IncludeSelf.has(s.number)) continue;
+      result.push(s);
+      includedNumbers.add(s.number);
+      continue;
+    }
+
+    // Find nearest included ancestor H2.
+    const parts = s.number.split(".");
+    const h2Number = parts[0];
+    if (!h2Number || !h2IncludeAll.has(h2Number)) {
+      // Orphan H3/H4 whose parent H2 was filtered — still keep label matches.
+      if (sectionMatchesLabel(s.line)) {
         result.push(s);
+        includedNumbers.add(s.number);
       }
+      continue;
+    }
+
+    // Under an expanded H2: take H3 + H4 (toclevel 2 and 3).
+    if (s.toclevel === 2 || s.toclevel === 3) {
+      result.push(s);
+      includedNumbers.add(s.number);
     }
   }
 
@@ -508,13 +662,50 @@ async function fetchSectionsWithFallback(wikiPage: string): Promise<{
   const matched = filterRelevantSections(sections);
   const altMatched = filterRelevantSections(altSections);
 
-  if (altMatched.length > matched.length) {
-    return { page: altPage, sections: altMatched, allSections: altSections };
+  const sortByNumber = (list: WikiSection[]) =>
+    [...list].sort((a, b) => compareSectionNumbers(a.number, b.number));
+
+  // Always prefer the /Strategies page when it has guide content — the main
+  // boss page often has more TOC nodes (rewards, drop tables, trivia) that
+  // inflate match count after structural expansion (e.g. CoX main > Strategies).
+  const primaryIsStrategies = hasStrategies;
+  const strategiesMatched = primaryIsStrategies ? matched : altMatched;
+  const strategiesPage = primaryIsStrategies ? wikiPage : altPage;
+  const strategiesAll = primaryIsStrategies ? sections : altSections;
+  const otherMatched = primaryIsStrategies ? altMatched : matched;
+  const otherPage = primaryIsStrategies ? altPage : wikiPage;
+  const otherAll = primaryIsStrategies ? altSections : sections;
+
+  if (strategiesMatched.length > 0) {
+    return {
+      page: strategiesPage,
+      sections: sortByNumber(strategiesMatched),
+      allSections: strategiesAll,
+    };
   }
-  if (matched.length > 0) {
-    return { page: wikiPage, sections: matched, allSections: sections };
+  if (otherMatched.length > 0) {
+    return {
+      page: otherPage,
+      sections: sortByNumber(otherMatched),
+      allSections: otherAll,
+    };
   }
-  return { page: altPage, sections: altMatched, allSections: altSections };
+  return {
+    page: strategiesPage,
+    sections: [],
+    allSections: strategiesAll,
+  };
+}
+
+function compareSectionNumbers(a: string, b: string): number {
+  const ap = a.split(".").map((n) => parseInt(n, 10) || 0);
+  const bp = b.split(".").map((n) => parseInt(n, 10) || 0);
+  const len = Math.max(ap.length, bp.length);
+  for (let i = 0; i < len; i++) {
+    const d = (ap[i] ?? 0) - (bp[i] ?? 0);
+    if (d !== 0) return d;
+  }
+  return 0;
 }
 
 // -----------------------------------------------------------------------
@@ -528,6 +719,37 @@ function disambiguateTitle(
   return parentTitle ? `${parentTitle} > ${title}` : title;
 }
 
+/**
+ * Remove nested H3/H4 blocks from a section body when those nested headings
+ * are rendered as their own guide cards.
+ */
+function stripNestedHeadings(rawHtml: string): string {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(rawHtml, "text/html");
+  const root = doc.querySelector(".mw-parser-output") || doc.body;
+
+  // Drop everything from the first nested section heading onward.
+  const kids = Array.from(root.children);
+  let cut = -1;
+  for (let i = 0; i < kids.length; i++) {
+    const el = kids[i];
+    if (
+      el.matches(
+        ".mw-heading3, .mw-heading4, h3, h4, .mw-heading2, h2"
+      )
+    ) {
+      cut = i;
+      break;
+    }
+  }
+  if (cut >= 0) {
+    for (let i = kids.length - 1; i >= cut; i--) {
+      kids[i].remove();
+    }
+  }
+  return root.innerHTML.trim();
+}
+
 // -----------------------------------------------------------------------
 // Main export
 // -----------------------------------------------------------------------
@@ -535,7 +757,7 @@ function disambiguateTitle(
 export async function fetchBossGuideDocument(
   wikiPage: string
 ): Promise<BossGuideDocument> {
-  const cacheKey = `boss-guide:v11:${wikiPage}`;
+  const cacheKey = `boss-guide:v15:${wikiPage}`;
   const cached = getCached<BossGuideDocument>(cacheKey, GUIDE_TTL);
   if (cached) return cached;
 
@@ -555,55 +777,81 @@ export async function fetchBossGuideDocument(
     sectionTitleByNumber.set(s.number, s.line);
   }
 
-  // Collect H2 titles to detect duplicates among included sections
-  const h2TitleCount = new Map<string, number>();
+  // Count repeated deep titles (H3/H4) so every instance carries its parent
+  // room — "Maiden > Strategy", "Bloat > Strategy", "Olm > Phases".
+  const deepTitleCounts = new Map<string, number>();
   for (const s of targetSections) {
-    if (s.toclevel === 1) {
-      h2TitleCount.set(s.line, (h2TitleCount.get(s.line) ?? 0) + 1);
-    }
-  }
-
-  // Count repeated H3 lines so every instance (not just the 2nd+) can be
-  // labelled with its parent room — "Maiden > Strategy", "Bloat > Strategy".
-  const h3LineCounts = new Map<string, number>();
-  for (const s of targetSections) {
-    if (s.toclevel === 2) {
+    if (s.toclevel >= 2) {
       const key = s.line.toLowerCase();
-      h3LineCounts.set(key, (h3LineCounts.get(key) ?? 0) + 1);
+      deepTitleCounts.set(key, (deepTitleCounts.get(key) ?? 0) + 1);
     }
   }
 
   type NormalizedSection = BossGuideSection & { summary: string | null };
 
+  // Sections that have their own child cards — parent bodies must not also
+  // embed that nested content (avoids Strategy + Skipping double-render).
+  const numbersWithChildCards = new Set<string>();
+  for (const s of targetSections) {
+    const parent = parentSectionNumber(s.number);
+    if (parent) numbersWithChildCards.add(parent);
+  }
+
   const rawSections = await Promise.all(
     targetSections.map(async (section): Promise<NormalizedSection | null> => {
+      // toclevel 1 = H2 → card level 2; toclevel 2/3 = H3/H4 → card level 3
       const level: 2 | 3 = section.toclevel <= 1 ? 2 : 3;
 
-      // For H3s, derive parent H2 number (e.g. "3.2" -> "3")
+      // Nearest parent section (H4 → H3, H3 → H2), not only the root H2.
       let parentId: string | undefined;
       let parentTitle: string | undefined;
-      if (level === 3) {
-        const parentNumber = section.number.split(".")[0];
-        parentTitle = sectionTitleByNumber.get(parentNumber);
-        if (parentTitle) {
-          parentId = slugify(parentTitle);
+      if (section.toclevel >= 2) {
+        const parentNumber = parentSectionNumber(section.number);
+        if (parentNumber) {
+          parentTitle = sectionTitleByNumber.get(parentNumber);
+          if (parentTitle) {
+            parentId = slugify(parentTitle);
+          }
         }
       }
 
-      const rawHtml =
-        extractSectionHtmlFromFullPage(fullHtml, section.line, level) ||
-        (await fetchSectionHtml(resolvedPage, section.number));
+      const hasChildCards = numbersWithChildCards.has(section.number);
+
+      // Prefer full-page extract (can stop before nested H4s). API section
+      // fetch uses the sequential `index` (not hierarchical `number`) and
+      // includes nested subsections — strip those when child cards exist.
+      let rawHtml = "";
+      if (section.toclevel >= 3) {
+        rawHtml = await fetchSectionHtml(resolvedPage, section.index);
+      } else {
+        rawHtml = extractSectionHtmlFromFullPage(
+          fullHtml,
+          section.line,
+          section.toclevel <= 1 ? 2 : 3
+        );
+        if (!rawHtml) {
+          rawHtml = await fetchSectionHtml(resolvedPage, section.index);
+        }
+        if (hasChildCards && rawHtml) {
+          rawHtml = stripNestedHeadings(rawHtml);
+        }
+      }
 
       const { html, summary } = cleanSectionHtml(rawHtml, section.line);
       if (html.length < 20) return null;
 
-      // Duplicate H3 titles (common under raid room H2s) always carry the parent.
+      // Deep titles: always prefix with nearest parent when duplicated, or when
+      // the bare title is a generic technique label (Phases, Safespotting…).
       let displayTitle = section.line;
-      if (
-        level === 3 &&
-        parentTitle &&
-        (h3LineCounts.get(section.line.toLowerCase()) ?? 0) > 1
-      ) {
+      const genericDeep =
+        section.toclevel >= 3 &&
+        /^(phases?|safespotting|skipping|stacking|strategy|attacks?|enrage|rotations?)/i.test(
+          section.line.trim()
+        );
+      const duplicatedDeep =
+        section.toclevel >= 2 &&
+        (deepTitleCounts.get(section.line.toLowerCase()) ?? 0) > 1;
+      if (parentTitle && (duplicatedDeep || genericDeep)) {
         displayTitle = disambiguateTitle(section.line, parentTitle);
       }
 

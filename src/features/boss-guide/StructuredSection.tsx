@@ -392,7 +392,7 @@ function SkillTile({
   return (
     <div
       title={tooltip}
-      className="flex items-start gap-2.5 rounded-lg border border-border/50 bg-bg-primary/40 px-3 py-2"
+      className="flex items-start gap-2.5 rounded-lg border border-border/50 bg-bg-primary/40 px-3 py-2 min-w-0"
     >
       {s.icon ? (
         <WikiImage
@@ -408,16 +408,20 @@ function SkillTile({
       )}
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 text-sm font-medium leading-5 text-text-primary">
-          <span>{primaryText}</span>
-          {s.boostAllowed && (
-            <span className="text-[10px] font-normal text-accent/70">(boostable)</span>
-          )}
-          {s.optional && (
-            <span className="text-[10px] font-normal text-text-secondary/60">(optional)</span>
-          )}
+          <span className="truncate">{primaryText}</span>
+          {s.boostAllowed ? (
+            <span className="shrink-0 rounded bg-accent/10 px-1 py-px text-[9px] font-medium uppercase tracking-wide text-accent/80">
+              boost
+            </span>
+          ) : null}
+          {s.optional ? (
+            <span className="shrink-0 rounded bg-bg-tertiary px-1 py-px text-[9px] font-medium uppercase tracking-wide text-text-secondary/70">
+              opt
+            </span>
+          ) : null}
         </div>
         {qualifier ? (
-          <div className="mt-0.5 text-xs text-text-secondary truncate" title={qualifier}>
+          <div className="mt-0.5 text-xs text-text-secondary line-clamp-2" title={qualifier}>
             {qualifier}
           </div>
         ) : null}

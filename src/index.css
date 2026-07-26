@@ -1235,20 +1235,28 @@ body {
   height: 1.1rem;
 }
 
+/* Nested headings inside a section card — quieter than the card chrome title. */
 .article-content h4 {
   color: var(--color-text-primary);
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   margin-top: 1rem;
   margin-bottom: 0.4rem;
+  padding-left: 0.55rem;
+  border-left: 2px solid color-mix(in srgb, var(--color-accent) 40%, transparent);
 }
 
 .article-content h5 {
-  color: var(--color-text-primary);
+  color: var(--color-text-secondary);
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: 0.8125rem;
   margin-top: 0.75rem;
   margin-bottom: 0.3rem;
+}
+
+.article-content > h4:first-child,
+.article-content > h5:first-child {
+  margin-top: 0.15rem;
 }
 
 .article-content hr {
