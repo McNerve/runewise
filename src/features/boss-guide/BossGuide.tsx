@@ -353,6 +353,32 @@ export default function BossGuide({ hiscores }: Props) {
     return () => window.clearTimeout(t);
   }, [loading, guide, selectedBoss?.name]);
 
+  // j / k — next / previous guide section (when not typing in an input).
+  useEffect(() => {
+    if (!guide || activeTab !== "guide") return;
+    function onKey(e: KeyboardEvent) {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const tag = (e.target as HTMLElement | null)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if ((e.target as HTMLElement | null)?.isContentEditable) return;
+      if (e.key !== "j" && e.key !== "k") return;
+      const ids = guide!.sections.map((s) => s.id);
+      if (ids.length === 0) return;
+      const current = activeSectionId && ids.includes(activeSectionId)
+        ? ids.indexOf(activeSectionId)
+        : 0;
+      const next =
+        e.key === "j"
+          ? Math.min(ids.length - 1, current + 1)
+          : Math.max(0, current - 1);
+      e.preventDefault();
+      scrollToGuideSection(ids[next]);
+      setActiveSectionId(ids[next]);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [guide, activeTab, activeSectionId]);
+
   // Keep the active mobile chip scrolled into view.
   useEffect(() => {
     if (!activeSectionId) return;
@@ -1056,12 +1082,20 @@ export default function BossGuide({ hiscores }: Props) {
                   const structuredOnly =
                     /requirements|skills|equipment|gear setup/i.test(section.title) &&
                     !/inventory/i.test(section.title);
-                  // Skip near-empty prose cards (e.g. blank Requirements shells).
+                  // Skip near-empty prose cards, but keep index parents that only
+                  // exist so the TOC can group their children.
                   const textOnly = section.html
                     .replace(/<[^>]+>/g, " ")
                     .replace(/\s+/g, " ")
                     .trim();
-                  if (!structuredOnly && textOnly.length < 24) {
+                  const isIndexParent = guide.sections.some(
+                    (s) => s.parentId === section.id
+                  );
+                  if (
+                    !structuredOnly &&
+                    textOnly.length < 24 &&
+                    !isIndexParent
+                  ) {
                     return null;
                   }
                   return (
@@ -1089,10 +1123,16 @@ export default function BossGuide({ hiscores }: Props) {
                     )}
                     <StructuredSection title={section.title} html={section.html} bossSlug={normalizeBossSlug(selectedBoss.name)} />
                     {!structuredOnly ? (
-                      <div
-                        className={`article-content text-sm leading-7 text-text-secondary ${sectionContentClasses(section.title)}`.trim()}
-                        dangerouslySetInnerHTML={{ __html: section.html }}
-                      />
+                      section.html.includes('data-section-index') ? (
+                        <p className="text-xs text-text-secondary/60">
+                          Use the subsections in the guide menu for detailed strategies.
+                        </p>
+                      ) : (
+                        <div
+                          className={`article-content text-sm leading-7 text-text-secondary ${sectionContentClasses(section.title)}`.trim()}
+                          dangerouslySetInnerHTML={{ __html: section.html }}
+                        />
+                      )
                     ) : null}
                   </section>
                   );

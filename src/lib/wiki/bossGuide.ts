@@ -771,28 +771,36 @@ function sectionTitleLeaf(title: string): string {
 function collapseDuplicateSections<
   T extends { id: string; title: string; html: string; parentId?: string },
 >(sections: T[]): T[] {
-  const byExact = new Map<string, T>();
+  // Scope uniqueness by parent so ToA "Challenge room" can exist once per path.
+  const byKey = new Map<string, T>();
   for (const s of sections) {
-    const key = s.title.trim().toLowerCase();
-    const prev = byExact.get(key);
+    const key = `${s.parentId ?? ""}::${s.title.trim().toLowerCase()}`;
+    const prev = byKey.get(key);
     if (!prev || s.html.length > prev.html.length) {
-      byExact.set(key, s);
+      byKey.set(key, s);
     }
   }
-  const exactKept = [...byExact.values()];
+  const exactKept = [...byKey.values()];
 
-  // Prefer "Parent > Leaf" over bare "Leaf" when both exist.
-  const prefixedLeaves = new Set(
-    exactKept
-      .filter((s) => s.title.includes(" > "))
-      .map((s) => sectionTitleLeaf(s.title))
-  );
+  // Prefer "Parent > Leaf" over bare "Leaf" only under the same parentId.
+  const prefixedByParent = new Map<string, Set<string>>();
+  for (const s of exactKept) {
+    if (!s.title.includes(" > ")) continue;
+    const p = s.parentId ?? "";
+    const set = prefixedByParent.get(p) ?? new Set<string>();
+    set.add(sectionTitleLeaf(s.title));
+    prefixedByParent.set(p, set);
+  }
 
   const out: T[] = [];
   const seenIds = new Set<string>();
   for (const s of exactKept) {
     const leaf = sectionTitleLeaf(s.title);
-    if (!s.title.includes(" > ") && prefixedLeaves.has(leaf)) {
+    const p = s.parentId ?? "";
+    if (
+      !s.title.includes(" > ") &&
+      (prefixedByParent.get(p)?.has(leaf) ?? false)
+    ) {
       continue;
     }
     if (seenIds.has(s.id)) continue;
@@ -800,7 +808,6 @@ function collapseDuplicateSections<
     out.push(s);
   }
 
-  // Preserve original document order.
   const order = new Map(sections.map((s, i) => [s.id, i]));
   out.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
   return out;
@@ -844,7 +851,7 @@ function stripNestedHeadings(rawHtml: string): string {
 export async function fetchBossGuideDocument(
   wikiPage: string
 ): Promise<BossGuideDocument> {
-  const cacheKey = `boss-guide:v19:${wikiPage}`;
+  const cacheKey = `boss-guide:v22:${wikiPage}`;
   const cached = getCached<BossGuideDocument>(cacheKey, GUIDE_TTL);
   if (cached) return cached;
 
@@ -892,13 +899,12 @@ export async function fetchBossGuideDocument(
       // Nearest parent section (H4 → H3, H3 → H2), not only the root H2.
       let parentId: string | undefined;
       let parentTitle: string | undefined;
-      if (section.toclevel >= 2) {
-        const parentNumber = parentSectionNumber(section.number);
-        if (parentNumber) {
-          parentTitle = sectionTitleByNumber.get(parentNumber);
-          if (parentTitle) {
-            parentId = slugify(parentTitle);
-          }
+      const parentNumber =
+        section.toclevel >= 2 ? parentSectionNumber(section.number) : null;
+      if (parentNumber) {
+        parentTitle = sectionTitleByNumber.get(parentNumber);
+        if (parentTitle) {
+          parentId = slugify(parentTitle);
         }
       }
 
@@ -924,11 +930,23 @@ export async function fetchBossGuideDocument(
         }
       }
 
-      const { html, summary } = cleanSectionHtml(rawHtml, section.line);
-      if (html.length < 20) return null;
+      let { html, summary } = cleanSectionHtml(rawHtml, section.line);
+      // Keep index-only parents (Combat, Path of Crondis, …) even when the
+      // body is empty after child sections were split out — TOC needs them.
+      if (html.length < 20) {
+        if (hasChildCards) {
+          html =
+            '<p data-section-index="1">Open the subsections below for strategies and setups.</p>';
+          summary = null;
+        } else {
+          return null;
+        }
+      }
 
       // Deep titles: always prefix with nearest parent when duplicated, or when
       // the bare title is a generic technique label (Phases, Safespotting…).
+      // Do NOT prefix children of a kept parent card — the TOC tree already
+      // nests them (avoids "Path of Crondis > Challenge room" as a flat root).
       let displayTitle = section.line;
       const genericDeep =
         section.toclevel >= 3 &&
@@ -938,7 +956,15 @@ export async function fetchBossGuideDocument(
       const duplicatedDeep =
         section.toclevel >= 2 &&
         (deepTitleCounts.get(section.line.toLowerCase()) ?? 0) > 1;
-      if (parentTitle && (duplicatedDeep || genericDeep)) {
+      // Prefix only when the parent section itself is not in the guide (orphan).
+      const parentWillExist =
+        parentNumber != null &&
+        targetSections.some((t) => t.number === parentNumber);
+      if (
+        parentTitle &&
+        (duplicatedDeep || genericDeep) &&
+        !parentWillExist
+      ) {
         displayTitle = disambiguateTitle(section.line, parentTitle);
       }
 
@@ -985,25 +1011,24 @@ export async function fetchBossGuideDocument(
     s.parentId = idByWikiNumber.get(parentNum);
   }
 
-  // Second dedup pass: if same title appears multiple times, prefix with parent
-  // room / H2 context so ToB "Strategy" under Maiden vs Bloat is readable.
+  // Second dedup pass: only prefix duplicate titles when the parent card is
+  // missing from the guide (orphan). When the parent exists, the TOC tree
+  // already nests children — keep bare titles like "Challenge room".
   const titleCounts = new Map<string, number>();
   for (const s of normalizedSections) {
     titleCounts.set(s.title, (titleCounts.get(s.title) ?? 0) + 1);
   }
+  const ids = new Set(normalizedSections.map((s) => s.id));
   for (const s of normalizedSections) {
     if ((titleCounts.get(s.title) ?? 0) <= 1) continue;
-    if (s.level === 3 && s.parentId) {
-      // Prefer the human parent title stored during parse (may be a raid room
-      // H2 that itself was filtered out of the body).
-      const parentFromDoc = normalizedSections.find((p) => p.id === s.parentId);
-      const parentLabel =
-        parentFromDoc?.title ??
-        // parentId is slugify(parentTitle) — reverse via section map when possible
-        s.parentId.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-      if (parentLabel && !s.title.includes(" > ")) {
-        s.title = disambiguateTitle(s.title, parentLabel);
-      }
+    if (s.level !== 3 || !s.parentId) continue;
+    if (ids.has(s.parentId)) continue; // parent card present — no prefix
+    const parentFromDoc = normalizedSections.find((p) => p.id === s.parentId);
+    const parentLabel =
+      parentFromDoc?.title ??
+      s.parentId.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+    if (parentLabel && !s.title.includes(" > ")) {
+      s.title = disambiguateTitle(s.title, parentLabel);
     }
   }
 
