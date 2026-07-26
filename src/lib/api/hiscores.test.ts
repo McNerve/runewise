@@ -1,9 +1,36 @@
 import { describe, it, expect } from "vitest";
-import { findActivityScore, type HiscoreData } from "./hiscores";
+import { findActivityScore, getSkillLevel, getSkillXp, type HiscoreData } from "./hiscores";
 
 const mk = (activities: { name: string; score: number }[]): HiscoreData => ({
   skills: [],
   activities: activities.map((a, i) => ({ id: i, rank: 1, ...a })),
+});
+
+describe("getSkillLevel aliases", () => {
+  const data: HiscoreData = {
+    skills: [
+      { id: 0, name: "Attack", rank: 1, level: 90, xp: 5_000_000 },
+      { id: 1, name: "Range", rank: 1, level: 88, xp: 4_000_000 },
+      { id: 2, name: "Hitpoints", rank: 1, level: 95, xp: 9_000_000 },
+      { id: 3, name: "Defence", rank: 1, level: 80, xp: 2_000_000 },
+    ],
+    activities: [],
+  };
+
+  it("matches canonical and alias names", () => {
+    expect(getSkillLevel(data, "Attack")).toBe(90);
+    expect(getSkillLevel(data, "Ranged")).toBe(88); // alias for "Range"
+    expect(getSkillLevel(data, "Range")).toBe(88);
+    expect(getSkillLevel(data, "Defense")).toBe(80); // US spelling
+    expect(getSkillLevel(data, "HP")).toBe(95);
+  });
+
+  it("uses fallback when missing or null data", () => {
+    expect(getSkillLevel(data, "Magic", 99)).toBe(99);
+    expect(getSkillLevel(null, "Attack", 99)).toBe(99);
+    expect(getSkillXp(data, "Attack")).toBe(5_000_000);
+    expect(getSkillXp(null, "Attack", 0)).toBe(0);
+  });
 });
 
 describe("findActivityScore", () => {

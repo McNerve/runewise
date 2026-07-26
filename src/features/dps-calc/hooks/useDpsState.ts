@@ -23,7 +23,7 @@ import { PRAYERS, type Prayer } from "../../../lib/data/prayers";
 import { MONSTERS } from "../../../lib/data/monsters";
 import { fetchAllMonsters, type WikiMonster } from "../../../lib/api/monsters";
 import { fetchAllEquipment } from "../../../lib/api/equipment";
-import { type HiscoreData } from "../../../lib/api/hiscores";
+import { type HiscoreData, getSkillLevel as getHiscoreSkillLevel } from "../../../lib/api/hiscores";
 import { type WikiEquipment, type EquipmentSlot } from "../../../lib/api/equipment";
 import { loadJSON, saveJSON } from "../../../lib/localStorage";
 import { useNavigation } from "../../../lib/NavigationContext";
@@ -139,12 +139,8 @@ function migrateLoadouts(): GearLoadout[] {
 }
 
 function getSkillLevel(hiscores: HiscoreData | null, name: string): number {
-  if (!hiscores) return 99;
-  return (
-    hiscores.skills.find(
-      (s) => s.name.toLowerCase() === name.toLowerCase()
-    )?.level ?? 99
-  );
+  // DPS defaults to 99 when hiscores missing or skill not present.
+  return getHiscoreSkillLevel(hiscores, name, 99);
 }
 
 interface Props {
@@ -350,6 +346,17 @@ export function useDpsState({ hiscores }: Props) {
     equippedGear,
   ]);
 
+  // Offensive prayer from Loadout Finder — after style + preset so it wins.
+  useEffect(() => {
+    const name = params.prayer;
+    if (!name) return;
+    const stylePrayers = PRAYERS.filter((p) => p.style === combatStyle);
+    const pIdx = stylePrayers.findIndex(
+      (p) => p.name.toLowerCase() === name.toLowerCase()
+    );
+    if (pIdx >= 0) setPrayerIdx(pIdx);
+  }, [params.prayer, combatStyle]);
+
   // Handle monster param from cross-nav. Syncing state from an external URL
   // param is a legitimate effect use. An optional `version` param selects a
   // specific phase (e.g. Verzik P2) directly.
@@ -433,6 +440,7 @@ export function useDpsState({ hiscores }: Props) {
 
   // Reset stance and prayer when combat style changes, or apply the pending
   // snapshot (loadout load / setup-tab switch across styles).
+  // Keep params.prayer when deep-linking from Loadout Finder.
   useEffect(() => {
     const snap = pendingSnapshot.current;
     if (snap && snap.combatStyle === combatStyle) {
@@ -440,13 +448,13 @@ export function useDpsState({ hiscores }: Props) {
       applySnapshotNow(snap);
     } else {
       setStanceIdx(0);
-      setPrayerIdx(0);
+      if (!params.prayer) setPrayerIdx(0);
       setAttackSpeed(DEFAULT_SPEED[combatStyle]);
       setActiveModifiers(new Set());
       setSelectedSpec(null);
       setSelectedSpell(null);
     }
-  }, [combatStyle]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [combatStyle, params.prayer]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const gearBonuses = useMemo(() => sumGearBonuses(equippedGear), [equippedGear]);
 
@@ -1029,7 +1037,16 @@ export function useDpsState({ hiscores }: Props) {
   useEffect(() => {
     if (mountRestoreDone.current) return;
     mountRestoreDone.current = true;
-    if (params.style || params.monster || params.onTask || params.preset) return;
+    if (
+      params.style ||
+      params.monster ||
+      params.onTask ||
+      params.preset ||
+      params.gear ||
+      params.prayer ||
+      params.upgradePath
+    )
+      return;
     const snap = setups[activeSetup];
     if (snap) applySnapshot(snap);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
