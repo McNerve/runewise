@@ -618,7 +618,17 @@ export default function WikiLookup() {
                       </div>
                     ))}
                   </nav>
-                  <h3 className="text-3xl font-semibold tracking-tight">{document.title}</h3>
+                  <h3 className="text-3xl font-semibold tracking-tight">
+                    {document.title.includes("/")
+                      ? document.title.replace(/\//g, " · ")
+                      : document.title}
+                  </h3>
+                  {isWikiStrategyTitle(document.title) ? (
+                    <p className="text-xs text-text-secondary/70">
+                      Strategy page from the OSRS Wiki — open the in-app Boss Guide for structured
+                      loadouts, loot, and tasks.
+                    </p>
+                  ) : null}
                   {document.summary ? (
                     <p className="max-w-3xl text-sm leading-6 text-text-secondary">
                       {document.summary}

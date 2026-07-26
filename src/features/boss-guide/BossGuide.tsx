@@ -343,6 +343,16 @@ export default function BossGuide({ hiscores }: Props) {
     el?.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }, [selectedBoss?.name]);
 
+  // After a guide finishes loading on small screens, jump past chrome into content.
+  useEffect(() => {
+    if (loading || !guide || !selectedBoss) return;
+    if (typeof window === "undefined" || window.innerWidth >= 1280) return;
+    const t = window.setTimeout(() => {
+      contentRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 120);
+    return () => window.clearTimeout(t);
+  }, [loading, guide, selectedBoss?.name]);
+
   // Keep the active mobile chip scrolled into view.
   useEffect(() => {
     if (!activeSectionId) return;
