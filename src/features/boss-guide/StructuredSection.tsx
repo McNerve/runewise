@@ -308,7 +308,10 @@ function sectionKind(title: string) {
   if (lower.includes("requirements")) return "requirements";
   if (lower.includes("recommended skills") || lower.includes("suggested skills"))
     return "skills";
-  if (lower.includes("equipment") || lower.includes("inventory"))
+  // Inventory setups are multi-tab wiki grids (Ranged/Melee/Blowpipe) — keep
+  // as transformed HTML, not the equipment-slot pill table.
+  if (lower.includes("inventory")) return null;
+  if (lower.includes("equipment") || lower.includes("gear setup"))
     return "loadout";
   return null;
 }

@@ -1580,18 +1580,22 @@ body {
   display: block;
 }
 
-/* Native details tab fallbacks (wiki-tabs from lookup transform) */
+/* Native details tab fallbacks (wiki-tabs from transformTabbers) */
 .article-content .wiki-tabs {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.4rem;
   margin: 1rem 0;
+  padding: 0.55rem;
+  border: 1px solid color-mix(in srgb, var(--color-border) 65%, transparent);
+  border-radius: 0.9rem;
+  background: color-mix(in srgb, var(--color-bg-primary) 40%, transparent);
 }
 
 .article-content .wiki-tab {
   border: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
-  border-radius: 0.75rem;
-  background: color-mix(in srgb, var(--color-bg-primary) 50%, transparent);
+  border-radius: 0.7rem;
+  background: color-mix(in srgb, var(--color-bg-secondary) 35%, transparent);
   overflow: hidden;
 }
 
@@ -1602,21 +1606,41 @@ body {
   font-size: 0.8125rem;
   font-weight: 600;
   color: var(--color-text-primary);
-  background: color-mix(in srgb, var(--color-bg-tertiary) 45%, transparent);
+  background: color-mix(in srgb, var(--color-bg-tertiary) 50%, transparent);
+  transition: background 140ms ease, color 140ms ease;
+}
+
+.article-content .wiki-tab > summary:hover {
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
 }
 
 .article-content .wiki-tab > summary::-webkit-details-marker {
   display: none;
 }
 
-.article-content .wiki-tab[open] > summary {
-  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent);
+.article-content .wiki-tab > summary::before {
+  content: "▸ ";
+  color: var(--color-text-secondary);
+  font-size: 0.7rem;
+}
+
+.article-content .wiki-tab[open] > summary::before {
+  content: "▾ ";
   color: var(--color-accent);
 }
 
-.article-content .wiki-tab > :not(summary) {
-  padding: 0.65rem 0.85rem;
+.article-content .wiki-tab[open] > summary {
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent);
+  color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
 }
+
+.article-content .wiki-tab > :not(summary) {
+  padding: 0.75rem 0.85rem;
+}
+
+/* Accordion behavior helper: only one open tab when user prefers via JS;
+ * default allows multiple open details for inventory comparisons. */
 
 /* CSS tooltip for item images */
 .article-content td {

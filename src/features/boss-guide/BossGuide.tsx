@@ -1050,10 +1050,12 @@ export default function BossGuide({ hiscores }: Props) {
 
               <div ref={guideContentRef} className="space-y-3 min-w-0" onClick={handleGuideClick}>
                 {guide.sections.map((section) => {
-                  // StructuredSection owns requirements / skills / loadout UX —
-                  // hide the raw HTML twin so we never double-render.
+                  // StructuredSection owns requirements / skills / equipment UX —
+                  // hide the raw HTML twin so we never double-render. Inventory
+                  // setups stay as article HTML (tabbed grids).
                   const structuredOnly =
-                    /requirements|skills|equipment|inventory/i.test(section.title);
+                    /requirements|skills|equipment|gear setup/i.test(section.title) &&
+                    !/inventory/i.test(section.title);
                   // Skip near-empty prose cards (e.g. blank Requirements shells).
                   const textOnly = section.html
                     .replace(/<[^>]+>/g, " ")

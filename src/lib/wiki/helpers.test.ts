@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { normalizeImages, wrapTablesForScroll, normalizeLinks } from "./helpers";
+import {
+  normalizeImages,
+  wrapTablesForScroll,
+  normalizeLinks,
+  transformTabbers,
+} from "./helpers";
 
 function makeRoot(html: string): Element {
   const div = document.createElement("div");
@@ -117,5 +122,25 @@ describe("normalizeLinks", () => {
     expect(a.getAttribute("data-wiki-page")).toBe("Abyssal demon");
     expect(a.getAttribute("href")).toContain("#wiki?");
     expect(a.getAttribute("target")).toBeNull();
+  });
+});
+
+describe("transformTabbers", () => {
+  it("converts tabber panels to openable wiki-tabs details", () => {
+    const root = makeRoot(`
+      <div class="tabber">
+        <div class="tabbertab" title="Ranged"><p>bow</p></div>
+        <div class="tabbertab" data-title="Melee"><p>whip</p></div>
+      </div>
+    `);
+    transformTabbers(root);
+    expect(root.querySelector(".tabber")).toBeNull();
+    expect(root.querySelectorAll(".wiki-tab")).toHaveLength(2);
+    expect(root.querySelector(".wiki-tab[open] summary")?.textContent).toBe(
+      "Ranged"
+    );
+    expect(root.querySelectorAll(".wiki-tab")[1].querySelector("summary")?.textContent).toBe(
+      "Melee"
+    );
   });
 });

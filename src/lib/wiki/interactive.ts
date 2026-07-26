@@ -321,8 +321,32 @@ export function initSortableTables(container: HTMLElement) {
   });
 }
 
+/**
+ * For parse-time wiki-tabs (details), optional exclusive-open within a group
+ * so inventory setups feel more like real tabs. Multi-open still works if
+ * the user opens a second panel manually before closing the first — we only
+ * auto-close siblings when a closed panel is opened.
+ */
+export function initWikiTabsExclusive(container: HTMLElement) {
+  container.querySelectorAll(".wiki-tabs").forEach((group) => {
+    if (group.getAttribute("data-exclusive-init")) return;
+    group.setAttribute("data-exclusive-init", "1");
+    group.querySelectorAll(":scope > .wiki-tab").forEach((panel) => {
+      panel.addEventListener("toggle", () => {
+        if (!(panel instanceof HTMLDetailsElement) || !panel.open) return;
+        group.querySelectorAll(":scope > .wiki-tab").forEach((other) => {
+          if (other !== panel && other instanceof HTMLDetailsElement && other.open) {
+            other.open = false;
+          }
+        });
+      });
+    });
+  });
+}
+
 export function initWikiInteractive(container: HTMLElement, pageSlug = "") {
   initWikiTabbers(container);
+  initWikiTabsExclusive(container);
   initTooltips(container);
   initItemTextLinks(container);
   initAnchorScroll(container, pageSlug);

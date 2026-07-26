@@ -9,6 +9,7 @@ import {
   normalizeGalleries,
   normalizeLinks,
   wrapTablesForScroll,
+  transformTabbers,
   extractSummary,
   sanitizeHtml,
   type WikiTextResponse,
@@ -371,6 +372,8 @@ function cleanSectionHtml(
   // Keep wiki anchors as in-app deep links (item → market, page → wiki lookup).
   normalizeLinks(content);
   wrapTablesForScroll(content);
+  // Inventory/equipment multi-setup tabbers → native details (no JS race).
+  transformTabbers(content, doc);
 
   normalizeGalleries(content);
 
@@ -841,7 +844,7 @@ function stripNestedHeadings(rawHtml: string): string {
 export async function fetchBossGuideDocument(
   wikiPage: string
 ): Promise<BossGuideDocument> {
-  const cacheKey = `boss-guide:v18:${wikiPage}`;
+  const cacheKey = `boss-guide:v19:${wikiPage}`;
   const cached = getCached<BossGuideDocument>(cacheKey, GUIDE_TTL);
   if (cached) return cached;
 
