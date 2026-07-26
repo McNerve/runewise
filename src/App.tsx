@@ -108,7 +108,12 @@ function AppContent() {
             className="content-area flex-1 overflow-y-auto p-4 sm:p-5 md:p-6"
             style={{ "--feature-accent": getFeatureAccent(view) } as React.CSSProperties}
           >
-            <div className="max-w-5xl mx-auto">
+            {/* Boss guides + wiki need dual panes; give them more horizontal room. */}
+            <div
+              className={`mx-auto ${
+                view === "bosses" || view === "wiki" ? "max-w-7xl" : "max-w-5xl"
+              }`}
+            >
               <ErrorBoundary resetKey={view}>
                 <Suspense fallback={<div className="space-y-4"><CardSkeleton /><CardSkeleton /></div>}>
                   <AnimatePresence mode="wait">

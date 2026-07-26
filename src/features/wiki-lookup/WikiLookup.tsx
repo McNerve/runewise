@@ -40,8 +40,11 @@ import { POPULAR_PAGES } from "./wikiLookupConstants";
 import {
   sectionContentClasses,
   shouldCollapseSection,
+  stripWikiStrategySuffix,
+  isWikiStrategyTitle,
 } from "./wikiLookupUtils";
 import { buildGeSnapshot, wikiKindLabel, type GESnapshot } from "./wikiLookupGe";
+import { findBossByName } from "../../lib/data/bosses";
 
 export default function WikiLookup() {
   const { params, navigate } = useNavigation();
@@ -58,6 +61,7 @@ export default function WikiLookup() {
   const contentRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
   const [geSnapshot, setGeSnapshot] = useState<GESnapshot | null>(null);
+  const [readProgress, setReadProgress] = useState(0);
   const { mapping, prices, fetchIfNeeded } = useGEData();
   // Reading history survives view switches via the module-level slot.
   const [pageHistory, setPageHistory] = useState<WikiHistory>(() => {
@@ -143,7 +147,10 @@ export default function WikiLookup() {
     }
 
     if (kind === "boss") {
-      navigate("bosses", { boss: page });
+      // "Vorkath/Strategies" → open Boss Guides for Vorkath, not a dead deep-link.
+      const bossName = stripWikiStrategySuffix(page);
+      const known = findBossByName(bossName);
+      navigate("bosses", { boss: known?.name ?? bossName });
       return;
     }
 
@@ -372,6 +379,24 @@ export default function WikiLookup() {
     }
   }, [loadingDocument, document]);
 
+  // Reading progress for long wiki articles (scroll within main content-area).
+  useEffect(() => {
+    if (!document) {
+      setReadProgress(0);
+      return;
+    }
+    const scroller = window.document.querySelector("main.content-area");
+    if (!scroller) return;
+    function onScroll() {
+      const el = scroller as HTMLElement;
+      const max = el.scrollHeight - el.clientHeight;
+      setReadProgress(max > 0 ? Math.min(100, Math.round((el.scrollTop / max) * 100)) : 0);
+    }
+    scroller.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => scroller.removeEventListener("scroll", onScroll);
+  }, [document, loadingDocument]);
+
   const pageUrl = useMemo(
     () =>
       document
@@ -386,10 +411,10 @@ export default function WikiLookup() {
   );
 
   return (
-    <div className="space-y-5">
-      <section>
+    <div className="space-y-5 min-w-0">
+      <section className="min-w-0">
         <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
-          <div className="space-y-1">
+          <div className="space-y-1 min-w-0">
             <h2 className="text-2xl font-semibold tracking-tight">OSRS Wiki</h2>
             <p className="max-w-2xl text-sm text-text-secondary">
               Search and read any OSRS Wiki page with formatted content.
@@ -400,8 +425,8 @@ export default function WikiLookup() {
           </div>
         </div>
 
-        <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_280px]">
-          <div ref={searchRef}>
+        <div className={`mt-4 grid gap-4 min-w-0 ${document || loadingDocument ? "" : "xl:grid-cols-[minmax(0,1fr)_280px]"}`}>
+          <div ref={searchRef} className="min-w-0">
           <form className="relative" onSubmit={handleSubmit}>
             <input
               type="text"
@@ -420,7 +445,7 @@ export default function WikiLookup() {
               className="w-full rounded-xl border border-border bg-bg-primary px-4 py-3 text-sm outline-none transition focus:border-accent"
             />
             {showResultsPanel ? (
-              <div className="absolute left-0 right-0 top-full z-20 mt-1 rounded-xl border border-border/60 bg-bg-primary shadow-lg">
+              <div className="absolute left-0 right-0 top-full z-20 mt-1 rounded-xl border border-border/60 bg-bg-primary shadow-lg max-h-[60vh] overflow-y-auto">
                 {loadingResults ? (
                   <div className="space-y-2 px-4 py-3">
                     <Skeleton className="h-4 w-2/3" />
@@ -475,17 +500,21 @@ export default function WikiLookup() {
           </form>
           </div>
 
-          <div className="text-sm text-text-secondary">
-            <div className="text-[10px] uppercase tracking-[0.18em] text-text-secondary/45">
-              Great For
+          {/* Hide the marketing blurb once a page is open — it only steals
+              vertical space and forces a two-column header on mobile. */}
+          {!document && !loadingDocument ? (
+            <div className="text-sm text-text-secondary">
+              <div className="text-[10px] uppercase tracking-[0.18em] text-text-secondary/45">
+                Great For
+              </div>
+              <div className="mt-3 space-y-2">
+                <p>Items and untradeables</p>
+                <p>Shops, NPCs, and locations</p>
+                <p>Skilling methods and mechanics</p>
+                <p>Quick in-app reference while playing</p>
+              </div>
             </div>
-            <div className="mt-3 space-y-2">
-              <p>Items and untradeables</p>
-              <p>Shops, NPCs, and locations</p>
-              <p>Skilling methods and mechanics</p>
-              <p>Quick in-app reference while playing</p>
-            </div>
-          </div>
+          ) : null}
         </div>
       </section>
 
@@ -547,14 +576,25 @@ export default function WikiLookup() {
       ) : null}
 
       {document ? (
-        <div ref={contentRef} className="rounded-xl border border-border/40 bg-bg-primary/25 p-5">
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
-          <section className="min-w-0 space-y-4">
+        <div ref={contentRef} className="relative rounded-xl border border-border/40 bg-bg-primary/25 p-4 sm:p-5 min-w-0 overflow-hidden">
+        {/* Reading progress */}
+        <div
+          className="pointer-events-none absolute left-0 top-0 z-10 h-0.5 bg-accent/80 transition-[width] duration-150"
+          style={{ width: `${readProgress}%` }}
+          aria-hidden
+        />
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px] min-w-0">
+          <section className="min-w-0 space-y-4 overflow-hidden">
             <div>
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div className="space-y-2">
-                  <div className="text-[10px] uppercase tracking-[0.2em] text-text-secondary/45">
-                    OSRS Wiki
+                  <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-text-secondary/45">
+                    <span>OSRS Wiki</span>
+                    {readProgress > 5 ? (
+                      <span className="normal-case tracking-normal text-text-secondary/35">
+                        · {readProgress}% read
+                      </span>
+                    ) : null}
                   </div>
                   <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-xs text-text-secondary/60">
                     <span className="flex items-center gap-0.5">
@@ -608,7 +648,17 @@ export default function WikiLookup() {
                       </div>
                     ))}
                   </nav>
-                  <h3 className="text-3xl font-semibold tracking-tight">{document.title}</h3>
+                  <h3 className="text-3xl font-semibold tracking-tight">
+                    {document.title.includes("/")
+                      ? document.title.replace(/\//g, " · ")
+                      : document.title}
+                  </h3>
+                  {isWikiStrategyTitle(document.title) ? (
+                    <p className="text-xs text-text-secondary/70">
+                      Strategy page from the OSRS Wiki — open the in-app Boss Guide for structured
+                      loadouts, loot, and tasks.
+                    </p>
+                  ) : null}
                   {document.summary ? (
                     <p className="max-w-3xl text-sm leading-6 text-text-secondary">
                       {document.summary}
@@ -616,22 +666,22 @@ export default function WikiLookup() {
                     ) : null}
                   {document.relatedPages.length > 0 ? (
                     <div className="flex flex-wrap items-center gap-2 pt-1">
-                      {document.relatedPages.slice(0, 8).map((page) => (
+                      {document.relatedPages.slice(0, 5).map((page) => (
                         <button
                           key={page.title}
                           type="button"
                           onClick={() => navigateToTypedPage(page.title, page.kind)}
                           className="rounded-full border border-border bg-bg-primary/55 px-3 py-1 text-xs text-text-secondary transition hover:border-accent/35 hover:text-text-primary"
                         >
-                          <span className="mr-1.5 text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
+                          <span className="mr-1.5 hidden text-[10px] uppercase tracking-[0.16em] text-text-secondary/45 sm:inline">
                             {getKindLabel(page.kind)}
                           </span>
                           {page.title}
                         </button>
                       ))}
-                      {document.totalRelatedPages > 8 ? (
+                      {document.totalRelatedPages > 5 ? (
                         <span className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
-                          +{document.totalRelatedPages - 8} more
+                          +{document.totalRelatedPages - 5} more
                         </span>
                       ) : null}
                     </div>
@@ -644,7 +694,22 @@ export default function WikiLookup() {
                 </div>
                 {pageUrl ? (
                   <div className="flex flex-wrap gap-2">
-                    {document.pageType !== "reference" ? (
+                    {document.pageType === "boss" || isWikiStrategyTitle(document.title) ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          navigateToTypedPage(
+                            document.title,
+                            "boss"
+                          )
+                        }
+                        className="rounded-xl border border-accent/25 bg-accent/10 px-3 py-2 text-xs font-medium text-accent transition hover:border-accent/45 hover:text-accent-hover"
+                      >
+                        {isWikiStrategyTitle(document.title)
+                          ? `Open ${stripWikiStrategySuffix(document.title)} Guide`
+                          : "Open Boss Guide"}
+                      </button>
+                    ) : document.pageType !== "reference" ? (
                       <button
                         type="button"
                         onClick={() => navigateToTypedPage(document.title, document.pageType)}
@@ -665,6 +730,31 @@ export default function WikiLookup() {
                 ) : null}
               </div>
             </div>
+
+            {/* Mobile on-this-page chips (desktop uses sticky WikiToc aside). */}
+            {tocEntries.length >= 2 ? (
+              <div className="xl:hidden -mx-1 overflow-x-auto sidebar-scroll sticky top-0 z-10 bg-bg-primary/95 backdrop-blur-sm py-1.5 border-b border-border/30">
+                <div className="flex min-w-max gap-1.5 px-1">
+                  {tocEntries
+                    .filter((e) => e.level === 2)
+                    .slice(0, 16)
+                    .map((entry) => (
+                      <button
+                        key={entry.id}
+                        type="button"
+                        onClick={() =>
+                          contentRef.current
+                            ?.querySelector(`#${CSS.escape(entry.id)}`)
+                            ?.scrollIntoView({ behavior: "smooth", block: "start" })
+                        }
+                        className="shrink-0 rounded-full border border-border/60 bg-bg-secondary/50 px-3 py-1 text-xs text-text-secondary transition hover:border-accent/40 hover:text-text-primary"
+                      >
+                        {entry.text}
+                      </button>
+                    ))}
+                </div>
+              </div>
+            ) : null}
 
             {document.leadHtml ? (
               <section>

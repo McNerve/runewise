@@ -107,6 +107,11 @@ function extractSlotLabel(cell: HTMLTableCellElement): string {
  * Parse all skill items from the section HTML.
  * Items that successfully parse become SuggestedSkill; others fall back
  * to raw text so we can still render them.
+ *
+ * Wiki rows often look like:
+ *   <li><img alt="Ranged"> 85+ (Ranged method)</li>
+ * where the skill name lives only on the image alt — we fold that into the
+ * text before parseSuggestedSkill so tiles never render bare "Level 85+".
  */
 function parseSkillItems(
   doc: Document,
@@ -114,11 +119,45 @@ function parseSkillItems(
 ): Array<(SuggestedSkill & { icon?: string | null }) | { fallback: string; icon: string | null }> {
   return Array.from(doc.querySelectorAll("li, p"))
     .map((node) => {
-      const text = normalizeText(node.textContent ?? "");
-      const icon = node.querySelector("img")?.getAttribute("src") ?? null;
+      const img = node.querySelector("img");
+      const icon = img?.getAttribute("src") ?? null;
+      const altRaw =
+        img?.getAttribute("alt") ||
+        img?.getAttribute("title") ||
+        "";
+      const altSkill = altRaw
+        .replace(/\s*icon$/i, "")
+        .replace(/_/g, " ")
+        .trim();
+
+      let text = normalizeText(node.textContent ?? "");
       if (!text || text.toLowerCase() === title.trim().toLowerCase()) return null;
+
+      // Inject skill name from icon alt when the text is just "85+" / "85+ (method)".
+      if (altSkill && !new RegExp(`\\b${altSkill}\\b`, "i").test(text)) {
+        // "85+ (Ranged method)" → "85+ Ranged (Ranged method)" is noisy;
+        // prefer "85+ Ranged" when text is only a level (+ optional parens).
+        if (/^\d+\+?\s*(\(.*\))?$/.test(text)) {
+          const levelPart = text.match(/^\d+\+?/)?.[0] ?? text;
+          const paren = text.match(/\(.*\)/)?.[0] ?? "";
+          text = `${levelPart} ${altSkill}${paren ? ` ${paren}` : ""}`.trim();
+        } else {
+          text = `${text} ${altSkill}`;
+        }
+      }
+
       const parsed = parseSuggestedSkill(text);
-      if (parsed) return { ...parsed, icon };
+      if (parsed) {
+        // Prefer alt skill when parser left skill empty / unknown.
+        if ((!parsed.skill || parsed.skill.toLowerCase() === "unknown") && altSkill) {
+          return {
+            ...parsed,
+            skill: altSkill.charAt(0).toUpperCase() + altSkill.slice(1),
+            icon,
+          };
+        }
+        return { ...parsed, icon };
+      }
       // Keep items with icons (skill icons) even if parsing fails
       if (icon || text.length <= 80) return { fallback: text, icon };
       return null;
@@ -269,7 +308,10 @@ function sectionKind(title: string) {
   if (lower.includes("requirements")) return "requirements";
   if (lower.includes("recommended skills") || lower.includes("suggested skills"))
     return "skills";
-  if (lower.includes("equipment") || lower.includes("inventory"))
+  // Inventory setups are multi-tab wiki grids (Ranged/Melee/Blowpipe) — keep
+  // as transformed HTML, not the equipment-slot pill table.
+  if (lower.includes("inventory")) return null;
+  if (lower.includes("equipment") || lower.includes("gear setup"))
     return "loadout";
   return null;
 }
@@ -346,11 +388,14 @@ function SkillTile({
   const isUnknownSkill = !s.skill || s.skill.toLowerCase() === "unknown";
   const primaryText = isUnknownSkill ? `Level ${s.level}+` : `${s.skill} ${s.level}+`;
   const tooltip = s.description ?? undefined;
+  // Clean qualifier: drop leading "for ", strip trailing duplicate skill name,
+  // collapse "method" noise into short method labels.
+  const qualifier = cleanSkillQualifier(s.qualifier, s.skill);
 
   return (
     <div
       title={tooltip}
-      className="flex items-start gap-2.5 rounded-lg border border-border/50 bg-bg-primary/40 px-3 py-2"
+      className="flex items-start gap-2.5 rounded-lg border border-border/50 bg-bg-primary/40 px-3 py-2 min-w-0"
     >
       {s.icon ? (
         <WikiImage
@@ -366,22 +411,49 @@ function SkillTile({
       )}
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 text-sm font-medium leading-5 text-text-primary">
-          <span>{primaryText}</span>
-          {s.boostAllowed && (
-            <span className="text-[10px] font-normal text-accent/70">(boostable)</span>
-          )}
-          {s.optional && (
-            <span className="text-[10px] font-normal text-text-secondary/60">(optional)</span>
-          )}
+          <span className="truncate">{primaryText}</span>
+          {s.boostAllowed ? (
+            <span className="shrink-0 rounded bg-accent/10 px-1 py-px text-[9px] font-medium uppercase tracking-wide text-accent/80">
+              boost
+            </span>
+          ) : null}
+          {s.optional ? (
+            <span className="shrink-0 rounded bg-bg-tertiary px-1 py-px text-[9px] font-medium uppercase tracking-wide text-text-secondary/70">
+              opt
+            </span>
+          ) : null}
         </div>
-        {s.qualifier && (
-          <div className="mt-0.5 text-xs text-text-secondary truncate" title={s.qualifier}>
-            {s.qualifier}
+        {qualifier ? (
+          <div className="mt-0.5 text-xs text-text-secondary line-clamp-2" title={qualifier}>
+            {qualifier}
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );
+}
+
+/** Normalise skill tile subtitles from noisy wiki text. */
+function cleanSkillQualifier(
+  raw: string | undefined,
+  skill: string | undefined
+): string | null {
+  if (!raw) return null;
+  let q = raw.replace(/\s+/g, " ").trim();
+  // "for Piety (74+ for Rigour) Prayer" → strip trailing skill echo
+  if (skill) {
+    const skillRe = new RegExp(`\\b${skill.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "gi");
+    q = q.replace(skillRe, "").replace(/\s+/g, " ").trim();
+  }
+  q = q.replace(/^for\s+/i, "").replace(/^[-–—,;:]\s*/, "").replace(/\s+[-–—,;:]$/, "").trim();
+  // Collapse bare "method" leftovers into empty if nothing else remains
+  if (!q || /^(method|methods)$/i.test(q)) return null;
+  // "Ranged method" style already clean; "Piety (74+ for Rigour)" good
+  // Capitalise first letter
+  if (q.length > 0) q = q.charAt(0).toUpperCase() + q.slice(1);
+  // Drop trailing empty parens
+  q = q.replace(/\(\s*\)/g, "").replace(/\s+/g, " ").trim();
+  return q || null;
 }
 
 // -----------------------------------------------------------------------
@@ -435,7 +507,7 @@ function EquipmentPill({
             fallback={entry.name[0]}
           />
         )}
-        <span className="text-xs text-text-primary truncate max-w-[160px]">
+        <span className="text-xs text-text-primary truncate max-w-[min(160px,40vw)]">
           {entry.name}
         </span>
         {isBest && (
@@ -509,8 +581,8 @@ function LoadoutTable({ title, html, doc, bossSlug }: { title: string; html: str
 
   return (
     <div className="space-y-1">
-      {/* Column header row */}
-      <div className="flex items-center gap-3 px-3 pb-1">
+      {/* Column header row (desktop) */}
+      <div className="hidden sm:flex items-center gap-3 px-3 pb-1">
         <div className="w-32 shrink-0" />
         <div className="flex-1 text-[10px] uppercase tracking-[0.16em] text-text-secondary/40">
           Recommended items
@@ -527,13 +599,23 @@ function LoadoutTable({ title, html, doc, bossSlug }: { title: string; html: str
         return (
           <div
             key={`${title}-entry-row-${index}`}
-            className="flex items-start gap-3 rounded-lg border border-border/40 bg-bg-primary/30 px-3 py-2.5"
+            className="flex flex-col gap-2 rounded-lg border border-border/40 bg-bg-primary/30 px-3 py-2.5 sm:flex-row sm:items-start sm:gap-3"
           >
-            <div className="flex shrink-0 items-start gap-2 w-32">
+            <div className="flex shrink-0 items-center gap-2 sm:w-32 sm:items-start">
               {renderIcon(row.slot.icon, row.slot.text, "sm")}
               <span className="text-xs font-medium text-text-secondary leading-tight break-words whitespace-normal">
                 {slotLabel}
               </span>
+              <label className="ml-auto flex items-center gap-1.5 sm:hidden text-[10px] uppercase tracking-wide text-text-secondary/50">
+                Own
+                <input
+                  type="checkbox"
+                  checked={owned[slotKey] ?? false}
+                  onChange={() => toggleOwned(slotKey)}
+                  aria-label={`Mark ${slotLabel} item as owned`}
+                  className="h-4 w-4 cursor-pointer appearance-none rounded border border-border/60 bg-bg-tertiary checked:border-accent checked:bg-accent"
+                />
+              </label>
             </div>
             <div className="flex flex-wrap gap-1.5 min-w-0 flex-1">
               {row.entries.map((entry, entryIndex) => (
@@ -544,7 +626,7 @@ function LoadoutTable({ title, html, doc, bossSlug }: { title: string; html: str
                 />
               ))}
             </div>
-            <div className="flex w-8 shrink-0 items-center justify-center pt-0.5">
+            <div className="hidden sm:flex w-8 shrink-0 items-center justify-center pt-0.5">
               <input
                 type="checkbox"
                 checked={owned[slotKey] ?? false}

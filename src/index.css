@@ -413,6 +413,9 @@ body {
 
 .article-content {
   min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .article-content a {
@@ -432,23 +435,32 @@ body {
   text-decoration-style: solid;
 }
 
-.article-content img {
+/* Standalone / figure-scale images (not table cells or inline icons). */
+.article-content > img,
+.article-content p > img:only-child,
+.article-content center img,
+.article-content figure img {
   max-width: 100%;
+  height: auto;
   border-radius: 0.9rem;
   margin: 1rem 0;
   border: 1px solid color-mix(in srgb, var(--color-border) 85%, transparent);
   background: color-mix(in srgb, var(--color-bg-tertiary) 75%, transparent);
 }
 
+/* Default imgs: keep small inventory/skill icons compact. */
+.article-content img {
+  max-width: 100%;
+  height: auto;
+}
+
 .article-content table {
   display: table;
-  width: auto;
-  max-width: 100%;
+  width: max-content;
+  max-width: none;
   border-collapse: collapse;
-  margin: 1rem 0;
+  margin: 0;
   font-size: 0.8125rem;
-  overflow-x: auto;
-  overflow-y: hidden;
   border-radius: 0.75rem;
   border: 1px solid var(--color-border);
 }
@@ -568,24 +580,41 @@ body {
   transform: scale(var(--press-scale));
 }
 
-/* Horizontal-scroll wrapper added by bossGuide.cleanSectionHtml so multi-
- * column wiki tables can overflow instead of squeezing cells until headers
- * wrap and content visually overlaps. */
-.article-content .wiki-table-scroll {
+/* Horizontal-scroll wrapper (helpers.wrapTablesForScroll) so multi-column
+ * wiki tables overflow inside a block container instead of expanding the page. */
+.article-content .wiki-table-scroll,
+.wiki-table-scroll {
   width: 100%;
   max-width: 100%;
   overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
   margin: 1rem 0;
+  border-radius: 0.75rem;
+  /* Subtle edge fade hint that more columns exist off-screen */
+  background:
+    linear-gradient(to right, var(--color-bg-primary) 30%, transparent) left center / 1.25rem 100% no-repeat,
+    linear-gradient(to left, var(--color-bg-primary) 30%, transparent) right center / 1.25rem 100% no-repeat;
+  background-attachment: local, local;
 }
 
-.article-content .wiki-table-scroll > table {
+.article-content .wiki-table-scroll > table,
+.wiki-table-scroll > table {
   margin: 0;
 }
 
 /* Within scroll wrappers, prevent header text from wrapping so columns size
  * to their natural width and the table grows wide instead of crushed. */
-.article-content .wiki-table-scroll th {
+.article-content .wiki-table-scroll th,
+.wiki-table-scroll th {
   white-space: nowrap;
+}
+
+/* Keep main content columns from forcing horizontal page scroll. */
+.content-area,
+.max-w-5xl,
+.article-content {
+  overflow-x: clip;
 }
 
 .article-content th,
@@ -1206,20 +1235,28 @@ body {
   height: 1.1rem;
 }
 
+/* Nested headings inside a section card — quieter than the card chrome title. */
 .article-content h4 {
   color: var(--color-text-primary);
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   margin-top: 1rem;
   margin-bottom: 0.4rem;
+  padding-left: 0.55rem;
+  border-left: 2px solid color-mix(in srgb, var(--color-accent) 40%, transparent);
 }
 
 .article-content h5 {
-  color: var(--color-text-primary);
+  color: var(--color-text-secondary);
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: 0.8125rem;
   margin-top: 0.75rem;
   margin-bottom: 0.3rem;
+}
+
+.article-content > h4:first-child,
+.article-content > h5:first-child {
+  margin-top: 0.15rem;
 }
 
 .article-content hr {
@@ -1499,18 +1536,152 @@ body {
   to { opacity: 1; }
 }
 
-/* Wiki tabber — show tabs as selectable buttons, hide inactive content */
+/* Wiki tabber — app-styled tabs, hide inactive panels */
 .article-content .tabber {
   margin: 1rem 0;
+  border: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+  border-radius: 0.85rem;
+  background: color-mix(in srgb, var(--color-bg-primary) 55%, transparent);
+  padding: 0.65rem 0.75rem 0.85rem;
+}
+
+.article-content .tabber > .tabber-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0 0 0.65rem;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 55%, transparent);
+}
+
+.article-content .tabber > .tabber-nav > button {
+  padding: 0.35rem 0.75rem !important;
+  border-radius: 999px !important;
+  font-size: 0.75rem !important;
+  font-weight: 500 !important;
+  border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent) !important;
+  background: color-mix(in srgb, var(--color-bg-tertiary) 70%, transparent) !important;
+  color: var(--color-text-secondary) !important;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+
+.article-content .tabber > .tabber-nav > button:hover {
+  border-color: color-mix(in srgb, var(--color-accent) 40%, transparent) !important;
+  color: var(--color-text-primary) !important;
 }
 
 .article-content .tabber > .tabbertab {
   display: none;
-  padding: 0.75rem 0;
+  padding: 0.25rem 0 0;
 }
 
 .article-content .tabber > .tabbertab.tabbertab--active {
   display: block;
+}
+
+/* Native details tab fallbacks (wiki-tabs from transformTabbers) */
+.article-content .wiki-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 1rem 0;
+  padding: 0.55rem;
+  border: 1px solid color-mix(in srgb, var(--color-border) 65%, transparent);
+  border-radius: 0.9rem;
+  background: color-mix(in srgb, var(--color-bg-primary) 40%, transparent);
+}
+
+.article-content .wiki-tab {
+  border: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+  border-radius: 0.7rem;
+  background: color-mix(in srgb, var(--color-bg-secondary) 35%, transparent);
+  overflow: hidden;
+}
+
+.article-content .wiki-tab > summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 0.55rem 0.85rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  background: color-mix(in srgb, var(--color-bg-tertiary) 50%, transparent);
+  transition: background 140ms ease, color 140ms ease;
+}
+
+.article-content .wiki-tab > summary:hover {
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+}
+
+.article-content .wiki-tab > summary::-webkit-details-marker {
+  display: none;
+}
+
+.article-content .wiki-tab > summary::before {
+  content: "▸ ";
+  color: var(--color-text-secondary);
+  font-size: 0.7rem;
+}
+
+.article-content .wiki-tab[open] > summary::before {
+  content: "▾ ";
+  color: var(--color-accent);
+}
+
+.article-content .wiki-tab[open] > summary {
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent);
+  color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+}
+
+.article-content .wiki-tab > :not(summary) {
+  padding: 0.75rem 0.85rem;
+}
+
+/* Tile-marker copy affordance in boss strategy HTML */
+.article-content .tile-marker-wrapper {
+  margin: 0.75rem 0;
+}
+
+.article-content .tile-marker-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 0.65rem;
+  border: 1px solid color-mix(in srgb, var(--color-accent) 35%, transparent);
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  color: var(--color-accent);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+
+.article-content .tile-marker-copy:hover {
+  background: color-mix(in srgb, var(--color-accent) 18%, transparent);
+  border-color: color-mix(in srgb, var(--color-accent) 55%, transparent);
+}
+
+/* Wiki math / formula fragments that survive sanitization */
+.article-content .mwe-math-element,
+.article-content .mwe-math-fallback-image-inline,
+.article-content .mwe-math-fallback-image-display {
+  display: inline-block;
+  vertical-align: middle;
+  max-width: 100%;
+}
+
+.article-content .mwe-math-fallback-image-display {
+  display: block;
+  margin: 0.75rem auto;
+}
+
+.article-content .texhtml {
+  font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  font-style: italic;
+  color: var(--color-text-primary);
 }
 
 /* CSS tooltip for item images */
@@ -1651,9 +1822,10 @@ body {
   box-shadow: 0 8px 22px -6px rgba(0, 0, 0, 0.12);
 }
 
-/* ── Scroll fade indicator ── */
+/* ── Scroll fade indicator ──
+ * Do NOT set position:relative here — it overrides Tailwind sticky on
+ * sidebars/TOCs that also use this class. Masks work without a positioned box. */
 .scroll-fade {
-  position: relative;
   mask-image: linear-gradient(to bottom, black calc(100% - 1.5rem), transparent 100%);
   -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 1.5rem), transparent 100%);
 }

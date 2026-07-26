@@ -212,6 +212,67 @@ export function normalizeGalleries(root: Element): void {
   });
 }
 
+/**
+ * Convert wiki tabbers to native <details>/<summary> panels. Interactive
+ * without runtime JS, and immune to React re-render races that leave
+ * `.tabbertab` panels stacked with no tab nav.
+ */
+export function transformTabbers(root: Element, doc: Document = document): void {
+  root.querySelectorAll(".tabber").forEach((tabber) => {
+    // Prefer direct children; fall back to any nested tabbertab.
+    let tabs = Array.from(tabber.querySelectorAll(":scope > .tabbertab"));
+    if (tabs.length === 0) {
+      tabs = Array.from(tabber.querySelectorAll(".tabbertab"));
+    }
+    if (tabs.length === 0) {
+      tabber.remove();
+      return;
+    }
+    const replacement = doc.createElement("div");
+    replacement.className = "wiki-tabs";
+    tabs.forEach((tab, i) => {
+      const details = doc.createElement("details");
+      details.className = "wiki-tab";
+      if (i === 0) details.setAttribute("open", "");
+      const summary = doc.createElement("summary");
+      summary.textContent =
+        tab.getAttribute("data-title") ||
+        tab.getAttribute("title") ||
+        tab.getAttribute("data-tab") ||
+        `Option ${i + 1}`;
+      details.appendChild(summary);
+      while (tab.firstChild) details.appendChild(tab.firstChild);
+      replacement.appendChild(details);
+    });
+    tabber.replaceWith(replacement);
+  });
+}
+
+/**
+ * Wrap wide wiki tables in a horizontal-scroll container. Overflow on a
+ * `display:table` element itself is ignored by browsers — the wrapper must
+ * be a block so mobile doesn't expand the whole page.
+ */
+export function wrapTablesForScroll(root: Element): void {
+  const doc = root.ownerDocument ?? document;
+  root.querySelectorAll("table").forEach((table) => {
+    if (table.parentElement?.classList.contains("wiki-table-scroll")) return;
+    // OSRS equipment / inventory grids are fixed-size layouts — don't scroll-wrap.
+    if (
+      table.classList.contains("equipment") ||
+      table.classList.contains("inventorytable") ||
+      table.classList.contains("lootingbagtable") ||
+      table.classList.contains("runepouchtable")
+    ) {
+      return;
+    }
+    const wrapper = doc.createElement("div");
+    wrapper.className = "wiki-table-scroll";
+    table.replaceWith(wrapper);
+    wrapper.appendChild(table);
+  });
+}
+
 export function stripUnsafeNodes(root: Element): void {
   root.querySelectorAll(UNSAFE_SELECTORS).forEach((el) => el.remove());
 
@@ -231,6 +292,8 @@ export function stripUnsafeNodes(root: Element): void {
 
   normalizeLinks(root);
   normalizeImages(root);
+  wrapTablesForScroll(root);
+  transformTabbers(root, root.ownerDocument ?? document);
 }
 
 export function sanitizeHtml(root: Element): string {

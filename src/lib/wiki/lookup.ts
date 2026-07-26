@@ -16,6 +16,7 @@ import {
   sanitizeHtml,
   extractSummary,
   resolveWikiPageFromHref,
+  transformTabbers,
   type WikiTextResponse,
 } from "./helpers";
 
@@ -194,34 +195,6 @@ function parseLead(rawHtml: string, title: string) {
     totalInfoboxFields: infoboxFields.length,
     relatedPages,
   };
-}
-
-// Wiki tabbers depend on the wiki's JS to switch panels. Convert them to
-// native <details>/<summary> at parse time — interactive without any script,
-// and immune to React re-renders (the previous runtime DOM patching raced
-// rendering and tab content could vanish entirely).
-function transformTabbers(root: Element, doc: Document): void {
-  root.querySelectorAll(".tabber").forEach((tabber) => {
-    const tabs = Array.from(tabber.querySelectorAll(":scope > .tabbertab"));
-    if (tabs.length === 0) {
-      tabber.remove();
-      return;
-    }
-    const replacement = doc.createElement("div");
-    replacement.className = "wiki-tabs";
-    tabs.forEach((tab, i) => {
-      const details = doc.createElement("details");
-      details.className = "wiki-tab";
-      if (i === 0) details.setAttribute("open", "");
-      const summary = doc.createElement("summary");
-      summary.textContent =
-        tab.getAttribute("data-title") || tab.getAttribute("title") || `Option ${i + 1}`;
-      details.appendChild(summary);
-      while (tab.firstChild) details.appendChild(tab.firstChild);
-      replacement.appendChild(details);
-    });
-    tabber.replaceWith(replacement);
-  });
 }
 
 // Subsection headings (h3) are demoted to h4 — the only heading tag the

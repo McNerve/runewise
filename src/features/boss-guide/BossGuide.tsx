@@ -94,14 +94,28 @@ export default function BossGuide({ hiscores }: Props) {
   const activeRequest = useRef(0);
   const contentRef = useRef<HTMLDivElement>(null);
   const guideContentRef = useRef<HTMLDivElement>(null);
+  const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
+  const [summaryExpanded, setSummaryExpanded] = useState(false);
+  const [bossQuery, setBossQuery] = useState("");
+  const [tocExpanded, setTocExpanded] = useState<Record<string, boolean>>({});
+  const [linkCopied, setLinkCopied] = useState(false);
+  const [showBackTop, setShowBackTop] = useState(false);
+  const prefetching = useRef<Set<string>>(new Set());
 
-  const filteredBosses = useMemo(
-    () =>
+  const filteredBosses = useMemo(() => {
+    const byCat =
       selectedCategory === "All"
         ? BOSSES
-        : BOSSES.filter((boss) => boss.category === selectedCategory),
-    [selectedCategory]
-  );
+        : BOSSES.filter((boss) => boss.category === selectedCategory);
+    const q = bossQuery.trim().toLowerCase();
+    if (!q) return byCat;
+    return byCat.filter(
+      (b) =>
+        b.name.toLowerCase().includes(q) ||
+        b.category.toLowerCase().includes(q) ||
+        (b.location?.toLowerCase().includes(q) ?? false)
+    );
+  }, [selectedCategory, bossQuery]);
 
   const bossKc = useMemo(
     () => getBossKc(hiscores, selectedBoss),
@@ -281,14 +295,167 @@ export default function BossGuide({ hiscores }: Props) {
     }
   }, [loading, guide]);
 
+  // Scrollspy: highlight the guide TOC / mobile chip for the section in view.
+  useEffect(() => {
+    if (!guide || loading || activeTab !== "guide") {
+      setActiveSectionId(null);
+      return;
+    }
+    const root = guideContentRef.current;
+    if (!root) return;
+
+    const targets = guide.sections
+      .map((s) => root.querySelector<HTMLElement>(`#${CSS.escape(s.id)}`))
+      .filter((el): el is HTMLElement => el !== null);
+    if (targets.length === 0) return;
+
+    const visible = new Set<string>();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const id = (entry.target as HTMLElement).id;
+          if (entry.isIntersecting) visible.add(id);
+          else visible.delete(id);
+        }
+        // Prefer the first H2 currently in view; fall back to first visible.
+        for (const section of guide.sections) {
+          if (visible.has(section.id)) {
+            setActiveSectionId(section.id);
+            return;
+          }
+        }
+      },
+      { rootMargin: "-12% 0px -55% 0px", threshold: [0, 0.1, 0.4] }
+    );
+    targets.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, [guide, loading, activeTab]);
+
+  // Reset mobile summary chrome / TOC expand when boss changes.
+  useEffect(() => {
+    setSummaryExpanded(false);
+    setTocExpanded({});
+  }, [selectedBoss?.name]);
+
+  // Keep the selected boss visible in the sticky directory list.
+  useEffect(() => {
+    if (!selectedBoss) return;
+    const el = document.querySelector<HTMLElement>(
+      `[data-boss-name="${CSS.escape(selectedBoss.name)}"]`
+    );
+    el?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [selectedBoss]);
+
+  // After a guide finishes loading on small screens, jump past chrome into content.
+  useEffect(() => {
+    if (loading || !guide || !selectedBoss) return;
+    if (typeof window === "undefined" || window.innerWidth >= 1280) return;
+    const t = window.setTimeout(() => {
+      contentRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 120);
+    return () => window.clearTimeout(t);
+  }, [loading, guide, selectedBoss]);
+
+  // j / k — next / previous guide section (when not typing in an input).
+  useEffect(() => {
+    if (!guide || activeTab !== "guide") return;
+    function onKey(e: KeyboardEvent) {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const tag = (e.target as HTMLElement | null)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if ((e.target as HTMLElement | null)?.isContentEditable) return;
+      if (e.key !== "j" && e.key !== "k") return;
+      const ids = guide!.sections.map((s) => s.id);
+      if (ids.length === 0) return;
+      const current = activeSectionId && ids.includes(activeSectionId)
+        ? ids.indexOf(activeSectionId)
+        : 0;
+      const next =
+        e.key === "j"
+          ? Math.min(ids.length - 1, current + 1)
+          : Math.max(0, current - 1);
+      e.preventDefault();
+      scrollToGuideSection(ids[next]);
+      setActiveSectionId(ids[next]);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [guide, activeTab, activeSectionId]);
+
+  // Show "back to top" after the user scrolls the main content area.
+  useEffect(() => {
+    const scroller = document.querySelector("main.content-area");
+    if (!scroller) return;
+    function onScroll() {
+      setShowBackTop((scroller as HTMLElement).scrollTop > 480);
+    }
+    scroller.addEventListener("scroll", onScroll, { passive: true });
+    return () => scroller.removeEventListener("scroll", onScroll);
+  }, [selectedBoss?.name]);
+
+  function prefetchBossGuide(boss: BossInfo) {
+    if (prefetching.current.has(boss.wikiPage)) return;
+    prefetching.current.add(boss.wikiPage);
+    void fetchBossGuideDocument(boss.wikiPage).catch(() => {
+      prefetching.current.delete(boss.wikiPage);
+    });
+  }
+
+  function copyBossDeepLink() {
+    if (!selectedBoss) return;
+    const url = `${window.location.origin}${window.location.pathname}#bosses?boss=${encodeURIComponent(selectedBoss.name)}`;
+    void navigator.clipboard.writeText(url).then(() => {
+      setLinkCopied(true);
+      window.setTimeout(() => setLinkCopied(false), 1800);
+    });
+  }
+
+  // Keep the active mobile chip scrolled into view.
+  useEffect(() => {
+    if (!activeSectionId) return;
+    const chip = document.querySelector<HTMLElement>(
+      `[data-guide-chips] [data-section-id="${CSS.escape(activeSectionId)}"]`
+    );
+    // If active is an H3, highlight its parent H2 chip instead.
+    const parentChip =
+      chip ??
+      (() => {
+        const section = guide?.sections.find((s) => s.id === activeSectionId);
+        if (!section?.parentId) return null;
+        return document.querySelector<HTMLElement>(
+          `[data-guide-chips] [data-section-id="${CSS.escape(section.parentId)}"]`
+        );
+      })();
+    parentChip?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+  }, [activeSectionId, guide?.sections]);
+
   return (
     <div className="space-y-5">
-      <AccountPrefillBanner
-        hasHiscores={Boolean(hiscores)}
-        context="boss kill counts and personalised task context"
-      />
+      {!selectedBoss ? (
+        <AccountPrefillBanner
+          hasHiscores={Boolean(hiscores)}
+          context="boss kill counts and personalised task context"
+        />
+      ) : null}
+      {showBackTop ? (
+        <button
+          type="button"
+          onClick={() => {
+            const scroller = document.querySelector("main.content-area");
+            scroller?.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+          className="fixed bottom-5 right-5 z-30 rounded-full border border-border/60 bg-bg-primary/95 px-3.5 py-2 text-xs font-medium text-text-secondary shadow-lg backdrop-blur transition hover:border-accent/40 hover:text-text-primary"
+          aria-label="Back to top"
+        >
+          ↑ Top
+        </button>
+      ) : null}
       <div>
-        <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
+        <div
+          className={`flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between ${
+            selectedBoss ? "hidden sm:flex" : ""
+          }`}
+        >
           <div className="space-y-1">
             <h2 className="text-hero font-semibold tracking-tight">Boss Guides</h2>
             <p className="max-w-2xl text-sm text-text-secondary">
@@ -301,7 +468,11 @@ export default function BossGuide({ hiscores }: Props) {
           </div>
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div
+          className={`mt-4 flex flex-wrap gap-2 ${
+            selectedBoss ? "hidden sm:flex" : ""
+          }`}
+        >
           <button
             type="button"
             onClick={() => setSelectedCategory("All")}
@@ -331,19 +502,44 @@ export default function BossGuide({ hiscores }: Props) {
         </div>
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-[280px_minmax(0,1fr)]">
-        <aside>
-          <div className="mb-3 px-2 text-[10px] uppercase tracking-[0.2em] text-text-secondary/45">
+      <div className="grid gap-5 xl:grid-cols-[280px_minmax(0,1fr)] min-w-0">
+        {/* On small screens, collapse the full directory once a boss is open —
+            dual-pane list + guide is the clunkiest layout on phone.
+            On desktop, sticky so scrolling the guide doesn't leave an empty column. */}
+        <aside
+          className={`${
+            selectedBoss ? "hidden xl:block" : "block"
+          } xl:sticky xl:top-4 xl:self-start xl:max-h-[calc(100vh-5rem)]`}
+        >
+          <div className="mb-2 px-2 text-[10px] uppercase tracking-[0.2em] text-text-secondary/45">
             Boss Directory
           </div>
-          <div className="space-y-1.5 max-h-[70vh] overflow-y-auto pr-1 scroll-fade sidebar-scroll">
+          <div className="mb-2 px-0.5">
+            <input
+              type="search"
+              value={bossQuery}
+              onChange={(e) => setBossQuery(e.target.value)}
+              placeholder="Search bosses…"
+              aria-label="Search bosses"
+              className="w-full rounded-lg border border-border/60 bg-bg-primary/70 px-3 py-2 text-sm text-text-primary outline-none placeholder:text-text-secondary/45 focus:border-accent/50"
+            />
+          </div>
+          <div className="space-y-1.5 max-h-[70vh] xl:max-h-[calc(100vh-9rem)] overflow-y-auto pr-1 scroll-fade sidebar-scroll">
+            {filteredBosses.length === 0 ? (
+              <div className="px-3 py-6 text-center text-xs text-text-secondary">
+                No bosses match “{bossQuery.trim()}”.
+              </div>
+            ) : null}
             {filteredBosses.map((boss) => {
               const active = selectedBoss?.name === boss.name;
               return (
                 <button
                   key={boss.name}
                   type="button"
+                  data-boss-name={boss.name}
                   onClick={() => void selectBoss(boss)}
+                  onMouseEnter={() => prefetchBossGuide(boss)}
+                  onFocus={() => prefetchBossGuide(boss)}
                   className={`w-full rounded-xl border px-3 py-3 text-left transition ${
                     active
                       ? "border-accent/35 bg-accent/10"
@@ -372,16 +568,9 @@ export default function BossGuide({ hiscores }: Props) {
               );
             })}
           </div>
-          {selectedBoss && (
-            <div className="flex justify-center py-2 xl:hidden text-text-secondary/30">
-              <svg width="20" height="12" viewBox="0 0 20 12" fill="none" stroke="currentColor" strokeWidth="2" className="animate-bounce">
-                <path d="M2 2l8 8 8-8" />
-              </svg>
-            </div>
-          )}
         </aside>
 
-        <div ref={contentRef} className="space-y-4">
+        <div ref={contentRef} className="space-y-4 min-w-0">
           {!selectedBoss ? (
             <EmptyState
               title="Select a boss"
@@ -390,13 +579,26 @@ export default function BossGuide({ hiscores }: Props) {
           ) : null}
 
           {selectedBoss ? (
-            <section>
+            <section className="min-w-0">
+              {/* Mobile: back-to-directory control (directory is hidden when a boss is open). */}
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedBoss(null);
+                  setGuide(null);
+                  setGuideError(null);
+                  navigate("bosses", {});
+                }}
+                className="mb-3 inline-flex items-center gap-1.5 rounded-lg border border-border/60 bg-bg-primary/50 px-2.5 py-1.5 text-xs text-text-secondary transition hover:border-accent/40 hover:text-text-primary xl:hidden"
+              >
+                ← All bosses
+              </button>
               <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-                <div className="flex items-start gap-4">
+                <div className="flex items-start gap-4 min-w-0">
                   <WikiImage
                     src={bossIcon(selectedBoss.name)}
                     alt=""
-                    className="h-20 w-20 rounded-2xl border border-border/40 bg-bg-primary/60 object-contain p-1"
+                    className="h-20 w-20 shrink-0 rounded-2xl border border-border/40 bg-bg-primary/60 object-contain p-1"
                     fallback={selectedBoss.name[0]}
                   />
                   <div className="space-y-2">
@@ -479,9 +681,22 @@ export default function BossGuide({ hiscores }: Props) {
                       ) : null}
                     </div>
                     {guide?.summary ? (
-                      <p className="max-w-3xl text-sm leading-6 text-text-secondary">
-                        {guide.summary}
-                      </p>
+                      <div className="max-w-3xl">
+                        <p
+                          className={`text-sm leading-6 text-text-secondary ${
+                            summaryExpanded ? "" : "line-clamp-3 sm:line-clamp-none"
+                          }`}
+                        >
+                          {guide.summary}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setSummaryExpanded((v) => !v)}
+                          className="mt-1 text-xs text-accent hover:text-accent-hover sm:hidden"
+                        >
+                          {summaryExpanded ? "Show less" : "Read more"}
+                        </button>
+                      </div>
                     ) : null}
                     <FreshnessStrip
                       updatedAt={guide?.fetchedAt ? new Date(guide.fetchedAt) : null}
@@ -521,6 +736,11 @@ export default function BossGuide({ hiscores }: Props) {
                     icon="🔗"
                     href={`https://oldschool.runescape.wiki/w/${selectedBoss.wikiPage}`}
                   />
+                  <BossActionIcon
+                    label={linkCopied ? "Link copied!" : "Copy guide link"}
+                    icon={linkCopied ? "✓" : "📎"}
+                    onClick={copyBossDeepLink}
+                  />
                 </div>
               </div>
 
@@ -531,7 +751,7 @@ export default function BossGuide({ hiscores }: Props) {
                 );
                 if (packs.length === 0) return null;
                 return (
-                  <div className="mt-4 rounded-xl border border-accent/20 bg-accent/5 px-3 py-2.5">
+                  <div className="mt-3 hidden rounded-xl border border-accent/20 bg-accent/5 px-3 py-2.5 sm:block">
                     <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                       <div className="text-[10px] uppercase tracking-[0.14em] text-accent/80 font-medium">
                         Meta loadouts
@@ -571,7 +791,7 @@ export default function BossGuide({ hiscores }: Props) {
                 );
               })()}
 
-              <div className="mt-4 flex items-stretch gap-2 overflow-x-auto pb-1 sidebar-scroll">
+              <div className="mt-3 flex items-stretch gap-2 overflow-x-auto pb-1 sidebar-scroll">
                 {BOSS_WORKSPACE_TABS.map((tab) => (
                   <button
                     key={tab.id}
@@ -595,53 +815,54 @@ export default function BossGuide({ hiscores }: Props) {
                 ))}
               </div>
 
-              <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <div className="rounded-xl border border-border-subtle bg-bg-tertiary px-4 py-3">
+              {/* Metric strip — desktop/tablet only; mobile skips straight to guide. */}
+              <div className="mt-4 hidden gap-2 overflow-x-auto pb-1 sidebar-scroll sm:grid sm:grid-cols-2 sm:overflow-visible xl:grid-cols-4 sm:gap-3">
+                <div className="min-w-[9.5rem] shrink-0 rounded-xl border border-border-subtle bg-bg-tertiary px-3 py-2.5 sm:min-w-0 sm:px-4 sm:py-3">
                   <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
-                    Guide Sections
+                    Sections
                   </div>
-                  <div className="mt-1 text-lg font-semibold text-text-primary">
+                  <div className="mt-0.5 text-base font-semibold text-text-primary sm:text-lg">
                     {guide?.sections.length ?? 0}
                   </div>
-                  <div className="mt-1 text-xs text-text-secondary">
-                    Structured strategy blocks in this workspace.
+                  <div className="mt-0.5 hidden text-xs text-text-secondary sm:block">
+                    Strategy blocks in this workspace.
                   </div>
                 </div>
-                <div className="rounded-xl border border-border-subtle bg-bg-tertiary px-4 py-3">
+                <div className="min-w-[9.5rem] shrink-0 rounded-xl border border-border-subtle bg-bg-tertiary px-3 py-2.5 sm:min-w-0 sm:px-4 sm:py-3">
                   <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
-                    Drop Categories
+                    Drop groups
                   </div>
-                  <div className="mt-1 text-lg font-semibold text-text-primary">
+                  <div className="mt-0.5 text-base font-semibold text-text-primary sm:text-lg">
                     {dropCategoryCount ?? "\u2014"}
                   </div>
-                  <div className="mt-1 text-xs text-text-secondary">
+                  <div className="mt-0.5 hidden text-xs text-text-secondary sm:block">
                     {dropCategories.length > 0
-                      ? "Embedded loot groups from the OSRS Wiki."
+                      ? "From the OSRS Wiki."
                       : bossLootTable
-                        ? "Curated loot groups from RuneWise data."
+                        ? "Curated RuneWise data."
                         : dropCategoryCount != null
-                          ? "Known raid loot groups (Uniques + Common)."
-                          : "No structured loot groups available yet."}
+                          ? "Raid loot groups."
+                          : "No loot groups yet."}
                   </div>
                 </div>
-                <div className="rounded-xl border border-border-subtle bg-bg-tertiary px-4 py-3">
+                <div className="min-w-[9.5rem] shrink-0 rounded-xl border border-border-subtle bg-bg-tertiary px-3 py-2.5 sm:min-w-0 sm:px-4 sm:py-3">
                   <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
-                    Task References
+                    Tasks
                   </div>
-                  <div className="mt-1 text-lg font-semibold text-text-primary">
+                  <div className="mt-0.5 text-base font-semibold text-text-primary sm:text-lg">
                     {bossTasks.length}
                   </div>
-                  <div className="mt-1 text-xs text-text-secondary">
-                    Boss-linked combat tasks available for planning.
+                  <div className="mt-0.5 hidden text-xs text-text-secondary sm:block">
+                    Boss-linked combat tasks.
                   </div>
                 </div>
-                <div className="rounded-xl border border-border-subtle bg-bg-tertiary px-4 py-3">
+                <div className="min-w-[9.5rem] shrink-0 rounded-xl border border-border-subtle bg-bg-tertiary px-3 py-2.5 sm:min-w-0 sm:px-4 sm:py-3">
                   <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
-                    Top Drop
+                    Top drop
                   </div>
                   {topDrops[0] ? (
                     <>
-                      <div className="mt-1 truncate text-sm font-semibold text-text-primary">
+                      <div className="mt-0.5 truncate text-sm font-semibold text-text-primary">
                         {topDrops[0].drop.name}
                       </div>
                       <div className="mt-0.5 text-xs text-success">
@@ -651,21 +872,14 @@ export default function BossGuide({ hiscores }: Props) {
                       </div>
                     </>
                   ) : raidTopDrop ? (
-                    <div className="mt-1 truncate text-sm font-semibold text-text-primary">
+                    <div className="mt-0.5 truncate text-sm font-semibold text-text-primary">
                       {raidTopDrop}
                     </div>
                   ) : (
-                    <div className="mt-1 text-lg font-semibold text-text-primary">{"\u2014"}</div>
+                    <div className="mt-0.5 text-base font-semibold text-text-primary sm:text-lg">
+                      {"\u2014"}
+                    </div>
                   )}
-                  <div className="mt-1 text-[11px] text-text-secondary/50">
-                    {topDrops[0]?.drop.name
-                      ? topDrops[0].gePrice != null
-                        ? "Top drop value"
-                        : "No price data"
-                      : raidTopDrop
-                        ? "Featured unique (curated)"
-                        : "Waiting on loot data"}
-                  </div>
                 </div>
               </div>
             </section>
@@ -699,69 +913,262 @@ export default function BossGuide({ hiscores }: Props) {
           {selectedBoss && !loading && activeTab === "guide" && !guideError && guide && guide.sections.length > 0 ? (
             <div>
               {BOSS_METADATA[selectedBoss.name] && (
-                <BossMetaCard
-                  meta={BOSS_METADATA[selectedBoss.name]}
-                  combatLevel={selectedBoss.combatLevel}
-                  hitpoints={selectedBoss.hitpoints}
-                  maxHit={selectedBoss.maxHit}
-                  weakness={selectedBoss.weakness}
-                  hiscores={hiscores}
-                />
+                <div className="mb-4 hidden sm:block">
+                  <BossMetaCard
+                    meta={BOSS_METADATA[selectedBoss.name]}
+                    combatLevel={selectedBoss.combatLevel}
+                    hitpoints={selectedBoss.hitpoints}
+                    maxHit={selectedBoss.maxHit}
+                    weakness={selectedBoss.weakness}
+                    hiscores={hiscores}
+                  />
+                </div>
               )}
-            <div className="grid gap-4 xl:grid-cols-[220px_minmax(0,1fr)]">
-              <aside className="h-fit xl:sticky xl:top-6 max-h-[calc(100vh-4rem)] overflow-y-auto scroll-fade sidebar-scroll">
-                <div className="mb-2 px-2 text-[10px] uppercase tracking-[0.2em] text-text-secondary/45">
-                  Guide Sections
+            <div className="grid gap-4 xl:grid-cols-[220px_minmax(0,1fr)] min-w-0 items-start">
+              {/* Desktop sticky TOC — hierarchical, collapsible for long raids */}
+              <aside className="hidden xl:block h-fit xl:sticky xl:top-6 max-h-[calc(100vh-4rem)] overflow-y-auto scroll-fade sidebar-scroll rounded-xl border border-border/30 bg-bg-primary/20 p-2">
+                <div className="mb-2 flex items-center justify-between gap-2 px-2">
+                  <div className="text-[10px] uppercase tracking-[0.2em] text-text-secondary/45">
+                    Guide Sections
+                  </div>
+                  <div
+                    className="text-[9px] text-text-secondary/35"
+                    title="Keyboard: j next section, k previous"
+                  >
+                    j/k
+                  </div>
                 </div>
                 <div className="space-y-0.5">
                   {(() => {
-                    let h2Counter = 0;
-                    return guide.sections.map((section) => {
-                      if (section.level === 2) h2Counter += 1;
-                      const h2Number = h2Counter;
-                      return (
-                    <button
-                      key={section.id}
-                      type="button"
-                      onClick={() => scrollToGuideSection(section.id)}
-                      className={`group flex w-full items-center gap-2 rounded-lg text-left text-text-secondary transition hover:bg-bg-primary/60 hover:text-text-primary ${
-                        section.level === 3
-                          ? "pl-6 pr-2.5 py-1.5"
-                          : "px-2.5 py-2"
-                      }`}
-                    >
-                      {section.level === 2 ? (
-                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-bg-tertiary/60 text-[10px] font-medium text-text-secondary/60 group-hover:text-text-primary">
-                          {h2Number}
-                        </span>
-                      ) : (
-                        <span className="w-1 h-1 shrink-0 rounded-full bg-text-secondary/30 group-hover:bg-accent/50" />
-                      )}
-                      <span
-                        className={`line-clamp-2 leading-snug ${
-                          section.level === 3
-                            ? "text-xs text-text-secondary/70"
-                            : "text-sm"
-                        }`}
-                      >
-                        {section.title}
-                      </span>
-                    </button>
-                      );
+                    const byId = new Map(guide.sections.map((s) => [s.id, s]));
+                    const depthOf = (id: string): number => {
+                      let d = 0;
+                      let cur = byId.get(id);
+                      while (cur?.parentId && byId.has(cur.parentId)) {
+                        d += 1;
+                        cur = byId.get(cur.parentId);
+                      }
+                      return d;
+                    };
+                    const descendantsOf = (rootId: string) =>
+                      guide.sections.filter((s) => {
+                        let cur = s;
+                        while (cur.parentId) {
+                          if (cur.parentId === rootId) return true;
+                          const parent = byId.get(cur.parentId);
+                          if (!parent) break;
+                          cur = parent;
+                        }
+                        return false;
+                      });
+                    const roots = guide.sections.filter((s) => !s.parentId || !byId.has(s.parentId));
+                    const claimed = new Set<string>();
+                    roots.forEach((r) => {
+                      claimed.add(r.id);
+                      descendantsOf(r.id).forEach((d) => claimed.add(d.id));
                     });
+                    const orphans = guide.sections.filter((s) => !claimed.has(s.id));
+                    let h2Counter = 0;
+                    return (
+                      <>
+                        {roots.map((section) => {
+                          const isTop = !section.parentId || section.level === 2;
+                          if (isTop) h2Counter += 1;
+                          const kids = descendantsOf(section.id);
+                          const active =
+                            activeSectionId === section.id ||
+                            kids.some((k) => k.id === activeSectionId);
+                          const expanded =
+                            tocExpanded[section.id] ??
+                            (active || kids.length <= 6);
+                          return (
+                            <div key={section.id}>
+                              <div className="flex items-stretch gap-0.5">
+                                {kids.length > 0 ? (
+                                  <button
+                                    type="button"
+                                    aria-label={expanded ? "Collapse" : "Expand"}
+                                    onClick={() =>
+                                      setTocExpanded((m) => ({
+                                        ...m,
+                                        [section.id]: !expanded,
+                                      }))
+                                    }
+                                    className="flex w-6 shrink-0 items-center justify-center rounded-md text-text-secondary/50 hover:bg-bg-primary/60 hover:text-text-primary"
+                                  >
+                                    <span className="text-[10px]">{expanded ? "▾" : "▸"}</span>
+                                  </button>
+                                ) : (
+                                  <span className="w-6 shrink-0" />
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    scrollToGuideSection(section.id);
+                                    if (kids.length > 0) {
+                                      setTocExpanded((m) => ({ ...m, [section.id]: true }));
+                                    }
+                                  }}
+                                  aria-current={active ? "location" : undefined}
+                                  className={`group flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-2 text-left transition ${
+                                    active
+                                      ? "bg-accent/10 text-text-primary"
+                                      : "text-text-secondary hover:bg-bg-primary/60 hover:text-text-primary"
+                                  }`}
+                                >
+                                  <span
+                                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[10px] font-medium ${
+                                      active
+                                        ? "bg-accent/20 text-accent"
+                                        : "bg-bg-tertiary/60 text-text-secondary/60"
+                                    }`}
+                                  >
+                                    {h2Counter}
+                                  </span>
+                                  <span className="line-clamp-2 text-sm leading-snug">
+                                    {section.title}
+                                  </span>
+                                  {kids.length > 0 ? (
+                                    <span className="ml-auto shrink-0 text-[10px] text-text-secondary/40">
+                                      {kids.length}
+                                    </span>
+                                  ) : null}
+                                </button>
+                              </div>
+                              {expanded && kids.length > 0 ? (
+                                <div className="ml-6 space-y-0.5 border-l border-border/30 pl-1">
+                                  {kids.map((child) => {
+                                    const childActive = activeSectionId === child.id;
+                                    const nest = Math.min(depthOf(child.id), 3);
+                                    const leaf = child.title.includes(" > ")
+                                      ? child.title.slice(child.title.lastIndexOf(" > ") + 3)
+                                      : child.title;
+                                    return (
+                                      <button
+                                        key={child.id}
+                                        type="button"
+                                        onClick={() => scrollToGuideSection(child.id)}
+                                        aria-current={childActive ? "location" : undefined}
+                                        style={{ paddingLeft: `${0.5 + nest * 0.45}rem` }}
+                                        className={`flex w-full items-center gap-2 rounded-lg py-1.5 pr-2.5 text-left transition ${
+                                          childActive
+                                            ? "bg-accent/10 text-text-primary"
+                                            : "text-text-secondary/70 hover:bg-bg-primary/60 hover:text-text-primary"
+                                        }`}
+                                      >
+                                        <span
+                                          className={`h-1 w-1 shrink-0 rounded-full ${
+                                            childActive ? "bg-accent" : "bg-text-secondary/30"
+                                          }`}
+                                        />
+                                        <span className="line-clamp-2 text-xs leading-snug">
+                                          {leaf}
+                                        </span>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              ) : null}
+                            </div>
+                          );
+                        })}
+                        {orphans.map((section) => {
+                          const active = activeSectionId === section.id;
+                          return (
+                            <button
+                              key={section.id}
+                              type="button"
+                              onClick={() => scrollToGuideSection(section.id)}
+                              aria-current={active ? "location" : undefined}
+                              className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 pl-8 text-left transition ${
+                                active
+                                  ? "bg-accent/10 text-text-primary"
+                                  : "text-text-secondary/70 hover:bg-bg-primary/60 hover:text-text-primary"
+                              }`}
+                            >
+                              <span className="line-clamp-2 text-xs leading-snug">
+                                {section.title}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </>
+                    );
                   })()}
                 </div>
               </aside>
 
-              <div ref={guideContentRef} className="space-y-3" onClick={handleGuideClick}>
-                {guide.sections.map((section) => (
+              {/* Mobile horizontal section chips — sticky while reading guide */}
+              <div className="xl:hidden -mx-1 px-1 overflow-x-auto sidebar-scroll sticky top-0 z-10 bg-bg-primary/95 backdrop-blur-sm py-1.5 -mt-1 border-b border-border/30">
+                <div className="flex gap-1.5 pb-0.5 min-w-max" data-guide-chips>
+                  {guide.sections
+                    .filter((s) => s.level === 2)
+                    .map((section, i) => {
+                      const active =
+                        activeSectionId === section.id ||
+                        guide.sections.some(
+                          (s) =>
+                            s.parentId === section.id && s.id === activeSectionId
+                        );
+                      return (
+                      <button
+                        key={section.id}
+                        type="button"
+                        data-section-id={section.id}
+                        onClick={() => scrollToGuideSection(section.id)}
+                        aria-current={active ? "location" : undefined}
+                        className={`shrink-0 rounded-full border px-3 py-1.5 text-xs transition ${
+                          active
+                            ? "border-accent/40 bg-accent/15 text-accent"
+                            : "border-border/60 bg-bg-primary/55 text-text-secondary hover:border-accent/40 hover:text-text-primary"
+                        }`}
+                      >
+                        <span className={`mr-1.5 ${active ? "text-accent/70" : "text-text-secondary/45"}`}>
+                          {i + 1}
+                        </span>
+                        {section.title}
+                      </button>
+                      );
+                    })}
+                </div>
+              </div>
+
+              <div ref={guideContentRef} className="space-y-3 min-w-0" onClick={handleGuideClick}>
+                {guide.sections.map((section) => {
+                  // StructuredSection owns requirements / skills / equipment UX —
+                  // hide the raw HTML twin so we never double-render. Inventory
+                  // setups stay as article HTML (tabbed grids).
+                  const structuredOnly =
+                    /requirements|skills|equipment|gear setup/i.test(section.title) &&
+                    !/inventory/i.test(section.title);
+                  // Skip near-empty prose cards, but keep index parents that only
+                  // exist so the TOC can group their children.
+                  const textOnly = section.html
+                    .replace(/<[^>]+>/g, " ")
+                    .replace(/\s+/g, " ")
+                    .trim();
+                  const isIndexParent = guide.sections.some(
+                    (s) => s.parentId === section.id
+                  );
+                  if (
+                    !structuredOnly &&
+                    textOnly.length < 24 &&
+                    !isIndexParent
+                  ) {
+                    return null;
+                  }
+                  return (
                   <section
                     key={section.id}
                     id={section.id}
-                    className={`rounded-xl border bg-bg-primary/25 ${
+                    className={`rounded-xl border bg-bg-primary/25 min-w-0 overflow-hidden scroll-mt-4 transition-[border-color,box-shadow] ${
                       section.level === 3
-                        ? "border-border/25 ml-4 p-4"
-                        : "border-border/40 p-5"
+                        ? "border-border/25 xl:ml-4 p-4"
+                        : "border-border/40 p-4 sm:p-5"
+                    } ${
+                      activeSectionId === section.id
+                        ? "border-accent/35 shadow-[inset_3px_0_0_0_var(--color-accent)]"
+                        : ""
                     }`}
                   >
                     {section.level === 3 ? (
@@ -774,20 +1181,21 @@ export default function BossGuide({ hiscores }: Props) {
                       </h4>
                     )}
                     <StructuredSection title={section.title} html={section.html} bossSlug={normalizeBossSlug(selectedBoss.name)} />
-                    <div
-                      className={`article-content text-sm leading-7 text-text-secondary ${sectionContentClasses(section.title)}`.trim()}
-                      dangerouslySetInnerHTML={{ __html: section.html }}
-                      style={
-                        section.title.toLowerCase().includes("requirements") ||
-                        section.title.toLowerCase().includes("skills") ||
-                        section.title.toLowerCase().includes("equipment") ||
-                        section.title.toLowerCase().includes("inventory")
-                          ? { display: "none" }
-                          : undefined
-                      }
-                    />
+                    {!structuredOnly ? (
+                      section.html.includes('data-section-index') ? (
+                        <p className="text-xs text-text-secondary/60">
+                          Use the subsections in the guide menu for detailed strategies.
+                        </p>
+                      ) : (
+                        <div
+                          className={`article-content text-sm leading-7 text-text-secondary ${sectionContentClasses(section.title)}`.trim()}
+                          dangerouslySetInnerHTML={{ __html: section.html }}
+                        />
+                      )
+                    ) : null}
                   </section>
-                ))}
+                  );
+                })}
               </div>
             </div>
             </div>
