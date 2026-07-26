@@ -1748,9 +1748,10 @@ body {
   box-shadow: 0 8px 22px -6px rgba(0, 0, 0, 0.12);
 }
 
-/* ── Scroll fade indicator ── */
+/* ── Scroll fade indicator ──
+ * Do NOT set position:relative here — it overrides Tailwind sticky on
+ * sidebars/TOCs that also use this class. Masks work without a positioned box. */
 .scroll-fade {
-  position: relative;
   mask-image: linear-gradient(to bottom, black calc(100% - 1.5rem), transparent 100%);
   -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 1.5rem), transparent 100%);
 }
