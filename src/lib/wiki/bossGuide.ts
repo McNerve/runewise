@@ -757,7 +757,7 @@ function stripNestedHeadings(rawHtml: string): string {
 export async function fetchBossGuideDocument(
   wikiPage: string
 ): Promise<BossGuideDocument> {
-  const cacheKey = `boss-guide:v15:${wikiPage}`;
+  const cacheKey = `boss-guide:v16:${wikiPage}`;
   const cached = getCached<BossGuideDocument>(cacheKey, GUIDE_TTL);
   if (cached) return cached;
 
