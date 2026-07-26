@@ -5,6 +5,8 @@ import {
   upgradeImageUrl,
   shouldCollapseSection,
   sectionContentClasses,
+  stripWikiStrategySuffix,
+  isWikiStrategyTitle,
 } from "./wikiLookupUtils";
 import type { WikiLookupDocument } from "../../lib/wiki/lookup";
 
@@ -179,9 +181,28 @@ describe("shouldCollapseSection / sectionContentClasses", () => {
     expect(shouldCollapseSection("Strategy")).toBe(false);
   });
 
+  it("collapses trivia and sound effects noise", () => {
+    expect(shouldCollapseSection("Trivia")).toBe(true);
+    expect(shouldCollapseSection("Sound effects")).toBe(true);
+  });
+
   it("tags requirements and gear sections with structured classes", () => {
     expect(sectionContentClasses("Requirements")).toContain("requirements");
     expect(sectionContentClasses("Equipment")).toContain("loadout");
     expect(sectionContentClasses("Strategy")).toBe("");
+  });
+});
+
+describe("stripWikiStrategySuffix / isWikiStrategyTitle", () => {
+  it("strips /Strategies for boss deep-links", () => {
+    expect(stripWikiStrategySuffix("Vorkath/Strategies")).toBe("Vorkath");
+    expect(stripWikiStrategySuffix("Chambers of Xeric/Strategies")).toBe(
+      "Chambers of Xeric"
+    );
+  });
+
+  it("detects strategy page titles", () => {
+    expect(isWikiStrategyTitle("Vorkath/Strategies")).toBe(true);
+    expect(isWikiStrategyTitle("Abyssal whip")).toBe(false);
   });
 });

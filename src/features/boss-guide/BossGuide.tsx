@@ -364,10 +364,12 @@ export default function BossGuide({ hiscores }: Props) {
 
   return (
     <div className="space-y-5">
-      <AccountPrefillBanner
-        hasHiscores={Boolean(hiscores)}
-        context="boss kill counts and personalised task context"
-      />
+      {!selectedBoss ? (
+        <AccountPrefillBanner
+          hasHiscores={Boolean(hiscores)}
+          context="boss kill counts and personalised task context"
+        />
+      ) : null}
       <div>
         <div
           className={`flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between ${
@@ -1042,6 +1044,14 @@ export default function BossGuide({ hiscores }: Props) {
                   // hide the raw HTML twin so we never double-render.
                   const structuredOnly =
                     /requirements|skills|equipment|inventory/i.test(section.title);
+                  // Skip near-empty prose cards (e.g. blank Requirements shells).
+                  const textOnly = section.html
+                    .replace(/<[^>]+>/g, " ")
+                    .replace(/\s+/g, " ")
+                    .trim();
+                  if (!structuredOnly && textOnly.length < 24) {
+                    return null;
+                  }
                   return (
                   <section
                     key={section.id}

@@ -10,7 +10,29 @@ export const COLLAPSED_SECTIONS = [
   "spawns",
   "combat stats",
   "changes",
+  "sound effects",
+  "trivia",
+  "update history",
+  "history",
+  "creation",
+  "shop locations",
+  "item sources",
+  "treasure trails",
+  "products",
 ];
+
+/** Strip /Strategies (and similar) so wiki titles map to boss workspace names. */
+export function stripWikiStrategySuffix(title: string): string {
+  return title
+    .replace(/\/strategies$/i, "")
+    .replace(/\/challenge mode\/strategies$/i, "")
+    .replace(/\/challenge mode$/i, "")
+    .trim();
+}
+
+export function isWikiStrategyTitle(title: string): boolean {
+  return /\/strategies$/i.test(title) || /strategies$/i.test(title);
+}
 
 export function shouldCollapseSection(title: string): boolean {
   const lower = title.toLowerCase();

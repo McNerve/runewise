@@ -40,8 +40,11 @@ import { POPULAR_PAGES } from "./wikiLookupConstants";
 import {
   sectionContentClasses,
   shouldCollapseSection,
+  stripWikiStrategySuffix,
+  isWikiStrategyTitle,
 } from "./wikiLookupUtils";
 import { buildGeSnapshot, wikiKindLabel, type GESnapshot } from "./wikiLookupGe";
+import { findBossByName } from "../../lib/data/bosses";
 
 export default function WikiLookup() {
   const { params, navigate } = useNavigation();
@@ -143,7 +146,10 @@ export default function WikiLookup() {
     }
 
     if (kind === "boss") {
-      navigate("bosses", { boss: page });
+      // "Vorkath/Strategies" → open Boss Guides for Vorkath, not a dead deep-link.
+      const bossName = stripWikiStrategySuffix(page);
+      const known = findBossByName(bossName);
+      navigate("bosses", { boss: known?.name ?? bossName });
       return;
     }
 
@@ -648,7 +654,22 @@ export default function WikiLookup() {
                 </div>
                 {pageUrl ? (
                   <div className="flex flex-wrap gap-2">
-                    {document.pageType !== "reference" ? (
+                    {document.pageType === "boss" || isWikiStrategyTitle(document.title) ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          navigateToTypedPage(
+                            document.title,
+                            "boss"
+                          )
+                        }
+                        className="rounded-xl border border-accent/25 bg-accent/10 px-3 py-2 text-xs font-medium text-accent transition hover:border-accent/45 hover:text-accent-hover"
+                      >
+                        {isWikiStrategyTitle(document.title)
+                          ? `Open ${stripWikiStrategySuffix(document.title)} Guide`
+                          : "Open Boss Guide"}
+                      </button>
+                    ) : document.pageType !== "reference" ? (
                       <button
                         type="button"
                         onClick={() => navigateToTypedPage(document.title, document.pageType)}
@@ -669,6 +690,31 @@ export default function WikiLookup() {
                 ) : null}
               </div>
             </div>
+
+            {/* Mobile on-this-page chips (desktop uses sticky WikiToc aside). */}
+            {tocEntries.length >= 2 ? (
+              <div className="xl:hidden -mx-1 overflow-x-auto sidebar-scroll sticky top-0 z-10 bg-bg-primary/95 backdrop-blur-sm py-1.5 border-b border-border/30">
+                <div className="flex min-w-max gap-1.5 px-1">
+                  {tocEntries
+                    .filter((e) => e.level === 2)
+                    .slice(0, 16)
+                    .map((entry) => (
+                      <button
+                        key={entry.id}
+                        type="button"
+                        onClick={() =>
+                          contentRef.current
+                            ?.querySelector(`#${CSS.escape(entry.id)}`)
+                            ?.scrollIntoView({ behavior: "smooth", block: "start" })
+                        }
+                        className="shrink-0 rounded-full border border-border/60 bg-bg-secondary/50 px-3 py-1 text-xs text-text-secondary transition hover:border-accent/40 hover:text-text-primary"
+                      >
+                        {entry.text}
+                      </button>
+                    ))}
+                </div>
+              </div>
+            ) : null}
 
             {document.leadHtml ? (
               <section>
