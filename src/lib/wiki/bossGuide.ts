@@ -208,6 +208,18 @@ const SECTION_LABELS = [
   "waves overview",
   "nylocas",
   "using melee",
+  "invocation",
+  "invocations",
+  "raid level",
+  "the nexus",
+  "the wardens",
+  "path clearing",
+  "challenge room",
+  "shield skip",
+  "shielded phase",
+  "phase 1",
+  "phase 2",
+  "phase 3",
 ] as const;
 
 /**
@@ -221,7 +233,12 @@ const STRUCTURAL_PARENT_H2 = [
   "encounters",
   "rooms",
   "paths",
+  "path of",
   "challenge mode",
+  "the wardens",
+  "the nexus",
+  "forms",
+  "invocations and raid level",
 ] as const;
 
 /** Exact H2/H3 titles that are pure loot tables (Loot tab owns these). */
@@ -262,6 +279,13 @@ const META_SECTION_DENY = [
   "further reading",
   "sources",
   "footnotes",
+  "music",
+  "developers",
+  "official worlds",
+  "money making",
+  "rewards",
+  "combat achievements",
+  "reward system",
 ];
 
 // -----------------------------------------------------------------------
@@ -380,15 +404,25 @@ function cleanSectionHtml(
   }
 
   // MediaWiki `section=` responses include the heading itself — remove the
-  // first H2–H4 that matches this section title so the card chrome title
-  // isn't doubled by a nested heading in the body.
+  // first H2–H4 that matches this section title (or its leaf after "Parent > ")
+  // so the card chrome title isn't doubled by a nested heading in the body.
   const titleNorm = sectionTitle.trim().toLowerCase();
+  const titleLeaf = titleNorm.includes(" > ")
+    ? titleNorm.slice(titleNorm.lastIndexOf(" > ") + 3).trim()
+    : titleNorm;
   const leadHeading = content.querySelector(
-    ":scope > .mw-heading2, :scope > .mw-heading3, :scope > .mw-heading4, :scope > h2, :scope > h3, :scope > h4"
+    ":scope > .mw-heading2, :scope > .mw-heading3, :scope > .mw-heading4, :scope > h2, :scope > h3, :scope > h4, .mw-heading2, .mw-heading3, .mw-heading4, h2, h3, h4"
   );
   if (leadHeading) {
-    const leadText = (leadHeading.textContent ?? "").trim().toLowerCase();
-    if (leadText === titleNorm || leadText.replace(/\s+/g, " ") === titleNorm) {
+    const leadText = (leadHeading.textContent ?? "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ");
+    if (
+      leadText === titleNorm ||
+      leadText === titleLeaf ||
+      titleNorm.endsWith(leadText)
+    ) {
       leadHeading.remove();
     }
   }
@@ -719,6 +753,54 @@ function disambiguateTitle(
   return parentTitle ? `${parentTitle} > ${title}` : title;
 }
 
+function sectionTitleLeaf(title: string): string {
+  const idx = title.lastIndexOf(" > ");
+  return (idx >= 0 ? title.slice(idx + 3) : title).trim().toLowerCase();
+}
+
+/**
+ * Drop duplicate cards: identical titles, or a bare "Shield Skip" next to
+ * "Fight overview > Shield Skip" / "Shielded phase > Shield Skip".
+ * Keeps the longer HTML body.
+ */
+function collapseDuplicateSections<
+  T extends { id: string; title: string; html: string; parentId?: string },
+>(sections: T[]): T[] {
+  const byExact = new Map<string, T>();
+  for (const s of sections) {
+    const key = s.title.trim().toLowerCase();
+    const prev = byExact.get(key);
+    if (!prev || s.html.length > prev.html.length) {
+      byExact.set(key, s);
+    }
+  }
+  const exactKept = [...byExact.values()];
+
+  // Prefer "Parent > Leaf" over bare "Leaf" when both exist.
+  const prefixedLeaves = new Set(
+    exactKept
+      .filter((s) => s.title.includes(" > "))
+      .map((s) => sectionTitleLeaf(s.title))
+  );
+
+  const out: T[] = [];
+  const seenIds = new Set<string>();
+  for (const s of exactKept) {
+    const leaf = sectionTitleLeaf(s.title);
+    if (!s.title.includes(" > ") && prefixedLeaves.has(leaf)) {
+      continue;
+    }
+    if (seenIds.has(s.id)) continue;
+    seenIds.add(s.id);
+    out.push(s);
+  }
+
+  // Preserve original document order.
+  const order = new Map(sections.map((s, i) => [s.id, i]));
+  out.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+  return out;
+}
+
 /**
  * Remove nested H3/H4 blocks from a section body when those nested headings
  * are rendered as their own guide cards.
@@ -757,7 +839,7 @@ function stripNestedHeadings(rawHtml: string): string {
 export async function fetchBossGuideDocument(
   wikiPage: string
 ): Promise<BossGuideDocument> {
-  const cacheKey = `boss-guide:v16:${wikiPage}`;
+  const cacheKey = `boss-guide:v17:${wikiPage}`;
   const cached = getCached<BossGuideDocument>(cacheKey, GUIDE_TTL);
   if (cached) return cached;
 
@@ -897,28 +979,32 @@ export async function fetchBossGuideDocument(
         parentFromDoc?.title ??
         // parentId is slugify(parentTitle) — reverse via section map when possible
         s.parentId.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-      if (parentLabel) {
+      if (parentLabel && !s.title.includes(" > ")) {
         s.title = disambiguateTitle(s.title, parentLabel);
       }
     }
   }
 
+  // Final collapse: drop exact duplicate titles (and bare-leaf duplicates of a
+  // "Parent > Leaf" card) keeping the longer body.
+  const collapsed = collapseDuplicateSections(normalizedSections);
+
   const doc = {
     template: classification.template,
     summary:
-      normalizedSections.find((section) => section.summary)?.summary ?? null,
+      collapsed.find((section) => section.summary)?.summary ?? null,
     weakness: extractWeaknessFromInfobox(fullHtml),
     recommendedApproach: extractRecommendedApproach(fullHtml),
     teamSize: extractTeamSize(fullHtml),
     combatLevel: extractCombatLevel(fullHtml),
-    sections: normalizedSections.map((section) => ({
+    sections: collapsed.map((section) => ({
       id: section.id,
       title: section.title,
       level: section.level,
       parentId: section.parentId,
       html: section.html,
     })),
-    blocks: normalizedSections.map((section) => ({
+    blocks: collapsed.map((section) => ({
       id: section.id,
       title: section.title,
       type: "article" as const,
