@@ -5,6 +5,7 @@ import {
   resolveTargetDefBonus,
   filterPassivesForTarget,
   bestMeleeAttackType,
+  bestPrayerForStyle,
   withOwnedPrices,
   filterExcludedEquipment,
   type LoadoutTarget,
@@ -267,6 +268,27 @@ describe("filterPassivesForTarget", () => {
     ]);
     expect(filterPassivesForTarget(["slayer_helm"], [], true)).toEqual(["slayer_helm"]);
     expect(filterPassivesForTarget(["slayer_helm"], [], false)).toEqual([]);
+  });
+});
+
+describe("bestPrayerForStyle", () => {
+  it("picks Piety at 70+ melee", () => {
+    expect(bestPrayerForStyle("melee", 70).name).toBe("Piety");
+  });
+
+  it("falls back to Chivalry when under 70", () => {
+    expect(bestPrayerForStyle("melee", 65).name).toBe("Chivalry");
+  });
+
+  it("picks Rigour / Augury at high levels", () => {
+    expect(bestPrayerForStyle("ranged", 99).name).toBe("Rigour");
+    expect(bestPrayerForStyle("magic", 99).name).toBe("Augury");
+  });
+
+  it("uses neutral mults when prayer level is very low", () => {
+    const p = bestPrayerForStyle("ranged", 1);
+    expect(p.attackMult).toBe(1);
+    expect(p.strengthMult).toBe(1);
   });
 });
 

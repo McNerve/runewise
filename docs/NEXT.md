@@ -1,26 +1,26 @@
 # NEXT — living product backlog
 
-After **2.5.13** (owned/exclude, multi-def, on-task, target-aware passives).
+After **2.5.14** (wiki targets, prayer level, bank paste).
 
 ## Shipped recently
 
+### 2.5.14
+- Live wiki NPC multi-def search for Loadout Finder
+- Prayer level-aware best prayer + display
+- Bank/inventory dump → owned free items
+
 ### 2.5.13
-- Per-style NPC defence + attack-type pick
-- Owned free / exclude items / on-task slayer
-- Target-aware situational passives
+- Owned chips / exclude / on-task / multi-def / target-aware passives
 
 ### 2.5.12
 - Combinatorial BiS (Pareto + BnB + local search)
 
-### 2.5.11
-- Beam BiS, obscure specs, monster attrs, Authenticode scaffold
-
 ## Still open (optional)
 
 ### Combat
-- Prayer / spell / set-effect as first-class search dimensions
-- Live wiki monster multi-def pull into FINDER_TARGETS
-- Inventory import from RuneLite / bank CSV
+- Spell selection as a search dimension (magic BiS)
+- Set-effect enumeration beyond passive auto-detect
+- RuneLite plugin bank JSON / direct import
 
 ### Platform
 - Purchase cert + set `WINDOWS_CERTIFICATE` secrets (scaffold ready)

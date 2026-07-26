@@ -13,6 +13,7 @@ import { calculateDps } from "../../lib/formulas/dps";
 import { knownWeaponSpeed } from "../../lib/data/weapon-speeds";
 import {
   buildDpsInput,
+  bestPrayerForStyle,
   filterExcludedEquipment,
   withOwnedPrices,
   type LoadoutTarget,
@@ -120,8 +121,12 @@ function toRanked(
         .map(([k, v]) => [k, v!.name])
     ),
   };
+  const prayerLevel =
+    hiscores?.skills.find((s) => s.name.toLowerCase() === "prayer")?.level ?? 99;
+  const prayer = bestPrayerForStyle(style, prayerLevel);
+
   return {
-    preset,
+    preset: { ...preset, prayer: prayer.name },
     gear,
     resolvedSlots: slotsFilled,
     missingItems: [],
@@ -133,6 +138,7 @@ function toRanked(
     ttk: scored.ttk,
     style,
     withinBudget: unlimited || totalCost <= budget,
+    prayerName: prayer.name,
   };
 }
 

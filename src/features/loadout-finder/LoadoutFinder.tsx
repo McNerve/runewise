@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { HiscoreData } from "../../lib/api/hiscores";
 import { fetchAllEquipment } from "../../lib/api/equipment";
+import { fetchAllMonsters } from "../../lib/api/monsters";
 import { useGEData } from "../../hooks/useGEData";
 import { useAsyncData } from "../../hooks/useAsyncData";
 import { useNavigation } from "../../lib/NavigationContext";
@@ -23,6 +24,8 @@ import {
 } from "./leftoverUpgrade";
 import { optimizeAllStyles } from "./budgetOptimize";
 import { parseBudgetInput } from "./parseBudget";
+import { parseOwnedInventory } from "./parseOwnedInventory";
+import { buildFinderTargetList, enrichTargetFromWiki } from "./wikiTargets";
 import type { CombatStyle } from "../dps-calc/dpsTypes";
 
 const BUDGETS: { id: string; label: string; gp: number }[] = [
@@ -130,6 +133,12 @@ function ResultRow({
                 <span className="text-text-secondary/50"> (untradeables)</span>
               )}
             </span>
+            {row.prayerName && row.prayerName !== "None" && (
+              <span>
+                <span className="text-text-secondary/60">Prayer </span>
+                <span className="text-text-primary">{row.prayerName}</span>
+              </span>
+            )}
           </div>
           {lowAcc && (
             <p className="text-2xs text-warning/90">
@@ -206,8 +215,10 @@ export default function LoadoutFinder({ hiscores }: Props) {
     loading: equipLoading,
     error: equipError,
   } = useAsyncData(() => fetchAllEquipment(), []);
+  const { data: wikiMonsters } = useAsyncData(() => fetchAllMonsters(), []);
 
   const [targetName, setTargetName] = useState(FINDER_TARGETS[0]!.name);
+  const [monsterSearch, setMonsterSearch] = useState("");
   const [budgetId, setBudgetId] = useState("50m");
   const [customBudgetText, setCustomBudgetText] = useState("75m");
   const [styleFilter, setStyleFilter] = useState<StyleFilter>("all");
@@ -216,6 +227,7 @@ export default function LoadoutFinder({ hiscores }: Props) {
   const [customHp, setCustomHp] = useState(150);
   const [ownedChips, setOwnedChips] = useState<string[]>([]);
   const [ownedExtra, setOwnedExtra] = useState("");
+  const [bankPaste, setBankPaste] = useState("");
   const [excludeText, setExcludeText] = useState("");
   const [onTask, setOnTask] = useState(false);
 
@@ -233,8 +245,16 @@ export default function LoadoutFinder({ hiscores }: Props) {
     return map;
   }, [mapping, prices]);
 
+  const targetList = useMemo(
+    () => buildFinderTargetList(FINDER_TARGETS, wikiMonsters, monsterSearch),
+    [wikiMonsters, monsterSearch]
+  );
+
   const target: LoadoutTarget = useMemo(() => {
-    const base = FINDER_TARGETS.find((t) => t.name === targetName) ?? FINDER_TARGETS[0]!;
+    const base =
+      targetList.find((t) => t.name === targetName) ??
+      FINDER_TARGETS.find((t) => t.name === targetName) ??
+      FINDER_TARGETS[0]!;
     if (base.name === "Custom / Dummy") {
       return {
         ...base,
@@ -243,8 +263,9 @@ export default function LoadoutFinder({ hiscores }: Props) {
         hp: customHp,
       };
     }
-    return base;
-  }, [targetName, customDef, customDefBonus, customHp]);
+    // Re-enrich in case targetList is stale relative to wiki
+    return enrichTargetFromWiki(base, wikiMonsters);
+  }, [targetName, customDef, customDefBonus, customHp, targetList, wikiMonsters]);
 
   const budget = useMemo(() => {
     if (budgetId === "custom") {
@@ -258,13 +279,15 @@ export default function LoadoutFinder({ hiscores }: Props) {
     [priceByName]
   );
 
+  const bankOwned = useMemo(() => parseOwnedInventory(bankPaste), [bankPaste]);
+
   const ownedItems = useMemo(() => {
     const extra = ownedExtra
       .split(/[,;\n]/)
       .map((s) => s.trim())
       .filter(Boolean);
-    return [...new Set([...ownedChips, ...extra])];
-  }, [ownedChips, ownedExtra]);
+    return [...new Set([...ownedChips, ...extra, ...bankOwned])];
+  }, [ownedChips, ownedExtra, bankOwned]);
 
   const excludeItems = useMemo(
     () =>
@@ -423,23 +446,37 @@ export default function LoadoutFinder({ hiscores }: Props) {
             <label className="text-2xs uppercase tracking-wide text-text-secondary/80 block mb-1.5">
               Target
             </label>
+            <input
+              type="search"
+              value={monsterSearch}
+              onChange={(e) => setMonsterSearch(e.target.value)}
+              placeholder="Search wiki NPCs…"
+              aria-label="Search monsters"
+              className="w-full rounded-lg border border-border bg-bg-primary px-3 py-1.5 text-sm mb-1.5"
+            />
             <select
               className="w-full rounded-lg border border-border bg-bg-primary px-3 py-2 text-sm"
-              value={targetName}
+              value={targetList.some((t) => t.name === targetName) ? targetName : targetList[0]?.name}
               onChange={(e) => setTargetName(e.target.value)}
             >
-              {FINDER_TARGETS.map((t) => {
+              {targetList.map((t) => {
                 const defHint =
                   t.defStab != null
                     ? ` · S/L/C ${t.defStab}/${t.defSlash ?? "—"}/${t.defCrush ?? "—"}`
                     : "";
                 return (
                   <option key={t.name} value={t.name}>
-                    {t.name} (def {t.defLevel}{defHint}, hp {t.hp})
+                    {t.name} (def {t.defLevel}
+                    {defHint}, hp {t.hp})
                   </option>
                 );
               })}
             </select>
+            {wikiMonsters && wikiMonsters.length > 0 && (
+              <p className="text-2xs text-text-secondary/70 mt-1">
+                Live wiki multi-def when matched · {wikiMonsters.length.toLocaleString()} NPCs loaded
+              </p>
+            )}
           </div>
 
           {isCustom && (
@@ -570,6 +607,25 @@ export default function LoadoutFinder({ hiscores }: Props) {
               aria-label="Additional owned items"
               className="w-full rounded-lg border border-border bg-bg-primary px-2.5 py-1.5 text-sm"
             />
+            <label className="text-2xs uppercase tracking-wide text-text-secondary/80 block mt-2 mb-1">
+              Paste bank / inventory dump
+            </label>
+            <textarea
+              value={bankPaste}
+              onChange={(e) => setBankPaste(e.target.value)}
+              placeholder={"One item per line, or CSV / RuneLite export\n3 x Abyssal whip\nFire cape"}
+              aria-label="Bank dump paste"
+              rows={3}
+              className="w-full rounded-lg border border-border bg-bg-primary px-2.5 py-1.5 text-xs font-mono"
+            />
+            {bankOwned.length > 0 && (
+              <p className="text-2xs text-success mt-1">
+                Parsed {bankOwned.length} owned item{bankOwned.length === 1 ? "" : "s"} from paste
+                {ownedItems.length > bankOwned.length
+                  ? ` · ${ownedItems.length} total free`
+                  : ""}
+              </p>
+            )}
           </div>
 
           <div>

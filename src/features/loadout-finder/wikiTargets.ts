@@ -1,0 +1,124 @@
+/**
+ * Merge curated FINDER_TARGETS with live wiki monster multi-def stats.
+ */
+import type { WikiMonster } from "../../lib/api/monsters";
+import type { LoadoutTarget } from "./budgetLoadoutFinder";
+
+/** Convert a wiki NPC row into a LoadoutTarget. */
+export function wikiMonsterToTarget(m: WikiMonster): LoadoutTarget {
+  const label = m.version ? `${m.name} (${m.version})` : m.name;
+  const defBonus = Math.max(m.defStab, m.defSlash, m.defCrush, 0);
+  return {
+    name: label,
+    defLevel: m.defenceLevel || 1,
+    defBonus,
+    defStab: m.defStab,
+    defSlash: m.defSlash,
+    defCrush: m.defCrush,
+    defRanged: m.defRanged,
+    defMagic: m.defMagic,
+    hp: m.hitpoints || 100,
+    magicLevel: m.magicLevel || undefined,
+  };
+}
+
+/** Best wiki match for a curated target name (case-insensitive, optional version). */
+export function findWikiMonster(
+  monsters: WikiMonster[],
+  name: string
+): WikiMonster | null {
+  const q = name.toLowerCase().trim();
+  if (!q || monsters.length === 0) return null;
+
+  // Exact name match (prefer null version / first)
+  const exact = monsters.filter((m) => m.name.toLowerCase() === q);
+  if (exact.length === 1) return exact[0]!;
+  if (exact.length > 1) {
+    // Prefer base form (no version) or highest HP
+    return (
+      exact.find((m) => !m.version) ??
+      [...exact].sort((a, b) => b.hitpoints - a.hitpoints)[0]!
+    );
+  }
+
+  // Name starts with query / query starts with name
+  const starts = monsters.filter(
+    (m) =>
+      m.name.toLowerCase().startsWith(q) ||
+      q.startsWith(m.name.toLowerCase())
+  );
+  if (starts.length > 0) {
+    return [...starts].sort((a, b) => b.hitpoints - a.hitpoints)[0]!;
+  }
+
+  // Substring
+  const sub = monsters.filter((m) => m.name.toLowerCase().includes(q));
+  if (sub.length > 0) {
+    return [...sub].sort((a, b) => b.hitpoints - a.hitpoints)[0]!;
+  }
+  return null;
+}
+
+/**
+ * Overlay wiki multi-def onto a curated target when the NPC is found.
+ * Keeps curated name / preferDefStyle; fills live def/hp/magic.
+ */
+export function enrichTargetFromWiki(
+  base: LoadoutTarget,
+  monsters: WikiMonster[] | null | undefined
+): LoadoutTarget {
+  if (!monsters?.length || base.name === "Custom / Dummy") return base;
+  // Strip parenthetical version from curated names for lookup
+  const lookupName = base.name.replace(/\s*\([^)]*\)\s*$/, "").trim();
+  const m = findWikiMonster(monsters, lookupName);
+  if (!m) return base;
+  return {
+    ...base,
+    defLevel: m.defenceLevel || base.defLevel,
+    defStab: m.defStab,
+    defSlash: m.defSlash,
+    defCrush: m.defCrush,
+    defRanged: m.defRanged,
+    defMagic: m.defMagic,
+    defBonus: Math.max(m.defStab, m.defSlash, m.defCrush, base.defBonus),
+    hp: m.hitpoints || base.hp,
+    magicLevel: m.magicLevel || base.magicLevel,
+  };
+}
+
+/**
+ * Build the target list: curated first (wiki-enriched), then optional
+ * search hits for free-text monster lookup.
+ */
+export function buildFinderTargetList(
+  curated: LoadoutTarget[],
+  monsters: WikiMonster[] | null | undefined,
+  searchQuery?: string
+): LoadoutTarget[] {
+  const enriched = curated.map((t) => enrichTargetFromWiki(t, monsters));
+  const q = searchQuery?.trim();
+  if (!q || !monsters?.length) return enriched;
+
+  const ql = q.toLowerCase();
+  // Avoid dupes already in curated
+  const curatedKeys = new Set(
+    enriched.map((t) => t.name.toLowerCase().replace(/\s*\([^)]*\)\s*$/, "").trim())
+  );
+
+  const extras: LoadoutTarget[] = [];
+  const seen = new Set<string>();
+  for (const m of monsters) {
+    if (!m.name.toLowerCase().includes(ql)) continue;
+    const key = `${m.name}|${m.version ?? ""}`.toLowerCase();
+    if (seen.has(key)) continue;
+    if (curatedKeys.has(m.name.toLowerCase()) && !m.version) continue;
+    seen.add(key);
+    extras.push(wikiMonsterToTarget(m));
+    if (extras.length >= 25) break;
+  }
+
+  // Put search hits after custom, before end — or after all curated except Custom
+  const custom = enriched.filter((t) => t.name === "Custom / Dummy");
+  const rest = enriched.filter((t) => t.name !== "Custom / Dummy");
+  return [...rest, ...extras, ...custom];
+}

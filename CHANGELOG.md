@@ -4,6 +4,14 @@ All notable changes to RuneWise are documented here. Versions follow [Semantic V
 
 ## [Unreleased]
 
+## [2.5.14] - 2026-07-25
+
+### Loadout Finder
+
+- **Live wiki targets** — search NPCs from the wiki bucket; multi-def/hp overlay onto curated bosses when matched.
+- **Prayer level-aware BiS** — Piety/Rigour/Augury only when Prayer level unlocks them; shown on each result row.
+- **Bank / inventory paste** — RuneLite-style dumps, CSV, or `qty x name` lines fill the owned (free) list.
+
 ## [2.5.13] - 2026-07-25
 
 ### Loadout Finder (GearScape parity)

@@ -120,6 +120,57 @@ export interface RankedLoadout {
   ttk: number;
   style: CombatStyle;
   withinBudget: boolean;
+  /** Offensive prayer used for scoring. */
+  prayerName?: string;
+}
+
+/**
+ * Best offensive prayer the player can use for this style given Prayer level.
+ * Preferred name wins if unlocked; otherwise max attack×strength (magic: +dmg%).
+ */
+export function bestPrayerForStyle(
+  style: CombatStyle,
+  prayerLevel: number,
+  preferredName?: string
+): { name: string; attackMult: number; strengthMult: number; magicDamagePct: number } {
+  const stylePrayers = PRAYERS.filter((p) => p.style === style);
+  const unlocked = stylePrayers.filter(
+    (p) => p.level == null || p.level <= prayerLevel
+  );
+  // If prayer level is too low for any listed prayer, fall back to neutral mults
+  const pool =
+    unlocked.length > 0
+      ? unlocked
+      : [{ name: "None", attackMult: 1, strengthMult: 1, style, magicDamagePct: 0 }];
+
+  if (preferredName) {
+    const pref = pool.find((p) => p.name === preferredName);
+    if (pref) {
+      return {
+        name: pref.name,
+        attackMult: pref.attackMult,
+        strengthMult: pref.strengthMult,
+        magicDamagePct: pref.magicDamagePct ?? 0,
+      };
+    }
+  }
+  // Score: product of mults + small magic dmg weight
+  let best = pool[0]!;
+  let bestScore = -1;
+  for (const p of pool) {
+    const score =
+      p.attackMult * p.strengthMult + (p.magicDamagePct ?? 0) * 0.01;
+    if (score > bestScore) {
+      bestScore = score;
+      best = p;
+    }
+  }
+  return {
+    name: best.name,
+    attackMult: best.attackMult,
+    strengthMult: best.strengthMult,
+    magicDamagePct: best.magicDamagePct ?? 0,
+  };
 }
 
 function skillLevel(hiscores: HiscoreData | null, name: string, fallback = 99): number {
@@ -198,16 +249,8 @@ export function buildDpsInput(
     if (i >= 0) stanceIdx = i;
   }
   const stance = stances[stanceIdx] ?? stances[0]!;
-  const prayers = PRAYERS.filter((p) => p.style === style);
-  let prayerIdx = 0;
-  if (prayerName) {
-    const pi = prayers.findIndex((p) => p.name === prayerName);
-    if (pi >= 0) prayerIdx = pi;
-  } else {
-    // Best offensive prayer (last non-None often strongest in our list)
-    prayerIdx = Math.max(0, prayers.length - 1);
-  }
-  const prayer = prayers[prayerIdx] ?? prayers[0]!;
+  const prayerLevel = skillLevel(hiscores, "Prayer", 99);
+  const prayer = bestPrayerForStyle(style, prayerLevel, prayerName);
 
   const weapon = gear.weapon ?? gear["2h"] ?? null;
   const speed =
@@ -275,7 +318,7 @@ export function buildDpsInput(
     targetHp: target.hp,
     targetMagicLevel: target.magicLevel,
     modifiers,
-    prayerMagicDamagePct: prayer.magicDamagePct ?? 0,
+    prayerMagicDamagePct: prayer.magicDamagePct,
     attackType: meleeType,
     weaponName: weapon?.name,
     monsterSize: meta.size,
@@ -425,8 +468,10 @@ export function findBudgetLoadouts(opts: BudgetFindOptions): RankedLoadout[] {
     // Soft: if budget set and everything unpriced, skip (can't validate)
     if (!unlimited && total === 0 && unpriced > 0 && requirePriced) continue;
 
+    const prayerLevel = skillLevel(hiscores, "Prayer", 99);
+    const prayer = bestPrayerForStyle(preset.style, prayerLevel, preset.prayer);
     const input = buildDpsInput(preset.style, gear, hiscores, target, {
-      prayerName: preset.prayer,
+      prayerName: prayer.name,
       onTask,
     });
     const result = calculateDps(input);
@@ -444,6 +489,7 @@ export function findBudgetLoadouts(opts: BudgetFindOptions): RankedLoadout[] {
       ttk: result.ttk,
       style: preset.style,
       withinBudget,
+      prayerName: prayer.name,
     });
   }
 
