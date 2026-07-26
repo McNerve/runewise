@@ -1,26 +1,23 @@
 # NEXT — living product backlog
 
-After **2.5.14** (wiki targets, prayer level, bank paste).
+After **2.5.15** (magic spell BiS, set pieces, JSON bank).
 
 ## Shipped recently
 
-### 2.5.14
-- Live wiki NPC multi-def search for Loadout Finder
-- Prayer level-aware best prayer + display
-- Bank/inventory dump → owned free items
+### 2.5.15
+- Magic spell / powered-staff resolution for Loadout Finder
+- Crystal / inquisitor / smoke / chaos gauntlets in optimizer
+- JSON bank paste support
 
-### 2.5.13
-- Owned chips / exclude / on-task / multi-def / target-aware passives
-
-### 2.5.12
-- Combinatorial BiS (Pareto + BnB + local search)
+### 2.5.12–2.5.14
+- Combinatorial BiS, owned/exclude/on-task, wiki targets, prayer level, bank dump
 
 ## Still open (optional)
 
 ### Combat
-- Spell selection as a search dimension (magic BiS)
-- Set-effect enumeration beyond passive auto-detect
-- RuneLite plugin bank JSON / direct import
+- Spellbook choice UI (standard vs ancient barrage for multi-target)
+- Elemental weakness on targets from wiki
+- RuneLite plugin live bank sync
 
 ### Platform
 - Purchase cert + set `WINDOWS_CERTIFICATE` secrets (scaffold ready)

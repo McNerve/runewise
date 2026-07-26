@@ -4,6 +4,14 @@ All notable changes to RuneWise are documented here. Versions follow [Semantic V
 
 ## [Unreleased]
 
+## [2.5.15] - 2026-07-26
+
+### Loadout Finder
+
+- **Magic spell BiS** — powered staves (trident/sang/shadow) use level scaling; staves/wands pick best unlocked autocast (Fire Surge with tome, etc.). Spell shown on results.
+- **Set-effect pieces** — crystal armour piece weight + inquisitor crush bonus + smoke staff / chaos gauntlets wired into optimizer DPS.
+- **JSON bank paste** — arrays of names or `{ items: [{ name }] }` / RuneLite-style dumps.
+
 ## [2.5.14] - 2026-07-25
 
 ### Loadout Finder

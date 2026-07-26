@@ -15,8 +15,15 @@ import {
   DEFAULT_SPEED,
 } from "../dps-calc/dpsGearMath";
 import type { EquippedGear, CombatStyle } from "../dps-calc/dpsTypes";
-import { detectGearPassives } from "../dps-calc/gearPassives";
+import {
+  detectGearPassives,
+  countCrystalPieces,
+  countInquisitorBonus,
+  hasSmokeStaff,
+  hasChaosGauntlets,
+} from "../dps-calc/gearPassives";
 import { lookupMonsterMeta } from "../../lib/data/monster-attributes";
+import { resolveMagicSpell } from "./magicSpellBiS";
 
 export interface LoadoutTarget {
   name: string;
@@ -122,6 +129,8 @@ export interface RankedLoadout {
   withinBudget: boolean;
   /** Offensive prayer used for scoring. */
   prayerName?: string;
+  /** Magic spell / powered staff attack used for scoring. */
+  spellName?: string;
 }
 
 /**
@@ -300,11 +309,25 @@ export function buildDpsInput(
 
   const defBonus = resolveTargetDefBonus(target, style, meleeType);
 
+  const magicLevel = skillLevel(hiscores, "Magic");
+  const crystalPieces = countCrystalPieces(gear);
+  const inquisitorBonus = countInquisitorBonus(gear);
+
+  // Magic: pick powered-staff attack or best unlocked autocast
+  const magicSpell =
+    style === "magic"
+      ? resolveMagicSpell({
+          magicLevel,
+          weaponName: weapon?.name,
+          preferFire: passiveIds.includes("tome_of_fire"),
+        })
+      : null;
+
   return {
     attackLevel: skillLevel(hiscores, "Attack"),
     strengthLevel: skillLevel(hiscores, "Strength"),
     rangedLevel: skillLevel(hiscores, "Ranged"),
-    magicLevel: skillLevel(hiscores, "Magic"),
+    magicLevel,
     attackBonus,
     strengthBonus,
     prayerAttackMult: prayer.attackMult,
@@ -324,7 +347,32 @@ export function buildDpsInput(
     monsterSize: meta.size,
     tbowRaidCap: meta.attributes.includes("xerician"),
     demonbaneVulnerability: meta.demonbaneVulnerability,
+    spellBaseMaxHit: magicSpell?.spellBaseMaxHit,
+    spellElement: magicSpell?.spellElement,
+    isBoltSpell: magicSpell?.isBoltSpell,
+    isGodSpell: magicSpell?.isGodSpell,
+    isDemonbaneSpell: magicSpell?.isDemonbaneSpell,
+    crystalPieces: crystalPieces > 0 ? crystalPieces : undefined,
+    inquisitorBonus: inquisitorBonus > 0 ? inquisitorBonus : undefined,
+    smokeStaff: hasSmokeStaff(gear) || undefined,
+    chaosGauntlets: hasChaosGauntlets(gear) || undefined,
   };
+}
+
+/** Resolved spell name for a magic gear set (for UI labels). */
+export function resolveSpellLabel(
+  style: CombatStyle,
+  gear: EquippedGear,
+  hiscores: HiscoreData | null
+): string | undefined {
+  if (style !== "magic") return undefined;
+  const weapon = gear.weapon ?? gear["2h"] ?? null;
+  const r = resolveMagicSpell({
+    magicLevel: skillLevel(hiscores, "Magic"),
+    weaponName: weapon?.name,
+    preferFire: (gear.shield?.name ?? "").toLowerCase().includes("tome of fire"),
+  });
+  return r?.spellName;
 }
 
 /**
@@ -490,6 +538,7 @@ export function findBudgetLoadouts(opts: BudgetFindOptions): RankedLoadout[] {
       style: preset.style,
       withinBudget,
       prayerName: prayer.name,
+      spellName: resolveSpellLabel(preset.style, gear, hiscores),
     });
   }
 
