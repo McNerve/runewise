@@ -14,8 +14,23 @@ export function initWikiTabbers(container: HTMLElement) {
 
     const nav = document.createElement("div");
     nav.className = "tabber-nav";
-    nav.style.cssText =
-      "display:flex;flex-wrap:wrap;gap:0.25rem;margin-bottom:0.5rem;";
+
+    const paint = (activeIdx: number) => {
+      tabs.forEach((t, j) => {
+        t.classList.toggle("tabbertab--active", j === activeIdx);
+      });
+      nav.querySelectorAll("button").forEach((b, j) => {
+        const on = j === activeIdx;
+        b.classList.toggle("tabber-nav-btn--active", on);
+        b.setAttribute("aria-selected", on ? "true" : "false");
+        // Fallback inline styles for contexts without CSS vars loaded
+        b.style.background = on
+          ? "rgba(59,130,246,0.15)"
+          : "rgba(26,29,39,0.55)";
+        b.style.color = on ? "#3b82f6" : "#a1a1aa";
+        b.style.borderColor = on ? "rgba(59,130,246,0.45)" : "#2e3345";
+      });
+    };
 
     tabs.forEach((tab, i) => {
       const title =
@@ -23,31 +38,20 @@ export function initWikiTabbers(container: HTMLElement) {
         tab.getAttribute("title") ||
         `Tab ${i + 1}`;
       const btn = document.createElement("button");
+      btn.type = "button";
       btn.textContent = title;
-      btn.style.cssText = `padding:0.35rem 0.75rem;border-radius:0.5rem;font-size:0.75rem;font-weight:500;border:1px solid #2e3345;background:${i === 0 ? "rgba(59,130,246,0.15)" : "rgba(26,29,39,0.6)"};color:${i === 0 ? "#3b82f6" : "#a1a1aa"};cursor:pointer;transition:all 0.15s;`;
+      btn.className = "tabber-nav-btn";
+      btn.setAttribute("role", "tab");
 
       btn.addEventListener("click", () => {
-        tabs.forEach((t) => t.classList.remove("tabbertab--active"));
-        tab.classList.add("tabbertab--active");
+        paint(i);
         setTimeout(() => initTooltips(tab as HTMLElement), 50);
-        nav.querySelectorAll("button").forEach((b, j) => {
-          b.style.background =
-            j === tabs.indexOf(tab)
-              ? "rgba(59,130,246,0.15)"
-              : "rgba(26,29,39,0.6)";
-          b.style.color =
-            j === tabs.indexOf(tab) ? "#3b82f6" : "#a1a1aa";
-          b.style.borderColor =
-            j === tabs.indexOf(tab)
-              ? "rgba(59,130,246,0.4)"
-              : "#2e3345";
-        });
       });
 
       nav.appendChild(btn);
     });
 
-    tabs[0].classList.add("tabbertab--active");
+    paint(0);
     tabber.prepend(nav);
   });
 }

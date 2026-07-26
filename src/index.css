@@ -1528,18 +1528,86 @@ body {
   to { opacity: 1; }
 }
 
-/* Wiki tabber — show tabs as selectable buttons, hide inactive content */
+/* Wiki tabber — app-styled tabs, hide inactive panels */
 .article-content .tabber {
   margin: 1rem 0;
+  border: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+  border-radius: 0.85rem;
+  background: color-mix(in srgb, var(--color-bg-primary) 55%, transparent);
+  padding: 0.65rem 0.75rem 0.85rem;
+}
+
+.article-content .tabber > .tabber-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0 0 0.65rem;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 55%, transparent);
+}
+
+.article-content .tabber > .tabber-nav > button {
+  padding: 0.35rem 0.75rem !important;
+  border-radius: 999px !important;
+  font-size: 0.75rem !important;
+  font-weight: 500 !important;
+  border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent) !important;
+  background: color-mix(in srgb, var(--color-bg-tertiary) 70%, transparent) !important;
+  color: var(--color-text-secondary) !important;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+
+.article-content .tabber > .tabber-nav > button:hover {
+  border-color: color-mix(in srgb, var(--color-accent) 40%, transparent) !important;
+  color: var(--color-text-primary) !important;
 }
 
 .article-content .tabber > .tabbertab {
   display: none;
-  padding: 0.75rem 0;
+  padding: 0.25rem 0 0;
 }
 
 .article-content .tabber > .tabbertab.tabbertab--active {
   display: block;
+}
+
+/* Native details tab fallbacks (wiki-tabs from lookup transform) */
+.article-content .wiki-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 1rem 0;
+}
+
+.article-content .wiki-tab {
+  border: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, var(--color-bg-primary) 50%, transparent);
+  overflow: hidden;
+}
+
+.article-content .wiki-tab > summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 0.55rem 0.85rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  background: color-mix(in srgb, var(--color-bg-tertiary) 45%, transparent);
+}
+
+.article-content .wiki-tab > summary::-webkit-details-marker {
+  display: none;
+}
+
+.article-content .wiki-tab[open] > summary {
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent);
+  color: var(--color-accent);
+}
+
+.article-content .wiki-tab > :not(summary) {
+  padding: 0.65rem 0.85rem;
 }
 
 /* CSS tooltip for item images */

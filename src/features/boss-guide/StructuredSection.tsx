@@ -385,6 +385,9 @@ function SkillTile({
   const isUnknownSkill = !s.skill || s.skill.toLowerCase() === "unknown";
   const primaryText = isUnknownSkill ? `Level ${s.level}+` : `${s.skill} ${s.level}+`;
   const tooltip = s.description ?? undefined;
+  // Clean qualifier: drop leading "for ", strip trailing duplicate skill name,
+  // collapse "method" noise into short method labels.
+  const qualifier = cleanSkillQualifier(s.qualifier, s.skill);
 
   return (
     <div
@@ -413,14 +416,37 @@ function SkillTile({
             <span className="text-[10px] font-normal text-text-secondary/60">(optional)</span>
           )}
         </div>
-        {s.qualifier && (
-          <div className="mt-0.5 text-xs text-text-secondary truncate" title={s.qualifier}>
-            {s.qualifier}
+        {qualifier ? (
+          <div className="mt-0.5 text-xs text-text-secondary truncate" title={qualifier}>
+            {qualifier}
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );
+}
+
+/** Normalise skill tile subtitles from noisy wiki text. */
+function cleanSkillQualifier(
+  raw: string | undefined,
+  skill: string | undefined
+): string | null {
+  if (!raw) return null;
+  let q = raw.replace(/\s+/g, " ").trim();
+  // "for Piety (74+ for Rigour) Prayer" → strip trailing skill echo
+  if (skill) {
+    const skillRe = new RegExp(`\\b${skill.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "gi");
+    q = q.replace(skillRe, "").replace(/\s+/g, " ").trim();
+  }
+  q = q.replace(/^for\s+/i, "").replace(/^[\-–—,;:]\s*/, "").replace(/\s+[\-–—,;:]$/, "").trim();
+  // Collapse bare "method" leftovers into empty if nothing else remains
+  if (!q || /^(method|methods)$/i.test(q)) return null;
+  // "Ranged method" style already clean; "Piety (74+ for Rigour)" good
+  // Capitalise first letter
+  if (q.length > 0) q = q.charAt(0).toUpperCase() + q.slice(1);
+  // Drop trailing empty parens
+  q = q.replace(/\(\s*\)/g, "").replace(/\s+/g, " ").trim();
+  return q || null;
 }
 
 // -----------------------------------------------------------------------

@@ -828,9 +828,21 @@ export function parseSuggestedSkill(raw: string): SuggestedSkill | null {
     ?? remainder.match(/^\(?\s*for\s+([^()]+?)(?:\s*\(with boost\))?\s*\)?$/i);
   if (qualMatch) {
     qualifier = qualMatch[1].trim();
-  } else if (remainder && !boostAllowed && !optional) {
-    // Some notes are just plain text
-    qualifier = remainder.replace(/^\(|\)$/g, "").trim() || undefined;
+  } else if (remainder) {
+    // Strip outer parens and noise flags; keep notes like "Piety (74+ for Rigour)"
+    // or method labels ("Ranged method" → "method" after skill already consumed).
+    let cleaned = remainder
+      .replace(/^\(+/, "")
+      .replace(/\)+$/, "")
+      .replace(/\bwith boost\b/gi, "")
+      .replace(/\boptional\b/gi, "")
+      .replace(/\s*-\s*$/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+    // Drop pure noise
+    if (cleaned && !/^(method|methods)$/i.test(cleaned)) {
+      qualifier = cleaned;
+    }
   }
 
   return {

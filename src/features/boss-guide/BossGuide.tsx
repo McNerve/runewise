@@ -94,6 +94,8 @@ export default function BossGuide({ hiscores }: Props) {
   const activeRequest = useRef(0);
   const contentRef = useRef<HTMLDivElement>(null);
   const guideContentRef = useRef<HTMLDivElement>(null);
+  const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
+  const [summaryExpanded, setSummaryExpanded] = useState(false);
 
   const filteredBosses = useMemo(
     () =>
@@ -280,6 +282,66 @@ export default function BossGuide({ hiscores }: Props) {
       initWikiInteractive(guideContentRef.current);
     }
   }, [loading, guide]);
+
+  // Scrollspy: highlight the guide TOC / mobile chip for the section in view.
+  useEffect(() => {
+    if (!guide || loading || activeTab !== "guide") {
+      setActiveSectionId(null);
+      return;
+    }
+    const root = guideContentRef.current;
+    if (!root) return;
+
+    const targets = guide.sections
+      .map((s) => root.querySelector<HTMLElement>(`#${CSS.escape(s.id)}`))
+      .filter((el): el is HTMLElement => el !== null);
+    if (targets.length === 0) return;
+
+    const visible = new Set<string>();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const id = (entry.target as HTMLElement).id;
+          if (entry.isIntersecting) visible.add(id);
+          else visible.delete(id);
+        }
+        // Prefer the first H2 currently in view; fall back to first visible.
+        for (const section of guide.sections) {
+          if (visible.has(section.id)) {
+            setActiveSectionId(section.id);
+            return;
+          }
+        }
+      },
+      { rootMargin: "-12% 0px -55% 0px", threshold: [0, 0.1, 0.4] }
+    );
+    targets.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, [guide, loading, activeTab]);
+
+  // Reset mobile summary chrome when boss changes.
+  useEffect(() => {
+    setSummaryExpanded(false);
+  }, [selectedBoss?.name]);
+
+  // Keep the active mobile chip scrolled into view.
+  useEffect(() => {
+    if (!activeSectionId) return;
+    const chip = document.querySelector<HTMLElement>(
+      `[data-guide-chips] [data-section-id="${CSS.escape(activeSectionId)}"]`
+    );
+    // If active is an H3, highlight its parent H2 chip instead.
+    const parentChip =
+      chip ??
+      (() => {
+        const section = guide?.sections.find((s) => s.id === activeSectionId);
+        if (!section?.parentId) return null;
+        return document.querySelector<HTMLElement>(
+          `[data-guide-chips] [data-section-id="${CSS.escape(section.parentId)}"]`
+        );
+      })();
+    parentChip?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+  }, [activeSectionId, guide?.sections]);
 
   return (
     <div className="space-y-5">
@@ -492,9 +554,22 @@ export default function BossGuide({ hiscores }: Props) {
                       ) : null}
                     </div>
                     {guide?.summary ? (
-                      <p className="max-w-3xl text-sm leading-6 text-text-secondary">
-                        {guide.summary}
-                      </p>
+                      <div className="max-w-3xl">
+                        <p
+                          className={`text-sm leading-6 text-text-secondary ${
+                            summaryExpanded ? "" : "line-clamp-3 sm:line-clamp-none"
+                          }`}
+                        >
+                          {guide.summary}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setSummaryExpanded((v) => !v)}
+                          className="mt-1 text-xs text-accent hover:text-accent-hover sm:hidden"
+                        >
+                          {summaryExpanded ? "Show less" : "Read more"}
+                        </button>
+                      </div>
                     ) : null}
                     <FreshnessStrip
                       updatedAt={guide?.fetchedAt ? new Date(guide.fetchedAt) : null}
@@ -608,53 +683,54 @@ export default function BossGuide({ hiscores }: Props) {
                 ))}
               </div>
 
-              <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <div className="rounded-xl border border-border-subtle bg-bg-tertiary px-4 py-3">
+              {/* Dense metric strip — compact on mobile, full cards on desktop. */}
+              <div className="mt-4 flex gap-2 overflow-x-auto pb-1 sidebar-scroll sm:grid sm:grid-cols-2 sm:overflow-visible xl:grid-cols-4 sm:gap-3">
+                <div className="min-w-[9.5rem] shrink-0 rounded-xl border border-border-subtle bg-bg-tertiary px-3 py-2.5 sm:min-w-0 sm:px-4 sm:py-3">
                   <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
-                    Guide Sections
+                    Sections
                   </div>
-                  <div className="mt-1 text-lg font-semibold text-text-primary">
+                  <div className="mt-0.5 text-base font-semibold text-text-primary sm:text-lg">
                     {guide?.sections.length ?? 0}
                   </div>
-                  <div className="mt-1 text-xs text-text-secondary">
-                    Structured strategy blocks in this workspace.
+                  <div className="mt-0.5 hidden text-xs text-text-secondary sm:block">
+                    Strategy blocks in this workspace.
                   </div>
                 </div>
-                <div className="rounded-xl border border-border-subtle bg-bg-tertiary px-4 py-3">
+                <div className="min-w-[9.5rem] shrink-0 rounded-xl border border-border-subtle bg-bg-tertiary px-3 py-2.5 sm:min-w-0 sm:px-4 sm:py-3">
                   <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
-                    Drop Categories
+                    Drop groups
                   </div>
-                  <div className="mt-1 text-lg font-semibold text-text-primary">
+                  <div className="mt-0.5 text-base font-semibold text-text-primary sm:text-lg">
                     {dropCategoryCount ?? "\u2014"}
                   </div>
-                  <div className="mt-1 text-xs text-text-secondary">
+                  <div className="mt-0.5 hidden text-xs text-text-secondary sm:block">
                     {dropCategories.length > 0
-                      ? "Embedded loot groups from the OSRS Wiki."
+                      ? "From the OSRS Wiki."
                       : bossLootTable
-                        ? "Curated loot groups from RuneWise data."
+                        ? "Curated RuneWise data."
                         : dropCategoryCount != null
-                          ? "Known raid loot groups (Uniques + Common)."
-                          : "No structured loot groups available yet."}
+                          ? "Raid loot groups."
+                          : "No loot groups yet."}
                   </div>
                 </div>
-                <div className="rounded-xl border border-border-subtle bg-bg-tertiary px-4 py-3">
+                <div className="min-w-[9.5rem] shrink-0 rounded-xl border border-border-subtle bg-bg-tertiary px-3 py-2.5 sm:min-w-0 sm:px-4 sm:py-3">
                   <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
-                    Task References
+                    Tasks
                   </div>
-                  <div className="mt-1 text-lg font-semibold text-text-primary">
+                  <div className="mt-0.5 text-base font-semibold text-text-primary sm:text-lg">
                     {bossTasks.length}
                   </div>
-                  <div className="mt-1 text-xs text-text-secondary">
-                    Boss-linked combat tasks available for planning.
+                  <div className="mt-0.5 hidden text-xs text-text-secondary sm:block">
+                    Boss-linked combat tasks.
                   </div>
                 </div>
-                <div className="rounded-xl border border-border-subtle bg-bg-tertiary px-4 py-3">
+                <div className="min-w-[9.5rem] shrink-0 rounded-xl border border-border-subtle bg-bg-tertiary px-3 py-2.5 sm:min-w-0 sm:px-4 sm:py-3">
                   <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
-                    Top Drop
+                    Top drop
                   </div>
                   {topDrops[0] ? (
                     <>
-                      <div className="mt-1 truncate text-sm font-semibold text-text-primary">
+                      <div className="mt-0.5 truncate text-sm font-semibold text-text-primary">
                         {topDrops[0].drop.name}
                       </div>
                       <div className="mt-0.5 text-xs text-success">
@@ -664,21 +740,14 @@ export default function BossGuide({ hiscores }: Props) {
                       </div>
                     </>
                   ) : raidTopDrop ? (
-                    <div className="mt-1 truncate text-sm font-semibold text-text-primary">
+                    <div className="mt-0.5 truncate text-sm font-semibold text-text-primary">
                       {raidTopDrop}
                     </div>
                   ) : (
-                    <div className="mt-1 text-lg font-semibold text-text-primary">{"\u2014"}</div>
+                    <div className="mt-0.5 text-base font-semibold text-text-primary sm:text-lg">
+                      {"\u2014"}
+                    </div>
                   )}
-                  <div className="mt-1 text-[11px] text-text-secondary/50">
-                    {topDrops[0]?.drop.name
-                      ? topDrops[0].gePrice != null
-                        ? "Top drop value"
-                        : "No price data"
-                      : raidTopDrop
-                        ? "Featured unique (curated)"
-                        : "Waiting on loot data"}
-                  </div>
                 </div>
               </div>
             </section>
@@ -733,28 +802,51 @@ export default function BossGuide({ hiscores }: Props) {
                     return guide.sections.map((section) => {
                       if (section.level === 2) h2Counter += 1;
                       const h2Number = h2Counter;
+                      const active =
+                        activeSectionId === section.id ||
+                        (section.level === 2 &&
+                          guide.sections.some(
+                            (s) =>
+                              s.parentId === section.id &&
+                              s.id === activeSectionId
+                          ));
                       return (
                     <button
                       key={section.id}
                       type="button"
                       onClick={() => scrollToGuideSection(section.id)}
-                      className={`group flex w-full items-center gap-2 rounded-lg text-left text-text-secondary transition hover:bg-bg-primary/60 hover:text-text-primary ${
+                      aria-current={active ? "location" : undefined}
+                      className={`group flex w-full items-center gap-2 rounded-lg text-left transition ${
                         section.level === 3
                           ? "pl-6 pr-2.5 py-1.5"
                           : "px-2.5 py-2"
+                      } ${
+                        active
+                          ? "bg-accent/10 text-text-primary"
+                          : "text-text-secondary hover:bg-bg-primary/60 hover:text-text-primary"
                       }`}
                     >
                       {section.level === 2 ? (
-                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-bg-tertiary/60 text-[10px] font-medium text-text-secondary/60 group-hover:text-text-primary">
+                        <span
+                          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[10px] font-medium ${
+                            active
+                              ? "bg-accent/20 text-accent"
+                              : "bg-bg-tertiary/60 text-text-secondary/60 group-hover:text-text-primary"
+                          }`}
+                        >
                           {h2Number}
                         </span>
                       ) : (
-                        <span className="w-1 h-1 shrink-0 rounded-full bg-text-secondary/30 group-hover:bg-accent/50" />
+                        <span
+                          className={`w-1 h-1 shrink-0 rounded-full ${
+                            active ? "bg-accent" : "bg-text-secondary/30 group-hover:bg-accent/50"
+                          }`}
+                        />
                       )}
                       <span
                         className={`line-clamp-2 leading-snug ${
                           section.level === 3
-                            ? "text-xs text-text-secondary/70"
+                            ? `text-xs ${active ? "text-text-primary" : "text-text-secondary/70"}`
                             : "text-sm"
                         }`}
                       >
@@ -767,22 +859,38 @@ export default function BossGuide({ hiscores }: Props) {
                 </div>
               </aside>
 
-              {/* Mobile horizontal section chips */}
-              <div className="xl:hidden -mx-1 px-1 overflow-x-auto sidebar-scroll">
-                <div className="flex gap-1.5 pb-1 min-w-max">
+              {/* Mobile horizontal section chips — sticky while reading guide */}
+              <div className="xl:hidden -mx-1 px-1 overflow-x-auto sidebar-scroll sticky top-0 z-10 bg-bg-primary/95 backdrop-blur-sm py-1.5 -mt-1 border-b border-border/30">
+                <div className="flex gap-1.5 pb-0.5 min-w-max" data-guide-chips>
                   {guide.sections
                     .filter((s) => s.level === 2)
-                    .map((section, i) => (
+                    .map((section, i) => {
+                      const active =
+                        activeSectionId === section.id ||
+                        guide.sections.some(
+                          (s) =>
+                            s.parentId === section.id && s.id === activeSectionId
+                        );
+                      return (
                       <button
                         key={section.id}
                         type="button"
+                        data-section-id={section.id}
                         onClick={() => scrollToGuideSection(section.id)}
-                        className="shrink-0 rounded-full border border-border/60 bg-bg-primary/55 px-3 py-1.5 text-xs text-text-secondary transition hover:border-accent/40 hover:text-text-primary"
+                        aria-current={active ? "location" : undefined}
+                        className={`shrink-0 rounded-full border px-3 py-1.5 text-xs transition ${
+                          active
+                            ? "border-accent/40 bg-accent/15 text-accent"
+                            : "border-border/60 bg-bg-primary/55 text-text-secondary hover:border-accent/40 hover:text-text-primary"
+                        }`}
                       >
-                        <span className="mr-1.5 text-text-secondary/45">{i + 1}</span>
+                        <span className={`mr-1.5 ${active ? "text-accent/70" : "text-text-secondary/45"}`}>
+                          {i + 1}
+                        </span>
                         {section.title}
                       </button>
-                    ))}
+                      );
+                    })}
                 </div>
               </div>
 
