@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeImages } from "./helpers";
+import { normalizeImages, wrapTablesForScroll, normalizeLinks } from "./helpers";
 
 function makeRoot(html: string): Element {
   const div = document.createElement("div");
@@ -80,5 +80,42 @@ describe("normalizeImages", () => {
     expect(imgs[0].getAttribute("src")).toBe("https://oldschool.runescape.wiki/images/first.png");
     expect(imgs[1].getAttribute("src")).toBe("https://oldschool.runescape.wiki/images/second.png");
     expect(imgs[2].getAttribute("src")).toBe("https://oldschool.runescape.wiki/images/third.png");
+  });
+});
+
+describe("wrapTablesForScroll", () => {
+  it("wraps plain tables in a scroll container", () => {
+    const root = makeRoot(`<table class="wikitable"><tr><td>A</td></tr></table>`);
+    wrapTablesForScroll(root);
+    const wrap = root.querySelector(".wiki-table-scroll");
+    expect(wrap).not.toBeNull();
+    expect(wrap?.querySelector("table")).not.toBeNull();
+  });
+
+  it("does not double-wrap already wrapped tables", () => {
+    const root = makeRoot(
+      `<div class="wiki-table-scroll"><table><tr><td>A</td></tr></table></div>`
+    );
+    wrapTablesForScroll(root);
+    expect(root.querySelectorAll(".wiki-table-scroll")).toHaveLength(1);
+  });
+
+  it("skips equipment inventory grids", () => {
+    const root = makeRoot(`<table class="equipment"><tr><td>x</td></tr></table>`);
+    wrapTablesForScroll(root);
+    expect(root.querySelector(".wiki-table-scroll")).toBeNull();
+  });
+});
+
+describe("normalizeLinks", () => {
+  it("rewrites wiki article links to in-app hashes", () => {
+    const root = makeRoot(
+      `<a href="/w/Abyssal_demon">abyssal demons</a>`
+    );
+    normalizeLinks(root);
+    const a = root.querySelector("a")!;
+    expect(a.getAttribute("data-wiki-page")).toBe("Abyssal demon");
+    expect(a.getAttribute("href")).toContain("#wiki?");
+    expect(a.getAttribute("target")).toBeNull();
   });
 });

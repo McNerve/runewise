@@ -1,5 +1,6 @@
 import type { MouseEvent as ReactMouseEvent } from "react";
 import { handleLightboxClick } from "../../lib/wiki/interactive";
+import { resolveWikiPageFromHref } from "../../lib/wiki/helpers";
 
 /** Weakness label from wiki/infobox → DPS Calc combat style. */
 const WEAKNESS_STYLE_MAP: Record<string, string> = {
@@ -34,7 +35,20 @@ export function scrollToGuideSection(sectionId: string): void {
   element.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-/** Click handler for boss-guide HTML: tile-marker copy + lightbox images. */
+/**
+ * Open an in-app wiki page from a guide link. Item-like pages still land on
+ * the wiki lookup (Market routing lives in WikiLookup's own click path).
+ */
+function openWikiPageInApp(page: string): void {
+  const hash = `#wiki?page=${encodeURIComponent(page)}&query=${encodeURIComponent(page)}`;
+  if (window.location.hash === hash) {
+    window.dispatchEvent(new HashChangeEvent("hashchange"));
+  } else {
+    window.location.hash = hash;
+  }
+}
+
+/** Click handler for boss-guide HTML: in-app links, tile-marker copy, lightbox. */
 export function handleGuideClick(e: ReactMouseEvent): void {
   const target = e.target;
 
@@ -54,6 +68,28 @@ export function handleGuideClick(e: ReactMouseEvent): void {
       });
     }
     return;
+  }
+
+  // In-app wiki navigation for rewritten anchors.
+  const element =
+    target instanceof HTMLElement
+      ? target
+      : target instanceof Node
+        ? target.parentElement
+        : null;
+  if (element) {
+    const link = element.closest("a");
+    if (link instanceof HTMLAnchorElement) {
+      const page =
+        link.dataset.wikiPage ||
+        resolveWikiPageFromHref(link.getAttribute("href") ?? link.href);
+      if (page) {
+        e.preventDefault();
+        e.stopPropagation();
+        openWikiPageInApp(page);
+        return;
+      }
+    }
   }
 
   handleLightboxClick(e);

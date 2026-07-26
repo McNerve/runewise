@@ -413,6 +413,9 @@ body {
 
 .article-content {
   min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .article-content a {
@@ -432,23 +435,32 @@ body {
   text-decoration-style: solid;
 }
 
-.article-content img {
+/* Standalone / figure-scale images (not table cells or inline icons). */
+.article-content > img,
+.article-content p > img:only-child,
+.article-content center img,
+.article-content figure img {
   max-width: 100%;
+  height: auto;
   border-radius: 0.9rem;
   margin: 1rem 0;
   border: 1px solid color-mix(in srgb, var(--color-border) 85%, transparent);
   background: color-mix(in srgb, var(--color-bg-tertiary) 75%, transparent);
 }
 
+/* Default imgs: keep small inventory/skill icons compact. */
+.article-content img {
+  max-width: 100%;
+  height: auto;
+}
+
 .article-content table {
   display: table;
-  width: auto;
-  max-width: 100%;
+  width: max-content;
+  max-width: none;
   border-collapse: collapse;
-  margin: 1rem 0;
+  margin: 0;
   font-size: 0.8125rem;
-  overflow-x: auto;
-  overflow-y: hidden;
   border-radius: 0.75rem;
   border: 1px solid var(--color-border);
 }
@@ -568,24 +580,41 @@ body {
   transform: scale(var(--press-scale));
 }
 
-/* Horizontal-scroll wrapper added by bossGuide.cleanSectionHtml so multi-
- * column wiki tables can overflow instead of squeezing cells until headers
- * wrap and content visually overlaps. */
-.article-content .wiki-table-scroll {
+/* Horizontal-scroll wrapper (helpers.wrapTablesForScroll) so multi-column
+ * wiki tables overflow inside a block container instead of expanding the page. */
+.article-content .wiki-table-scroll,
+.wiki-table-scroll {
   width: 100%;
   max-width: 100%;
   overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
   margin: 1rem 0;
+  border-radius: 0.75rem;
+  /* Subtle edge fade hint that more columns exist off-screen */
+  background:
+    linear-gradient(to right, var(--color-bg-primary) 30%, transparent) left center / 1.25rem 100% no-repeat,
+    linear-gradient(to left, var(--color-bg-primary) 30%, transparent) right center / 1.25rem 100% no-repeat;
+  background-attachment: local, local;
 }
 
-.article-content .wiki-table-scroll > table {
+.article-content .wiki-table-scroll > table,
+.wiki-table-scroll > table {
   margin: 0;
 }
 
 /* Within scroll wrappers, prevent header text from wrapping so columns size
  * to their natural width and the table grows wide instead of crushed. */
-.article-content .wiki-table-scroll th {
+.article-content .wiki-table-scroll th,
+.wiki-table-scroll th {
   white-space: nowrap;
+}
+
+/* Keep main content columns from forcing horizontal page scroll. */
+.content-area,
+.max-w-5xl,
+.article-content {
+  overflow-x: clip;
 }
 
 .article-content th,

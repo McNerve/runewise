@@ -386,10 +386,10 @@ export default function WikiLookup() {
   );
 
   return (
-    <div className="space-y-5">
-      <section>
+    <div className="space-y-5 min-w-0">
+      <section className="min-w-0">
         <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
-          <div className="space-y-1">
+          <div className="space-y-1 min-w-0">
             <h2 className="text-2xl font-semibold tracking-tight">OSRS Wiki</h2>
             <p className="max-w-2xl text-sm text-text-secondary">
               Search and read any OSRS Wiki page with formatted content.
@@ -400,8 +400,8 @@ export default function WikiLookup() {
           </div>
         </div>
 
-        <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_280px]">
-          <div ref={searchRef}>
+        <div className={`mt-4 grid gap-4 min-w-0 ${document || loadingDocument ? "" : "xl:grid-cols-[minmax(0,1fr)_280px]"}`}>
+          <div ref={searchRef} className="min-w-0">
           <form className="relative" onSubmit={handleSubmit}>
             <input
               type="text"
@@ -420,7 +420,7 @@ export default function WikiLookup() {
               className="w-full rounded-xl border border-border bg-bg-primary px-4 py-3 text-sm outline-none transition focus:border-accent"
             />
             {showResultsPanel ? (
-              <div className="absolute left-0 right-0 top-full z-20 mt-1 rounded-xl border border-border/60 bg-bg-primary shadow-lg">
+              <div className="absolute left-0 right-0 top-full z-20 mt-1 rounded-xl border border-border/60 bg-bg-primary shadow-lg max-h-[60vh] overflow-y-auto">
                 {loadingResults ? (
                   <div className="space-y-2 px-4 py-3">
                     <Skeleton className="h-4 w-2/3" />
@@ -475,17 +475,21 @@ export default function WikiLookup() {
           </form>
           </div>
 
-          <div className="text-sm text-text-secondary">
-            <div className="text-[10px] uppercase tracking-[0.18em] text-text-secondary/45">
-              Great For
+          {/* Hide the marketing blurb once a page is open — it only steals
+              vertical space and forces a two-column header on mobile. */}
+          {!document && !loadingDocument ? (
+            <div className="text-sm text-text-secondary">
+              <div className="text-[10px] uppercase tracking-[0.18em] text-text-secondary/45">
+                Great For
+              </div>
+              <div className="mt-3 space-y-2">
+                <p>Items and untradeables</p>
+                <p>Shops, NPCs, and locations</p>
+                <p>Skilling methods and mechanics</p>
+                <p>Quick in-app reference while playing</p>
+              </div>
             </div>
-            <div className="mt-3 space-y-2">
-              <p>Items and untradeables</p>
-              <p>Shops, NPCs, and locations</p>
-              <p>Skilling methods and mechanics</p>
-              <p>Quick in-app reference while playing</p>
-            </div>
-          </div>
+          ) : null}
         </div>
       </section>
 
@@ -547,9 +551,9 @@ export default function WikiLookup() {
       ) : null}
 
       {document ? (
-        <div ref={contentRef} className="rounded-xl border border-border/40 bg-bg-primary/25 p-5">
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
-          <section className="min-w-0 space-y-4">
+        <div ref={contentRef} className="rounded-xl border border-border/40 bg-bg-primary/25 p-4 sm:p-5 min-w-0 overflow-hidden">
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px] min-w-0">
+          <section className="min-w-0 space-y-4 overflow-hidden">
             <div>
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div className="space-y-2">

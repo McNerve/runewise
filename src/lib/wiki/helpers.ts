@@ -212,6 +212,31 @@ export function normalizeGalleries(root: Element): void {
   });
 }
 
+/**
+ * Wrap wide wiki tables in a horizontal-scroll container. Overflow on a
+ * `display:table` element itself is ignored by browsers — the wrapper must
+ * be a block so mobile doesn't expand the whole page.
+ */
+export function wrapTablesForScroll(root: Element): void {
+  const doc = root.ownerDocument ?? document;
+  root.querySelectorAll("table").forEach((table) => {
+    if (table.parentElement?.classList.contains("wiki-table-scroll")) return;
+    // OSRS equipment / inventory grids are fixed-size layouts — don't scroll-wrap.
+    if (
+      table.classList.contains("equipment") ||
+      table.classList.contains("inventorytable") ||
+      table.classList.contains("lootingbagtable") ||
+      table.classList.contains("runepouchtable")
+    ) {
+      return;
+    }
+    const wrapper = doc.createElement("div");
+    wrapper.className = "wiki-table-scroll";
+    table.replaceWith(wrapper);
+    wrapper.appendChild(table);
+  });
+}
+
 export function stripUnsafeNodes(root: Element): void {
   root.querySelectorAll(UNSAFE_SELECTORS).forEach((el) => el.remove());
 
@@ -231,6 +256,7 @@ export function stripUnsafeNodes(root: Element): void {
 
   normalizeLinks(root);
   normalizeImages(root);
+  wrapTablesForScroll(root);
 }
 
 export function sanitizeHtml(root: Element): string {

@@ -7,8 +7,10 @@ import {
   slugify,
   normalizeImages,
   normalizeGalleries,
+  normalizeLinks,
+  wrapTablesForScroll,
   extractSummary,
-  sanitizeHtmlStrict,
+  sanitizeHtml,
   type WikiTextResponse,
 } from "./helpers";
 
@@ -144,7 +146,7 @@ const SECTION_LABELS = [
   "special attacks",
   "phases",
   "attacks",
-  "drops",
+  // Note: "drops" intentionally omitted — Loot tab owns drop tables.
   "safespotting",
   "prayer flicking",
   "tips",
@@ -180,7 +182,38 @@ const SECTION_LABELS = [
   "zombified spawn",
   "acid phase",
   "ice phase",
+  "woox walk",
+  "player death",
+  "banking and transportation",
+  "divine potions",
+  "defence reduction",
+  "standard attacks",
+  "dragonfire",
 ] as const;
+
+/** Exact H2/H3 titles that are pure loot tables (Loot tab owns these). */
+const DROP_SECTION_EXACT = new Set([
+  "drops",
+  "drop table",
+  "100%",
+  "uniques",
+  "unique",
+  "mutagens",
+  "weapons and armour",
+  "runes",
+  "herbs",
+  "seeds",
+  "resources",
+  "shark drop table",
+  "rare drop table",
+  "tertiary",
+  "always drops",
+  "pre-roll",
+  "main drop",
+  "other drops",
+  "gem drop table",
+  "supplies",
+]);
 
 // -----------------------------------------------------------------------
 // Infobox field extractors (approach / team / combat / weakness)
@@ -260,23 +293,9 @@ function cleanSectionHtml(
     }
   });
 
-  content.querySelectorAll("a").forEach((link) => {
-    const fragment = document.createDocumentFragment();
-    while (link.firstChild) fragment.appendChild(link.firstChild);
-    link.replaceWith(fragment);
-  });
-
-  // Wrap wiki tables in a horizontal-scroll container so multi-column tables
-  // (e.g. Location info, drop tables, attack tables) can overflow gracefully
-  // instead of squeezing cells until headers and content visually overlap.
-  content.querySelectorAll("table").forEach((table) => {
-    if (table.parentElement?.classList.contains("wiki-table-scroll")) return;
-    if (table.classList.contains("equipment")) return;
-    const wrapper = doc.createElement("div");
-    wrapper.className = "wiki-table-scroll";
-    table.replaceWith(wrapper);
-    wrapper.appendChild(table);
-  });
+  // Keep wiki anchors as in-app deep links (item → market, page → wiki lookup).
+  normalizeLinks(content);
+  wrapTablesForScroll(content);
 
   normalizeGalleries(content);
 
@@ -319,7 +338,8 @@ function cleanSectionHtml(
     return text.length >= 60 && !isNavigationParagraph(text);
   });
   const summary = summaryPara?.textContent?.trim() ?? extractSummary(content);
-  const sanitized = sanitizeHtmlStrict(content);
+  // Preserve anchors so players can jump to related wiki pages / market items.
+  const sanitized = sanitizeHtml(content);
 
   return { html: sanitized, summary };
 }
@@ -431,31 +451,40 @@ function extractSectionHtmlFromFullPage(
 // Section selection / fallback logic
 // -----------------------------------------------------------------------
 
+function isDropSection(line: string): boolean {
+  const lower = line.toLowerCase().trim();
+  if (DROP_SECTION_EXACT.has(lower)) return true;
+  if (lower.startsWith("drops") || lower.includes("drop table")) return true;
+  return false;
+}
+
 function sectionMatchesLabel(line: string): boolean {
+  if (isDropSection(line)) return false;
   const lower = line.toLowerCase();
   return SECTION_LABELS.some((l) => lower.includes(l));
 }
 
 /**
  * Given raw wiki sections, return all H2s that match the label list PLUS
- * all H3s whose parent H2 also matches.
+ * all H3s whose parent H2 also matches. Drop-table trees are excluded —
+ * those live on the Loot tab.
  */
 function filterRelevantSections(sections: WikiSection[]): WikiSection[] {
   const result: WikiSection[] = [];
   let currentH2Included = false;
+  let currentH2IsDrops = false;
 
   for (const s of sections) {
     if (s.toclevel === 1) {
-      // H2
-      currentH2Included = sectionMatchesLabel(s.line);
+      currentH2IsDrops = isDropSection(s.line);
+      currentH2Included = !currentH2IsDrops && sectionMatchesLabel(s.line);
       if (currentH2Included) result.push(s);
     } else if (s.toclevel === 2) {
-      // H3 — include if parent H2 was included OR if the H3 itself matches
+      if (currentH2IsDrops || isDropSection(s.line)) continue;
       if (currentH2Included || sectionMatchesLabel(s.line)) {
         result.push(s);
       }
     }
-    // Deeper levels (H4+) are ignored
   }
 
   return result;
@@ -500,7 +529,7 @@ function disambiguateTitle(
 export async function fetchBossGuideDocument(
   wikiPage: string
 ): Promise<BossGuideDocument> {
-  const cacheKey = `boss-guide:v8:${wikiPage}`;
+  const cacheKey = `boss-guide:v9:${wikiPage}`;
   const cached = getCached<BossGuideDocument>(cacheKey, GUIDE_TTL);
   if (cached) return cached;
 
@@ -765,19 +794,25 @@ export function parseSuggestedSkill(raw: string): SuggestedSkill | null {
 
   // Match: optional leading/trailing parens, level (number), optional +, optional skill name
   // e.g. "82+ Herblore", "43 Prayer", "75+ (recommended)"
-  const levelMatch = text.match(/^(\d+)\+?\s*([A-Za-z]+)?/);
+  // Also: "85+ Ranged method" → skill=Ranged, qualifier=method
+  const levelMatch = text.match(/^(\d+)\+?\s*([A-Za-z']+)?/);
   if (!levelMatch) return null;
 
   const level = parseInt(levelMatch[1], 10);
   const rawSkill = (levelMatch[2] ?? "").trim().toLowerCase();
-  const skill = SKILL_NAMES.has(rawSkill)
-    ? rawSkill.charAt(0).toUpperCase() + rawSkill.slice(1)
-    : rawSkill
-      ? rawSkill.charAt(0).toUpperCase() + rawSkill.slice(1)
+  // Reject common non-skill words that follow a level (e.g. "For 70+").
+  const NON_SKILLS = new Set(["for", "with", "and", "or", "the", "a", "an", "to", "at"]);
+  const skill =
+    rawSkill && !NON_SKILLS.has(rawSkill)
+      ? SKILL_NAMES.has(rawSkill)
+        ? rawSkill.charAt(0).toUpperCase() + rawSkill.slice(1)
+        : rawSkill.charAt(0).toUpperCase() + rawSkill.slice(1)
       : "";
 
   // Rest of the string after "NN+ SkillName"
-  const prefix = levelMatch[0];
+  const prefix = skill
+    ? levelMatch[0]
+    : `${levelMatch[1]}${text.includes("+") ? "+" : ""}`;
   const remainder = text.slice(prefix.length).trim();
 
   // Detect boost

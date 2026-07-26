@@ -331,12 +331,19 @@ export default function BossGuide({ hiscores }: Props) {
         </div>
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-[280px_minmax(0,1fr)]">
-        <aside>
+      <div className="grid gap-5 xl:grid-cols-[280px_minmax(0,1fr)] min-w-0">
+        {/* On small screens, collapse the full directory once a boss is open —
+            dual-pane list + guide is the clunkiest layout on phone.
+            On desktop, sticky so scrolling the guide doesn't leave an empty column. */}
+        <aside
+          className={`${
+            selectedBoss ? "hidden xl:block" : "block"
+          } xl:sticky xl:top-4 xl:self-start xl:max-h-[calc(100vh-5rem)]`}
+        >
           <div className="mb-3 px-2 text-[10px] uppercase tracking-[0.2em] text-text-secondary/45">
             Boss Directory
           </div>
-          <div className="space-y-1.5 max-h-[70vh] overflow-y-auto pr-1 scroll-fade sidebar-scroll">
+          <div className="space-y-1.5 max-h-[70vh] xl:max-h-[calc(100vh-7rem)] overflow-y-auto pr-1 scroll-fade sidebar-scroll">
             {filteredBosses.map((boss) => {
               const active = selectedBoss?.name === boss.name;
               return (
@@ -372,16 +379,9 @@ export default function BossGuide({ hiscores }: Props) {
               );
             })}
           </div>
-          {selectedBoss && (
-            <div className="flex justify-center py-2 xl:hidden text-text-secondary/30">
-              <svg width="20" height="12" viewBox="0 0 20 12" fill="none" stroke="currentColor" strokeWidth="2" className="animate-bounce">
-                <path d="M2 2l8 8 8-8" />
-              </svg>
-            </div>
-          )}
         </aside>
 
-        <div ref={contentRef} className="space-y-4">
+        <div ref={contentRef} className="space-y-4 min-w-0">
           {!selectedBoss ? (
             <EmptyState
               title="Select a boss"
@@ -390,13 +390,26 @@ export default function BossGuide({ hiscores }: Props) {
           ) : null}
 
           {selectedBoss ? (
-            <section>
+            <section className="min-w-0">
+              {/* Mobile: back-to-directory control (directory is hidden when a boss is open). */}
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedBoss(null);
+                  setGuide(null);
+                  setGuideError(null);
+                  navigate("bosses", {});
+                }}
+                className="mb-3 inline-flex items-center gap-1.5 rounded-lg border border-border/60 bg-bg-primary/50 px-2.5 py-1.5 text-xs text-text-secondary transition hover:border-accent/40 hover:text-text-primary xl:hidden"
+              >
+                ← All bosses
+              </button>
               <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-                <div className="flex items-start gap-4">
+                <div className="flex items-start gap-4 min-w-0">
                   <WikiImage
                     src={bossIcon(selectedBoss.name)}
                     alt=""
-                    className="h-20 w-20 rounded-2xl border border-border/40 bg-bg-primary/60 object-contain p-1"
+                    className="h-20 w-20 shrink-0 rounded-2xl border border-border/40 bg-bg-primary/60 object-contain p-1"
                     fallback={selectedBoss.name[0]}
                   />
                   <div className="space-y-2">
@@ -708,8 +721,9 @@ export default function BossGuide({ hiscores }: Props) {
                   hiscores={hiscores}
                 />
               )}
-            <div className="grid gap-4 xl:grid-cols-[220px_minmax(0,1fr)]">
-              <aside className="h-fit xl:sticky xl:top-6 max-h-[calc(100vh-4rem)] overflow-y-auto scroll-fade sidebar-scroll">
+            <div className="grid gap-4 xl:grid-cols-[220px_minmax(0,1fr)] min-w-0 items-start">
+              {/* Desktop sticky TOC */}
+              <aside className="hidden xl:block h-fit xl:sticky xl:top-6 max-h-[calc(100vh-4rem)] overflow-y-auto scroll-fade sidebar-scroll rounded-xl border border-border/30 bg-bg-primary/20 p-2">
                 <div className="mb-2 px-2 text-[10px] uppercase tracking-[0.2em] text-text-secondary/45">
                   Guide Sections
                 </div>
@@ -753,15 +767,39 @@ export default function BossGuide({ hiscores }: Props) {
                 </div>
               </aside>
 
-              <div ref={guideContentRef} className="space-y-3" onClick={handleGuideClick}>
-                {guide.sections.map((section) => (
+              {/* Mobile horizontal section chips */}
+              <div className="xl:hidden -mx-1 px-1 overflow-x-auto sidebar-scroll">
+                <div className="flex gap-1.5 pb-1 min-w-max">
+                  {guide.sections
+                    .filter((s) => s.level === 2)
+                    .map((section, i) => (
+                      <button
+                        key={section.id}
+                        type="button"
+                        onClick={() => scrollToGuideSection(section.id)}
+                        className="shrink-0 rounded-full border border-border/60 bg-bg-primary/55 px-3 py-1.5 text-xs text-text-secondary transition hover:border-accent/40 hover:text-text-primary"
+                      >
+                        <span className="mr-1.5 text-text-secondary/45">{i + 1}</span>
+                        {section.title}
+                      </button>
+                    ))}
+                </div>
+              </div>
+
+              <div ref={guideContentRef} className="space-y-3 min-w-0" onClick={handleGuideClick}>
+                {guide.sections.map((section) => {
+                  // StructuredSection owns requirements / skills / loadout UX —
+                  // hide the raw HTML twin so we never double-render.
+                  const structuredOnly =
+                    /requirements|skills|equipment|inventory/i.test(section.title);
+                  return (
                   <section
                     key={section.id}
                     id={section.id}
-                    className={`rounded-xl border bg-bg-primary/25 ${
+                    className={`rounded-xl border bg-bg-primary/25 min-w-0 overflow-hidden scroll-mt-4 ${
                       section.level === 3
-                        ? "border-border/25 ml-4 p-4"
-                        : "border-border/40 p-5"
+                        ? "border-border/25 xl:ml-4 p-4"
+                        : "border-border/40 p-4 sm:p-5"
                     }`}
                   >
                     {section.level === 3 ? (
@@ -774,20 +812,15 @@ export default function BossGuide({ hiscores }: Props) {
                       </h4>
                     )}
                     <StructuredSection title={section.title} html={section.html} bossSlug={normalizeBossSlug(selectedBoss.name)} />
-                    <div
-                      className={`article-content text-sm leading-7 text-text-secondary ${sectionContentClasses(section.title)}`.trim()}
-                      dangerouslySetInnerHTML={{ __html: section.html }}
-                      style={
-                        section.title.toLowerCase().includes("requirements") ||
-                        section.title.toLowerCase().includes("skills") ||
-                        section.title.toLowerCase().includes("equipment") ||
-                        section.title.toLowerCase().includes("inventory")
-                          ? { display: "none" }
-                          : undefined
-                      }
-                    />
+                    {!structuredOnly ? (
+                      <div
+                        className={`article-content text-sm leading-7 text-text-secondary ${sectionContentClasses(section.title)}`.trim()}
+                        dangerouslySetInnerHTML={{ __html: section.html }}
+                      />
+                    ) : null}
                   </section>
-                ))}
+                  );
+                })}
               </div>
             </div>
             </div>
