@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { HiscoreData } from "../../lib/api/hiscores";
+import { type HiscoreData, getSkillLevel } from "../../lib/api/hiscores";
 import { fetchAllEquipment } from "../../lib/api/equipment";
 import { fetchAllMonsters } from "../../lib/api/monsters";
 import { useGEData } from "../../hooks/useGEData";
@@ -405,16 +405,11 @@ export default function LoadoutFinder({ hiscores }: Props) {
 
   const levelSummary = useMemo(() => {
     if (!hiscores) return "Levels: 99s (no hiscores — using defaults)";
-    const get = (...names: string[]) => {
-      for (const n of names) {
-        const hit = hiscores.skills.find(
-          (s) => s.name.toLowerCase() === n.toLowerCase()
-        );
-        if (hit && hit.level >= 1) return hit.level;
-      }
-      return "—";
+    const get = (n: string) => {
+      const level = getSkillLevel(hiscores, n, 0);
+      return level > 0 ? level : "—";
     };
-    return `Using your levels — Atk ${get("Attack")} · Str ${get("Strength")} · Ranged ${get("Ranged", "Range")} · Magic ${get("Magic")}`;
+    return `Using your levels — Atk ${get("Attack")} · Str ${get("Strength")} · Ranged ${get("Ranged")} · Magic ${get("Magic")}`;
   }, [hiscores]);
 
   const openInDps = (row: RankedLoadout) => {

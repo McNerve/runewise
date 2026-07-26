@@ -70,18 +70,79 @@ export async function detectIronmanType(rsn: string): Promise<IronmanType> {
   return "none";
 }
 
-export function getSkillLevel(data: HiscoreData, skillName: string): number {
-  const skill = data.skills.find(
-    (s) => s.name.toLowerCase() === skillName.toLowerCase()
-  );
-  return skill?.level ?? 1;
+/**
+ * Canonical skill name keys + aliases used by Jagex / WOM / older payloads.
+ * Lookup is case-insensitive exact match against any alias.
+ */
+const SKILL_ALIASES: Record<string, string[]> = {
+  attack: ["attack"],
+  strength: ["strength"],
+  defence: ["defence", "defense"],
+  ranged: ["ranged", "range"],
+  prayer: ["prayer"],
+  magic: ["magic"],
+  runecraft: ["runecraft", "runecrafting"],
+  hitpoints: ["hitpoints", "hit points", "hp", "constitution"],
+  crafting: ["crafting"],
+  mining: ["mining"],
+  smithing: ["smithing"],
+  fishing: ["fishing"],
+  cooking: ["cooking"],
+  firemaking: ["firemaking"],
+  woodcutting: ["woodcutting"],
+  agility: ["agility"],
+  herblore: ["herblore"],
+  thieving: ["thieving"],
+  fletching: ["fletching"],
+  slayer: ["slayer"],
+  farming: ["farming"],
+  construction: ["construction"],
+  hunter: ["hunter"],
+};
+
+function skillNameKeys(skillName: string): string[] {
+  const lower = skillName.toLowerCase().trim();
+  const fromMap = SKILL_ALIASES[lower];
+  if (fromMap) return fromMap;
+  // Also accept any alias as input (e.g. "Range" → ranged keys)
+  for (const keys of Object.values(SKILL_ALIASES)) {
+    if (keys.includes(lower)) return keys;
+  }
+  return [lower];
 }
 
-export function getSkillXp(data: HiscoreData, skillName: string): number {
-  const skill = data.skills.find(
-    (s) => s.name.toLowerCase() === skillName.toLowerCase()
-  );
-  return skill?.xp ?? 0;
+function findSkill(data: HiscoreData, skillName: string): HiscoreSkill | undefined {
+  const keys = skillNameKeys(skillName);
+  for (const key of keys) {
+    const hit = data.skills.find((s) => s.name.toLowerCase() === key);
+    if (hit) return hit;
+  }
+  return undefined;
+}
+
+/**
+ * Resolve a combat/skilling level from hiscores with alias support.
+ * @param fallback used when data is null/empty or the skill is missing (default 1).
+ */
+export function getSkillLevel(
+  data: HiscoreData | null | undefined,
+  skillName: string,
+  fallback = 1
+): number {
+  if (!data?.skills?.length) return fallback;
+  const skill = findSkill(data, skillName);
+  if (!skill) return fallback;
+  return skill.level >= 1 ? skill.level : fallback;
+}
+
+export function getSkillXp(
+  data: HiscoreData | null | undefined,
+  skillName: string,
+  fallback = 0
+): number {
+  if (!data?.skills?.length) return fallback;
+  const skill = findSkill(data, skillName);
+  return skill?.xp ?? fallback;
 }
 
 /** Fuzzy-match a boss/activity source against the hiscores activities list.

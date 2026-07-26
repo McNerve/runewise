@@ -4,6 +4,13 @@ All notable changes to RuneWise are documented here. Versions follow [Semantic V
 
 ## [Unreleased]
 
+## [2.5.17] - 2026-07-26
+
+### Loadout → DPS
+
+- **Prayer deep-link** — Open in DPS applies Rigour/Piety/etc. from the finder (style-change no longer wipes it).
+- **Skill aliases** — shared `getSkillLevel` understands Range/Ranged, Defense/Defence, HP/Hitpoints for loadout + DPS.
+
 ## [2.5.16] - 2026-07-26
 
 ### Fixes (visual audit)

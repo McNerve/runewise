@@ -7,7 +7,7 @@ import { GEAR_PRESETS, type GearPreset } from "../../lib/data/gear-presets";
 import { PRAYERS } from "../../lib/data/prayers";
 import { knownWeaponSpeed } from "../../lib/data/weapon-speeds";
 import type { WikiEquipment, EquipmentSlot } from "../../lib/api/equipment";
-import type { HiscoreData } from "../../lib/api/hiscores";
+import { type HiscoreData, getSkillLevel } from "../../lib/api/hiscores";
 import {
   sumGearBonuses,
   meleeAttackBonus,
@@ -183,8 +183,7 @@ export function bestPrayerForStyle(
 }
 
 function skillLevel(hiscores: HiscoreData | null, name: string, fallback = 99): number {
-  if (!hiscores) return fallback;
-  return hiscores.skills.find((s) => s.name.toLowerCase() === name.toLowerCase())?.level ?? fallback;
+  return getSkillLevel(hiscores, name, fallback);
 }
 
 function resolveGear(
