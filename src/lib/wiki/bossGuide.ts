@@ -78,10 +78,12 @@ interface WikiSection {
 export interface BossGuideSection {
   id: string;
   title: string;
-  /** Heading level: 2 for H2, 3 for H3 */
+  /** Heading level: 2 for H2, 3 for H3/H4 */
   level: 2 | 3;
-  /** id of the parent H2 section (set for H3s) */
+  /** id of the parent section card (set for nested sections) */
   parentId?: string;
+  /** Wiki TOC hierarchical number, e.g. "7.9.1" — used to wire parent links. */
+  wikiNumber?: string;
   html: string;
 }
 
@@ -839,7 +841,7 @@ function stripNestedHeadings(rawHtml: string): string {
 export async function fetchBossGuideDocument(
   wikiPage: string
 ): Promise<BossGuideDocument> {
-  const cacheKey = `boss-guide:v17:${wikiPage}`;
+  const cacheKey = `boss-guide:v18:${wikiPage}`;
   const cached = getCached<BossGuideDocument>(cacheKey, GUIDE_TTL);
   if (cached) return cached;
 
@@ -942,6 +944,7 @@ export async function fetchBossGuideDocument(
         title: displayTitle,
         level,
         parentId,
+        wikiNumber: section.number,
         html,
         summary,
       };
@@ -961,6 +964,22 @@ export async function fetchBossGuideDocument(
     const count = (seenIds.get(baseId) ?? 0) + 1;
     seenIds.set(baseId, count);
     if (count > 1) s.id = `${baseId}-${count}`;
+  }
+
+  // Rewire parentId to the actual parent *card* id using wiki numbers
+  // (slugify(parentTitle) does not match ids like "great-olm-combat").
+  const idByWikiNumber = new Map<string, string>();
+  for (const s of normalizedSections) {
+    if (s.wikiNumber) idByWikiNumber.set(s.wikiNumber, s.id);
+  }
+  for (const s of normalizedSections) {
+    if (!s.wikiNumber) continue;
+    const parentNum = parentSectionNumber(s.wikiNumber);
+    if (!parentNum) {
+      s.parentId = undefined;
+      continue;
+    }
+    s.parentId = idByWikiNumber.get(parentNum);
   }
 
   // Second dedup pass: if same title appears multiple times, prefix with parent
@@ -1002,6 +1021,7 @@ export async function fetchBossGuideDocument(
       title: section.title,
       level: section.level,
       parentId: section.parentId,
+      wikiNumber: section.wikiNumber,
       html: section.html,
     })),
     blocks: collapsed.map((section) => ({

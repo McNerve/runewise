@@ -96,14 +96,23 @@ export default function BossGuide({ hiscores }: Props) {
   const guideContentRef = useRef<HTMLDivElement>(null);
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [summaryExpanded, setSummaryExpanded] = useState(false);
+  const [bossQuery, setBossQuery] = useState("");
+  const [tocExpanded, setTocExpanded] = useState<Record<string, boolean>>({});
 
-  const filteredBosses = useMemo(
-    () =>
+  const filteredBosses = useMemo(() => {
+    const byCat =
       selectedCategory === "All"
         ? BOSSES
-        : BOSSES.filter((boss) => boss.category === selectedCategory),
-    [selectedCategory]
-  );
+        : BOSSES.filter((boss) => boss.category === selectedCategory);
+    const q = bossQuery.trim().toLowerCase();
+    if (!q) return byCat;
+    return byCat.filter(
+      (b) =>
+        b.name.toLowerCase().includes(q) ||
+        b.category.toLowerCase().includes(q) ||
+        (b.location?.toLowerCase().includes(q) ?? false)
+    );
+  }, [selectedCategory, bossQuery]);
 
   const bossKc = useMemo(
     () => getBossKc(hiscores, selectedBoss),
@@ -319,9 +328,10 @@ export default function BossGuide({ hiscores }: Props) {
     return () => observer.disconnect();
   }, [guide, loading, activeTab]);
 
-  // Reset mobile summary chrome when boss changes.
+  // Reset mobile summary chrome / TOC expand when boss changes.
   useEffect(() => {
     setSummaryExpanded(false);
+    setTocExpanded({});
   }, [selectedBoss?.name]);
 
   // Keep the active mobile chip scrolled into view.
@@ -363,7 +373,11 @@ export default function BossGuide({ hiscores }: Props) {
           </div>
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div
+          className={`mt-4 flex flex-wrap gap-2 ${
+            selectedBoss ? "hidden sm:flex" : ""
+          }`}
+        >
           <button
             type="button"
             onClick={() => setSelectedCategory("All")}
@@ -402,10 +416,25 @@ export default function BossGuide({ hiscores }: Props) {
             selectedBoss ? "hidden xl:block" : "block"
           } xl:sticky xl:top-4 xl:self-start xl:max-h-[calc(100vh-5rem)]`}
         >
-          <div className="mb-3 px-2 text-[10px] uppercase tracking-[0.2em] text-text-secondary/45">
+          <div className="mb-2 px-2 text-[10px] uppercase tracking-[0.2em] text-text-secondary/45">
             Boss Directory
           </div>
-          <div className="space-y-1.5 max-h-[70vh] xl:max-h-[calc(100vh-7rem)] overflow-y-auto pr-1 scroll-fade sidebar-scroll">
+          <div className="mb-2 px-0.5">
+            <input
+              type="search"
+              value={bossQuery}
+              onChange={(e) => setBossQuery(e.target.value)}
+              placeholder="Search bosses…"
+              aria-label="Search bosses"
+              className="w-full rounded-lg border border-border/60 bg-bg-primary/70 px-3 py-2 text-sm text-text-primary outline-none placeholder:text-text-secondary/45 focus:border-accent/50"
+            />
+          </div>
+          <div className="space-y-1.5 max-h-[70vh] xl:max-h-[calc(100vh-9rem)] overflow-y-auto pr-1 scroll-fade sidebar-scroll">
+            {filteredBosses.length === 0 ? (
+              <div className="px-3 py-6 text-center text-xs text-text-secondary">
+                No bosses match “{bossQuery.trim()}”.
+              </div>
+            ) : null}
             {filteredBosses.map((boss) => {
               const active = selectedBoss?.name === boss.name;
               return (
@@ -619,7 +648,7 @@ export default function BossGuide({ hiscores }: Props) {
                 );
                 if (packs.length === 0) return null;
                 return (
-                  <div className="mt-4 rounded-xl border border-accent/20 bg-accent/5 px-3 py-2.5">
+                  <div className="mt-3 hidden rounded-xl border border-accent/20 bg-accent/5 px-3 py-2.5 sm:block">
                     <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                       <div className="text-[10px] uppercase tracking-[0.14em] text-accent/80 font-medium">
                         Meta loadouts
@@ -659,7 +688,7 @@ export default function BossGuide({ hiscores }: Props) {
                 );
               })()}
 
-              <div className="mt-4 flex items-stretch gap-2 overflow-x-auto pb-1 sidebar-scroll">
+              <div className="mt-3 flex items-stretch gap-2 overflow-x-auto pb-1 sidebar-scroll">
                 {BOSS_WORKSPACE_TABS.map((tab) => (
                   <button
                     key={tab.id}
@@ -683,8 +712,8 @@ export default function BossGuide({ hiscores }: Props) {
                 ))}
               </div>
 
-              {/* Dense metric strip — compact on mobile, full cards on desktop. */}
-              <div className="mt-4 flex gap-2 overflow-x-auto pb-1 sidebar-scroll sm:grid sm:grid-cols-2 sm:overflow-visible xl:grid-cols-4 sm:gap-3">
+              {/* Metric strip — desktop/tablet only; mobile skips straight to guide. */}
+              <div className="mt-4 hidden gap-2 overflow-x-auto pb-1 sidebar-scroll sm:grid sm:grid-cols-2 sm:overflow-visible xl:grid-cols-4 sm:gap-3">
                 <div className="min-w-[9.5rem] shrink-0 rounded-xl border border-border-subtle bg-bg-tertiary px-3 py-2.5 sm:min-w-0 sm:px-4 sm:py-3">
                   <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
                     Sections
@@ -793,70 +822,167 @@ export default function BossGuide({ hiscores }: Props) {
                 </div>
               )}
             <div className="grid gap-4 xl:grid-cols-[220px_minmax(0,1fr)] min-w-0 items-start">
-              {/* Desktop sticky TOC */}
+              {/* Desktop sticky TOC — hierarchical, collapsible for long raids */}
               <aside className="hidden xl:block h-fit xl:sticky xl:top-6 max-h-[calc(100vh-4rem)] overflow-y-auto scroll-fade sidebar-scroll rounded-xl border border-border/30 bg-bg-primary/20 p-2">
                 <div className="mb-2 px-2 text-[10px] uppercase tracking-[0.2em] text-text-secondary/45">
                   Guide Sections
                 </div>
                 <div className="space-y-0.5">
                   {(() => {
-                    let h2Counter = 0;
-                    return guide.sections.map((section) => {
-                      if (section.level === 2) h2Counter += 1;
-                      const h2Number = h2Counter;
-                      const active =
-                        activeSectionId === section.id ||
-                        (section.level === 2 &&
-                          guide.sections.some(
-                            (s) =>
-                              s.parentId === section.id &&
-                              s.id === activeSectionId
-                          ));
-                      return (
-                    <button
-                      key={section.id}
-                      type="button"
-                      onClick={() => scrollToGuideSection(section.id)}
-                      aria-current={active ? "location" : undefined}
-                      className={`group flex w-full items-center gap-2 rounded-lg text-left transition ${
-                        section.level === 3
-                          ? "pl-6 pr-2.5 py-1.5"
-                          : "px-2.5 py-2"
-                      } ${
-                        active
-                          ? "bg-accent/10 text-text-primary"
-                          : "text-text-secondary hover:bg-bg-primary/60 hover:text-text-primary"
-                      }`}
-                    >
-                      {section.level === 2 ? (
-                        <span
-                          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[10px] font-medium ${
-                            active
-                              ? "bg-accent/20 text-accent"
-                              : "bg-bg-tertiary/60 text-text-secondary/60 group-hover:text-text-primary"
-                          }`}
-                        >
-                          {h2Number}
-                        </span>
-                      ) : (
-                        <span
-                          className={`w-1 h-1 shrink-0 rounded-full ${
-                            active ? "bg-accent" : "bg-text-secondary/30 group-hover:bg-accent/50"
-                          }`}
-                        />
-                      )}
-                      <span
-                        className={`line-clamp-2 leading-snug ${
-                          section.level === 3
-                            ? `text-xs ${active ? "text-text-primary" : "text-text-secondary/70"}`
-                            : "text-sm"
-                        }`}
-                      >
-                        {section.title}
-                      </span>
-                    </button>
-                      );
+                    const byId = new Map(guide.sections.map((s) => [s.id, s]));
+                    const depthOf = (id: string): number => {
+                      let d = 0;
+                      let cur = byId.get(id);
+                      while (cur?.parentId && byId.has(cur.parentId)) {
+                        d += 1;
+                        cur = byId.get(cur.parentId);
+                      }
+                      return d;
+                    };
+                    const descendantsOf = (rootId: string) =>
+                      guide.sections.filter((s) => {
+                        let cur = s;
+                        while (cur.parentId) {
+                          if (cur.parentId === rootId) return true;
+                          const parent = byId.get(cur.parentId);
+                          if (!parent) break;
+                          cur = parent;
+                        }
+                        return false;
+                      });
+                    const roots = guide.sections.filter((s) => !s.parentId || !byId.has(s.parentId));
+                    const claimed = new Set<string>();
+                    roots.forEach((r) => {
+                      claimed.add(r.id);
+                      descendantsOf(r.id).forEach((d) => claimed.add(d.id));
                     });
+                    const orphans = guide.sections.filter((s) => !claimed.has(s.id));
+                    let h2Counter = 0;
+                    return (
+                      <>
+                        {roots.map((section) => {
+                          const isTop = !section.parentId || section.level === 2;
+                          if (isTop) h2Counter += 1;
+                          const kids = descendantsOf(section.id);
+                          const active =
+                            activeSectionId === section.id ||
+                            kids.some((k) => k.id === activeSectionId);
+                          const expanded =
+                            tocExpanded[section.id] ??
+                            (active || kids.length <= 6);
+                          return (
+                            <div key={section.id}>
+                              <div className="flex items-stretch gap-0.5">
+                                {kids.length > 0 ? (
+                                  <button
+                                    type="button"
+                                    aria-label={expanded ? "Collapse" : "Expand"}
+                                    onClick={() =>
+                                      setTocExpanded((m) => ({
+                                        ...m,
+                                        [section.id]: !expanded,
+                                      }))
+                                    }
+                                    className="flex w-6 shrink-0 items-center justify-center rounded-md text-text-secondary/50 hover:bg-bg-primary/60 hover:text-text-primary"
+                                  >
+                                    <span className="text-[10px]">{expanded ? "▾" : "▸"}</span>
+                                  </button>
+                                ) : (
+                                  <span className="w-6 shrink-0" />
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    scrollToGuideSection(section.id);
+                                    if (kids.length > 0) {
+                                      setTocExpanded((m) => ({ ...m, [section.id]: true }));
+                                    }
+                                  }}
+                                  aria-current={active ? "location" : undefined}
+                                  className={`group flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-2 text-left transition ${
+                                    active
+                                      ? "bg-accent/10 text-text-primary"
+                                      : "text-text-secondary hover:bg-bg-primary/60 hover:text-text-primary"
+                                  }`}
+                                >
+                                  <span
+                                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[10px] font-medium ${
+                                      active
+                                        ? "bg-accent/20 text-accent"
+                                        : "bg-bg-tertiary/60 text-text-secondary/60"
+                                    }`}
+                                  >
+                                    {h2Counter}
+                                  </span>
+                                  <span className="line-clamp-2 text-sm leading-snug">
+                                    {section.title}
+                                  </span>
+                                  {kids.length > 0 ? (
+                                    <span className="ml-auto shrink-0 text-[10px] text-text-secondary/40">
+                                      {kids.length}
+                                    </span>
+                                  ) : null}
+                                </button>
+                              </div>
+                              {expanded && kids.length > 0 ? (
+                                <div className="ml-6 space-y-0.5 border-l border-border/30 pl-1">
+                                  {kids.map((child) => {
+                                    const childActive = activeSectionId === child.id;
+                                    const nest = Math.min(depthOf(child.id), 3);
+                                    const leaf = child.title.includes(" > ")
+                                      ? child.title.slice(child.title.lastIndexOf(" > ") + 3)
+                                      : child.title;
+                                    return (
+                                      <button
+                                        key={child.id}
+                                        type="button"
+                                        onClick={() => scrollToGuideSection(child.id)}
+                                        aria-current={childActive ? "location" : undefined}
+                                        style={{ paddingLeft: `${0.5 + nest * 0.45}rem` }}
+                                        className={`flex w-full items-center gap-2 rounded-lg py-1.5 pr-2.5 text-left transition ${
+                                          childActive
+                                            ? "bg-accent/10 text-text-primary"
+                                            : "text-text-secondary/70 hover:bg-bg-primary/60 hover:text-text-primary"
+                                        }`}
+                                      >
+                                        <span
+                                          className={`h-1 w-1 shrink-0 rounded-full ${
+                                            childActive ? "bg-accent" : "bg-text-secondary/30"
+                                          }`}
+                                        />
+                                        <span className="line-clamp-2 text-xs leading-snug">
+                                          {leaf}
+                                        </span>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              ) : null}
+                            </div>
+                          );
+                        })}
+                        {orphans.map((section) => {
+                          const active = activeSectionId === section.id;
+                          return (
+                            <button
+                              key={section.id}
+                              type="button"
+                              onClick={() => scrollToGuideSection(section.id)}
+                              aria-current={active ? "location" : undefined}
+                              className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 pl-8 text-left transition ${
+                                active
+                                  ? "bg-accent/10 text-text-primary"
+                                  : "text-text-secondary/70 hover:bg-bg-primary/60 hover:text-text-primary"
+                              }`}
+                            >
+                              <span className="line-clamp-2 text-xs leading-snug">
+                                {section.title}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </>
+                    );
                   })()}
                 </div>
               </aside>

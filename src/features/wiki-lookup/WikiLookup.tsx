@@ -620,22 +620,22 @@ export default function WikiLookup() {
                     ) : null}
                   {document.relatedPages.length > 0 ? (
                     <div className="flex flex-wrap items-center gap-2 pt-1">
-                      {document.relatedPages.slice(0, 8).map((page) => (
+                      {document.relatedPages.slice(0, 5).map((page) => (
                         <button
                           key={page.title}
                           type="button"
                           onClick={() => navigateToTypedPage(page.title, page.kind)}
                           className="rounded-full border border-border bg-bg-primary/55 px-3 py-1 text-xs text-text-secondary transition hover:border-accent/35 hover:text-text-primary"
                         >
-                          <span className="mr-1.5 text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
+                          <span className="mr-1.5 hidden text-[10px] uppercase tracking-[0.16em] text-text-secondary/45 sm:inline">
                             {getKindLabel(page.kind)}
                           </span>
                           {page.title}
                         </button>
                       ))}
-                      {document.totalRelatedPages > 8 ? (
+                      {document.totalRelatedPages > 5 ? (
                         <span className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
-                          +{document.totalRelatedPages - 8} more
+                          +{document.totalRelatedPages - 5} more
                         </span>
                       ) : null}
                     </div>
