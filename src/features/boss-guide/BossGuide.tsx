@@ -334,6 +334,15 @@ export default function BossGuide({ hiscores }: Props) {
     setTocExpanded({});
   }, [selectedBoss?.name]);
 
+  // Keep the selected boss visible in the sticky directory list.
+  useEffect(() => {
+    if (!selectedBoss) return;
+    const el = document.querySelector<HTMLElement>(
+      `[data-boss-name="${CSS.escape(selectedBoss.name)}"]`
+    );
+    el?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [selectedBoss?.name]);
+
   // Keep the active mobile chip scrolled into view.
   useEffect(() => {
     if (!activeSectionId) return;
@@ -360,7 +369,11 @@ export default function BossGuide({ hiscores }: Props) {
         context="boss kill counts and personalised task context"
       />
       <div>
-        <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
+        <div
+          className={`flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between ${
+            selectedBoss ? "hidden sm:flex" : ""
+          }`}
+        >
           <div className="space-y-1">
             <h2 className="text-hero font-semibold tracking-tight">Boss Guides</h2>
             <p className="max-w-2xl text-sm text-text-secondary">
@@ -441,6 +454,7 @@ export default function BossGuide({ hiscores }: Props) {
                 <button
                   key={boss.name}
                   type="button"
+                  data-boss-name={boss.name}
                   onClick={() => void selectBoss(boss)}
                   className={`w-full rounded-xl border px-3 py-3 text-left transition ${
                     active
