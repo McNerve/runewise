@@ -65,7 +65,7 @@ const Sidebar = memo(function Sidebar({ currentView, onNavigate, rsn = "" }: Sid
   return (
     <Tooltip.Provider delayDuration={200}>
     <aside
-      className={`sidebar-shell ${collapsed ? "w-16" : "w-56"} flex flex-col overflow-hidden border-r border-border/80 transition-[width] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]`}
+      className={`sidebar-shell h-full bg-bg-primary ${collapsed ? "w-16" : "w-56"} flex flex-col overflow-hidden border-r border-border/80 transition-[width] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]`}
     >
       <div
         className={`h-16 ${collapsed ? "px-3 justify-center" : "px-4"} flex items-center border-b border-border/60`}

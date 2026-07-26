@@ -33,7 +33,14 @@ function AppContent() {
     const hasRsn = Boolean(localStorage.getItem(RSN_KEY));
     return !completed && !hasRsn;
   });
+  /** Mobile nav drawer (sidebar overlay below md). */
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const renderView = VIEW_RENDERERS[view];
+
+  // Close mobile drawer on navigation
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [view]);
 
   // Seed ironman mode from account detection ONCE, then leave it to the user.
   // Never auto-disable (detection failures shouldn't flip the setting) and
@@ -59,19 +66,46 @@ function AppContent() {
   return (
     <>
       <div className="flex h-screen">
-        <Sidebar currentView={view} onNavigate={navigate} rsn={hiscores.rsn} />
-        <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Desktop sidebar */}
+        <div className="hidden md:flex h-full shrink-0">
+          <Sidebar currentView={view} onNavigate={navigate} rsn={hiscores.rsn} />
+        </div>
+
+        {/* Mobile drawer overlay */}
+        {mobileNavOpen && (
+          <div className="fixed inset-0 z-40 md:hidden">
+            <button
+              type="button"
+              className="absolute inset-0 bg-black/55 backdrop-blur-[2px]"
+              aria-label="Close navigation"
+              onClick={() => setMobileNavOpen(false)}
+            />
+            <div className="absolute inset-y-0 left-0 flex h-full w-56 max-w-[85vw] shadow-2xl">
+              <Sidebar
+                currentView={view}
+                onNavigate={(v, p) => {
+                  navigate(v, p);
+                  setMobileNavOpen(false);
+                }}
+                rsn={hiscores.rsn}
+              />
+            </div>
+          </div>
+        )}
+
+        <div className="flex-1 flex flex-col overflow-hidden min-w-0">
           <PlayerBar
             rsn={hiscores.rsn}
             loading={hiscores.loading}
             error={hiscores.error}
             onLookup={hiscores.lookup}
             onClear={hiscores.clear}
+            onOpenNav={() => setMobileNavOpen(true)}
           />
           <OfflineBanner />
           <main
             aria-label="Main content"
-            className="content-area flex-1 overflow-y-auto p-5 sm:p-6"
+            className="content-area flex-1 overflow-y-auto p-4 sm:p-5 md:p-6"
             style={{ "--feature-accent": getFeatureAccent(view) } as React.CSSProperties}
           >
             <div className="max-w-5xl mx-auto">

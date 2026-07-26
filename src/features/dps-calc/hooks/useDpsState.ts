@@ -260,28 +260,39 @@ export function useDpsState({ hiscores }: Props) {
     if (preset) void applyPreset(preset);
   }, [params.preset, applyPreset]);
 
-  // Apply upgrade path pieces once after preset deep-link (upgradeItem / upgradePath)
+  // Apply gear deep-link from Loadout Finder:
+  // - params.gear = JSON { slot: itemName, ... } (preferred, full optimized sets)
+  // - params.upgradePath / upgradeItem (leftover path + legacy)
   const upgradePathApplied = useRef<string | null>(null);
   useEffect(() => {
     const single = params.upgradeItem;
     const slot = params.upgradeSlot;
     const path = params.upgradePath;
-    if (!single && !path) return;
-    const key = `${params.preset ?? ""}|${path ?? ""}|${slot ?? ""}|${single ?? ""}`;
+    const gearJson = params.gear;
+    if (!single && !path && !gearJson) return;
+    const key = `${params.preset ?? ""}|${gearJson ?? ""}|${path ?? ""}|${slot ?? ""}|${single ?? ""}`;
     if (upgradePathApplied.current === key) return;
     // Wait until preset gear has landed when a preset is also requested
     if (params.preset && Object.keys(equippedGear).length === 0) return;
-    // Optimized loadouts send only upgradePath — apply onto empty/current gear
 
-    upgradePathApplied.current = key;
     let cancelled = false;
     (async () => {
       const equipment = allEquipment.length > 0 ? allEquipment : await fetchAllEquipment();
       if (cancelled) return;
       if (allEquipment.length === 0) setAllEquipment(equipment);
 
+      const resolveItem = (itemName: string) => {
+        const lower = itemName.toLowerCase();
+        return (
+          equipment.find((e) => e.name.toLowerCase() === lower) ??
+          // Soft match: ignore trailing "(uncharged)" / "(i)" noise
+          equipment.find((e) => e.name.toLowerCase().startsWith(lower)) ??
+          equipment.find((e) => lower.startsWith(e.name.toLowerCase()))
+        );
+      };
+
       const applyOne = (slotName: string, itemName: string, gear: EquippedGear): EquippedGear => {
-        const match = equipment.find((e) => e.name.toLowerCase() === itemName.toLowerCase());
+        const match = resolveItem(itemName);
         if (!match) return gear;
         const next = { ...gear };
         if (slotName === "2h") {
@@ -298,7 +309,18 @@ export function useDpsState({ hiscores }: Props) {
       };
 
       setEquippedGear((prev) => {
-        let gear = { ...prev };
+        // Full gear JSON replaces; path merges onto prev/preset
+        let gear: EquippedGear = gearJson ? {} : { ...prev };
+        if (gearJson) {
+          try {
+            const slots = JSON.parse(gearJson) as Record<string, string>;
+            for (const [s, itemName] of Object.entries(slots)) {
+              if (s && itemName) gear = applyOne(s, itemName, gear);
+            }
+          } catch {
+            /* ignore bad JSON */
+          }
+        }
         if (path) {
           for (const part of path.split("|")) {
             const [s, ...rest] = part.split(":");
@@ -311,6 +333,8 @@ export function useDpsState({ hiscores }: Props) {
         return gear;
       });
       setBonusMode("equipment");
+      // Mark applied only after equipment catalog was available
+      upgradePathApplied.current = key;
     })();
 
     return () => {
@@ -320,6 +344,7 @@ export function useDpsState({ hiscores }: Props) {
     params.upgradeItem,
     params.upgradeSlot,
     params.upgradePath,
+    params.gear,
     params.preset,
     allEquipment,
     equippedGear,

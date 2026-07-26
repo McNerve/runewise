@@ -9,6 +9,8 @@ interface PlayerBarProps {
   error: string | null;
   onLookup: (rsn: string) => void;
   onClear: () => void;
+  /** Open mobile navigation drawer (md:hidden). */
+  onOpenNav?: () => void;
 }
 
 const PlayerBar = memo(function PlayerBar({
@@ -17,6 +19,7 @@ const PlayerBar = memo(function PlayerBar({
   error,
   onLookup,
   onClear,
+  onOpenNav,
 }: PlayerBarProps) {
   const { view, goBack, canGoBack } = useNavigation();
   const [input, setInput] = useState(rsn);
@@ -42,10 +45,23 @@ const PlayerBar = memo(function PlayerBar({
 
   return (
     <div className="topbar-shell border-b border-border/70 shrink-0">
-      <div className="h-16 flex items-center px-5">
-        <div className="flex items-center justify-between gap-4 w-full">
-        {/* Left: nav + title */}
-        <div className="flex items-center gap-3 min-w-0">
+      <div className="h-16 flex items-center px-3 sm:px-5">
+        <div className="flex items-center justify-between gap-2 sm:gap-4 w-full">
+        {/* Left: mobile menu + nav + title */}
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          {onOpenNav && (
+            <button
+              type="button"
+              onClick={onOpenNav}
+              className="pressable md:hidden flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-text-secondary hover:bg-bg-secondary hover:text-text-primary"
+              title="Open menu"
+              aria-label="Open navigation menu"
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+              </svg>
+            </button>
+          )}
           {canGoBack && (
             <button
               type="button"

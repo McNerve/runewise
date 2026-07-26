@@ -405,26 +405,35 @@ export default function LoadoutFinder({ hiscores }: Props) {
 
   const levelSummary = useMemo(() => {
     if (!hiscores) return "Levels: 99s (no hiscores — using defaults)";
-    const get = (n: string) =>
-      hiscores.skills.find((s) => s.name.toLowerCase() === n.toLowerCase())?.level ?? "—";
-    return `Using your levels — Atk ${get("Attack")} · Str ${get("Strength")} · Ranged ${get("Ranged")} · Magic ${get("Magic")}`;
+    const get = (...names: string[]) => {
+      for (const n of names) {
+        const hit = hiscores.skills.find(
+          (s) => s.name.toLowerCase() === n.toLowerCase()
+        );
+        if (hit && hit.level >= 1) return hit.level;
+      }
+      return "—";
+    };
+    return `Using your levels — Atk ${get("Attack")} · Str ${get("Strength")} · Ranged ${get("Ranged", "Range")} · Magic ${get("Magic")}`;
   }, [hiscores]);
 
   const openInDps = (row: RankedLoadout) => {
     const params: Record<string, string> = {
       style: row.style,
     };
-    // Named presets deep-link by name; optimized gear is encoded as path
+    // Named presets deep-link by name; optimized / custom gear is JSON-encoded
+    // so DPS can equip every slot reliably (upgradePath alone was flaky on name match).
     if (!row.preset.name.startsWith("Optimized ")) {
       params.preset = row.preset.name;
-    } else {
-      // Build upgradePath of all slots so DPS can equip the full set
-      const parts: string[] = [];
-      for (const [slot, item] of Object.entries(row.gear)) {
-        if (item) parts.push(`${slot}:${item.name}`);
-      }
-      if (parts.length) params.upgradePath = parts.join("|");
     }
+    const gearSlots: Record<string, string> = {};
+    for (const [slot, item] of Object.entries(row.gear)) {
+      if (item?.name) gearSlots[slot] = item.name;
+    }
+    if (Object.keys(gearSlots).length > 0) {
+      params.gear = JSON.stringify(gearSlots);
+    }
+    if (row.prayerName) params.prayer = row.prayerName;
     if (target.name !== "Custom / Dummy") {
       params.monster = target.name;
     }
