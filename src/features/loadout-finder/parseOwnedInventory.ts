@@ -7,6 +7,8 @@
  * - "qty x Name" / "Name x qty" / "Name, qty"
  * - Simple CSV (name in first column, or "name,quantity")
  * - Comma / semicolon separated lists
+ * - JSON array of strings, or objects with name/itemName/item fields
+ *   (RuneLite bank tags export, simple plugin dumps)
  */
 
 const QTY_PREFIX = /^\s*(\d+)\s*[x×]\s+(.+)$/i;
@@ -45,12 +47,60 @@ export function normalizeOwnedToken(raw: string): string | null {
   return s;
 }
 
+function parseJsonOwned(text: string): string[] | null {
+  const t = text.trim();
+  if (!t.startsWith("[") && !t.startsWith("{")) return null;
+  try {
+    const data = JSON.parse(t) as unknown;
+    const items: string[] = [];
+    const push = (v: unknown) => {
+      if (typeof v === "string") {
+        const n = normalizeOwnedToken(v);
+        if (n) items.push(n);
+      } else if (v && typeof v === "object") {
+        const o = v as Record<string, unknown>;
+        const name =
+          o.name ?? o.itemName ?? o.item ?? o.Name ?? o["item name"];
+        if (typeof name === "string") {
+          const n = normalizeOwnedToken(name);
+          if (n) items.push(n);
+        }
+      }
+    };
+    if (Array.isArray(data)) {
+      for (const row of data) push(row);
+    } else if (data && typeof data === "object") {
+      const o = data as Record<string, unknown>;
+      // { items: [...] } or { bank: [...] }
+      const arr = o.items ?? o.bank ?? o.inventory ?? o.data;
+      if (Array.isArray(arr)) for (const row of arr) push(row);
+    }
+    return items.length > 0 ? items : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
- * Parse a multi-line bank dump / CSV paste into unique item names
+ * Parse a multi-line bank dump / CSV / JSON paste into unique item names
  * (order preserved, case kept from first sighting).
  */
 export function parseOwnedInventory(text: string): string[] {
   if (!text?.trim()) return [];
+
+  const fromJson = parseJsonOwned(text);
+  if (fromJson) {
+    // Dedupe
+    const seen = new Set<string>();
+    const out: string[] = [];
+    for (const n of fromJson) {
+      const k = n.toLowerCase();
+      if (seen.has(k)) continue;
+      seen.add(k);
+      out.push(n);
+    }
+    return out;
+  }
 
   const seen = new Set<string>();
   const out: string[] = [];

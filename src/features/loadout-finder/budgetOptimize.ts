@@ -15,6 +15,7 @@ import {
   buildDpsInput,
   bestPrayerForStyle,
   filterExcludedEquipment,
+  resolveSpellLabel,
   withOwnedPrices,
   type LoadoutTarget,
   type RankedLoadout,
@@ -139,6 +140,7 @@ function toRanked(
     style,
     withinBudget: unlimited || totalCost <= budget,
     prayerName: prayer.name,
+    spellName: resolveSpellLabel(style, gear, hiscores),
   };
 }
 

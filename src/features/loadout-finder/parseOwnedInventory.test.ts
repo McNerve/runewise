@@ -47,4 +47,21 @@ Dragon scimitar,2`;
   it("dedupes case-insensitively", () => {
     expect(parseOwnedInventory("Whip\nwhip\nWHIP")).toEqual(["Whip"]);
   });
+
+  it("parses JSON array of names", () => {
+    expect(parseOwnedInventory('["Fire cape", "Abyssal whip"]')).toEqual([
+      "Fire cape",
+      "Abyssal whip",
+    ]);
+  });
+
+  it("parses JSON objects with name fields", () => {
+    const json = JSON.stringify({
+      items: [
+        { name: "Dragon defender", quantity: 1 },
+        { itemName: "Barrows gloves", qty: 1 },
+      ],
+    });
+    expect(parseOwnedInventory(json)).toEqual(["Dragon defender", "Barrows gloves"]);
+  });
 });

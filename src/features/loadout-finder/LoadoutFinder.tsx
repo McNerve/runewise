@@ -139,6 +139,12 @@ function ResultRow({
                 <span className="text-text-primary">{row.prayerName}</span>
               </span>
             )}
+            {row.spellName && (
+              <span>
+                <span className="text-text-secondary/60">Spell </span>
+                <span className="text-text-primary">{row.spellName}</span>
+              </span>
+            )}
           </div>
           {lowAcc && (
             <p className="text-2xs text-warning/90">
@@ -613,7 +619,9 @@ export default function LoadoutFinder({ hiscores }: Props) {
             <textarea
               value={bankPaste}
               onChange={(e) => setBankPaste(e.target.value)}
-              placeholder={"One item per line, or CSV / RuneLite export\n3 x Abyssal whip\nFire cape"}
+              placeholder={
+                "One item per line, CSV, JSON array, or RuneLite dump\n3 x Abyssal whip\nFire cape"
+              }
               aria-label="Bank dump paste"
               rows={3}
               className="w-full rounded-lg border border-border bg-bg-primary px-2.5 py-1.5 text-xs font-mono"
