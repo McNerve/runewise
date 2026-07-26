@@ -1233,7 +1233,7 @@ export function parseSuggestedSkill(raw: string): SuggestedSkill | null {
   } else if (remainder) {
     // Strip outer parens and noise flags; keep notes like "Piety (74+ for Rigour)"
     // or method labels ("Ranged method" → "method" after skill already consumed).
-    let cleaned = remainder
+    const cleaned = remainder
       .replace(/^\(+/, "")
       .replace(/\)+$/, "")
       .replace(/\bwith boost\b/gi, "")

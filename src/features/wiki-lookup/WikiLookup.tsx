@@ -395,7 +395,7 @@ export default function WikiLookup() {
     scroller.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
     return () => scroller.removeEventListener("scroll", onScroll);
-  }, [document?.title, loadingDocument]);
+  }, [document, loadingDocument]);
 
   const pageUrl = useMemo(
     () =>

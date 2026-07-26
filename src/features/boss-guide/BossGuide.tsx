@@ -344,7 +344,7 @@ export default function BossGuide({ hiscores }: Props) {
       `[data-boss-name="${CSS.escape(selectedBoss.name)}"]`
     );
     el?.scrollIntoView({ block: "nearest", behavior: "smooth" });
-  }, [selectedBoss?.name]);
+  }, [selectedBoss]);
 
   // After a guide finishes loading on small screens, jump past chrome into content.
   useEffect(() => {
@@ -354,7 +354,7 @@ export default function BossGuide({ hiscores }: Props) {
       contentRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 120);
     return () => window.clearTimeout(t);
-  }, [loading, guide, selectedBoss?.name]);
+  }, [loading, guide, selectedBoss]);
 
   // j / k — next / previous guide section (when not typing in an input).
   useEffect(() => {

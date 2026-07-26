@@ -4,6 +4,22 @@ All notable changes to RuneWise are documented here. Versions follow [Semantic V
 
 ## [Unreleased]
 
+## [2.5.18] - 2026-07-26
+
+### OSRS Wiki + Boss Guides (UX overhaul)
+
+- **In-app strategy links** — boss guide HTML keeps wiki anchors; click items/pages without leaving RuneWise.
+- **Strategy vs Loot** — drop tables no longer clutter Strategy; Loot tab owns them.
+- **Raid room trees** — CoX combat rooms, ToB rooms, ToA paths/Wardens with nested H3/H4 (Safespotting, Phases, Challenge room ×4).
+- **MediaWiki section index** — nested sections fetch correctly (was empty on H4s).
+- **Prefer /Strategies** — guides load strategy pages, not reward-heavy main pages.
+- **Inventory tabbers** — Ranged/Melee/Blowpipe setups as native expandable tabs.
+- **Sticky directory + hierarchical TOC** — collapsible Combat/Paths trees; sticky panes mid-scroll.
+- **Mobile** — directory collapses when a boss is open, sticky section chips, thinner chrome, jump-to-guide.
+- **Boss search** — filter the directory; hover prefetches guides.
+- **Wiki polish** — table horizontal scroll, collapsed trivia/sound effects, mobile TOC chips, reading progress, Open Vorkath Guide from strategy pages.
+- **Power UX** — copy deep-link, back-to-top, j/k section keys, skill BOOST/OPT badges.
+
 ## [2.5.17] - 2026-07-26
 
 ### Loadout → DPS

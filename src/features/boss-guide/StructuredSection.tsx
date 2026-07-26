@@ -445,7 +445,7 @@ function cleanSkillQualifier(
     const skillRe = new RegExp(`\\b${skill.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "gi");
     q = q.replace(skillRe, "").replace(/\s+/g, " ").trim();
   }
-  q = q.replace(/^for\s+/i, "").replace(/^[\-–—,;:]\s*/, "").replace(/\s+[\-–—,;:]$/, "").trim();
+  q = q.replace(/^for\s+/i, "").replace(/^[-–—,;:]\s*/, "").replace(/\s+[-–—,;:]$/, "").trim();
   // Collapse bare "method" leftovers into empty if nothing else remains
   if (!q || /^(method|methods)$/i.test(q)) return null;
   // "Ranged method" style already clean; "Piety (74+ for Rigour)" good
