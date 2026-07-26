@@ -181,9 +181,26 @@ export default function ProductionCalc() {
 
   if (loading) {
     return (
-      <div className="max-w-4xl">
-        <h2 className="text-xl font-semibold mb-1">Recipe Calculator</h2>
-        <div className="animate-pulse bg-bg-tertiary/50 h-4 rounded w-3/4" />
+      <div className="max-w-4xl space-y-4">
+        <div>
+          <h2 className="text-xl font-semibold mb-1">Recipe Calculator</h2>
+          <p className="text-xs text-text-secondary">
+            Loading recipe database from the wiki… this can take a few seconds on first open.
+          </p>
+        </div>
+        <div className="h-10 rounded-lg bg-bg-tertiary/60 border border-border animate-pulse" />
+        <div className="space-y-2">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div
+              key={i}
+              className="h-10 rounded-lg bg-bg-tertiary/40 border border-border/50 animate-pulse"
+              style={{ width: `${90 - i * 6}%` }}
+            />
+          ))}
+        </div>
+        <p className="text-2xs text-text-secondary/70">
+          Popular recipes (available after load): {POPULAR_RECIPES.slice(0, 5).join(" · ")}
+        </p>
       </div>
     );
   }

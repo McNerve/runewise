@@ -1,8 +1,13 @@
 # NEXT — living product backlog
 
-After **2.5.15** (magic spell BiS, set pieces, JSON bank).
+After **2.5.16** (audit fixes: Open-in-DPS gear, mobile nav, version, news timeout).
 
 ## Shipped recently
+
+### 2.5.16
+- Full gear deep-link from Loadout → DPS
+- Mobile hamburger drawer
+- Version badge, recipe loading, news timeout, monster keys
 
 ### 2.5.15
 - Magic spell / powered-staff resolution for Loadout Finder

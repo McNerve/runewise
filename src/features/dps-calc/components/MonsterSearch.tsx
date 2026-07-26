@@ -96,12 +96,12 @@ export default memo(function MonsterSearch({
           ref={listRef}
           className="absolute z-30 top-full mt-1 w-full bg-bg-tertiary border border-border rounded-lg shadow-xl max-h-60 overflow-y-auto"
         >
-          {results.map((m) => {
+          {results.map((m, i) => {
             const ver = m.version ? cleanVersion(m.version) : null;
             const weakness = m.name === "Zulrah" && ver ? ZULRAH_WEAKNESS[ver] : null;
             return (
               <button
-                key={`${m.name}:${m.version ?? ""}`}
+                key={`${m.name}:${m.version ?? ""}:${m.combatLevel}:${m.hitpoints}:${i}`}
                 onClick={() => {
                   onSelect(m);
                   setOpen(false);

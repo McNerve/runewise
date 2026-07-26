@@ -4,6 +4,17 @@ All notable changes to RuneWise are documented here. Versions follow [Semantic V
 
 ## [Unreleased]
 
+## [2.5.16] - 2026-07-26
+
+### Fixes (visual audit)
+
+- **Open in DPS** — optimized loadouts pass full gear JSON; equip every slot reliably (no more empty fists).
+- **Mobile nav** — hamburger drawer below `md`; sidebar no longer crushes content.
+- **App version badge** — reads `package.json` correctly (shows v2.5.x).
+- **Recipe Calculator** — visible loading state while wiki recipes download.
+- **News** — 18s hard timeout so the page never spins forever.
+- **DPS monster list** — unique React keys (no duplicate-key warnings).
+
 ## [2.5.15] - 2026-07-26
 
 ### Loadout Finder

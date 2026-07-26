@@ -272,9 +272,19 @@ export default function News() {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- loading state for async fetch
     setLoading(true);
     setLoadError(false);
+    // Hard cap so the page never spins forever if a month fetch hangs.
+    const hardTimeout = window.setTimeout(() => {
+      if (cancelled) return;
+      setLoading((still) => {
+        if (still) setLoadError(true);
+        return false;
+      });
+    }, 18_000);
+
     fetchBlogPosts()
       .then((p) => {
         if (!cancelled) {
+          clearTimeout(hardTimeout);
           setPosts(p);
           setLoadError(p.length === 0);
           setLoading(false);
@@ -282,6 +292,7 @@ export default function News() {
       })
       .catch(() => {
         if (!cancelled) {
+          clearTimeout(hardTimeout);
           setPosts([]);
           setLoadError(true);
           setLoading(false);
@@ -289,6 +300,7 @@ export default function News() {
       });
     return () => {
       cancelled = true;
+      clearTimeout(hardTimeout);
     };
   }, [refreshKey]);
 

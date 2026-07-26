@@ -1,8 +1,15 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import { readFileSync } from "fs";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
 
 const host = process.env.TAURI_DEV_HOST;
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const pkgVersion = JSON.parse(
+  readFileSync(join(__dirname, "package.json"), "utf-8")
+).version as string;
 
 // RW_MOCK_API=1 routes every /api proxy to scripts/mock-api.mjs so the full
 // app can be exercised with realistic data in offline sandboxes.
@@ -12,7 +19,8 @@ const MOCK_TARGET = "http://localhost:5198";
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   define: {
-    __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
+    // Read package.json directly — npm_package_version is often unset under Vite CLI.
+    __APP_VERSION__: JSON.stringify(pkgVersion),
   },
   clearScreen: false,
   server: {
