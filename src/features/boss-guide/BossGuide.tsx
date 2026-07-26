@@ -781,14 +781,16 @@ export default function BossGuide({ hiscores }: Props) {
           {selectedBoss && !loading && activeTab === "guide" && !guideError && guide && guide.sections.length > 0 ? (
             <div>
               {BOSS_METADATA[selectedBoss.name] && (
-                <BossMetaCard
-                  meta={BOSS_METADATA[selectedBoss.name]}
-                  combatLevel={selectedBoss.combatLevel}
-                  hitpoints={selectedBoss.hitpoints}
-                  maxHit={selectedBoss.maxHit}
-                  weakness={selectedBoss.weakness}
-                  hiscores={hiscores}
-                />
+                <div className="mb-4 hidden sm:block">
+                  <BossMetaCard
+                    meta={BOSS_METADATA[selectedBoss.name]}
+                    combatLevel={selectedBoss.combatLevel}
+                    hitpoints={selectedBoss.hitpoints}
+                    maxHit={selectedBoss.maxHit}
+                    weakness={selectedBoss.weakness}
+                    hiscores={hiscores}
+                  />
+                </div>
               )}
             <div className="grid gap-4 xl:grid-cols-[220px_minmax(0,1fr)] min-w-0 items-start">
               {/* Desktop sticky TOC */}
@@ -904,10 +906,14 @@ export default function BossGuide({ hiscores }: Props) {
                   <section
                     key={section.id}
                     id={section.id}
-                    className={`rounded-xl border bg-bg-primary/25 min-w-0 overflow-hidden scroll-mt-4 ${
+                    className={`rounded-xl border bg-bg-primary/25 min-w-0 overflow-hidden scroll-mt-4 transition-[border-color,box-shadow] ${
                       section.level === 3
                         ? "border-border/25 xl:ml-4 p-4"
                         : "border-border/40 p-4 sm:p-5"
+                    } ${
+                      activeSectionId === section.id
+                        ? "border-accent/35 shadow-[inset_3px_0_0_0_var(--color-accent)]"
+                        : ""
                     }`}
                   >
                     {section.level === 3 ? (

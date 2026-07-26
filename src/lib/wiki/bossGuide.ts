@@ -490,7 +490,11 @@ function filterRelevantSections(sections: WikiSection[]): WikiSection[] {
   return result;
 }
 
-async function fetchSectionsWithFallback(wikiPage: string) {
+async function fetchSectionsWithFallback(wikiPage: string): Promise<{
+  page: string;
+  sections: WikiSection[];
+  allSections: WikiSection[];
+}> {
   const hasStrategies = wikiPage.endsWith("/Strategies");
   const altPage = hasStrategies
     ? wikiPage.replace(/\/Strategies$/, "")
@@ -504,11 +508,13 @@ async function fetchSectionsWithFallback(wikiPage: string) {
   const matched = filterRelevantSections(sections);
   const altMatched = filterRelevantSections(altSections);
 
-  return altMatched.length > matched.length
-    ? { page: altPage, sections: altMatched }
-    : matched.length > 0
-      ? { page: wikiPage, sections: matched }
-      : { page: altPage, sections: altMatched };
+  if (altMatched.length > matched.length) {
+    return { page: altPage, sections: altMatched, allSections: altSections };
+  }
+  if (matched.length > 0) {
+    return { page: wikiPage, sections: matched, allSections: sections };
+  }
+  return { page: altPage, sections: altMatched, allSections: altSections };
 }
 
 // -----------------------------------------------------------------------
@@ -529,11 +535,11 @@ function disambiguateTitle(
 export async function fetchBossGuideDocument(
   wikiPage: string
 ): Promise<BossGuideDocument> {
-  const cacheKey = `boss-guide:v9:${wikiPage}`;
+  const cacheKey = `boss-guide:v11:${wikiPage}`;
   const cached = getCached<BossGuideDocument>(cacheKey, GUIDE_TTL);
   if (cached) return cached;
 
-  const { page: resolvedPage, sections: targetSections } =
+  const { page: resolvedPage, sections: targetSections, allSections } =
     await fetchSectionsWithFallback(wikiPage);
 
   const [classification, fullHtml] = await Promise.all([
@@ -541,20 +547,31 @@ export async function fetchBossGuideDocument(
     fetchFullHtml(resolvedPage),
   ]);
 
-  // Build a map of section number -> title for parent lookup
+  // Map every wiki section number → title (including H2s we filtered out of
+  // the guide body). Needed so orphaned H3s like repeated "Strategy" under
+  // raid rooms still get a parent label for disambiguation.
   const sectionTitleByNumber = new Map<string, string>();
+  for (const s of allSections) {
+    sectionTitleByNumber.set(s.number, s.line);
+  }
 
-  // Collect H2 titles to detect duplicates
+  // Collect H2 titles to detect duplicates among included sections
   const h2TitleCount = new Map<string, number>();
   for (const s of targetSections) {
     if (s.toclevel === 1) {
       h2TitleCount.set(s.line, (h2TitleCount.get(s.line) ?? 0) + 1);
-      sectionTitleByNumber.set(s.number, s.line);
     }
   }
 
-  // Track seen display-titles for H3-level deduplication
-  const seenDisplayTitles = new Map<string, number>();
+  // Count repeated H3 lines so every instance (not just the 2nd+) can be
+  // labelled with its parent room — "Maiden > Strategy", "Bloat > Strategy".
+  const h3LineCounts = new Map<string, number>();
+  for (const s of targetSections) {
+    if (s.toclevel === 2) {
+      const key = s.line.toLowerCase();
+      h3LineCounts.set(key, (h3LineCounts.get(key) ?? 0) + 1);
+    }
+  }
 
   type NormalizedSection = BossGuideSection & { summary: string | null };
 
@@ -580,18 +597,14 @@ export async function fetchBossGuideDocument(
       const { html, summary } = cleanSectionHtml(rawHtml, section.line);
       if (html.length < 20) return null;
 
-      // Determine display title with disambiguation
+      // Duplicate H3 titles (common under raid room H2s) always carry the parent.
       let displayTitle = section.line;
-      if (level === 3 && parentTitle) {
-        const key = section.line.toLowerCase();
-        const count = seenDisplayTitles.get(key) ?? 0;
-        seenDisplayTitles.set(key, count + 1);
-        if (count > 0) {
-          // Duplicate H3 title — prefix with parent
-          displayTitle = disambiguateTitle(section.line, parentTitle);
-        } else {
-          seenDisplayTitles.set(key, 1);
-        }
+      if (
+        level === 3 &&
+        parentTitle &&
+        (h3LineCounts.get(section.line.toLowerCase()) ?? 0) > 1
+      ) {
+        displayTitle = disambiguateTitle(section.line, parentTitle);
       }
 
       return {
@@ -620,17 +633,24 @@ export async function fetchBossGuideDocument(
     if (count > 1) s.id = `${baseId}-${count}`;
   }
 
-  // Second dedup pass: if same title appears multiple times, disambiguate H3 using parent context
+  // Second dedup pass: if same title appears multiple times, prefix with parent
+  // room / H2 context so ToB "Strategy" under Maiden vs Bloat is readable.
   const titleCounts = new Map<string, number>();
   for (const s of normalizedSections) {
     titleCounts.set(s.title, (titleCounts.get(s.title) ?? 0) + 1);
   }
   for (const s of normalizedSections) {
-    const parentSectionId = s.parentId;
-    if ((titleCounts.get(s.title) ?? 0) > 1 && s.level === 3 && parentSectionId) {
-      const parentSection = normalizedSections.find((p) => p.id === parentSectionId);
-      if (parentSection) {
-        s.title = disambiguateTitle(s.title, parentSection.title);
+    if ((titleCounts.get(s.title) ?? 0) <= 1) continue;
+    if (s.level === 3 && s.parentId) {
+      // Prefer the human parent title stored during parse (may be a raid room
+      // H2 that itself was filtered out of the body).
+      const parentFromDoc = normalizedSections.find((p) => p.id === s.parentId);
+      const parentLabel =
+        parentFromDoc?.title ??
+        // parentId is slugify(parentTitle) — reverse via section map when possible
+        s.parentId.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+      if (parentLabel) {
+        s.title = disambiguateTitle(s.title, parentLabel);
       }
     }
   }
