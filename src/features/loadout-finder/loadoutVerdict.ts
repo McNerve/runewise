@@ -1,8 +1,6 @@
-import { accuracyTier, dpsVerdict, formatTtk } from "../dps-calc/dpsVerdict";
+import { dpsVerdict } from "../dps-calc/dpsVerdict";
 import { formatGp } from "../../lib/format";
 import type { CombatStyle } from "../dps-calc/dpsTypes";
-
-export { formatTtk, accuracyTier };
 
 export interface LoadoutPick {
   name: string;

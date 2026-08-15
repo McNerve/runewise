@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { accuracyTier, dpsVerdict, formatTtk } from "./dpsVerdict";
+import { accuracyTier, accuracyTone, dpsVerdict, formatTtk } from "./dpsVerdict";
 
 describe("accuracyTier", () => {
   it("splits at 80% and 50%", () => {
@@ -7,6 +7,18 @@ describe("accuracyTier", () => {
     expect(accuracyTier(0.8)).toBe("high");
     expect(accuracyTier(0.64)).toBe("moderate");
     expect(accuracyTier(0.31)).toBe("low");
+  });
+});
+
+describe("accuracyTone", () => {
+  it("maps the same tiers the meters use", () => {
+    expect(accuracyTone(0.8)).toEqual({
+      text: "text-success",
+      bar: "bg-success",
+      label: "High accuracy",
+    });
+    expect(accuracyTone(0.5).text).toBe("text-warning");
+    expect(accuracyTone(0.49).text).toBe("text-danger");
   });
 });
 

@@ -235,7 +235,7 @@ function resolveGear(
   return { gear, missing, resolved };
 }
 
-function setupCost(
+export function setupCost(
   gear: EquippedGear,
   priceOf: (name: string) => number | null
 ): { total: number; unpriced: number } {
@@ -243,11 +243,11 @@ function setupCost(
   let unpriced = 0;
   for (const item of Object.values(gear)) {
     if (!item) continue;
-    const p = priceOf(item.name);
-    if (p == null) {
+    const cash = itemCashCost(priceOf, item.name);
+    if (cash == null) {
       unpriced += 1;
-    } else if (p > 0) {
-      total += p;
+    } else {
+      total += cash;
     }
   }
   return { total, unpriced };
@@ -541,8 +541,6 @@ export function findBudgetLoadouts(opts: BudgetFindOptions): RankedLoadout[] {
     if (requirePriced && unpriced > 0) continue;
     const withinBudget = unlimited || total <= budget;
     if (!withinBudget && !unlimited) continue;
-    // Soft: if budget set and everything unpriced, skip (can't validate)
-    if (!unlimited && total === 0 && unpriced > 0 && requirePriced) continue;
 
     const prayerLevel = skillLevel(hiscores, "Prayer", 99);
     const prayer = bestPrayerForStyle(preset.style, prayerLevel, preset.prayer);

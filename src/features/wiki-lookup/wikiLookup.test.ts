@@ -10,10 +10,6 @@ import {
 } from "./wikiLookupUtils";
 import type { WikiLookupDocument } from "../../lib/wiki/lookup";
 
-// Task 1: Breadcrumb ordering is a UI concern; tested via integration.
-// The openPage trail logic can be unit-tested via pure function extraction if needed.
-// Here we verify the helper functions used by the component.
-
 describe("isDatePill", () => {
   it("filters bare year", () => {
     expect(isDatePill("2018")).toBe(true);

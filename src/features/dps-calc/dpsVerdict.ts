@@ -1,9 +1,25 @@
 export type AccuracyTier = "high" | "moderate" | "low";
 
+export interface AccuracyTone {
+  text: string;
+  bar: string;
+  label: string;
+}
+
+const ACCURACY_TONE: Record<AccuracyTier, AccuracyTone> = {
+  high: { text: "text-success", bar: "bg-success", label: "High accuracy" },
+  moderate: { text: "text-warning", bar: "bg-warning", label: "Moderate accuracy" },
+  low: { text: "text-danger", bar: "bg-danger", label: "Low accuracy" },
+};
+
 export function accuracyTier(accuracy: number): AccuracyTier {
   if (accuracy >= 0.8) return "high";
   if (accuracy >= 0.5) return "moderate";
   return "low";
+}
+
+export function accuracyTone(accuracy: number): AccuracyTone {
+  return ACCURACY_TONE[accuracyTier(accuracy)];
 }
 
 export function formatTtk(seconds: number): string {

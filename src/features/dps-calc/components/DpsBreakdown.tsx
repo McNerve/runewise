@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { StatGrid, StatCard } from "../../../components/primitives";
-import { accuracyTier, dpsVerdict, formatTtk } from "../dpsVerdict";
+import { dpsVerdict, formatTtk } from "../dpsVerdict";
+import { AccuracyMeter } from "./AccuracyMeter";
 
 interface DpsBreakdownProps {
   maxHit: number;
@@ -31,14 +32,6 @@ export default memo(function DpsBreakdown({
   monsterName = null,
   hitsToKill = null,
 }: DpsBreakdownProps) {
-  const accPct = (accuracy * 100).toFixed(1);
-  const tier = accuracyTier(accuracy);
-  const accColor =
-    tier === "high" ? "text-success" : tier === "moderate" ? "text-warning" : "text-danger";
-  const accLabel =
-    tier === "high" ? "High accuracy" : tier === "moderate" ? "Moderate accuracy" : "Low accuracy";
-  const accBar =
-    tier === "high" ? "bg-success" : tier === "moderate" ? "bg-warning" : "bg-danger";
   const line = dpsVerdict({ monsterName, dps, ttk, accuracy });
 
   return (
@@ -58,18 +51,7 @@ export default memo(function DpsBreakdown({
 
       <p className="text-sm leading-6 text-text-secondary">{line}</p>
 
-      <div>
-        <div className="mb-1.5 flex items-center justify-between">
-          <span className="section-kicker">{accLabel}</span>
-          <span className={`num text-sm font-semibold ${accColor}`}>{accPct}%</span>
-        </div>
-        <div className="h-1.5 rounded-full bg-bg-secondary overflow-hidden">
-          <div
-            className={`h-full rounded-full transition-all duration-300 ${accBar}`}
-            style={{ width: `${Math.min(accuracy * 100, 100)}%` }}
-          />
-        </div>
-      </div>
+      <AccuracyMeter accuracy={accuracy} />
 
       <StatGrid columns={2}>
         <StatCard label="Max Hit" value={maxHit} />
@@ -79,7 +61,6 @@ export default memo(function DpsBreakdown({
         />
       </StatGrid>
 
-      {/* Roll breakdown */}
       {showDetails && (
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-bg-base rounded-lg px-3 py-2">

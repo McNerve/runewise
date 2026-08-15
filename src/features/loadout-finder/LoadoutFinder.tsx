@@ -10,7 +10,9 @@ import { itemIcon } from "../../lib/sprites";
 import ItemTooltip from "../../components/ItemTooltip";
 import AccountPrefillBanner from "../../components/AccountPrefillBanner";
 import { Button, Card, FilterPills, StatCard, StatGrid } from "../../components/primitives";
-import { accuracyTier, formatTtk, loadoutVerdict } from "./loadoutVerdict";
+import { formatTtk } from "../dps-calc/dpsVerdict";
+import { AccuracyMeter } from "../dps-calc/components/AccuracyMeter";
+import { loadoutVerdict } from "./loadoutVerdict";
 import {
   FINDER_TARGETS,
   COMMON_OWNED_CHIPS,
@@ -63,30 +65,6 @@ function StyleBadge({ style }: { style: CombatStyle }) {
     <span className={`text-2xs uppercase tracking-wide px-1.5 py-0.5 rounded border ${styleBadgeClass(style)}`}>
       {style}
     </span>
-  );
-}
-
-function AccuracyMeter({ accuracy }: { accuracy: number }) {
-  const tier = accuracyTier(accuracy);
-  const accColor =
-    tier === "high" ? "text-success" : tier === "moderate" ? "text-warning" : "text-danger";
-  const accLabel =
-    tier === "high" ? "High accuracy" : tier === "moderate" ? "Moderate accuracy" : "Low accuracy";
-  const accBar =
-    tier === "high" ? "bg-success" : tier === "moderate" ? "bg-warning" : "bg-danger";
-  return (
-    <div>
-      <div className="mb-1.5 flex items-center justify-between">
-        <span className="section-kicker">{accLabel}</span>
-        <span className={`num text-sm font-semibold ${accColor}`}>{(accuracy * 100).toFixed(1)}%</span>
-      </div>
-      <div className="h-1.5 rounded-full bg-bg-secondary overflow-hidden">
-        <div
-          className={`h-full rounded-full transition-all duration-300 ${accBar}`}
-          style={{ width: `${Math.min(accuracy * 100, 100)}%` }}
-        />
-      </div>
-    </div>
   );
 }
 

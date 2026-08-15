@@ -18,6 +18,7 @@ import {
   filterExcludedEquipment,
   itemCashCost,
   resolveSpellLabel,
+  setupCost,
   withOwnedPrices,
   type LoadoutTarget,
   type RankedLoadout,
@@ -67,16 +68,6 @@ function styleOk(item: WikiEquipment, style: CombatStyle): boolean {
   return true;
 }
 
-function setupCost(gear: EquippedGear, priceOf: (n: string) => number | null): number {
-  let t = 0;
-  for (const item of Object.values(gear)) {
-    if (!item) continue;
-    const cash = itemCashCost(priceOf, item.name);
-    if (cash != null) t += cash;
-  }
-  return t;
-}
-
 function scoreGear(
   style: CombatStyle,
   gear: EquippedGear,
@@ -108,7 +99,7 @@ function toRanked(
 ): RankedLoadout | null {
   if (Object.keys(gear).length === 0) return null;
   const scored = scoreGear(style, gear, hiscores, target, onTask);
-  const totalCost = setupCost(gear, priceOf);
+  const { total: totalCost, unpriced: unpricedCount } = setupCost(gear, priceOf);
   const slotsFilled = Object.values(gear).filter(Boolean).length;
   const styleLabel = `${style[0]!.toUpperCase()}${style.slice(1)}`;
   const preset: GearPreset = {
@@ -131,8 +122,7 @@ function toRanked(
     resolvedSlots: slotsFilled,
     missingItems: [],
     totalCost,
-    unpricedCount: Object.values(gear).filter((i) => i && itemCashCost(priceOf, i.name) == null)
-      .length,
+    unpricedCount,
     dps: scored.dps,
     maxHit: scored.maxHit,
     accuracy: scored.accuracy,
@@ -412,7 +402,7 @@ export function beamOptimizeUnderBudget(raw: BudgetOptimizeOptions): RankedLoado
 
   const consider = (gear: EquippedGear) => {
     const { dps } = scoreGear(style, gear, hiscores, target, onTask);
-    const cost = setupCost(gear, priceOf);
+    const cost = setupCost(gear, priceOf).total;
     if (dps > bestDps + 0.001 || (Math.abs(dps - bestDps) < 0.001 && cost < bestCost)) {
       bestDps = dps;
       bestCost = cost;
@@ -605,7 +595,7 @@ export function combinatorialOptimizeUnderBudget(
 
   const consider = (gear: EquippedGear, dps?: number) => {
     const d = dps ?? score(gear);
-    const cost = setupCost(gear, priceOf);
+    const cost = setupCost(gear, priceOf).total;
     if (d > bestDps + 0.0005 || (Math.abs(d - bestDps) < 0.0005 && cost < bestCost)) {
       bestDps = d;
       bestCost = cost;
@@ -779,7 +769,7 @@ function localSearchRefine(args: {
   while (improved && passes < 4 && args.maxEvals() > 100) {
     improved = false;
     passes += 1;
-    const spent = setupCost(gear, args.priceOf);
+    const spent = setupCost(gear, args.priceOf).total;
     const remaining = args.unlimited
       ? Number.POSITIVE_INFINITY
       : args.cashCap - spent;
@@ -862,7 +852,7 @@ function localSearchRefine(args: {
           (c2 ? (itemCashCost(args.priceOf, c2.name) ?? 0) : 0);
         const freeCash = args.unlimited
           ? Number.POSITIVE_INFINITY
-          : args.cashCap - setupCost(gear, args.priceOf) + baseCost;
+          : args.cashCap - setupCost(gear, args.priceOf).total + baseCost;
 
         for (const a of p1) {
           for (const b of p2) {

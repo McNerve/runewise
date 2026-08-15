@@ -5,6 +5,7 @@ import HitDistributionChart from "./HitDistributionChart";
 import { attackKillTimeStats } from "../../../lib/formulas/hitDistribution";
 import { incomingDps, type ProtectionPrayer } from "../../../lib/formulas/incomingDps";
 import { Button, Card } from "../../../components/primitives";
+import { accuracyTone } from "../dpsVerdict";
 import type { DpsState } from "../hooks/useDpsState";
 
 interface ResultsPanelProps {
@@ -318,7 +319,7 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
               </thead>
               <tbody>
                 {phaseResults.map(({ phase, monster, result: pr }, phaseIdx) => {
-                  const accColor = pr.accuracy >= 0.8 ? "text-success" : pr.accuracy >= 0.5 ? "text-warning" : "text-danger";
+                  const accColor = accuracyTone(pr.accuracy).text;
                   const phaseTtk = phaseKillTimes[phaseIdx]?.expectedSeconds ?? pr.ttk;
                   return (
                     <tr
@@ -380,7 +381,7 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
               </thead>
               <tbody>
                 {arsenalResults.map(({ loadout, result: lr }) => {
-                  const accColor = lr.accuracy >= 0.8 ? "text-success" : lr.accuracy >= 0.5 ? "text-warning" : "text-danger";
+                  const accColor = accuracyTone(lr.accuracy).text;
                   const delta = lr.dps - result.dps;
                   const isActive = activeLoadout === loadout.name;
                   return (
@@ -465,9 +466,7 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
                 <div className="text-[10px] text-text-secondary">Spec Max</div>
               </div>
               <div>
-                <div className={`text-lg font-bold num ${
-                  specResult.specAccuracy >= 0.8 ? "text-success" : specResult.specAccuracy >= 0.5 ? "text-warning" : "text-danger"
-                }`}>
+                <div className={`text-lg font-bold num ${accuracyTone(specResult.specAccuracy).text}`}>
                   {(specResult.specAccuracy * 100).toFixed(1)}%
                 </div>
                 <div className="text-[10px] text-text-secondary">Spec Acc</div>
