@@ -4,6 +4,7 @@ import { fetchAllEquipment } from "../../lib/api/equipment";
 import { fetchAllMonsters } from "../../lib/api/monsters";
 import { useGEData } from "../../hooks/useGEData";
 import { useAsyncData } from "../../hooks/useAsyncData";
+import { useDebounce } from "../../hooks/useDebounce";
 import { useNavigation } from "../../lib/NavigationContext";
 import { formatGp } from "../../lib/format";
 import { itemIcon } from "../../lib/sprites";
@@ -29,7 +30,7 @@ import { optimizeAllStyles } from "./budgetOptimize";
 import { parseBudgetInput } from "./parseBudget";
 import { parseOwnedInventory } from "./parseOwnedInventory";
 import { normalizeMonsterVersion, parseMonsterRef } from "../../lib/wikiMonsterMatch";
-import { buildFinderTargetList, enrichTargetFromWiki } from "./wikiTargets";
+import { buildFinderTargetList, resolveSelectedTarget } from "./wikiTargets";
 import type { CombatStyle } from "../dps-calc/dpsTypes";
 
 const BUDGETS: { id: string; label: string; gp: number }[] = [
@@ -173,29 +174,35 @@ export default function LoadoutFinder({ hiscores }: Props) {
     [wikiMonsters, monsterSearch]
   );
 
-  const target: LoadoutTarget = useMemo(() => {
-    const base =
-      targetList.find((t) => t.name === targetName) ??
-      FINDER_TARGETS.find((t) => t.name === targetName) ??
-      FINDER_TARGETS[0]!;
-    if (base.name === "Custom / Dummy") {
-      return {
-        ...base,
+  const target: LoadoutTarget = useMemo(
+    () =>
+      resolveSelectedTarget(targetName, wikiMonsters, {
         defLevel: customDef,
         defBonus: customDefBonus,
         hp: customHp,
-      };
-    }
-    // Re-enrich in case targetList is stale relative to wiki
-    return enrichTargetFromWiki(base, wikiMonsters);
-  }, [targetName, customDef, customDefBonus, customHp, targetList, wikiMonsters]);
+      }),
+    [targetName, customDef, customDefBonus, customHp, wikiMonsters]
+  );
+
+  const debouncedBudgetText = useDebounce(customBudgetText, 300);
+  const debouncedOwnedExtra = useDebounce(ownedExtra, 300);
+  const debouncedBankPaste = useDebounce(bankPaste, 300);
+  const debouncedExcludeText = useDebounce(excludeText, 300);
+  const optimizePending =
+    customBudgetText !== debouncedBudgetText ||
+    ownedExtra !== debouncedOwnedExtra ||
+    bankPaste !== debouncedBankPaste ||
+    excludeText !== debouncedExcludeText;
 
   const budget = useMemo(() => {
     if (budgetId === "custom") {
-      return parseBudgetInput(customBudgetText) ?? 0;
+      return parseBudgetInput(debouncedBudgetText) ?? 0;
     }
     return BUDGETS.find((b) => b.id === budgetId)?.gp ?? 50_000_000;
-  }, [budgetId, customBudgetText]);
+  }, [budgetId, debouncedBudgetText]);
+
+  const liveCustomBudget =
+    budgetId === "custom" ? (parseBudgetInput(customBudgetText) ?? 0) : budget;
 
   const priceOf = useMemo(
     () => (name: string) => priceByName.get(name.toLowerCase()) ?? null,
@@ -203,22 +210,26 @@ export default function LoadoutFinder({ hiscores }: Props) {
   );
 
   const bankOwned = useMemo(() => parseOwnedInventory(bankPaste), [bankPaste]);
+  const optimizeBankOwned = useMemo(
+    () => parseOwnedInventory(debouncedBankPaste),
+    [debouncedBankPaste]
+  );
 
   const ownedItems = useMemo(() => {
-    const extra = ownedExtra
+    const extra = debouncedOwnedExtra
       .split(/[,;\n]/)
       .map((s) => s.trim())
       .filter(Boolean);
-    return [...new Set([...ownedChips, ...extra, ...bankOwned])];
-  }, [ownedChips, ownedExtra, bankOwned]);
+    return [...new Set([...ownedChips, ...extra, ...optimizeBankOwned])];
+  }, [ownedChips, debouncedOwnedExtra, optimizeBankOwned]);
 
   const excludeItems = useMemo(
     () =>
-      excludeText
+      debouncedExcludeText
         .split(/[,;\n]/)
         .map((s) => s.trim())
         .filter(Boolean),
-    [excludeText]
+    [debouncedExcludeText]
   );
 
   const toggleOwnedChip = (name: string) => {
@@ -497,7 +508,9 @@ export default function LoadoutFinder({ hiscores }: Props) {
                   className="w-40 rounded-lg border border-border bg-bg-primary px-2.5 py-1.5 text-sm num"
                 />
                 <span className="text-xs text-text-secondary">
-                  {budget > 0 ? `= ${formatGp(budget)}` : "Enter amount (k / m / b)"}
+                  {liveCustomBudget > 0
+                    ? `= ${formatGp(liveCustomBudget)}`
+                    : "Enter amount (k / m / b)"}
                 </span>
               </div>
             )}
@@ -640,7 +653,11 @@ export default function LoadoutFinder({ hiscores }: Props) {
             kicker={target.name}
             action={
               <span className="text-xs text-text-secondary">
-                {budget > 0 ? `≤ ${formatGp(budget)}` : "no cap"}
+                {optimizePending
+                  ? "Updating…"
+                  : budget > 0
+                    ? `≤ ${formatGp(budget)}`
+                    : "no cap"}
               </span>
             }
           >
