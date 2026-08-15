@@ -21,12 +21,13 @@ async function loadPayload(page: string): Promise<HoverPayload> {
     const [summary, mapping, prices] = await Promise.all([
       fetchWikiSummary(page),
       fetchMapping().catch(() => []),
-      fetchLatestPrices().catch(() => ({}) as Record<string, { high: number | null }>),
+      fetchLatestPrices().catch(() => ({}) as Record<string, { high: number | null; low: number | null }>),
     ]);
     const item = mapping.find((m) => m.name.toLowerCase() === page.toLowerCase());
+    const quote = item ? prices[String(item.id)] : undefined;
     const ge = item
       ? {
-          price: prices[String(item.id)]?.high ?? prices[String(item.id)]?.low ?? null,
+          price: quote?.high ?? quote?.low ?? null,
           alch: item.highalch ?? null,
           limit: item.limit ?? null,
         }
