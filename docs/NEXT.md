@@ -14,6 +14,7 @@ After **wiki-mirror** (infobox/hatnotes/article body + Mad Angel + IA).
 - Unpriced items no longer count as 0 gp on a capped budget
 - Open in DPS matches the finder monster version (Vorkath post-quest vs DS2)
 - Loadout Finder optimizer debounced (search no longer retriggers BiS)
+- Boss Guides: dwell-prefetch + skip H4 fetches when the article surface works
 
 ### 2.5.18
 - Wiki + Boss Guides full UX overhaul (links, raid trees, inventory tabs, mobile, search, TOC)

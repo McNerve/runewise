@@ -4,6 +4,7 @@ import type { WikiGuideBlock, WikiGuideTemplate } from "./blocks";
 import { classifyWikiPage } from "./classify";
 import {
   WIKI_API,
+  WIKI_PARSE_FLAGS,
   slugify,
   normalizeImages,
   normalizeGalleries,
@@ -513,6 +514,21 @@ async function fetchFullHtml(wikiPage: string): Promise<string> {
   });
 }
 
+/** Lead only — enough for the main-page infobox without a second full parse. */
+async function fetchLeadHtml(wikiPage: string): Promise<string> {
+  return fetchJson<string>({
+    url: `${WIKI_API}?action=parse&page=${encodeURIComponent(wikiPage)}&prop=text&section=0&${WIKI_PARSE_FLAGS}`,
+    dedupeKey: `boss-guide-lead:${wikiPage}`,
+    transform: (json) =>
+      ((json as WikiTextResponse).parse?.text?.["*"] ?? "").trim(),
+  });
+}
+
+export function guideHasArticleSurface(article: WikiLookupDocument | null): boolean {
+  if (!article) return false;
+  return Boolean(article.leadHtml || article.sections.length > 0 || article.infoboxHtml);
+}
+
 // -----------------------------------------------------------------------
 // Section HTML extraction from full-page dump
 // -----------------------------------------------------------------------
@@ -858,7 +874,7 @@ function stripNestedHeadings(rawHtml: string): string {
 export async function fetchBossGuideDocument(
   wikiPage: string
 ): Promise<BossGuideDocument> {
-  const cacheKey = `boss-guide:v25:${wikiPage}`;
+  const cacheKey = `boss-guide:v26:${wikiPage}`;
   const cached = getCached<BossGuideDocument>(cacheKey, GUIDE_TTL);
   if (cached) return cached;
 
@@ -890,6 +906,30 @@ export async function fetchBossGuideDocument(
 
   type NormalizedSection = BossGuideSection & { summary: string | null };
 
+  const articleTitle = resolvedPage.replace(/_/g, " ");
+  let article = buildWikiLookupDocumentFromHtml(
+    fullHtml,
+    articleTitle,
+    classification.entityKind
+  );
+
+  const mainPage = resolvedPage.replace(/\/Strategies$/i, "");
+  let mainHtml = fullHtml;
+  if (mainPage !== resolvedPage) {
+    try {
+      mainHtml = await fetchLeadHtml(mainPage);
+      article = applyInfoboxFromHtml(
+        article,
+        mainHtml,
+        mainPage.replace(/_/g, " ")
+      );
+    } catch {
+      mainHtml = fullHtml;
+    }
+  }
+
+  const articleOk = guideHasArticleSurface(article);
+
   // Sections that have their own child cards — parent bodies must not also
   // embed that nested content (avoids Strategy + Skipping double-render).
   const numbersWithChildCards = new Set<string>();
@@ -898,7 +938,9 @@ export async function fetchBossGuideDocument(
     if (parent) numbersWithChildCards.add(parent);
   }
 
-  const rawSections = await Promise.all(
+  const rawSections = articleOk
+    ? []
+    : await Promise.all(
     targetSections.map(async (section): Promise<NormalizedSection | null> => {
       // toclevel 1 = H2 → card level 2; toclevel 2/3 = H3/H4 → card level 3
       const level: 2 | 3 = section.toclevel <= 1 ? 2 : 3;
@@ -921,6 +963,7 @@ export async function fetchBossGuideDocument(
       // fetch uses the sequential `index` (not hierarchical `number`) and
       // includes nested subsections — strip those when child cards exist.
       let rawHtml = "";
+      try {
       if (section.toclevel >= 3) {
         rawHtml = await fetchSectionHtml(resolvedPage, section.index);
       } else {
@@ -935,6 +978,9 @@ export async function fetchBossGuideDocument(
         if (hasChildCards && rawHtml) {
           rawHtml = stripNestedHeadings(rawHtml);
         }
+      }
+      } catch {
+        return null;
       }
 
       let { html, summary } = cleanSectionHtml(rawHtml, section.line);
@@ -987,9 +1033,15 @@ export async function fetchBossGuideDocument(
     })
   );
 
-  const normalizedSections: NormalizedSection[] = rawSections.filter(
-    (s): s is NormalizedSection => s !== null
-  );
+  const normalizedSections: NormalizedSection[] = articleOk
+    ? article.sections.map((s) => ({
+        id: s.id,
+        title: s.title,
+        level: 2 as const,
+        html: "",
+        summary: null,
+      }))
+    : rawSections.filter((s): s is NormalizedSection => s !== null);
 
   // Ensure section ids are unique (wiki pages occasionally have repeated H2
   // titles like "Strategy" or "Equipment"). Append a counter suffix on
@@ -1041,29 +1093,9 @@ export async function fetchBossGuideDocument(
 
   // Final collapse: drop exact duplicate titles (and bare-leaf duplicates of a
   // "Parent > Leaf" card) keeping the longer body.
-  const collapsed = collapseDuplicateSections(normalizedSections);
-
-  const articleTitle = resolvedPage.replace(/_/g, " ");
-  let article = buildWikiLookupDocumentFromHtml(
-    fullHtml,
-    articleTitle,
-    classification.entityKind
-  );
-
-  const mainPage = resolvedPage.replace(/\/Strategies$/i, "");
-  let mainHtml = fullHtml;
-  if (mainPage !== resolvedPage) {
-    try {
-      mainHtml = await fetchFullHtml(mainPage);
-      article = applyInfoboxFromHtml(
-        article,
-        mainHtml,
-        mainPage.replace(/_/g, " ")
-      );
-    } catch {
-      mainHtml = fullHtml;
-    }
-  }
+  const collapsed = articleOk
+    ? normalizedSections
+    : collapseDuplicateSections(normalizedSections);
 
   const doc = {
     template: classification.template,
