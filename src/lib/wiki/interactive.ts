@@ -6,6 +6,7 @@
  */
 import { initWikiHoverCards } from "./hoverCard";
 import { itemWikiHash } from "../openItem";
+import { isPlaceholderLabel } from "./helpers";
 
 export function initWikiTabbers(container: HTMLElement) {
   container.querySelectorAll(".tabber").forEach((tabber) => {
@@ -65,6 +66,9 @@ export function initTooltips(container: HTMLElement) {
     if (img.closest("a[data-wiki-page]")) return;
     img.setAttribute("data-tooltip-init", "1");
 
+    if (isPlaceholderLabel(img.getAttribute("title"))) img.removeAttribute("title");
+    if (isPlaceholderLabel(img.getAttribute("alt"))) img.removeAttribute("alt");
+
     const label =
       img.getAttribute("alt") ||
       img.getAttribute("title") ||
@@ -77,7 +81,7 @@ export function initTooltips(container: HTMLElement) {
           .replace(/_/g, " ") || ""
       );
 
-    if (!label || label.length < 2) return;
+    if (isPlaceholderLabel(label) || label.length < 2) return;
 
     img.style.cursor = "help";
     const parent = img.parentElement;
