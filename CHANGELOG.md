@@ -8,6 +8,7 @@ All notable changes to RuneWise are documented here. Versions follow [Semantic V
 
 - **Open in DPS** picks the same monster version the Loadout Finder scored (post-quest Vorkath, not DS2).
 - **Loadout Finder** no longer reruns combinatorial BiS on every keystroke in search / budget / owned / exclude.
+- **Boss Guides** no longer fetch every H4 plus a second full page on directory hover. Prefetch waits 300ms and one at a time; infobox comes from the lead section.
 
 ### Wiki mirror + Boss Guides
 

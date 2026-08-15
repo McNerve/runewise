@@ -102,6 +102,8 @@ export default function BossGuide({ hiscores }: Props) {
   const [linkCopied, setLinkCopied] = useState(false);
   const [showBackTop, setShowBackTop] = useState(false);
   const prefetching = useRef<Set<string>>(new Set());
+  const prefetchTimer = useRef<number | null>(null);
+  const prefetchInFlight = useRef(0);
 
   const filteredBosses = useMemo(() => {
     const byCat =
@@ -391,13 +393,32 @@ export default function BossGuide({ hiscores }: Props) {
     return () => scroller.removeEventListener("scroll", onScroll);
   }, [selectedBoss?.name]);
 
-  function prefetchBossGuide(boss: BossInfo) {
-    if (prefetching.current.has(boss.wikiPage)) return;
-    prefetching.current.add(boss.wikiPage);
-    void fetchBossGuideDocument(boss.wikiPage).catch(() => {
-      prefetching.current.delete(boss.wikiPage);
-    });
+  function cancelPrefetch() {
+    if (prefetchTimer.current != null) {
+      window.clearTimeout(prefetchTimer.current);
+      prefetchTimer.current = null;
+    }
   }
+
+  function schedulePrefetch(boss: BossInfo) {
+    if (prefetching.current.has(boss.wikiPage) || prefetchInFlight.current >= 1) return;
+    cancelPrefetch();
+    prefetchTimer.current = window.setTimeout(() => {
+      prefetchTimer.current = null;
+      if (prefetching.current.has(boss.wikiPage) || prefetchInFlight.current >= 1) return;
+      prefetching.current.add(boss.wikiPage);
+      prefetchInFlight.current += 1;
+      void fetchBossGuideDocument(boss.wikiPage)
+        .catch(() => {
+          prefetching.current.delete(boss.wikiPage);
+        })
+        .finally(() => {
+          prefetchInFlight.current = Math.max(0, prefetchInFlight.current - 1);
+        });
+    }, 300);
+  }
+
+  useEffect(() => () => cancelPrefetch(), []);
 
   function copyBossDeepLink() {
     if (!selectedBoss) return;
@@ -543,8 +564,10 @@ export default function BossGuide({ hiscores }: Props) {
                       type="button"
                       data-boss-name={boss.name}
                       onClick={() => void selectBoss(boss)}
-                      onMouseEnter={() => prefetchBossGuide(boss)}
-                      onFocus={() => prefetchBossGuide(boss)}
+                      onMouseEnter={() => schedulePrefetch(boss)}
+                      onFocus={() => schedulePrefetch(boss)}
+                      onMouseLeave={cancelPrefetch}
+                      onBlur={cancelPrefetch}
                       className={`w-full rounded-xl border px-3 py-2.5 text-left transition ${
                         active
                           ? "border-accent/35 bg-accent/10"

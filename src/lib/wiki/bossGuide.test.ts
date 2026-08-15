@@ -3,7 +3,30 @@ import {
   parseEquipmentEntry,
   parseEquipmentCellEntries,
   parseSuggestedSkill,
+  guideHasArticleSurface,
 } from "./bossGuide";
+import type { WikiLookupDocument } from "./lookup";
+
+function articleStub(over: Partial<WikiLookupDocument> = {}): WikiLookupDocument {
+  return {
+    title: "Vorkath/Strategies",
+    pageType: "boss",
+    template: "reference",
+    summary: "A strategy.",
+    infoboxTitle: null,
+    infoboxImage: null,
+    infoboxFields: [],
+    totalInfoboxFields: 0,
+    infoboxHtml: null,
+    hatnotes: [],
+    leadHtml: "<p>Lead.</p>",
+    sections: [],
+    relatedPages: [],
+    totalRelatedPages: 0,
+    fetchedAt: 0,
+    ...over,
+  };
+}
 
 // -----------------------------------------------------------------------
 // parseEquipmentEntry
@@ -180,5 +203,24 @@ describe("hierarchy deduplication logic", () => {
     const h2Id = makeId("Equipment");
     const h3Id = makeId("Equipment", "path-of-het");
     expect(h2Id).not.toBe(h3Id);
+  });
+});
+
+describe("guideHasArticleSurface", () => {
+  it("is true when the article has lead, sections, or an infobox", () => {
+    expect(guideHasArticleSurface(articleStub())).toBe(true);
+    expect(
+      guideHasArticleSurface(articleStub({ leadHtml: "", sections: [{ id: "a", title: "A", html: "<p>x</p>", subsections: [] }] }))
+    ).toBe(true);
+    expect(guideHasArticleSurface(articleStub({ leadHtml: "", infoboxHtml: "<table></table>" }))).toBe(
+      true
+    );
+  });
+
+  it("is false when the article is empty", () => {
+    expect(guideHasArticleSurface(null)).toBe(false);
+    expect(guideHasArticleSurface(articleStub({ leadHtml: "", infoboxHtml: null, sections: [] }))).toBe(
+      false
+    );
   });
 });
