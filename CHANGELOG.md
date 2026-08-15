@@ -4,6 +4,28 @@ All notable changes to RuneWise are documented here. Versions follow [Semantic V
 
 ## [Unreleased]
 
+### Wiki mirror + Boss Guides
+
+- **Wiki is a wiki.** Articles keep the infobox HTML, hatnotes, combat stats, and heading grammar instead of flattening to a "Snapshot" card. Item/boss/quest clicks stay on the page; workspace jumps are explicit buttons.
+- **Wiki home** — category launchpad (Skills, Quests, Bosses, Raids, Sailing, …) instead of an empty search box.
+- **Search** finds `/Strategies` pages (slash titles no longer filtered out).
+- **Tabbers** render as a horizontal wiki tab strip.
+- **Boss Strategy** renders the wiki `/Strategies` article as the reading surface, with structured skills/equipment still overlaid when they parse. Empty raid guides fall back to the article instead of "no content."
+- **IA** — Loadout Finder and Progress back on the rail; Wiki is its own hub.
+- **The Mad Angel** (Wyrmscraig, 29 Jul 2026) added to Boss Guides under Sailing.
+- Home no longer asks you to set an RSN that's already saved.
+- **Wiki hover cards** — MediaWiki-style page previews on every in-app wiki link (image, extract, GE/alch facts). ItemTooltip uses the same card.
+- **Boss directory grouped** by category instead of a flat list.
+- **Home tools grouped** by hub (Player / Combat / Market / Plan / Wiki / Live).
+- **Boss metric strip removed** — Sections / Drop groups / Tasks / Top drop tiles no longer sit on top of the article.
+- **Strategy infobox** — `/Strategies` guides pull the main boss page infobox (combat level, members, examine).
+- **Combat stats paper doll** — posed equipped images stay; bonuses + combat-styles tables no longer wrap mid-word.
+- **Mortimer** (Wyrmscraig) added to Slayer Helper — 29 wiki tasks, 100 combat / 70 Slayer, choice-of-two notes, recommended blocks.
+- **Drops open the wiki** — loot, raid uniques, shop stock, recipes, and collection-log items go to the article + GE card instead of a market row.
+- **DPS is a verdict** — hero metric + kill-time sentence first (accuracy follow-up, hits-to-kill). Duplicate Results card gone. Mobile shows numbers before the form.
+- **Loadout Finder is a pick** — one setup to wear (cost + kill sentence + style gaps). Alternatives collapse to a comparison table. Inputs are no longer the hero.
+- **Unpriced ≠ free** — a capped budget skips items with no GE price. Mark them owned or set Any. Unlimited still shows theoretical BiS.
+
 ## [2.5.18] - 2026-07-26
 
 ### OSRS Wiki + Boss Guides (UX overhaul)

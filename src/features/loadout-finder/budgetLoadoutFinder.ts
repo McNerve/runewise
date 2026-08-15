@@ -86,6 +86,35 @@ export function withOwnedPrices(
   };
 }
 
+/**
+ * Cash to equip this item.
+ * - `> 0` — GE buy price
+ * - `0` — owned / explicitly free
+ * - `null` — no price (not buyable on a capped budget)
+ */
+export function itemCashCost(
+  priceOf: (name: string) => number | null,
+  name: string
+): number | null {
+  const p = priceOf(name);
+  if (p == null) return null;
+  return p > 0 ? p : 0;
+}
+
+/**
+ * Optimizer cost. Unpriced items are free only when the budget is unlimited
+ * (`Any`). A capped budget cannot pretend missing GE data is 0 gp.
+ */
+export function candidateCost(
+  priceOf: (name: string) => number | null,
+  name: string,
+  unlimited: boolean
+): number | null {
+  const cash = itemCashCost(priceOf, name);
+  if (cash == null) return unlimited ? 0 : null;
+  return cash;
+}
+
 /** Drop excluded item names from an equipment catalog. */
 export function filterExcludedEquipment(
   equipment: WikiEquipment[],
@@ -215,9 +244,9 @@ function setupCost(
   for (const item of Object.values(gear)) {
     if (!item) continue;
     const p = priceOf(item.name);
-    if (p == null || p <= 0) {
+    if (p == null) {
       unpriced += 1;
-    } else {
+    } else if (p > 0) {
       total += p;
     }
   }

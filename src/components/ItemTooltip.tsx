@@ -29,19 +29,17 @@ export default memo(function ItemTooltip({ itemName, children }: Props) {
 
   function handleOpen(open: boolean) {
     if (!open || loaded) return;
-    ensureData().then(({ mapping, prices }) => {
+    Promise.all([
+      ensureData(),
+      fetchWikiSummary(itemName).catch(() => null),
+    ]).then(([{ mapping, prices }, summary]) => {
       const match = mapping.get(itemName.toLowerCase());
       if (match) {
         setItem(match);
         setPrice(prices[String(match.id)] ?? null);
-        setLoaded(true);
-        return;
       }
-      // Not on the GE (untradeables, NPCs, …) — fall back to a wiki-style
-      // page preview instead of "no data".
-      fetchWikiSummary(itemName)
-        .then(setWiki)
-        .finally(() => setLoaded(true));
+      if (summary) setWiki(summary);
+      setLoaded(true);
     });
   }
 
@@ -50,74 +48,43 @@ export default memo(function ItemTooltip({ itemName, children }: Props) {
       <Tooltip.Trigger asChild>{children}</Tooltip.Trigger>
       <Tooltip.Content
         className="item-tooltip-content"
-        sideOffset={6}
+        sideOffset={8}
         side="top"
         collisionPadding={8}
         style={{ transformOrigin: "var(--radix-tooltip-content-transform-origin)" }}
       >
-        {item ? (
-          <div className="flex gap-3 items-start">
-            <img
-              src={`${WIKI_IMG}/${encodeIconFilename(item.icon)}`}
-              alt=""
-              className="w-8 h-8 shrink-0 mt-0.5"
-              onError={(e) => { e.currentTarget.style.display = "none"; }}
-            />
-            <div className="min-w-0">
-              <div className="font-semibold text-text-primary text-xs">{item.name}</div>
-              {item.examine && (
-                <div className="text-[10px] text-text-secondary/60 mt-0.5 italic">{item.examine}</div>
-              )}
-              <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-[10px]">
-                {price?.high != null && (
-                  <span>
-                    <span className="text-text-secondary/50">GE: </span>
-                    <span className="text-success font-medium">{formatGp(price.high)}</span>
-                  </span>
-                )}
-                {item.highalch != null && (
-                  <span>
-                    <span className="text-text-secondary/50">Alch: </span>
-                    <span className="text-warning font-medium">{formatGp(item.highalch)}</span>
-                  </span>
-                )}
-                {item.limit != null && (
-                  <span>
-                    <span className="text-text-secondary/50">Limit: </span>
-                    <span className="text-text-primary">{item.limit.toLocaleString()}</span>
-                  </span>
-                )}
-                {item.members && (
-                  <span className="text-accent">P2P</span>
-                )}
-              </div>
-            </div>
-          </div>
-        ) : wiki ? (
-          <div className="flex gap-3 items-start max-w-64">
-            {wiki.image && (
+        {item || wiki ? (
+          <div className="wiki-hover-card-inner">
+            {(wiki?.image || item) && (
               <img
-                src={wiki.image}
+                src={
+                  wiki?.image ??
+                  `${WIKI_IMG}/${encodeIconFilename(item?.icon ?? `${itemName}.png`)}`
+                }
                 alt=""
-                className="w-10 h-10 shrink-0 mt-0.5 object-contain"
+                className="wiki-hover-card-img"
                 onError={(e) => { e.currentTarget.style.display = "none"; }}
               />
             )}
-            <div className="min-w-0">
-              <div className="font-semibold text-text-primary text-xs">{wiki.title}</div>
-              {wiki.summary && (
-                <div className="text-[10px] text-text-secondary/70 mt-0.5 line-clamp-3">{wiki.summary}</div>
+            <div className="wiki-hover-card-body">
+              <div className="wiki-hover-card-title">{item?.name ?? wiki?.title ?? itemName}</div>
+              {(wiki?.summary || item?.examine) && (
+                <p className="wiki-hover-card-extract">
+                  {wiki?.summary ?? item?.examine}
+                </p>
               )}
-              {wiki.fields.length > 0 && (
-                <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-[10px]">
-                  {wiki.fields.slice(0, 3).map((f) => (
+              <div className="wiki-hover-card-facts">
+                {price?.high != null && <span>GE {formatGp(price.high)}</span>}
+                {item?.highalch != null && <span>Alch {formatGp(item.highalch)}</span>}
+                {item?.limit != null && <span>Limit {item.limit.toLocaleString()}</span>}
+                {item?.members && <span>Members</span>}
+                {!item &&
+                  wiki?.fields.slice(0, 3).map((f) => (
                     <span key={f.label}>
-                      <span className="text-text-secondary/50">{f.label}: </span>
-                      <span className="text-text-primary">{f.value}</span>
+                      {f.label} {f.value}
                     </span>
                   ))}
-                </div>
-              )}
+              </div>
             </div>
           </div>
         ) : loaded ? (

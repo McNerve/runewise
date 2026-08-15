@@ -43,7 +43,8 @@ const KEYBIND_LABELS_ALL: Record<string, { label: string; family: string }> = {
   "clue-helper": { label: "Clue Helper", family: "Live" },
   stars: { label: "Star Helper", family: "Live" },
   news: { label: "OSRS News", family: "Live" },
-  wiki: { label: "OSRS Wiki", family: "Live" },
+  wiki: { label: "OSRS Wiki", family: "Wiki" },
+  "loadout-finder": { label: "Loadout Finder", family: "Combat" },
 };
 
 const KEYBIND_LABELS: Record<string, { label: string; family: string }> =

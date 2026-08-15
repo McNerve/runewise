@@ -98,7 +98,7 @@ export function buildWhatNext(input: WhatNextInput): WhatNextAction[] {
     });
   }
 
-  if (!rsn || !hiscores) {
+  if (!rsn) {
     actions.push({
       id: "set-rsn",
       title: "Set your RSN",
@@ -114,6 +114,11 @@ export function buildWhatNext(input: WhatNextInput): WhatNextAction[] {
       view: "loadout-finder",
       kind: "combat",
     });
+    return actions.slice(0, 3);
+  }
+
+  if (!hiscores) {
+    // RSN is set but hiscores are still loading — don't nag to "set" it.
     return actions.slice(0, 3);
   }
 

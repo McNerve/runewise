@@ -14,6 +14,11 @@ import {
   sanitizeHtml,
   type WikiTextResponse,
 } from "./helpers";
+import {
+  applyInfoboxFromHtml,
+  buildWikiLookupDocumentFromHtml,
+  type WikiLookupDocument,
+} from "./lookup";
 
 const GUIDE_TTL = 60 * 60 * 1000;
 
@@ -97,6 +102,8 @@ export interface BossGuideDocument {
   combatLevel: string | null;
   sections: BossGuideSection[];
   blocks: WikiGuideBlock[];
+  /** Full /Strategies article — primary reading surface (wiki mirror). */
+  article: WikiLookupDocument | null;
   fetchedAt: number;
 }
 
@@ -851,7 +858,7 @@ function stripNestedHeadings(rawHtml: string): string {
 export async function fetchBossGuideDocument(
   wikiPage: string
 ): Promise<BossGuideDocument> {
-  const cacheKey = `boss-guide:v22:${wikiPage}`;
+  const cacheKey = `boss-guide:v25:${wikiPage}`;
   const cached = getCached<BossGuideDocument>(cacheKey, GUIDE_TTL);
   if (cached) return cached;
 
@@ -1036,14 +1043,37 @@ export async function fetchBossGuideDocument(
   // "Parent > Leaf" card) keeping the longer body.
   const collapsed = collapseDuplicateSections(normalizedSections);
 
+  const articleTitle = resolvedPage.replace(/_/g, " ");
+  let article = buildWikiLookupDocumentFromHtml(
+    fullHtml,
+    articleTitle,
+    classification.entityKind
+  );
+
+  const mainPage = resolvedPage.replace(/\/Strategies$/i, "");
+  let mainHtml = fullHtml;
+  if (mainPage !== resolvedPage) {
+    try {
+      mainHtml = await fetchFullHtml(mainPage);
+      article = applyInfoboxFromHtml(
+        article,
+        mainHtml,
+        mainPage.replace(/_/g, " ")
+      );
+    } catch {
+      mainHtml = fullHtml;
+    }
+  }
+
   const doc = {
     template: classification.template,
     summary:
-      collapsed.find((section) => section.summary)?.summary ?? null,
-    weakness: extractWeaknessFromInfobox(fullHtml),
-    recommendedApproach: extractRecommendedApproach(fullHtml),
-    teamSize: extractTeamSize(fullHtml),
-    combatLevel: extractCombatLevel(fullHtml),
+      collapsed.find((section) => section.summary)?.summary ?? article.summary,
+    weakness: extractWeaknessFromInfobox(mainHtml) ?? extractWeaknessFromInfobox(fullHtml),
+    recommendedApproach:
+      extractRecommendedApproach(mainHtml) ?? extractRecommendedApproach(fullHtml),
+    teamSize: extractTeamSize(mainHtml) ?? extractTeamSize(fullHtml),
+    combatLevel: extractCombatLevel(mainHtml) ?? extractCombatLevel(fullHtml),
     sections: collapsed.map((section) => ({
       id: section.id,
       title: section.title,
@@ -1058,6 +1088,10 @@ export async function fetchBossGuideDocument(
       type: "article" as const,
       html: section.html,
     })),
+    article:
+      article.leadHtml || article.sections.length > 0 || article.infoboxHtml
+        ? article
+        : null,
     fetchedAt: Date.now(),
   };
 
@@ -1183,7 +1217,7 @@ const SKILL_NAMES = new Set([
   "runecrafting", "hitpoints", "crafting", "mining", "smithing",
   "fishing", "cooking", "firemaking", "woodcutting", "agility",
   "herblore", "thieving", "fletching", "slayer", "farming",
-  "construction", "hunter",
+  "construction", "hunter", "sailing",
 ]);
 
 /**

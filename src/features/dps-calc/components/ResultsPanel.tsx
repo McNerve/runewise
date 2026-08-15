@@ -136,9 +136,9 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
       : null;
 
   return (
-    <div className="lg:sticky lg:top-4 lg:self-start space-y-5">
+    <div className="lg:sticky lg:top-4 lg:self-start flex flex-col gap-5">
       {/* Target */}
-      <Card kicker="Target">
+      <Card kicker="Target" className="order-2">
         <MonsterSearch
           monsters={wikiMonsters}
           selected={selectedMonster}
@@ -234,73 +234,10 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
         </div>
       </Card>
 
-      {/* Spec Weapon */}
-      <Card kicker="Special Attack">
-        {boltEnchant ? (
-          <div className="mb-2 text-[11px] text-text-secondary">
-            Bolt enchant: <span className="text-text-primary capitalize">{boltEnchant}</span>
-            {" "}(EV-blended procs)
-          </div>
-        ) : null}
-        {showZcbSpec && (
-          <label className="mb-2 flex items-center gap-2 text-[11px] text-text-secondary cursor-pointer">
-            <input
-              type="checkbox"
-              checked={zcbSpec}
-              onChange={(e) => setZcbSpec(e.target.checked)}
-              className="rounded border-border"
-            />
-            Zaryte crossbow special (guaranteed hit + bolt proc)
-          </label>
-        )}
-        <select
-          value={selectedSpec?.id ?? ""}
-          onChange={(e) => {
-            const spec = specWeapons.find((s) => s.id === e.target.value) ?? null;
-            setSelectedSpec(spec);
-          }}
-          className="w-full px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
-        >
-          <option value="">None</option>
-          {specWeapons.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name} — {s.specName} ({s.specCost}%)
-            </option>
-          ))}
-        </select>
-        {selectedSpec && specResult && (
-          <div className="mt-2 rounded-lg border border-border/40 bg-bg-tertiary/30 p-3">
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <div>
-                <div className="text-lg font-bold text-text-primary num">{specResult.specMaxHit}</div>
-                <div className="text-[10px] text-text-secondary">Spec Max</div>
-              </div>
-              <div>
-                <div className={`text-lg font-bold num ${
-                  specResult.specAccuracy >= 0.8 ? "text-success" : specResult.specAccuracy >= 0.5 ? "text-warning" : "text-danger"
-                }`}>
-                  {(specResult.specAccuracy * 100).toFixed(1)}%
-                </div>
-                <div className="text-[10px] text-text-secondary">Spec Acc</div>
-              </div>
-              <div>
-                <div className="text-lg font-bold text-accent num">{specResult.specDps.toFixed(2)}</div>
-                <div className="text-[10px] text-text-secondary">Spec DPS</div>
-              </div>
-            </div>
-            {selectedSpec.hits > 1 && (
-              <div className="mt-1.5 text-[10px] text-text-secondary/50 text-center">
-                {selectedSpec.hits} hits &times; {Math.floor(specResult.specMaxHit / selectedSpec.hits)} each
-              </div>
-            )}
-            <div className="mt-1.5 text-[10px] text-text-secondary/40 text-center">{selectedSpec.notes}</div>
-          </div>
-        )}
-      </Card>
-
-      {/* Results */}
       <Card
-        kicker="Results"
+        elevation="hero"
+        className="order-1"
+        kicker={selectedMonster?.name ?? "Verdict"}
         action={
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
@@ -329,12 +266,13 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
           attackRoll={result.attackRoll}
           defenseRoll={result.defenseRoll}
           showDetails={showBreakdown}
+          monsterName={selectedMonster?.name ?? null}
+          hitsToKill={killStats?.expectedAttacks ?? null}
         />
         {killStats && (
           <div className="mt-2 text-[10px] text-text-secondary num">
-            ≈{killStats.expectedAttacks.toFixed(1)} hits to kill
             {killStats.medianSeconds !== null && (
-              <> · 50% by <span className="text-text-primary">{formatSeconds(killStats.medianSeconds)}</span></>
+              <>50% by <span className="text-text-primary">{formatSeconds(killStats.medianSeconds)}</span></>
             )}
             {killStats.p90Seconds !== null && (
               <> · 90% by <span className="text-text-primary">{formatSeconds(killStats.p90Seconds)}</span></>
@@ -424,7 +362,6 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
           </div>
         )}
 
-        {/* Arsenal — every saved loadout vs this target */}
         {arsenalResults.length > 0 && (
           <div className="mt-4 rounded-lg border border-border/40 overflow-hidden">
             <div className="px-3 py-2 text-[10px] uppercase tracking-wider text-text-secondary/50 border-b border-border/40">
@@ -486,9 +423,74 @@ export default function ResultsPanel({ state }: ResultsPanelProps) {
         )}
       </Card>
 
+      {/* Spec Weapon */}
+      <Card kicker="Special Attack" className="order-3">
+        {boltEnchant ? (
+          <div className="mb-2 text-[11px] text-text-secondary">
+            Bolt enchant: <span className="text-text-primary capitalize">{boltEnchant}</span>
+            {" "}(EV-blended procs)
+          </div>
+        ) : null}
+        {showZcbSpec && (
+          <label className="mb-2 flex items-center gap-2 text-[11px] text-text-secondary cursor-pointer">
+            <input
+              type="checkbox"
+              checked={zcbSpec}
+              onChange={(e) => setZcbSpec(e.target.checked)}
+              className="rounded border-border"
+            />
+            Zaryte crossbow special (guaranteed hit + bolt proc)
+          </label>
+        )}
+        <select
+          value={selectedSpec?.id ?? ""}
+          onChange={(e) => {
+            const spec = specWeapons.find((s) => s.id === e.target.value) ?? null;
+            setSelectedSpec(spec);
+          }}
+          className="w-full px-3 py-2 rounded-lg bg-bg-tertiary border border-border text-sm text-text-primary focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/20 transition-colors"
+        >
+          <option value="">None</option>
+          {specWeapons.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name} — {s.specName} ({s.specCost}%)
+            </option>
+          ))}
+        </select>
+        {selectedSpec && specResult && (
+          <div className="mt-2 rounded-lg border border-border/40 bg-bg-tertiary/30 p-3">
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div>
+                <div className="text-lg font-bold text-text-primary num">{specResult.specMaxHit}</div>
+                <div className="text-[10px] text-text-secondary">Spec Max</div>
+              </div>
+              <div>
+                <div className={`text-lg font-bold num ${
+                  specResult.specAccuracy >= 0.8 ? "text-success" : specResult.specAccuracy >= 0.5 ? "text-warning" : "text-danger"
+                }`}>
+                  {(specResult.specAccuracy * 100).toFixed(1)}%
+                </div>
+                <div className="text-[10px] text-text-secondary">Spec Acc</div>
+              </div>
+              <div>
+                <div className="text-lg font-bold text-accent num">{specResult.specDps.toFixed(2)}</div>
+                <div className="text-[10px] text-text-secondary">Spec DPS</div>
+              </div>
+            </div>
+            {selectedSpec.hits > 1 && (
+              <div className="mt-1.5 text-[10px] text-text-secondary/50 text-center">
+                {selectedSpec.hits} hits &times; {Math.floor(specResult.specMaxHit / selectedSpec.hits)} each
+              </div>
+            )}
+            <div className="mt-1.5 text-[10px] text-text-secondary/40 text-center">{selectedSpec.notes}</div>
+          </div>
+        )}
+      </Card>
+
       {/* Sustain — incoming damage */}
       {sustain && (
         <Card
+          className="order-4"
           kicker="Sustain — Damage Taken"
           action={
             <select

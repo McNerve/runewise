@@ -129,6 +129,7 @@ const BOSS_SMALL_ICON: Record<string, string> = {
   "Lunar Chests": "Blood_moon_helm.png",
   "Yama": "Yama.png",
   "The Royal Titans": "Bran.png",
+  "The Mad Angel": "Mad_Angel.png",
 
   // Aliases (hiscores names that differ)
   "Mimic": "Mimic.png",
@@ -220,6 +221,7 @@ const BOSS_LARGE_ICON: Record<string, string> = {
   "Lunar Chests": "Blood_Moon.png",
   "Yama": "Yama.png",
   "The Royal Titans": "Bran.png",
+  "The Mad Angel": "Mad_Angel.png",
 
   // Aliases
   "The Fortis Colosseum": "Sol_Heredit.png",

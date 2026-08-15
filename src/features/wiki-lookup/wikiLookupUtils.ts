@@ -8,7 +8,7 @@ export const COLLAPSED_SECTIONS = [
   "gallery",
   "drop sources",
   "spawns",
-  "combat stats",
+  // Combat stats stay open — they are the reason you opened an item page.
   "changes",
   "sound effects",
   "trivia",

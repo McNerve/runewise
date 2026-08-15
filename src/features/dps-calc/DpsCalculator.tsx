@@ -53,7 +53,7 @@ export default function DpsCalculator({ hiscores }: Props) {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-6 items-start">
+      <div className="flex flex-col-reverse lg:grid lg:grid-cols-[3fr_2fr] gap-6 items-start">
 
         {/* ====== LEFT COLUMN -- Configuration ====== */}
         <div className="space-y-5">

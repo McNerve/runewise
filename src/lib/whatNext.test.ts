@@ -34,6 +34,12 @@ describe("buildWhatNext", () => {
     expect(actions.length).toBeLessThanOrEqual(3);
   });
 
+  it("does not nag to set RSN when the name is already saved", () => {
+    const actions = buildWhatNext({ rsn: "Raxor", hiscores: null, liveStarCount: 4 });
+    expect(actions.some((a) => a.id === "set-rsn")).toBe(false);
+    expect(actions.some((a) => a.id === "stars")).toBe(true);
+  });
+
   it("surfaces live farm timers ahead of generic setup", () => {
     const actions = buildWhatNext({
       rsn: null,

@@ -61,8 +61,7 @@ export const FEATURE_REGISTRY = {
     title: "Budget Loadout Finder",
     navLabel: "Loadout Finder",
     family: "Combat",
-    // Search + What next / DPS deep links; rail stays on daily drivers.
-    sidebar: false,
+    sidebar: true,
     search: true,
     aliases: [
       "loadout finder",
@@ -160,9 +159,9 @@ export const FEATURE_REGISTRY = {
   },
   progress: {
     title: "Character Progress",
-    navLabel: "Character Progress",
+    navLabel: "Progress",
     family: "Player",
-    sidebar: false,
+    sidebar: true,
     search: true,
     aliases: ["quests", "quest requirements", "diaries", "achievement diaries", "progress", "combat tasks", "combat achievements"],
   },
@@ -249,7 +248,7 @@ export const FEATURE_REGISTRY = {
   wiki: {
     title: "OSRS Wiki",
     navLabel: "OSRS Wiki",
-    family: "Live",
+    family: "Wiki",
     sidebar: true,
     search: true,
     aliases: ["wiki", "wiki lookup", "search wiki", "look up anything"],
@@ -328,6 +327,7 @@ export const FEATURE_FAMILIES: FeatureFamily[] = [
   "Combat",
   "Market",
   "Plan",
+  "Wiki",
   "Live",
 ];
 

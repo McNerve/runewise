@@ -203,6 +203,58 @@ describe("owned and exclude constraints", () => {
     }
   });
 
+  it("does not treat unpriced BiS as free under a capped budget", () => {
+    const god = item("God blade", "weapon", {
+      attackSlash: 200,
+      strengthBonus: 200,
+      attackSpeed: 4,
+      combatStyle: "slash",
+    });
+    const r = optimizeUnderBudget({
+      ...commonOpts,
+      equipment: [...catalog, god],
+      budget: 5_000_000,
+    });
+    expect(r).not.toBeNull();
+    const w = r!.gear.weapon?.name ?? r!.gear["2h"]?.name ?? "";
+    expect(w).not.toBe("God blade");
+    expect(w).toMatch(/whip|scimitar|rapier/i);
+  });
+
+  it("allows unpriced BiS when budget is unlimited", () => {
+    const god = item("God blade", "weapon", {
+      attackSlash: 200,
+      strengthBonus: 200,
+      attackSpeed: 4,
+      combatStyle: "slash",
+    });
+    const r = optimizeUnderBudget({
+      ...commonOpts,
+      equipment: [...catalog, god],
+      budget: 0,
+    });
+    expect(r).not.toBeNull();
+    expect(r!.gear.weapon?.name ?? r!.gear["2h"]?.name).toBe("God blade");
+  });
+
+  it("still equips an owned unpriced item under a capped budget", () => {
+    const god = item("God blade", "weapon", {
+      attackSlash: 200,
+      strengthBonus: 200,
+      attackSpeed: 4,
+      combatStyle: "slash",
+    });
+    const r = optimizeUnderBudget({
+      ...commonOpts,
+      equipment: [...catalog, god],
+      budget: 100_000,
+      ownedItems: ["God blade"],
+    });
+    expect(r).not.toBeNull();
+    expect(r!.gear.weapon?.name ?? r!.gear["2h"]?.name).toBe("God blade");
+    expect(r!.totalCost).toBeLessThan(1_500_000);
+  });
+
   it("never equips excluded weapons", () => {
     const r = optimizeUnderBudget({
       ...commonOpts,

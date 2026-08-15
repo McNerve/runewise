@@ -26,6 +26,7 @@ const SANITIZE_TAGS = [
   "tr",
   "th",
   "td",
+  "caption",
   "strong",
   "em",
   "b",
@@ -38,10 +39,22 @@ const SANITIZE_TAGS = [
   "blockquote",
   "details",
   "summary",
+  "h2",
+  "h3",
   "h4",
   "h5",
   "code",
   "a",
+  "figure",
+  "figcaption",
+  "small",
+  "sub",
+  "abbr",
+  "dl",
+  "dt",
+  "dd",
+  "hr",
+  "center",
 ] as const;
 
 const SANITIZE_ATTRS = [
@@ -230,18 +243,24 @@ export function transformTabbers(root: Element, doc: Document = document): void 
     }
     const replacement = doc.createElement("div");
     replacement.className = "wiki-tabs";
+    replacement.setAttribute("role", "tablist");
     tabs.forEach((tab, i) => {
       const details = doc.createElement("details");
       details.className = "wiki-tab";
+      details.setAttribute("role", "tabpanel");
       if (i === 0) details.setAttribute("open", "");
       const summary = doc.createElement("summary");
+      summary.setAttribute("role", "tab");
       summary.textContent =
         tab.getAttribute("data-title") ||
         tab.getAttribute("title") ||
         tab.getAttribute("data-tab") ||
         `Option ${i + 1}`;
       details.appendChild(summary);
-      while (tab.firstChild) details.appendChild(tab.firstChild);
+      const body = doc.createElement("div");
+      body.className = "wiki-tab-body";
+      while (tab.firstChild) body.appendChild(tab.firstChild);
+      details.appendChild(body);
       replacement.appendChild(details);
     });
     tabber.replaceWith(replacement);
@@ -262,7 +281,8 @@ export function wrapTablesForScroll(root: Element): void {
       table.classList.contains("equipment") ||
       table.classList.contains("inventorytable") ||
       table.classList.contains("lootingbagtable") ||
-      table.classList.contains("runepouchtable")
+      table.classList.contains("runepouchtable") ||
+      table.classList.contains("infobox-bonuses")
     ) {
       return;
     }

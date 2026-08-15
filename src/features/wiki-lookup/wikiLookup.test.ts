@@ -175,9 +175,9 @@ describe("breadcrumb trail", () => {
 });
 
 describe("shouldCollapseSection / sectionContentClasses", () => {
-  it("collapses gallery and combat stats sections", () => {
+  it("collapses gallery but keeps combat stats open", () => {
     expect(shouldCollapseSection("Gallery")).toBe(true);
-    expect(shouldCollapseSection("Combat stats")).toBe(true);
+    expect(shouldCollapseSection("Combat stats")).toBe(false);
     expect(shouldCollapseSection("Strategy")).toBe(false);
   });
 

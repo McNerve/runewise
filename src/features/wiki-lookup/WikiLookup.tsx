@@ -11,7 +11,6 @@ import {
   type WikiLookupDocument,
   type WikiSearchResult,
 } from "../../lib/wiki/lookup";
-import SourceAttribution from "../../components/SourceAttribution";
 import { Skeleton } from "../../components/Skeleton";
 import { useNavigation } from "../../lib/NavigationContext";
 import { loadRecentEntities } from "../../lib/recentEntities";
@@ -21,9 +20,8 @@ import {
 } from "../../lib/wiki/interactive";
 import { useGEData } from "../../hooks/useGEData";
 import { fetchVolumes } from "../../lib/api/ge";
-import WikiSectionContent from "./components/WikiSectionContent";
-import WikiToc from "./components/WikiToc";
-import { extractTocEntries } from "./wikiLookupUtils";
+import WikiArticle from "./components/WikiArticle";
+import { POPULAR_PAGES, WIKI_HOME_CATEGORIES } from "./wikiLookupConstants";
 import {
   loadPersistedHistory,
   persistHistory,
@@ -35,11 +33,7 @@ import {
   currentPage,
   type WikiHistory,
 } from "./wikiHistory";
-import { formatGp } from "../../lib/format";
-import { POPULAR_PAGES } from "./wikiLookupConstants";
 import {
-  sectionContentClasses,
-  shouldCollapseSection,
   stripWikiStrategySuffix,
   isWikiStrategyTitle,
 } from "./wikiLookupUtils";
@@ -141,24 +135,9 @@ export default function WikiLookup() {
   );
 
   function navigateToTypedPage(page: string, kind: WikiEntityKind) {
-    if (kind === "item") {
-      navigate("market", { query: page });
-      return;
-    }
-
-    if (kind === "boss") {
-      // "Vorkath/Strategies" → open Boss Guides for Vorkath, not a dead deep-link.
-      const bossName = stripWikiStrategySuffix(page);
-      const known = findBossByName(bossName);
-      navigate("bosses", { boss: known?.name ?? bossName });
-      return;
-    }
-
-    if (kind === "quest") {
-      navigate("progress", { quest: page, tab: "quests" });
-      return;
-    }
-
+    // Stay on the wiki — this view is a wiki mirror. Workspace jumps are
+    // explicit buttons on the article, not silent redirects.
+    void kind;
     openPage(page);
   }
 
@@ -405,27 +384,26 @@ export default function WikiLookup() {
     [document]
   );
 
-  const tocEntries = useMemo(
-    () => (document ? extractTocEntries(document.sections) : []),
-    [document]
-  );
-
   return (
     <div className="space-y-5 min-w-0">
       <section className="min-w-0">
         <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
           <div className="space-y-1 min-w-0">
             <h2 className="text-2xl font-semibold tracking-tight">OSRS Wiki</h2>
-            <p className="max-w-2xl text-sm text-text-secondary">
-              Search and read any OSRS Wiki page with formatted content.
-            </p>
+            {!document ? (
+              <p className="max-w-2xl text-sm text-text-secondary">
+                Search and read any OSRS Wiki page with formatted content.
+              </p>
+            ) : null}
           </div>
-          <div className="text-[11px] uppercase tracking-[0.18em] text-text-secondary/60">
-            Reference
-          </div>
+          {!document ? (
+            <div className="text-[11px] uppercase tracking-[0.18em] text-text-secondary/60">
+              Reference
+            </div>
+          ) : null}
         </div>
 
-        <div className={`mt-4 grid gap-4 min-w-0 ${document || loadingDocument ? "" : "xl:grid-cols-[minmax(0,1fr)_280px]"}`}>
+        <div className="mt-4 min-w-0">
           <div ref={searchRef} className="min-w-0">
           <form className="relative" onSubmit={handleSubmit}>
             <input
@@ -500,21 +478,6 @@ export default function WikiLookup() {
           </form>
           </div>
 
-          {/* Hide the marketing blurb once a page is open — it only steals
-              vertical space and forces a two-column header on mobile. */}
-          {!document && !loadingDocument ? (
-            <div className="text-sm text-text-secondary">
-              <div className="text-[10px] uppercase tracking-[0.18em] text-text-secondary/45">
-                Great For
-              </div>
-              <div className="mt-3 space-y-2">
-                <p>Items and untradeables</p>
-                <p>Shops, NPCs, and locations</p>
-                <p>Skilling methods and mechanics</p>
-                <p>Quick in-app reference while playing</p>
-              </div>
-            </div>
-          ) : null}
         </div>
       </section>
 
@@ -534,14 +497,9 @@ export default function WikiLookup() {
       ) : null}
 
       {!loadingDocument && !document && !error ? (
-        <div className="py-10 text-center text-sm text-text-secondary space-y-4">
-          <p>
-            Search for something like <span className="text-text-primary">Dusuri&apos;s Star Shop</span>,
-            <span className="text-text-primary"> Dragon defender</span>, or
-            <span className="text-text-primary"> Guardians of the Rift</span> to open a structured wiki view.
-          </p>
+        <div className="space-y-6 py-2">
           {recentWikiPages.length > 0 && (
-            <div className="flex flex-wrap items-center justify-center gap-1.5">
+            <div className="flex flex-wrap items-center gap-1.5">
               <span className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
                 Recent
               </span>
@@ -557,7 +515,20 @@ export default function WikiLookup() {
               ))}
             </div>
           )}
-          <div className="flex flex-wrap items-center justify-center gap-1.5">
+          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+            {WIKI_HOME_CATEGORIES.map((cat) => (
+              <button
+                key={cat.page}
+                type="button"
+                onClick={() => openPage(cat.page)}
+                className="home-tile rounded-xl border border-border/50 bg-bg-tertiary/40 px-4 py-3 text-left"
+              >
+                <div className="text-sm font-medium text-text-primary">{cat.title}</div>
+                <div className="mt-0.5 text-xs text-text-secondary">{cat.blurb}</div>
+              </button>
+            ))}
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5">
             <span className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
               Popular
             </span>
@@ -576,334 +547,125 @@ export default function WikiLookup() {
       ) : null}
 
       {document ? (
-        <div ref={contentRef} className="relative rounded-xl border border-border/40 bg-bg-primary/25 p-4 sm:p-5 min-w-0 overflow-hidden">
-        {/* Reading progress */}
-        <div
-          className="pointer-events-none absolute left-0 top-0 z-10 h-0.5 bg-accent/80 transition-[width] duration-150"
-          style={{ width: `${readProgress}%` }}
-          aria-hidden
-        />
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px] min-w-0">
-          <section className="min-w-0 space-y-4 overflow-hidden">
-            <div>
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-text-secondary/45">
-                    <span>OSRS Wiki</span>
-                    {readProgress > 5 ? (
-                      <span className="normal-case tracking-normal text-text-secondary/35">
-                        · {readProgress}% read
+        <div className="space-y-3">
+          <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-xs text-text-secondary/60">
+            <span className="flex items-center gap-0.5">
+              <button
+                type="button"
+                onClick={() => navigateHistory("back")}
+                disabled={!canGoBack(pageHistory)}
+                aria-label="Back to previous wiki page"
+                title="Back (Alt+←)"
+                className="rounded-md border border-border/60 p-1 transition enabled:hover:border-accent/40 enabled:hover:text-text-primary disabled:opacity-30"
+              >
+                <ChevronLeft className="h-3.5 w-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => navigateHistory("forward")}
+                disabled={!canGoForward(pageHistory)}
+                aria-label="Forward to next wiki page"
+                title="Forward (Alt+→)"
+                className="rounded-md border border-border/60 p-1 transition enabled:hover:border-accent/40 enabled:hover:text-text-primary disabled:opacity-30"
+              >
+                <ChevronRight className="h-3.5 w-3.5" />
+              </button>
+            </span>
+            <button type="button" onClick={() => navigate("home")} className="transition hover:text-text-primary">
+              Home
+            </button>
+            <span>/</span>
+            <button type="button" onClick={() => navigate("wiki")} className="transition hover:text-text-primary">
+              Wiki
+            </button>
+            {breadcrumbPages.map((page) => (
+              <div key={page} className="contents">
+                <span>/</span>
+                <button
+                  type="button"
+                  onClick={() => openPage(page)}
+                  className="max-w-40 truncate text-accent transition hover:underline cursor-pointer"
+                  title={page}
+                >
+                  {page}
+                </button>
+              </div>
+            ))}
+          </nav>
+          <WikiArticle
+            document={document}
+            contentRef={contentRef}
+            onContentClick={handleContentClick}
+            geSnapshot={geSnapshot}
+            pageUrl={pageUrl}
+            readProgress={readProgress}
+            related={
+              document.relatedPages.length > 0 ? (
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  {document.relatedPages.slice(0, 5).map((page) => (
+                    <button
+                      key={page.title}
+                      type="button"
+                      onClick={() => openPage(page.title)}
+                      className="rounded-full border border-border bg-bg-primary/55 px-3 py-1 text-xs text-text-secondary transition hover:border-accent/35 hover:text-text-primary"
+                    >
+                      <span className="mr-1.5 hidden text-[10px] uppercase tracking-[0.16em] text-text-secondary/45 sm:inline">
+                        {getKindLabel(page.kind)}
                       </span>
-                    ) : null}
-                  </div>
-                  <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-xs text-text-secondary/60">
-                    <span className="flex items-center gap-0.5">
-                      <button
-                        type="button"
-                        onClick={() => navigateHistory("back")}
-                        disabled={!canGoBack(pageHistory)}
-                        aria-label="Back to previous wiki page"
-                        title="Back (Alt+←)"
-                        className="rounded-md border border-border/60 p-1 transition enabled:hover:border-accent/40 enabled:hover:text-text-primary disabled:opacity-30"
-                      >
-                        <ChevronLeft className="h-3.5 w-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => navigateHistory("forward")}
-                        disabled={!canGoForward(pageHistory)}
-                        aria-label="Forward to next wiki page"
-                        title="Forward (Alt+→)"
-                        className="rounded-md border border-border/60 p-1 transition enabled:hover:border-accent/40 enabled:hover:text-text-primary disabled:opacity-30"
-                      >
-                        <ChevronRight className="h-3.5 w-3.5" />
-                      </button>
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => navigate("home")}
-                      className="transition hover:text-text-primary"
-                    >
-                      Home
+                      {page.title}
                     </button>
-                    <span>/</span>
-                    <button
-                      type="button"
-                      onClick={() => navigate("wiki")}
-                      className="transition hover:text-text-primary"
-                    >
-                      Wiki Lookup
-                    </button>
-                    {breadcrumbPages.map((page) => (
-                      <div key={page} className="contents">
-                        <span>/</span>
-                        <button
-                          type="button"
-                          onClick={() => openPage(page)}
-                          className="max-w-40 truncate text-accent transition hover:underline cursor-pointer"
-                          title={page}
-                        >
-                          {page}
-                        </button>
-                      </div>
-                    ))}
-                  </nav>
-                  <h3 className="text-3xl font-semibold tracking-tight">
-                    {document.title.includes("/")
-                      ? document.title.replace(/\//g, " · ")
-                      : document.title}
-                  </h3>
-                  {isWikiStrategyTitle(document.title) ? (
-                    <p className="text-xs text-text-secondary/70">
-                      Strategy page from the OSRS Wiki — open the in-app Boss Guide for structured
-                      loadouts, loot, and tasks.
-                    </p>
-                  ) : null}
-                  {document.summary ? (
-                    <p className="max-w-3xl text-sm leading-6 text-text-secondary">
-                      {document.summary}
-                    </p>
-                    ) : null}
-                  {document.relatedPages.length > 0 ? (
-                    <div className="flex flex-wrap items-center gap-2 pt-1">
-                      {document.relatedPages.slice(0, 5).map((page) => (
-                        <button
-                          key={page.title}
-                          type="button"
-                          onClick={() => navigateToTypedPage(page.title, page.kind)}
-                          className="rounded-full border border-border bg-bg-primary/55 px-3 py-1 text-xs text-text-secondary transition hover:border-accent/35 hover:text-text-primary"
-                        >
-                          <span className="mr-1.5 hidden text-[10px] uppercase tracking-[0.16em] text-text-secondary/45 sm:inline">
-                            {getKindLabel(page.kind)}
-                          </span>
-                          {page.title}
-                        </button>
-                      ))}
-                      {document.totalRelatedPages > 5 ? (
-                        <span className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
-                          +{document.totalRelatedPages - 5} more
-                        </span>
-                      ) : null}
-                    </div>
-                  ) : null}
-                  <SourceAttribution
-                    source="OSRS Wiki"
-                    fetchedAt={document.fetchedAt}
-                    cacheLabel="1 hour"
-                  />
+                  ))}
                 </div>
-                {pageUrl ? (
-                  <div className="flex flex-wrap gap-2">
-                    {document.pageType === "boss" || isWikiStrategyTitle(document.title) ? (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          navigateToTypedPage(
-                            document.title,
-                            "boss"
-                          )
-                        }
-                        className="rounded-xl border border-accent/25 bg-accent/10 px-3 py-2 text-xs font-medium text-accent transition hover:border-accent/45 hover:text-accent-hover"
-                      >
-                        {isWikiStrategyTitle(document.title)
-                          ? `Open ${stripWikiStrategySuffix(document.title)} Guide`
-                          : "Open Boss Guide"}
-                      </button>
-                    ) : document.pageType !== "reference" ? (
-                      <button
-                        type="button"
-                        onClick={() => navigateToTypedPage(document.title, document.pageType)}
-                        className="rounded-xl border border-accent/25 bg-accent/10 px-3 py-2 text-xs font-medium text-accent transition hover:border-accent/45 hover:text-accent-hover"
-                      >
-                        Open in {getKindLabel(document.pageType)} Workspace
-                      </button>
-                    ) : null}
-                    <a
-                      href={pageUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="rounded-xl border border-border bg-bg-primary/60 px-3 py-2 text-xs font-medium text-text-secondary transition hover:border-accent/40 hover:text-text-primary"
-                    >
-                      Open Full Wiki Page
-                    </a>
-                  </div>
-                ) : null}
-              </div>
-            </div>
-
-            {/* Mobile on-this-page chips (desktop uses sticky WikiToc aside). */}
-            {tocEntries.length >= 2 ? (
-              <div className="xl:hidden -mx-1 overflow-x-auto sidebar-scroll sticky top-0 z-10 bg-bg-primary/95 backdrop-blur-sm py-1.5 border-b border-border/30">
-                <div className="flex min-w-max gap-1.5 px-1">
-                  {tocEntries
-                    .filter((e) => e.level === 2)
-                    .slice(0, 16)
-                    .map((entry) => (
-                      <button
-                        key={entry.id}
-                        type="button"
-                        onClick={() =>
-                          contentRef.current
-                            ?.querySelector(`#${CSS.escape(entry.id)}`)
-                            ?.scrollIntoView({ behavior: "smooth", block: "start" })
-                        }
-                        className="shrink-0 rounded-full border border-border/60 bg-bg-secondary/50 px-3 py-1 text-xs text-text-secondary transition hover:border-accent/40 hover:text-text-primary"
-                      >
-                        {entry.text}
-                      </button>
-                    ))}
-                </div>
-              </div>
-            ) : null}
-
-            {document.leadHtml ? (
-              <section>
-                <div
-                  className="article-content"
-                  onClick={handleContentClick}
-                  dangerouslySetInnerHTML={{ __html: document.leadHtml }}
-                />
-              </section>
-            ) : null}
-
-            {document.sections.map((section) => {
-              const extra = sectionContentClasses(section.title);
-              const collapsed = shouldCollapseSection(section.title);
-              return collapsed ? (
-                <details key={section.id} id={section.id} className="article-content-collapse scroll-mt-4">
-                  <summary className="mb-4 text-lg font-semibold tracking-tight cursor-pointer text-text-primary hover:text-accent transition-colors">
-                    {section.title}
-                  </summary>
-                  <WikiSectionContent
-                    html={section.html}
-                    className={`article-content${extra ? ` ${extra}` : ""}`}
-                    onClick={handleContentClick}
-                  />
-                </details>
-              ) : (
-                <section key={section.id} id={section.id} className="scroll-mt-4">
-                  <h4 className="mb-4 text-lg font-semibold tracking-tight">{section.title}</h4>
-                  <WikiSectionContent
-                    html={section.html}
-                    className={`article-content${extra ? ` ${extra}` : ""}`}
-                    onClick={handleContentClick}
-                  />
-                </section>
-              );
-            })}
-          </section>
-
-          {/* Snapshot scrolls naturally; the TOC sticks below it for the rest
-              of the column. No inner scroll region — sticky + overflow-auto
-              caused paint artifacts in webviews. */}
-          <aside className="space-y-6">
-            <section>
-              <div className="text-[10px] uppercase tracking-[0.2em] text-text-secondary/45">
-                Snapshot
-              </div>
-              <div className="mt-3 space-y-4">
-                {document.infoboxImage ? (
-                  <>
-                    <img
-                      src={document.infoboxImage}
-                      alt={document.infoboxTitle ?? document.title}
-                      className="max-h-64 w-full rounded-xl border border-border object-contain bg-bg-tertiary/30"
-                      onError={(e) => {
-                        const el = e.currentTarget;
-                        el.style.display = "none";
-                        const fallback = el.nextElementSibling;
-                        if (fallback instanceof HTMLElement) fallback.style.display = "flex";
-                      }}
-                    />
-                    <div className="hidden h-32 w-full rounded-xl border border-border bg-bg-tertiary/30 items-center justify-center text-2xl text-text-secondary/30">
-                      {(document.infoboxTitle ?? document.title)[0]}
-                    </div>
-                  </>
-                ) : (
-                  <div className="flex h-32 w-full rounded-xl border border-border bg-bg-tertiary/30 items-center justify-center text-2xl text-text-secondary/30">
-                    {(document.infoboxTitle ?? document.title)[0]}
-                  </div>
-                )}
-                <div>
-                  <div className="text-sm font-semibold text-text-primary">
-                    {document.infoboxTitle ?? document.title}
-                  </div>
-                  <div className="mt-1 text-xs text-text-secondary">
-                    Quick-reference facts pulled from the page infobox where available.
-                  </div>
-                </div>
-
-                {geSnapshot ? (
-                  <div
-                    data-testid="snapshot-ge-price"
-                    className="rounded-xl border border-accent/20 bg-accent/5 px-3 py-3 space-y-1"
+              ) : null
+            }
+            actions={
+              <>
+                {document.pageType === "item" ? (
+                  <button
+                    type="button"
+                    onClick={() => navigate("market", { query: document.title })}
+                    className="rounded-xl border border-accent/25 bg-accent/10 px-3 py-2 text-xs font-medium text-accent transition hover:border-accent/45"
                   >
-                    <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
-                      Grand Exchange
-                    </div>
-                    <div className={`text-lg font-semibold ${geSnapshot.price !== null && geSnapshot.price >= 1_000_000 ? "text-accent" : "text-text-primary"}`}>
-                      {geSnapshot.price !== null ? `${formatGp(geSnapshot.price)} coins` : "—"}
-                    </div>
-                    {(geSnapshot.buyLimit !== null || geSnapshot.dailyVolume !== null) ? (
-                      <div className="text-xs text-text-secondary">
-                        {geSnapshot.buyLimit !== null && (
-                          <span>Buy limit: {geSnapshot.buyLimit.toLocaleString()}</span>
-                        )}
-                        {geSnapshot.buyLimit !== null && geSnapshot.dailyVolume !== null && (
-                          <span className="mx-1">·</span>
-                        )}
-                        {geSnapshot.dailyVolume !== null && (
-                          <span>Daily vol: {geSnapshot.dailyVolume.toLocaleString()}</span>
-                        )}
-                      </div>
-                    ) : null}
-                  </div>
+                    Open in Items
+                  </button>
                 ) : null}
-
-                <div className="space-y-2">
-                  {document.infoboxFields.length > 0 ? (
-                    <>
-                      {document.infoboxFields.map((field) => (
-                        <div
-                          key={field.label}
-                          className="px-3 py-2"
-                        >
-                          <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
-                            {field.label}
-                          </div>
-                          <div className="mt-1 text-sm text-text-primary">{field.value}</div>
-                        </div>
-                      ))}
-                      {document.totalInfoboxFields > document.infoboxFields.length ? (
-                        pageUrl ? (
-                          <a
-                            href={pageUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="block px-3 py-1 text-[10px] uppercase tracking-[0.16em] text-accent hover:underline cursor-pointer"
-                          >
-                            +{document.totalInfoboxFields - document.infoboxFields.length} more fields on wiki
-                          </a>
-                        ) : (
-                          <div className="px-3 py-1 text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
-                            +{document.totalInfoboxFields - document.infoboxFields.length} more fields on wiki
-                          </div>
-                        )
-                      ) : null}
-                    </>
-                  ) : (
-                    <div className="px-3 py-3 text-sm text-text-secondary">
-                      No structured infobox fields were found for this page.
-                    </div>
-                  )}
-                </div>
-              </div>
-            </section>
-            <div className="xl:sticky xl:top-4">
-              <WikiToc entries={tocEntries} contentRef={contentRef} />
-            </div>
-          </aside>
-        </div>
+                {document.pageType === "boss" || isWikiStrategyTitle(document.title) ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const bossName = stripWikiStrategySuffix(document.title);
+                      const known = findBossByName(bossName);
+                      navigate("bosses", { boss: known?.name ?? bossName });
+                    }}
+                    className="rounded-xl border border-accent/25 bg-accent/10 px-3 py-2 text-xs font-medium text-accent transition hover:border-accent/45"
+                  >
+                    {isWikiStrategyTitle(document.title)
+                      ? `Open ${stripWikiStrategySuffix(document.title)} Guide`
+                      : "Open Boss Guide"}
+                  </button>
+                ) : null}
+                {document.pageType === "quest" ? (
+                  <button
+                    type="button"
+                    onClick={() => navigate("progress", { quest: document.title, tab: "quests" })}
+                    className="rounded-xl border border-accent/25 bg-accent/10 px-3 py-2 text-xs font-medium text-accent transition hover:border-accent/45"
+                  >
+                    Open in Quests
+                  </button>
+                ) : null}
+                {pageUrl ? (
+                  <a
+                    href={pageUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-xl border border-border bg-bg-primary/60 px-3 py-2 text-xs font-medium text-text-secondary transition hover:border-accent/40 hover:text-text-primary"
+                  >
+                    Open Full Wiki Page
+                  </a>
+                ) : null}
+              </>
+            }
+          />
         </div>
       ) : null}
     </div>

@@ -7,6 +7,7 @@ import { postTaxPrice } from "../../lib/tax";
 import { itemIcon, skillIcon } from "../../lib/sprites";
 import ErrorState from "../../components/ErrorState";
 import { useNavigation } from "../../lib/NavigationContext";
+import { openItemPage } from "../../lib/openItem";
 import ItemTooltip from "../../components/ItemTooltip";
 
 function getItemPrice(
@@ -339,7 +340,7 @@ export default function ProductionCalc() {
                     <ItemTooltip itemName={mat.name}>
                       <button
                         type="button"
-                        onClick={() => navigate("market", { query: mat.name })}
+                        onClick={() => openItemPage(navigate, mat.name)}
                         className="text-sm flex-1 text-left text-text-primary hover:text-accent transition-colors"
                       >
                         {mat.name}

@@ -5,6 +5,7 @@ import { formatGp } from "../../lib/format";
 import { itemIcon } from "../../lib/sprites";
 import { useDebounce } from "../../hooks/useDebounce";
 import { useNavigation } from "../../lib/NavigationContext";
+import { openItemPage } from "../../lib/openItem";
 import WikiImage from "../../components/WikiImage";
 import { findBossByName } from "../../lib/data/bosses";
 import { TableSkeleton } from "../../components/Skeleton";
@@ -213,7 +214,7 @@ export default function DropTable() {
                   >
                     <td className="px-4 py-1.5 font-medium">
                       <button
-                        onClick={() => navigate("market", { query: drop.name })}
+                        onClick={() => openItemPage(navigate, drop.name)}
                         className="hover:text-accent transition-colors text-left flex items-center gap-2"
                       >
                         <WikiImage

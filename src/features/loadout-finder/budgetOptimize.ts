@@ -14,7 +14,9 @@ import { knownWeaponSpeed } from "../../lib/data/weapon-speeds";
 import {
   buildDpsInput,
   bestPrayerForStyle,
+  candidateCost,
   filterExcludedEquipment,
+  itemCashCost,
   resolveSpellLabel,
   withOwnedPrices,
   type LoadoutTarget,
@@ -44,11 +46,6 @@ const SLOT_ORDERS: (EquipmentSlot | "2h")[][] = [
   ["ring", "neck", "cape", "hands", "feet", "head", "legs", "body", "shield", "ammo"],
 ];
 
-function priceOrZero(priceOf: (n: string) => number | null, name: string): number {
-  const p = priceOf(name);
-  return p != null && p > 0 ? p : 0;
-}
-
 function styleOk(item: WikiEquipment, style: CombatStyle): boolean {
   const n = item.name.toLowerCase();
   if (style === "melee") {
@@ -73,7 +70,9 @@ function styleOk(item: WikiEquipment, style: CombatStyle): boolean {
 function setupCost(gear: EquippedGear, priceOf: (n: string) => number | null): number {
   let t = 0;
   for (const item of Object.values(gear)) {
-    if (item) t += priceOrZero(priceOf, item.name);
+    if (!item) continue;
+    const cash = itemCashCost(priceOf, item.name);
+    if (cash != null) t += cash;
   }
   return t;
 }
@@ -132,7 +131,8 @@ function toRanked(
     resolvedSlots: slotsFilled,
     missingItems: [],
     totalCost,
-    unpricedCount: Object.values(gear).filter((i) => i && priceOrZero(priceOf, i.name) === 0).length,
+    unpricedCount: Object.values(gear).filter((i) => i && itemCashCost(priceOf, i.name) == null)
+      .length,
     dps: scored.dps,
     maxHit: scored.maxHit,
     accuracy: scored.accuracy,
@@ -266,7 +266,8 @@ export function greedyOptimizeUnderBudget(raw: BudgetOptimizeOptions): RankedLoa
   const emptyScore = scoreGear(style, {}, hiscores, target, onTask).dps;
 
   for (const w of weapons) {
-    const cost = priceOrZero(priceOf, w.name);
+    const cost = candidateCost(priceOf, w.name, unlimited);
+    if (cost == null) continue;
     if (!unlimited && cost > remaining) continue;
     // Prefer priced weapons when budget set so untradeables don't always win
     if (!unlimited && cost === 0 && w.name.toLowerCase().includes("broken")) continue;
@@ -295,9 +296,10 @@ export function greedyOptimizeUnderBudget(raw: BudgetOptimizeOptions): RankedLoa
     const candidates = equipment
       .filter((e) => e.slot === slot && styleOk(e, style))
       .map((item) => {
-        const cost = priceOrZero(priceOf, item.name);
-        return { item, cost };
+        const cost = candidateCost(priceOf, item.name, unlimited);
+        return cost == null ? null : { item, cost };
       })
+      .filter((c): c is { item: WikiEquipment; cost: number } => c != null)
       .filter(({ cost }) => unlimited || cost <= remaining)
       .sort((a, b) => offensiveScore(b.item, style) - offensiveScore(a.item, style))
       .slice(0, perSlot);
@@ -364,9 +366,10 @@ export function beamOptimizeUnderBudget(raw: BudgetOptimizeOptions): RankedLoado
       return speed > 0 || style === "magic";
     })
     .map((w) => {
-      const cost = priceOrZero(priceOf, w.name);
-      return { w, cost };
+      const cost = candidateCost(priceOf, w.name, unlimited);
+      return cost == null ? null : { w, cost };
     })
+    .filter((c): c is { w: WikiEquipment; cost: number } => c != null)
     .filter(({ w, cost }) => {
       if (!unlimited && cost > cashCap) return false;
       if (!unlimited && cost === 0 && w.name.toLowerCase().includes("broken")) return false;
@@ -393,7 +396,11 @@ export function beamOptimizeUnderBudget(raw: BudgetOptimizeOptions): RankedLoado
   for (const slot of ARMOUR_SLOTS) {
     const list = equipment
       .filter((e) => e.slot === slot && styleOk(e, style))
-      .map((item) => ({ item, cost: priceOrZero(priceOf, item.name) }))
+      .map((item) => {
+        const cost = candidateCost(priceOf, item.name, unlimited);
+        return cost == null ? null : { item, cost };
+      })
+      .filter((c): c is { item: WikiEquipment; cost: number } => c != null)
       .sort((a, b) => offensiveScore(b.item, style) - offensiveScore(a.item, style))
       .slice(0, perSlot);
     bySlot.set(slot, list);
@@ -518,9 +525,12 @@ export function combinatorialOptimizeUnderBudget(
       return speed > 0 || style === "magic";
     })
     .map((w) => {
-      const cost = priceOrZero(priceOf, w.name);
-      return { item: w, cost, offense: offensiveScore(w, style) };
+      const cost = candidateCost(priceOf, w.name, unlimited);
+      return cost == null
+        ? null
+        : { item: w, cost, offense: offensiveScore(w, style) };
     })
+    .filter((c): c is SlotCand => c != null)
     .filter(({ item, cost }) => {
       if (!unlimited && cost > cashCap) return false;
       if (!unlimited && cost === 0 && item.name.toLowerCase().includes("broken")) return false;
@@ -566,11 +576,13 @@ export function combinatorialOptimizeUnderBudget(
     }
     const raw = equipment
       .filter((e) => e.slot === slot && styleOk(e, style))
-      .map((item) => ({
-        item,
-        cost: priceOrZero(priceOf, item.name),
-        offense: offensiveScore(item, style),
-      }))
+      .map((item) => {
+        const cost = candidateCost(priceOf, item.name, unlimited);
+        return cost == null
+          ? null
+          : { item, cost, offense: offensiveScore(item, style) };
+      })
+      .filter((c): c is SlotCand => c != null)
       .filter((c) => unlimited || c.cost <= cashCap);
     bySlot.set(slot, paretoFilterCandidates(raw, perSlot));
   }
@@ -779,7 +791,7 @@ function localSearchRefine(args: {
       if ((slot === "weapon" || slot === "2h") && gear["2h"] && slot === "weapon") continue;
 
       const current = gear[slot as keyof EquippedGear] as WikiEquipment | undefined;
-      const currentCost = current ? priceOrZero(args.priceOf, current.name) : 0;
+      const currentCost = current ? (itemCashCost(args.priceOf, current.name) ?? 0) : 0;
       const pool =
         slot === "weapon" || slot === "2h"
           ? args.weaponCands.filter((c) =>
@@ -846,8 +858,8 @@ function localSearchRefine(args: {
           | undefined;
         const c2 = gear[s2] as WikiEquipment | undefined;
         const baseCost =
-          (c1 ? priceOrZero(args.priceOf, c1.name) : 0) +
-          (c2 ? priceOrZero(args.priceOf, c2.name) : 0);
+          (c1 ? (itemCashCost(args.priceOf, c1.name) ?? 0) : 0) +
+          (c2 ? (itemCashCost(args.priceOf, c2.name) ?? 0) : 0);
         const freeCash = args.unlimited
           ? Number.POSITIVE_INFINITY
           : args.cashCap - setupCost(gear, args.priceOf) + baseCost;
