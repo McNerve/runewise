@@ -26,13 +26,13 @@ async function loadPayload(page: string): Promise<HoverPayload> {
     const item = mapping.find((m) => m.name.toLowerCase() === page.toLowerCase());
     const ge = item
       ? {
-          price: prices[String(item.id)]?.high ?? null,
+          price: prices[String(item.id)]?.high ?? prices[String(item.id)]?.low ?? null,
           alch: item.highalch ?? null,
           limit: item.limit ?? null,
         }
       : null;
     const payload = { summary, ge };
-    payloadCache.set(key, payload);
+    if (payload.summary || payload.ge) payloadCache.set(key, payload);
     return payload;
   })();
 
@@ -57,6 +57,20 @@ export function buildHoverFacts(payload: HoverPayload): string[] {
   return facts;
 }
 
+function isWikiImageUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url, "https://oldschool.runescape.wiki");
+    return (
+      parsed.protocol === "https:" &&
+      (parsed.hostname === "oldschool.runescape.wiki" ||
+        parsed.hostname === "maps.runescape.wiki" ||
+        parsed.hostname.endsWith(".runescape.com"))
+    );
+  } catch {
+    return false;
+  }
+}
+
 function renderCard(el: HTMLElement, page: string, payload: HoverPayload) {
   const summary = payload.summary;
   const title = summary?.title ?? page;
@@ -64,38 +78,41 @@ function renderCard(el: HTMLElement, page: string, payload: HoverPayload) {
   const image = summary?.image;
   const facts = buildHoverFacts(payload);
 
-  el.innerHTML = `
-    <div class="wiki-hover-card-inner">
-      ${
-        image
-          ? `<img class="wiki-hover-card-img" src="${image}" alt="" />`
-          : ""
-      }
-      <div class="wiki-hover-card-body">
-        <div class="wiki-hover-card-title">${escapeHtml(title)}</div>
-        ${
-          extract
-            ? `<p class="wiki-hover-card-extract">${escapeHtml(extract)}</p>`
-            : ""
-        }
-        ${
-          facts.length
-            ? `<div class="wiki-hover-card-facts">${facts
-                .map((f) => `<span>${escapeHtml(f)}</span>`)
-                .join("")}</div>`
-            : ""
-        }
-      </div>
-    </div>
-  `;
-}
+  const inner = document.createElement("div");
+  inner.className = "wiki-hover-card-inner";
 
-function escapeHtml(input: string): string {
-  return input
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+  if (image && isWikiImageUrl(image)) {
+    const img = document.createElement("img");
+    img.className = "wiki-hover-card-img";
+    img.src = image;
+    img.alt = "";
+    inner.appendChild(img);
+  }
+
+  const body = document.createElement("div");
+  body.className = "wiki-hover-card-body";
+  const titleEl = document.createElement("div");
+  titleEl.className = "wiki-hover-card-title";
+  titleEl.textContent = title;
+  body.appendChild(titleEl);
+  if (extract) {
+    const p = document.createElement("p");
+    p.className = "wiki-hover-card-extract";
+    p.textContent = extract;
+    body.appendChild(p);
+  }
+  if (facts.length) {
+    const wrap = document.createElement("div");
+    wrap.className = "wiki-hover-card-facts";
+    for (const fact of facts) {
+      const span = document.createElement("span");
+      span.textContent = fact;
+      wrap.appendChild(span);
+    }
+    body.appendChild(wrap);
+  }
+  inner.appendChild(body);
+  el.replaceChildren(inner);
 }
 
 function placeCard(el: HTMLElement, rect: DOMRect) {
@@ -119,8 +136,10 @@ function placeCard(el: HTMLElement, rect: DOMRect) {
  * MediaWiki-style page previews on in-app wiki links (`a[data-wiki-page]`).
  * One shared card on document.body; summaries are cached.
  */
-export function initWikiHoverCards(container: HTMLElement) {
-  if (container.getAttribute("data-hover-init")) return;
+export function initWikiHoverCards(container: HTMLElement): () => void {
+  if (container.getAttribute("data-hover-init")) {
+    return () => teardownWikiHoverCards();
+  }
   container.setAttribute("data-hover-init", "1");
 
   let card: HTMLDivElement | null = null;
@@ -143,12 +162,24 @@ export function initWikiHoverCards(container: HTMLElement) {
     activePage = null;
   }
 
+  function clearTimers() {
+    if (showTimer != null) window.clearTimeout(showTimer);
+    if (hideTimer != null) window.clearTimeout(hideTimer);
+    showTimer = null;
+    hideTimer = null;
+  }
+
   async function show(anchor: Element, page: string) {
     const el = ensureCard();
     // Snapshot the rect now — React may replace the <a> while we fetch.
     const rect = anchor.getBoundingClientRect();
     activePage = page;
-    el.innerHTML = `<div class="wiki-hover-card-inner wiki-hover-card-inner--loading"><div class="wiki-hover-card-skel"></div><div class="wiki-hover-card-body"><div class="wiki-hover-card-skel-line"></div><div class="wiki-hover-card-skel-line short"></div></div></div>`;
+    el.replaceChildren();
+    const loading = document.createElement("div");
+    loading.className = "wiki-hover-card-inner wiki-hover-card-inner--loading";
+    loading.innerHTML =
+      `<div class="wiki-hover-card-skel"></div><div class="wiki-hover-card-body"><div class="wiki-hover-card-skel-line"></div><div class="wiki-hover-card-skel-line short"></div></div>`;
+    el.appendChild(loading);
     placeCard(el, rect);
     const payload = await loadPayload(page);
     if (activePage !== page) return;
@@ -160,7 +191,7 @@ export function initWikiHoverCards(container: HTMLElement) {
     placeCard(el, rect);
   }
 
-  container.addEventListener("mouseover", (event) => {
+  function onOver(event: Event) {
     const target = event.target;
     if (!(target instanceof Element)) return;
     const link = target.closest("a[data-wiki-page]");
@@ -175,23 +206,35 @@ export function initWikiHoverCards(container: HTMLElement) {
     showTimer = window.setTimeout(() => {
       void show(link, page);
     }, 160);
-  });
+  }
 
-  container.addEventListener("mouseout", (event) => {
+  function onOut(event: Event) {
     const target = event.target;
     if (!(target instanceof Element)) return;
     const link = target.closest("a[data-wiki-page]");
     if (!link) return;
-    const related = event.relatedTarget;
+    const related = (event as MouseEvent).relatedTarget;
     if (related instanceof Node && link.contains(related)) return;
     if (showTimer != null) {
       window.clearTimeout(showTimer);
       showTimer = null;
     }
     hideTimer = window.setTimeout(hide, 80);
-  });
+  }
 
+  container.addEventListener("mouseover", onOver);
+  container.addEventListener("mouseout", onOut);
   container.addEventListener("click", hide);
+
+  return () => {
+    container.removeAttribute("data-hover-init");
+    container.removeEventListener("mouseover", onOver);
+    container.removeEventListener("mouseout", onOut);
+    container.removeEventListener("click", hide);
+    clearTimers();
+    card?.remove();
+    card = null;
+  };
 }
 
 export function teardownWikiHoverCards() {

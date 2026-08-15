@@ -484,7 +484,7 @@ const TASK_UNLOCK_MAP: Record<string, string> = {
 };
 
 for (const master of SLAYER_MASTERS) {
-  if (master.name === "Turael") continue;
+  if (master.name === "Turael" || master.name === "Mortimer") continue;
   for (const task of master.tasks) {
     const unlock = TASK_UNLOCK_MAP[task.monster];
     if (unlock) task.requiredUnlock = unlock;

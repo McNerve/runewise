@@ -29,18 +29,22 @@ export default memo(function ItemTooltip({ itemName, children }: Props) {
 
   function handleOpen(open: boolean) {
     if (!open || loaded) return;
-    Promise.all([
-      ensureData(),
-      fetchWikiSummary(itemName).catch(() => null),
-    ]).then(([{ mapping, prices }, summary]) => {
-      const match = mapping.get(itemName.toLowerCase());
-      if (match) {
-        setItem(match);
-        setPrice(prices[String(match.id)] ?? null);
+    void Promise.allSettled([ensureData(), fetchWikiSummary(itemName)]).then(
+      ([geResult, wikiResult]) => {
+        if (geResult.status === "fulfilled") {
+          const { mapping, prices } = geResult.value;
+          const match = mapping.get(itemName.toLowerCase());
+          if (match) {
+            setItem(match);
+            setPrice(prices[String(match.id)] ?? null);
+          }
+        }
+        if (wikiResult.status === "fulfilled" && wikiResult.value) {
+          setWiki(wikiResult.value);
+        }
+        setLoaded(true);
       }
-      if (summary) setWiki(summary);
-      setLoaded(true);
-    });
+    );
   }
 
   return (

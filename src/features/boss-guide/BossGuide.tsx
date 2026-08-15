@@ -289,7 +289,7 @@ export default function BossGuide({ hiscores }: Props) {
   // Initialize wiki tabbers after guide content renders
   useEffect(() => {
     if (!loading && guide && guideContentRef.current) {
-      initWikiInteractive(guideContentRef.current);
+      return initWikiInteractive(guideContentRef.current);
     }
   }, [loading, guide]);
 

@@ -174,6 +174,7 @@ export function normalizeImages(root: Element): void {
 
 export function normalizeLinks(root: Element): void {
   root.querySelectorAll("a").forEach((link) => {
+    link.removeAttribute("data-wiki-page");
     const href = link.getAttribute("href") ?? "";
     const internalPage = resolveWikiPageFromHref(href);
 

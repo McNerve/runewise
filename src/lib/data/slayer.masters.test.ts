@@ -14,6 +14,6 @@ describe("SLAYER_MASTERS", () => {
     );
     expect(mortimer?.tasks.some((t) => t.monster === "Hydras" && t.weight === 10)).toBe(true);
     const basilisks = mortimer?.tasks.find((t) => t.monster === "Basilisks");
-    expect(basilisks?.requiredUnlock).toBe("Basilocked");
+    expect(basilisks?.requiredUnlock).toBeUndefined();
   });
 });

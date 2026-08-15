@@ -194,13 +194,9 @@ describe("owned and exclude constraints", () => {
       ownedItems: ["Abyssal whip"],
     });
     expect(r).not.toBeNull();
-    // Whip can be selected since owned → 0 gp
-    expect(r!.gear.weapon?.name).toMatch(/whip|scimitar|rapier/i);
-    if (r!.gear.weapon?.name === "Abyssal whip") {
-      expect(r!.totalCost).toBeLessThan(r!.totalCost + 1); // owned not in cost
-      // Cost should not include whip
-      expect(r!.totalCost).toBeLessThan(1_500_000);
-    }
+    expect(r!.gear.weapon?.name).toBe("Abyssal whip");
+    expect(r!.totalCost).toBeLessThanOrEqual(100_000);
+    expect(r!.unpricedCount).toBe(0);
   });
 
   it("does not treat unpriced BiS as free under a capped budget", () => {
@@ -252,7 +248,8 @@ describe("owned and exclude constraints", () => {
     });
     expect(r).not.toBeNull();
     expect(r!.gear.weapon?.name ?? r!.gear["2h"]?.name).toBe("God blade");
-    expect(r!.totalCost).toBeLessThan(1_500_000);
+    expect(r!.totalCost).toBeLessThanOrEqual(100_000);
+    expect(r!.unpricedCount).toBe(0);
   });
 
   it("never equips excluded weapons", () => {

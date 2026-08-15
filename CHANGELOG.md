@@ -25,6 +25,7 @@ All notable changes to RuneWise are documented here. Versions follow [Semantic V
 - **DPS is a verdict** — hero metric + kill-time sentence first (accuracy follow-up, hits-to-kill). Duplicate Results card gone. Mobile shows numbers before the form.
 - **Loadout Finder is a pick** — one setup to wear (cost + kill sentence + style gaps). Alternatives collapse to a comparison table. Inputs are no longer the hero.
 - **Unpriced ≠ free** — a capped budget skips items with no GE price. Mark them owned or set Any. Unlimited still shows theoretical BiS.
+- Hover cards build the preview in the DOM (no `innerHTML` image URL). Item tooltip still shows wiki if GE fails. Mortimer no longer inherits Konar unlocks.
 
 ## [2.5.18] - 2026-07-26
 

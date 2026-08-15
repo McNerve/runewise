@@ -354,7 +354,7 @@ export default function WikiLookup() {
 
   useEffect(() => {
     if (!loadingDocument && document && contentRef.current) {
-      initWikiInteractive(contentRef.current);
+      return initWikiInteractive(contentRef.current);
     }
   }, [loadingDocument, document]);
 

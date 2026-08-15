@@ -348,12 +348,12 @@ export function initWikiTabsExclusive(container: HTMLElement) {
   });
 }
 
-export function initWikiInteractive(container: HTMLElement, pageSlug = "") {
+export function initWikiInteractive(container: HTMLElement, pageSlug = ""): () => void {
   initWikiTabbers(container);
   initWikiTabsExclusive(container);
   initTooltips(container);
   initItemTextLinks(container);
   initAnchorScroll(container, pageSlug);
   initSortableTables(container);
-  initWikiHoverCards(container);
+  return initWikiHoverCards(container);
 }

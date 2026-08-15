@@ -30,6 +30,35 @@ describe("buildWikiLookupDocumentFromHtml", () => {
     expect(doc.infoboxFields.some((f) => f.label === "Members")).toBe(true);
     expect(doc.sections.some((s) => s.title === "Combat stats")).toBe(true);
   });
+
+  it("keeps only the visible version on a switch infobox", () => {
+    const html = `
+      <div class="mw-parser-output">
+        <table class="infobox infobox-monster">
+          <tr><th colspan="2">Zulrah</th></tr>
+          <tr>
+            <th>Combat level</th>
+            <td>
+              <span>725</span>
+              <span style="display:none">725</span>
+              <span style="display: none">725</span>
+            </td>
+          </tr>
+          <tr class="advanced-data"><th>Item ID</th><td>123</td></tr>
+          <tr><th>Location</th><td>Kourend<br>Tirannwn</td></tr>
+        </table>
+        <p>Zulrah is a snake boss with a long enough lead paragraph for the summary extractor.</p>
+      </div>
+    `;
+    const doc = buildWikiLookupDocumentFromHtml(html, "Zulrah", "boss");
+    const combat = doc.infoboxFields.find((f) => f.label === "Combat level");
+    expect(combat?.value).toBe("725");
+    expect(combat?.value).not.toContain("725725");
+    expect(doc.infoboxFields.some((f) => f.label === "Item ID")).toBe(false);
+    expect(doc.infoboxFields.find((f) => f.label === "Location")?.value).toBe(
+      "Kourend, Tirannwn"
+    );
+  });
 });
 
 describe("parseSections", () => {
@@ -44,8 +73,7 @@ describe("parseSections", () => {
       </div>
     `;
     const sections = parseSections(html);
-    expect(sections.map((s) => s.title)).toContain("Requirements");
-    expect(sections.map((s) => s.title).some((t) => /trivia/i.test(t))).toBe(false);
+    expect(sections.map((s) => s.title)).toEqual(["Requirements"]);
   });
 
   it("keeps posed paper-doll cells in combat stats", () => {
