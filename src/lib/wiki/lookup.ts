@@ -63,6 +63,10 @@ export interface WikiLookupDocument {
   infoboxImage: string | null;
   infoboxFields: Array<{ label: string; value: string }>;
   totalInfoboxFields: number;
+  /** Sanitized original infobox HTML — preferred over flattened fields. */
+  infoboxHtml: string | null;
+  /** Wiki hatnotes (disambiguation / "for the strategy guide…") kept as HTML. */
+  hatnotes: string[];
   leadHtml: string;
   sections: WikiLookupSection[];
   relatedPages: WikiRelatedPage[];
@@ -103,7 +107,17 @@ function parseLead(rawHtml: string, title: string) {
 
   let infoboxTitle: string | null = null;
   let infoboxImage: string | null = null;
+  let infoboxHtml: string | null = null;
   const infoboxFields: Array<{ label: string; value: string }> = [];
+  const hatnotes: string[] = [];
+
+  content.querySelectorAll(".hatnote").forEach((el) => {
+    const clone = el.cloneNode(true) as Element;
+    stripUnsafeNodes(clone);
+    const html = sanitizeHtml(clone);
+    if (html.trim().length > 0) hatnotes.push(html);
+    el.remove();
+  });
 
   if (infobox) {
     // Switch infoboxes carry every version's value with inactive ones hidden
@@ -112,7 +126,16 @@ function parseLead(rawHtml: string, title: string) {
     infobox
       .querySelectorAll('[style*="display:none"], [style*="display: none"]')
       .forEach((el) => el.remove());
+    infobox
+      .querySelectorAll(".infobox-buttons, .infobox-switch-resources, .infobox-switch")
+      .forEach((el) => el.remove());
     normalizeImages(infobox);
+    infobox.querySelectorAll("img").forEach((img) => {
+      const src = img.getAttribute("src");
+      if (!src) return;
+      const upgraded = src.replace(/\/(\d+)px-/, "/240px-");
+      if (upgraded !== src) img.setAttribute("src", upgraded);
+    });
 
     const heading =
       infobox.querySelector("th.infobox-header, th.infobox-title, caption, th[colspan]")?.textContent ??
@@ -138,6 +161,14 @@ function parseLead(rawHtml: string, title: string) {
       }
     });
 
+    const infoboxClone = infobox.cloneNode(true) as Element;
+    stripUnsafeNodes(infoboxClone);
+    // sanitizeHtml uses innerHTML — wrap so the <table> itself survives.
+    const wrap = infobox.ownerDocument.createElement("div");
+    wrap.appendChild(infoboxClone);
+    const serialized = sanitizeHtml(wrap);
+    if (serialized.trim().length > 40) infoboxHtml = serialized;
+
     infobox.remove();
   }
 
@@ -146,7 +177,7 @@ function parseLead(rawHtml: string, title: string) {
   // lead; deleting every <table> threw that content away.
   content
     .querySelectorAll(
-      "table.infobox:not(.infobox-bonuses), table[style*='float'], .thumb, .infobox-buttons, .hatnote, .infobox-switch-resources, .navigation-not-searchable, .infobox-bonuses-image"
+      "table.infobox:not(.infobox-bonuses), table[style*='float'], .thumb, .infobox-buttons, .infobox-switch-resources, .navigation-not-searchable"
     )
     .forEach((element) => element.remove());
 
@@ -191,8 +222,10 @@ function parseLead(rawHtml: string, title: string) {
     leadHtml: sanitizeHtml(content),
     infoboxTitle,
     infoboxImage,
-    infoboxFields: infoboxFields.slice(0, 15),
+    infoboxFields: infoboxFields.slice(0, 24),
     totalInfoboxFields: infoboxFields.length,
+    infoboxHtml,
+    hatnotes,
     relatedPages,
   };
 }
@@ -234,7 +267,7 @@ export function parseSections(rawHtml: string): WikiLookupSection[] {
   const content = doc.querySelector(".mw-parser-output") || doc.body;
 
   content
-    .querySelectorAll(".navbox, .hatnote, .mw-editsection, .infobox-bonuses-image")
+    .querySelectorAll(".navbox, .hatnote, .mw-editsection")
     .forEach((element) => element.remove());
 
   const isSectionHeading = (el: Element) =>
@@ -343,7 +376,13 @@ export async function searchWikiPagesRich(query: string): Promise<WikiSearchResu
               entry !== null &&
               typeof (entry as { title?: unknown }).title === "string"
           )
-          .filter((entry) => !entry.title.includes("/") && !entry.title.startsWith("File:"))
+          .filter(
+            (entry) =>
+              !entry.title.startsWith("File:") &&
+              !entry.title.startsWith("Category:") &&
+              !entry.title.startsWith("Template:") &&
+              !entry.title.startsWith("Update:")
+          )
           .map((entry) => ({
             title: entry.title,
             snippet:
@@ -417,7 +456,12 @@ export async function searchWikiPages(query: string): Promise<string[]> {
       if (!Array.isArray(titles)) return [];
       return titles
         .filter((title): title is string => typeof title === "string")
-        .filter((title) => !title.includes("/") && !title.startsWith("File:"));
+        .filter(
+          (title) =>
+            !title.startsWith("File:") &&
+            !title.startsWith("Category:") &&
+            !title.startsWith("Template:")
+        );
     },
   });
 }
@@ -442,10 +486,58 @@ async function fetchWikiHtmlFull(page: string): Promise<WikiFullParseResult> {
   });
 }
 
+/**
+ * Build a wiki article from already-fetched parse HTML (shared by Wiki
+ * Lookup and Boss Guides so raid/strategy pages don't pay a second fetch).
+ */
+/** Copy infobox chrome from another parse (main boss page → /Strategies). */
+export function applyInfoboxFromHtml(
+  article: WikiLookupDocument,
+  rawHtml: string,
+  title: string
+): WikiLookupDocument {
+  const extra = buildWikiLookupDocumentFromHtml(rawHtml, title, article.pageType);
+  if (!extra.infoboxHtml && extra.infoboxFields.length === 0) return article;
+  return {
+    ...article,
+    infoboxHtml: extra.infoboxHtml ?? article.infoboxHtml,
+    infoboxTitle: extra.infoboxTitle ?? article.infoboxTitle,
+    infoboxImage: extra.infoboxImage ?? article.infoboxImage,
+    infoboxFields:
+      extra.infoboxFields.length > 0 ? extra.infoboxFields : article.infoboxFields,
+    totalInfoboxFields: extra.totalInfoboxFields || article.totalInfoboxFields,
+  };
+}
+
+export function buildWikiLookupDocumentFromHtml(
+  rawHtml: string,
+  title: string,
+  pageType: WikiEntityKind = "reference"
+): WikiLookupDocument {
+  const lead = parseLead(rawHtml, title);
+  return {
+    title,
+    pageType,
+    template: "reference",
+    summary: lead.summary,
+    infoboxTitle: lead.infoboxTitle,
+    infoboxImage: lead.infoboxImage,
+    infoboxFields: lead.infoboxFields,
+    totalInfoboxFields: lead.totalInfoboxFields,
+    infoboxHtml: lead.infoboxHtml,
+    hatnotes: lead.hatnotes,
+    leadHtml: lead.leadHtml,
+    sections: parseSections(rawHtml),
+    relatedPages: [],
+    totalRelatedPages: lead.relatedPages.length,
+    fetchedAt: Date.now(),
+  };
+}
+
 export async function fetchWikiLookupDocument(
   page: string
 ): Promise<WikiLookupDocument> {
-  const cacheKey = `wiki-lookup:v8:${page}`;
+  const cacheKey = `wiki-lookup:v12:${page}`;
   const cached = getCached<WikiLookupDocument>(cacheKey, LOOKUP_TTL);
   if (cached) return cached;
 
@@ -475,6 +567,8 @@ export async function fetchWikiLookupDocument(
     infoboxImage: lead.infoboxImage,
     infoboxFields: lead.infoboxFields,
     totalInfoboxFields: lead.totalInfoboxFields,
+    infoboxHtml: lead.infoboxHtml,
+    hatnotes: lead.hatnotes,
     leadHtml: lead.leadHtml,
     sections: normalizedSections,
     relatedPages,

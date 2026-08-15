@@ -8,6 +8,7 @@ import {
   computeLootTotals,
   getBossKc,
   getBossTasks,
+  groupBossesByCategory,
   groupTasksByTier,
   raidTopUniqueName,
   TASK_ALIASES,
@@ -137,5 +138,20 @@ describe("buildItemMaps / raidTopUniqueName", () => {
       "Dexterous prayer scroll"
     );
     expect(raidTopUniqueName(null)).toBeNull();
+  });
+});
+
+describe("groupBossesByCategory", () => {
+  it("emits groups in the given category order", () => {
+    const groups = groupBossesByCategory(
+      [
+        boss({ name: "Vorkath", category: "Other" }),
+        boss({ name: "General Graardor", category: "GWD" }),
+        boss({ name: "The Mad Angel", category: "Sailing" }),
+      ],
+      ["GWD", "Other", "Sailing"]
+    );
+    expect(groups.map((g) => g.category)).toEqual(["GWD", "Other", "Sailing"]);
+    expect(groups[0]?.bosses[0]?.name).toBe("General Graardor");
   });
 });

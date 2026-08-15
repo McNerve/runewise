@@ -99,6 +99,16 @@ export const BOSSES: BossInfo[] = [
   { name: "Lunar Chests", wikiPage: "Moons_of_Peril", category: "Other", location: "Perilous Moons", dropsName: "Lunar Chest" },
   { name: "Yama", wikiPage: "Yama", category: "Other" },
   { name: "The Royal Titans", wikiPage: "The_Royal_Titans", category: "Other" },
+
+  // Sailing (Wyrmscraig — 29 July 2026)
+  {
+    name: "The Mad Angel",
+    wikiPage: "The_Mad_Angel",
+    category: "Sailing",
+    combatLevel: 588,
+    location: "Wyrmscraig",
+    hiscoresName: "The Mad Angel",
+  },
 ];
 
 export const BOSS_CATEGORIES = [...new Set(BOSSES.map((b) => b.category))];

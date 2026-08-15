@@ -5,6 +5,7 @@ import { TOA_ROOMS, TOA_UNIQUES } from "./data/toa";
 import { itemIcon } from "../../lib/sprites";
 import RaidLootCalc from "./components/RaidLootCalc";
 import { useNavigation } from "../../lib/NavigationContext";
+import { openItemPage } from "../../lib/openItem";
 
 const RaidCompanion = lazy(() => import("../raid-companion/RaidCompanion"));
 
@@ -230,7 +231,7 @@ export default function Raids() {
             lootDescription="CoX uses a points-based system. Each player earns points from damaging bosses and completing tasks. Your chance of ANY unique is personal points / 867,500 — roughly 1/28.9 at 30,000 points — and the specific item is then rolled by table weight (e.g. Twisted bow is 2/69 of unique rolls)."
             expandedRoom={expandedRoom}
             onToggleRoom={(name) => setExpandedRoom(expandedRoom === name ? null : name)}
-            onNavigateMarket={(name) => navigate("market", { query: name })}
+            onNavigateMarket={(name) => openItemPage(navigate, name)}
           />
           <RaidLootCalc
             uniques={COX_UNIQUES}
@@ -251,7 +252,7 @@ export default function Raids() {
             lootDescription="ToB rewards are contribution-based. At full performance the team has roughly an 11% (1/9.1) chance of a unique per completion — deaths reduce it — and the recipient is rolled by points contribution, so an even split in a team of N gives you about 1/(9.1 × N)."
             expandedRoom={expandedRoom}
             onToggleRoom={(name) => setExpandedRoom(expandedRoom === name ? null : name)}
-            onNavigateMarket={(name) => navigate("market", { query: name })}
+            onNavigateMarket={(name) => openItemPage(navigate, name)}
           />
           <RaidLootCalc
             uniques={TOB_UNIQUES}
@@ -271,7 +272,7 @@ export default function Raids() {
             lootDescription="ToA uses an invocation-based system. Higher invocation levels increase difficulty and unique drop rates. At 150 invocations the chance of ANY unique is approximately 1/48; the specific item is then rolled by table weight (Tumeken's shadow is 1/24 of unique rolls). Expert mode (300+) significantly improves rates."
             expandedRoom={expandedRoom}
             onToggleRoom={(name) => setExpandedRoom(expandedRoom === name ? null : name)}
-            onNavigateMarket={(name) => navigate("market", { query: name })}
+            onNavigateMarket={(name) => openItemPage(navigate, name)}
           />
           <RaidLootCalc
             uniques={TOA_UNIQUES}

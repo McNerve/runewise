@@ -8,7 +8,7 @@ export const COLLAPSED_SECTIONS = [
   "gallery",
   "drop sources",
   "spawns",
-  "combat stats",
+  // Combat stats stay open — they are the reason you opened an item page.
   "changes",
   "sound effects",
   "trivia",
@@ -16,9 +16,7 @@ export const COLLAPSED_SECTIONS = [
   "history",
   "creation",
   "shop locations",
-  "item sources",
   "treasure trails",
-  "products",
 ];
 
 /** Strip /Strategies (and similar) so wiki titles map to boss workspace names. */
@@ -31,7 +29,7 @@ export function stripWikiStrategySuffix(title: string): string {
 }
 
 export function isWikiStrategyTitle(title: string): boolean {
-  return /\/strategies$/i.test(title) || /strategies$/i.test(title);
+  return /strategies$/i.test(title);
 }
 
 export function shouldCollapseSection(title: string): boolean {
@@ -62,7 +60,6 @@ export function sectionContentClasses(title: string): string {
   return "";
 }
 
-// Task 4: Date pill filter
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
@@ -77,7 +74,6 @@ export function isDatePill(title: string): boolean {
   return false;
 }
 
-// Task 5: TOC heading extraction
 export interface TocEntry {
   id: string;
   text: string;
@@ -93,7 +89,6 @@ export function extractTocEntries(sections: WikiLookupDocument["sections"]): Toc
   ]);
 }
 
-// Task 6: Upgrade snapshot image URL
 export function upgradeImageUrl(url: string | null): string | null {
   if (!url) return null;
   // Pattern: /thumb/hash/name/NNpx-name.ext  →  swap NNpx with 300px

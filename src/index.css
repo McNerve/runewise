@@ -371,44 +371,59 @@ body {
   letter-spacing: -0.01em;
 }
 
-/* Tabbers converted to native details panels at parse time. */
+/* Tabbers → horizontal wiki-style tab strip (details/summary, exclusive-open). */
 .article-content .wiki-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
   margin-bottom: 0.9rem;
   border: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
   border-radius: 0.75rem;
   overflow: hidden;
+  background: color-mix(in srgb, var(--color-bg-secondary) 22%, transparent);
+}
+
+.article-content .wiki-tab {
+  display: contents;
 }
 
 .article-content .wiki-tab > summary {
   cursor: pointer;
-  padding: 0.5rem 0.85rem;
+  list-style: none;
+  padding: 0.5rem 0.9rem;
   font-size: 13px;
   font-weight: 500;
   color: var(--color-text-secondary);
-  background: color-mix(in srgb, var(--color-bg-secondary) 35%, transparent);
-  transition: color 0.15s;
+  border-right: 1px solid color-mix(in srgb, var(--color-border) 45%, transparent);
+  background: transparent;
+  transition: color 0.15s, background-color 0.15s;
+}
+
+.article-content .wiki-tab > summary::-webkit-details-marker {
+  display: none;
 }
 
 .article-content .wiki-tab > summary:hover {
   color: var(--color-text-primary);
+  background: color-mix(in srgb, var(--color-bg-secondary) 40%, transparent);
 }
 
 .article-content .wiki-tab[open] > summary {
   color: var(--color-accent);
-  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent);
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  box-shadow: inset 0 -2px 0 var(--color-accent);
 }
 
-.article-content .wiki-tab + .wiki-tab {
+.article-content .wiki-tab-body {
+  flex: 1 0 100%;
+  width: 100%;
+  padding: 0.75rem 0.9rem 0.35rem;
+  background: color-mix(in srgb, var(--color-bg-primary) 40%, transparent);
   border-top: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent);
 }
 
-.article-content .wiki-tab > :not(summary) {
-  margin-left: 0.85rem;
-  margin-right: 0.85rem;
-}
-
-.article-content .wiki-tab > p:first-of-type {
-  margin-top: 0.6rem;
+.article-content .wiki-tab:not([open]) > .wiki-tab-body {
+  display: none;
 }
 
 .article-content {
@@ -982,20 +997,21 @@ body {
   font-size: 0.8125rem;
 }
 
-/* First column — item image — keep narrow */
-.article-content .wikitable tbody tr > td:first-child {
+/* First column — item image — keep narrow.
+   Combat-styles tables are stance grids, not item lists. */
+.article-content .wikitable:not(.combat-styles) tbody tr > td:first-child {
   width: 56px;
   min-width: 48px;
   text-align: center;
 }
 
-.article-content .wikitable tbody tr > td:first-child img {
+.article-content .wikitable:not(.combat-styles) tbody tr > td:first-child img {
   margin: 0 auto;
   display: inline-block;
 }
 
 /* Last column — Notes prose — clamp height with hover/focus expand */
-.article-content .wikitable tbody tr > td:last-child {
+.article-content .wikitable:not(.combat-styles) tbody tr > td:last-child {
   max-width: 36ch;
   max-height: 5.5rem;
   overflow-y: auto;
@@ -1006,16 +1022,16 @@ body {
   color: var(--color-text-secondary);
 }
 
-.article-content .wikitable tbody tr:hover > td:last-child,
-.article-content .wikitable tbody tr > td:last-child:focus-within {
+.article-content .wikitable:not(.combat-styles) tbody tr:hover > td:last-child,
+.article-content .wikitable:not(.combat-styles) tbody tr > td:last-child:focus-within {
   max-height: 24rem;
 }
 
-.article-content .wikitable tbody tr > td:last-child p {
+.article-content .wikitable:not(.combat-styles) tbody tr > td:last-child p {
   margin: 0 0 0.4rem 0;
 }
 
-.article-content .wikitable tbody tr > td:last-child p:last-child {
+.article-content .wikitable:not(.combat-styles) tbody tr > td:last-child p:last-child {
   margin-bottom: 0;
 }
 
@@ -1195,7 +1211,8 @@ body {
 }
 
 .article-content .infobox-bonuses {
-  width: auto;
+  width: max-content;
+  max-width: 100%;
   border-collapse: separate;
   border-spacing: 0;
   font-size: 0.8rem;
@@ -1220,19 +1237,61 @@ body {
   text-align: center;
   border: none;
   border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
+  overflow-wrap: normal;
+  word-break: normal;
+  white-space: nowrap;
 }
 
 .article-content .infobox-bonuses tr:last-child td {
   border-bottom: none;
 }
 
-.article-content .infobox-bonuses td:empty {
-  display: none;
-}
-
 .article-content .infobox-bonuses img {
   width: 1.1rem;
   height: 1.1rem;
+}
+
+/* Posed paper-doll cells sit beside the bonus numbers — don't shrink them. */
+.article-content td.infobox-bonuses-image {
+  width: 132px;
+  max-width: 140px;
+  padding: 0.35rem 0.4rem;
+  vertical-align: top;
+  background: color-mix(in srgb, var(--color-bg-tertiary) 55%, transparent);
+  white-space: normal;
+}
+
+.article-content td.infobox-bonuses-image img {
+  width: auto;
+  height: auto;
+  max-width: 132px;
+  max-height: 360px;
+  display: block;
+  margin: 0 auto;
+}
+
+.article-content table.combat-styles {
+  width: max-content;
+  max-width: 100%;
+  table-layout: auto;
+}
+
+.article-content table.combat-styles th,
+.article-content table.combat-styles td {
+  overflow-wrap: normal;
+  word-break: normal;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.article-content table.combat-styles th {
+  font-size: 0.7rem;
+}
+
+.article-content th,
+.article-content td {
+  overflow-wrap: normal;
+  word-break: normal;
 }
 
 /* Nested headings inside a section card — quieter than the card chrome title. */
@@ -1580,63 +1639,148 @@ body {
   display: block;
 }
 
-/* Native details tab fallbacks (wiki-tabs from transformTabbers) */
+/* Native details tabbers — horizontal strip like the wiki */
 .article-content .wiki-tabs {
   display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
+  flex-wrap: wrap;
+  gap: 0;
   margin: 1rem 0;
-  padding: 0.55rem;
+  padding: 0;
   border: 1px solid color-mix(in srgb, var(--color-border) 65%, transparent);
-  border-radius: 0.9rem;
-  background: color-mix(in srgb, var(--color-bg-primary) 40%, transparent);
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, var(--color-bg-secondary) 22%, transparent);
+  overflow: hidden;
 }
 
 .article-content .wiki-tab {
-  border: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
-  border-radius: 0.7rem;
-  background: color-mix(in srgb, var(--color-bg-secondary) 35%, transparent);
-  overflow: hidden;
+  display: contents;
 }
 
 .article-content .wiki-tab > summary {
   cursor: pointer;
   list-style: none;
-  padding: 0.55rem 0.85rem;
+  padding: 0.5rem 0.9rem;
   font-size: 0.8125rem;
   font-weight: 600;
-  color: var(--color-text-primary);
-  background: color-mix(in srgb, var(--color-bg-tertiary) 50%, transparent);
+  color: var(--color-text-secondary);
+  border-right: 1px solid color-mix(in srgb, var(--color-border) 45%, transparent);
+  background: transparent;
   transition: background 140ms ease, color 140ms ease;
 }
 
 .article-content .wiki-tab > summary:hover {
-  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+  color: var(--color-text-primary);
+  background: color-mix(in srgb, var(--color-accent) 8%, transparent);
 }
 
 .article-content .wiki-tab > summary::-webkit-details-marker {
   display: none;
 }
 
-.article-content .wiki-tab > summary::before {
-  content: "▸ ";
-  color: var(--color-text-secondary);
-  font-size: 0.7rem;
-}
-
-.article-content .wiki-tab[open] > summary::before {
-  content: "▾ ";
-  color: var(--color-accent);
-}
-
 .article-content .wiki-tab[open] > summary {
-  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent);
   color: var(--color-accent);
   background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  box-shadow: inset 0 -2px 0 var(--color-accent);
 }
 
-.article-content .wiki-tab > :not(summary) {
-  padding: 0.75rem 0.85rem;
+.article-content .wiki-tab-body {
+  flex: 1 0 100%;
+  width: 100%;
+  padding: 0.75rem 0.9rem 0.4rem;
+  background: color-mix(in srgb, var(--color-bg-primary) 40%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent);
+}
+
+.article-content .wiki-tab:not([open]) > .wiki-tab-body {
+  display: none;
+}
+
+/* Wiki-mirror infobox — right-rail card that keeps wiki table grammar */
+.wiki-infobox-wrap .wiki-infobox,
+.article-content .wiki-infobox,
+.wiki-infobox {
+  width: 100%;
+  font-size: 12px;
+  line-height: 1.4;
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: var(--color-bg-tertiary);
+}
+
+.wiki-infobox table,
+.wiki-infobox.infobox,
+.wiki-infobox.article-content table {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0;
+  border: none;
+  display: table;
+}
+
+.wiki-infobox .infobox-buttons,
+.wiki-infobox .infobox-switch {
+  display: none;
+}
+
+.wiki-infobox,
+.wiki-infobox th,
+.wiki-infobox td {
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.wiki-infobox th,
+.wiki-infobox td {
+  padding: 0.35rem 0.55rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 45%, transparent);
+  vertical-align: top;
+}
+
+.wiki-infobox th {
+  white-space: nowrap;
+  width: 38%;
+}
+
+.wiki-infobox th[colspan],
+.wiki-infobox .infobox-header,
+.wiki-infobox caption {
+  text-align: center;
+  background: color-mix(in srgb, var(--color-accent) 14%, var(--color-bg-secondary));
+  color: var(--color-text-primary);
+  font-weight: 650;
+  letter-spacing: 0.01em;
+}
+
+.wiki-infobox img {
+  max-width: 100%;
+  height: auto;
+  margin: 0.25rem auto;
+  display: block;
+  cursor: zoom-in;
+}
+
+.wiki-hatnote {
+  padding: 0.55rem 0.75rem;
+  border-left: 3px solid color-mix(in srgb, var(--color-accent) 55%, transparent);
+  background: color-mix(in srgb, var(--color-accent) 7%, transparent);
+  border-radius: 0 0.5rem 0.5rem 0;
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+}
+
+.wiki-section-heading {
+  font-size: 1.15rem;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+}
+
+.wiki-article-title {
+  font-family: var(--font-display);
+  letter-spacing: 0.01em;
 }
 
 /* Tile-marker copy affordance in boss strategy HTML */
@@ -1774,15 +1918,102 @@ body {
 
 .item-tooltip-content {
   border-radius: 0.75rem;
-  padding: 0.625rem 0.75rem;
+  padding: 0;
   font-size: 0.75rem;
-  background: color-mix(in srgb, var(--color-bg-overlay) 94%, transparent);
+  background: color-mix(in srgb, var(--color-bg-overlay) 96%, transparent);
   backdrop-filter: blur(14px) saturate(140%);
   -webkit-backdrop-filter: blur(14px) saturate(140%);
   border: 1px solid var(--color-border);
   color: var(--color-text-primary);
-  box-shadow: 0 14px 36px -10px rgba(0, 0, 0, 0.5);
-  max-width: 280px;
+  box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.55);
+  max-width: 340px;
+}
+
+/* MediaWiki-style page preview — used by article hovers + ItemTooltip */
+.wiki-hover-card {
+  position: fixed;
+  z-index: 80;
+  max-width: 340px;
+  border-radius: 0.7rem;
+  background: color-mix(in srgb, var(--color-bg-overlay) 97%, transparent);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 18px 44px -14px rgba(0, 0, 0, 0.58);
+  pointer-events: none;
+  animation: tooltip-in var(--duration-fast) var(--ease-out);
+}
+
+.wiki-hover-card-inner {
+  display: flex;
+  gap: 0.7rem;
+  padding: 0.7rem 0.8rem 0.75rem;
+  align-items: flex-start;
+}
+
+.wiki-hover-card-img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  flex-shrink: 0;
+  background: color-mix(in srgb, var(--color-bg-tertiary) 70%, transparent);
+  border-radius: 0.4rem;
+}
+
+.wiki-hover-card-title {
+  font-size: 0.8125rem;
+  font-weight: 650;
+  color: var(--color-text-primary);
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+.wiki-hover-card-extract {
+  margin: 0.3rem 0 0;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: var(--color-text-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.wiki-hover-card-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.65rem;
+  margin-top: 0.4rem;
+  font-size: 0.65rem;
+  color: var(--color-text-tertiary);
+}
+
+.wiki-hover-card-facts span {
+  white-space: nowrap;
+}
+
+.wiki-hover-card-inner--loading {
+  min-width: 200px;
+}
+
+.wiki-hover-card-skel {
+  width: 48px;
+  height: 48px;
+  border-radius: 0.4rem;
+  background: color-mix(in srgb, var(--color-bg-tertiary) 80%, transparent);
+  animation: pulse 1s ease-in-out infinite;
+}
+
+.wiki-hover-card-skel-line {
+  height: 0.55rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-bg-tertiary) 80%, transparent);
+  margin-bottom: 0.35rem;
+  width: 11rem;
+}
+
+.wiki-hover-card-skel-line.short {
+  width: 7rem;
 }
 
 /* Never scale from 0 — start visible enough to feel material (emil-design-eng) */

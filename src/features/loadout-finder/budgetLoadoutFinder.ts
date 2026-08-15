@@ -86,6 +86,35 @@ export function withOwnedPrices(
   };
 }
 
+/**
+ * Cash to equip this item.
+ * - `> 0` — GE buy price
+ * - `0` — owned / explicitly free
+ * - `null` — no price (not buyable on a capped budget)
+ */
+export function itemCashCost(
+  priceOf: (name: string) => number | null,
+  name: string
+): number | null {
+  const p = priceOf(name);
+  if (p == null) return null;
+  return p > 0 ? p : 0;
+}
+
+/**
+ * Optimizer cost. Unpriced items are free only when the budget is unlimited
+ * (`Any`). A capped budget cannot pretend missing GE data is 0 gp.
+ */
+export function candidateCost(
+  priceOf: (name: string) => number | null,
+  name: string,
+  unlimited: boolean
+): number | null {
+  const cash = itemCashCost(priceOf, name);
+  if (cash == null) return unlimited ? 0 : null;
+  return cash;
+}
+
 /** Drop excluded item names from an equipment catalog. */
 export function filterExcludedEquipment(
   equipment: WikiEquipment[],
@@ -206,7 +235,7 @@ function resolveGear(
   return { gear, missing, resolved };
 }
 
-function setupCost(
+export function setupCost(
   gear: EquippedGear,
   priceOf: (name: string) => number | null
 ): { total: number; unpriced: number } {
@@ -214,11 +243,11 @@ function setupCost(
   let unpriced = 0;
   for (const item of Object.values(gear)) {
     if (!item) continue;
-    const p = priceOf(item.name);
-    if (p == null || p <= 0) {
+    const cash = itemCashCost(priceOf, item.name);
+    if (cash == null) {
       unpriced += 1;
     } else {
-      total += p;
+      total += cash;
     }
   }
   return { total, unpriced };
@@ -512,8 +541,6 @@ export function findBudgetLoadouts(opts: BudgetFindOptions): RankedLoadout[] {
     if (requirePriced && unpriced > 0) continue;
     const withinBudget = unlimited || total <= budget;
     if (!withinBudget && !unlimited) continue;
-    // Soft: if budget set and everything unpriced, skip (can't validate)
-    if (!unlimited && total === 0 && unpriced > 0 && requirePriced) continue;
 
     const prayerLevel = skillLevel(hiscores, "Prayer", 99);
     const prayer = bestPrayerForStyle(preset.style, prayerLevel, preset.prayer);

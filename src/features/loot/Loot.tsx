@@ -9,6 +9,7 @@ import { itemIcon } from "../../lib/sprites";
 import { parseRate } from "./parseRate";
 import { useDebounce } from "../../hooks/useDebounce";
 import { useNavigation, type View } from "../../lib/NavigationContext";
+import { openItemPage } from "../../lib/openItem";
 import WikiImage from "../../components/WikiImage";
 import DropTable from "../../components/DropTable";
 import { findBossByName, normalizeBossLookup } from "../../lib/data/bosses";
@@ -277,7 +278,7 @@ function DropTablesTab({
                   >
                     <td className="px-4 py-1.5 font-medium">
                       <button
-                        onClick={() => navigate("market", { query: drop.name })}
+                        onClick={() => openItemPage(navigate, drop.name)}
                         className="hover:text-accent transition-colors text-left flex items-center gap-2"
                       >
                         <WikiImage src={itemIcon(drop.name)} alt="" className="w-5 h-5 shrink-0" fallback={drop.name[0]} />

@@ -113,4 +113,5 @@ export const BOSS_METADATA: Record<string, BossMetadata> = {
   "Lunar Chests": { difficulty: 4, teamSize: "solo", mechanicsSummary: "Combined loot tracker for Moons of Peril encounters. Fight three moon bosses (Blood, Blue, Eclipse) in sequence with different combat styles." },
   "Yama": { difficulty: 4, teamSize: "solo", mechanicsSummary: "Underworld boss with melee and magic attacks. Dodge fire walls and ground hazards. Prayer switching and precise movement required." },
   "The Royal Titans": { difficulty: 4, teamSize: "small", mechanicsSummary: "Multi-boss encounter featuring paired titan fights. Requires team coordination with role assignment and phase-based mechanics." },
+  "The Mad Angel": { difficulty: 3, teamSize: "solo", mechanicsSummary: "Repeatable Wyrmscraig boss unlocked after Fallen From Grace. Mid-level sailing destination with a unique weapon drop (Hallowfell)." },
 };

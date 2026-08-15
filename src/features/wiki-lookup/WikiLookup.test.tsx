@@ -50,6 +50,8 @@ const mockItemDocument: WikiLookupDocument = {
     { label: "High alch", value: "72,000 coins" },
   ],
   totalInfoboxFields: 7,
+  infoboxHtml: null,
+  hatnotes: [],
   leadHtml: "<p>The Twisted bow is a powerful ranged weapon.</p>",
   sections: [],
   relatedPages: [],

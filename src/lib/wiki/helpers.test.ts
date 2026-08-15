@@ -110,6 +110,14 @@ describe("wrapTablesForScroll", () => {
     wrapTablesForScroll(root);
     expect(root.querySelector(".wiki-table-scroll")).toBeNull();
   });
+
+  it("does not scroll-wrap combat bonuses tables (paper doll cells)", () => {
+    const root = makeRoot(
+      `<table class="infobox-bonuses"><tr><td class="infobox-bonuses-image">x</td></tr></table>`
+    );
+    wrapTablesForScroll(root);
+    expect(root.querySelector(".wiki-table-scroll")).toBeNull();
+  });
 });
 
 describe("normalizeLinks", () => {
@@ -142,5 +150,6 @@ describe("transformTabbers", () => {
     expect(root.querySelectorAll(".wiki-tab")[1].querySelector("summary")?.textContent).toBe(
       "Melee"
     );
+    expect(root.querySelector(".wiki-tab-body")?.textContent).toContain("bow");
   });
 });

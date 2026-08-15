@@ -8,6 +8,8 @@ import {
   bestPrayerForStyle,
   withOwnedPrices,
   filterExcludedEquipment,
+  itemCashCost,
+  candidateCost,
   type LoadoutTarget,
 } from "./budgetLoadoutFinder";
 import type { WikiEquipment, EquipmentSlot } from "../../lib/api/equipment";
@@ -223,6 +225,15 @@ describe("findBudgetLoadouts", () => {
     const free = withOwnedPrices(priceOf, ["Abyssal whip"]);
     expect(free("Abyssal whip")).toBe(0);
     expect(free("Dragon scimitar")).toBe(100_000);
+  });
+
+  it("treats owned 0gp as free, not unpriced", () => {
+    const priceOf = (n: string) => (n.toLowerCase() === "fire cape" ? 0 : null);
+    expect(itemCashCost(priceOf, "Fire cape")).toBe(0);
+    expect(itemCashCost(priceOf, "Twisted bow")).toBeNull();
+    expect(candidateCost(priceOf, "Twisted bow", false)).toBeNull();
+    expect(candidateCost(priceOf, "Twisted bow", true)).toBe(0);
+    expect(candidateCost(priceOf, "Fire cape", false)).toBe(0);
   });
 
   it("excludes banned items from catalog", () => {

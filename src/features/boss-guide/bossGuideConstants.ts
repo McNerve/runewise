@@ -18,4 +18,5 @@ export const CATEGORY_LABELS: Record<string, string> = {
   Wilderness: "Wilderness bosses",
   Other: "Other bosses",
   Varlamore: "Varlamore",
+  Sailing: "Sailing",
 };

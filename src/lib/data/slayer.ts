@@ -52,8 +52,8 @@ export const SLAYER_REWARDS: SlayerReward[] = [
   { name: "Watch the Birdie", cost: 80, category: "unlock", description: "Konar, Duradel, Nieve, Chaeldar, Krystilia can assign Aviansie" },
   { name: "Basilocked", cost: 80, category: "unlock", description: "Konar, Duradel, Nieve can assign Basilisks" },
   { name: "Actual Vampyre Slayer", cost: 80, category: "unlock", description: "Konar, Duradel, Nieve, Chaeldar can assign Vampyres" },
-  { name: "Lured In", cost: 80, category: "unlock", description: "Nieve and Duradel can assign Aquanites" },
-  { name: "Wings Spread", cost: 80, category: "unlock", description: "Nieve and Duradel can assign Gryphons" },
+  { name: "Lured In", cost: 80, category: "unlock", description: "Nieve, Duradel, and Mortimer can assign Aquanites" },
+  { name: "Wings Spread", cost: 80, category: "unlock", description: "Nieve, Duradel, and Mortimer can assign Gryphons" },
   { name: "Reptile Got Ripped", cost: 75, category: "unlock", description: "Konar, Duradel, Nieve, Chaeldar can assign Lizardmen" },
   { name: "Warped Reality", cost: 60, category: "unlock", description: "Konar, Duradel, Nieve, Chaeldar can assign Warped creatures" },
   { name: "Seeing Red", cost: 50, category: "unlock", description: "Konar, Duradel, Nieve can assign Red dragons" },
@@ -159,6 +159,14 @@ export const RECOMMENDED_BLOCKS: Record<string, SlayerBlockRecommendation[]> = {
     { monster: "Ice warriors", reason: "Weight 7, low value" },
     { monster: "Scorpions", reason: "Weight 6, very low XP" },
   ],
+  "Mortimer": [
+    { monster: "Crawling Hands", reason: "Weight 10, low XP — skip unless you want a fast clear" },
+    { monster: "Cave crawlers", reason: "Weight 10, filler task at this master's level" },
+    { monster: "Banshees", reason: "Weight 10, low value once you have 70+ Slayer" },
+    { monster: "Rockslugs", reason: "Weight 10, bag-of-salt busywork" },
+    { monster: "Cockatrice", reason: "Weight 10, mediocre XP and loot" },
+    { monster: "Infernal mages", reason: "Weight 10, slow kills for the assignment size" },
+  ],
 };
 
 export interface SlayerStrategy {
@@ -181,7 +189,7 @@ export const BOOSTING_STRATEGIES: SlayerStrategy[] = [
   },
   {
     title: "Master Selection",
-    content: "Duradel (15 pts) — best task quality and XP/hr for high-level mains. Konar (18 pts) — best base points, bonus Brimstone Keys, but location-locked tasks. Krystilia (25 pts) — highest points but Wilderness-only with PvP risk, separate streak counter. Nieve (12 pts) — good balance of task quality and points, easier requirements than Duradel.",
+    content: "Mortimer (Wyrmscraig, 100 combat + 70 Slayer) — pick 2 tasks (3 after 50 assignments); every task has superiors. Cannot Turael-skip; skips cost 100 points. Duradel (15 pts) — best conventional XP/hr. Konar (18 pts) — best base points + Brimstone Keys, location-locked. Krystilia (25 pts) — highest points, Wilderness only. Nieve (12 pts) — easier requirements than Duradel.",
   },
 ];
 
@@ -420,6 +428,44 @@ export const SLAYER_MASTERS: SlayerMaster[] = [
       { monster: "Wyrms", amount: "100-160", weight: 8, slayerLevel: 62, combatLevel: 100 },
     ],
   },
+  {
+    name: "Mortimer",
+    combatRequired: 100,
+    slayerRequired: 70,
+    location: "Wyrmscraig Cavern",
+    pointsPerTask: 15,
+    tasks: [
+      { monster: "Crawling Hands", amount: "35-50", weight: 10, slayerLevel: 5, combatLevel: 100 },
+      { monster: "Cave crawlers", amount: "35-50", weight: 10, slayerLevel: 10, combatLevel: 100 },
+      { monster: "Banshees", amount: "35-50", weight: 10, slayerLevel: 15, combatLevel: 100 },
+      { monster: "Rockslugs", amount: "35-50", weight: 10, slayerLevel: 20, combatLevel: 100 },
+      { monster: "Cockatrice", amount: "35-50", weight: 10, slayerLevel: 25, combatLevel: 100 },
+      { monster: "Pyrefiends", amount: "35-50", weight: 10, slayerLevel: 30, combatLevel: 100 },
+      { monster: "Basilisks", amount: "40-60", weight: 10, slayerLevel: 40, combatLevel: 100 },
+      { monster: "Infernal mages", amount: "35-50", weight: 10, slayerLevel: 45, combatLevel: 100 },
+      { monster: "Bloodveld", amount: "120-180", weight: 8, slayerLevel: 50, combatLevel: 100 },
+      { monster: "Gryphons", amount: "80-120", weight: 10, slayerLevel: 51, combatLevel: 100 },
+      { monster: "Jellies", amount: "80-120", weight: 10, slayerLevel: 52, combatLevel: 100 },
+      { monster: "Custodian stalker", amount: "80-120", weight: 8, slayerLevel: 54, combatLevel: 100 },
+      { monster: "Turoth", amount: "80-120", weight: 10, slayerLevel: 55, combatLevel: 100 },
+      { monster: "Warped creatures", amount: "80-120", weight: 10, slayerLevel: 56, combatLevel: 100 },
+      { monster: "Cave horrors", amount: "80-120", weight: 10, slayerLevel: 58, combatLevel: 100 },
+      { monster: "Aberrant spectres", amount: "80-120", weight: 10, slayerLevel: 60, combatLevel: 100 },
+      { monster: "Wyrms", amount: "80-120", weight: 10, slayerLevel: 62, combatLevel: 100 },
+      { monster: "Dust devils", amount: "120-180", weight: 8, slayerLevel: 65, combatLevel: 100 },
+      { monster: "Kurask", amount: "40-60", weight: 10, slayerLevel: 70, combatLevel: 100 },
+      { monster: "Venators", amount: "120-180", weight: 10, slayerLevel: 74, combatLevel: 100 },
+      { monster: "Gargoyles", amount: "120-180", weight: 10, slayerLevel: 75, combatLevel: 100 },
+      { monster: "Aquanites", amount: "40-60", weight: 10, slayerLevel: 78, combatLevel: 100 },
+      { monster: "Nechryael", amount: "150-200", weight: 8, slayerLevel: 80, combatLevel: 100 },
+      { monster: "Drakes", amount: "40-60", weight: 10, slayerLevel: 84, combatLevel: 100 },
+      { monster: "Abyssal demons", amount: "120-180", weight: 8, slayerLevel: 85, combatLevel: 100 },
+      { monster: "Dark beasts", amount: "40-60", weight: 10, slayerLevel: 90, combatLevel: 100 },
+      { monster: "Araxytes", amount: "120-180", weight: 8, slayerLevel: 92, combatLevel: 100 },
+      { monster: "Smoke devils", amount: "80-120", weight: 8, slayerLevel: 93, combatLevel: 100 },
+      { monster: "Hydras", amount: "150-200", weight: 10, slayerLevel: 95, combatLevel: 100 },
+    ],
+  },
 ];
 
 // Apply requiredUnlock to tasks that need a reward purchase
@@ -438,7 +484,7 @@ const TASK_UNLOCK_MAP: Record<string, string> = {
 };
 
 for (const master of SLAYER_MASTERS) {
-  if (master.name === "Turael") continue;
+  if (master.name === "Turael" || master.name === "Mortimer") continue;
   for (const task of master.tasks) {
     const unlock = TASK_UNLOCK_MAP[task.monster];
     if (unlock) task.requiredUnlock = unlock;

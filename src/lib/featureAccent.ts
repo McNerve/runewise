@@ -44,7 +44,7 @@ const FEATURE_ACCENTS: Record<View, string> = {
   "world-map": MID,
   stars: MID,
   news: MID,
-  wiki: MID,
+  wiki: STRONG,
   timers: MID,
   "xp-table": MID,
 

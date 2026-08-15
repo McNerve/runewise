@@ -10,10 +10,6 @@ import {
 } from "./wikiLookupUtils";
 import type { WikiLookupDocument } from "../../lib/wiki/lookup";
 
-// Task 1: Breadcrumb ordering is a UI concern; tested via integration.
-// The openPage trail logic can be unit-tested via pure function extraction if needed.
-// Here we verify the helper functions used by the component.
-
 describe("isDatePill", () => {
   it("filters bare year", () => {
     expect(isDatePill("2018")).toBe(true);
@@ -175,9 +171,9 @@ describe("breadcrumb trail", () => {
 });
 
 describe("shouldCollapseSection / sectionContentClasses", () => {
-  it("collapses gallery and combat stats sections", () => {
+  it("collapses gallery but keeps combat stats open", () => {
     expect(shouldCollapseSection("Gallery")).toBe(true);
-    expect(shouldCollapseSection("Combat stats")).toBe(true);
+    expect(shouldCollapseSection("Combat stats")).toBe(false);
     expect(shouldCollapseSection("Strategy")).toBe(false);
   });
 

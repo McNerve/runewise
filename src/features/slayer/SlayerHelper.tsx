@@ -119,6 +119,11 @@ const ICON_OVERRIDES: Record<string, string> = {
     "Spiritual creatures": "Spiritual_ranger_%28Saradomin%29.png",
     "Scabarites": "Scarab_Mage.png",
     "Custodian stalker": "Scabaras.png",
+    "Infernal mages": "Infernal_Mage.png",
+    "Cockatrice": "Cockatrice.png",
+    "Rockslugs": "Rockslug.png",
+    "Pyrefiends": "Pyrefiend.png",
+    "Venators": "Venator.png",
 };
 
 function monsterIconUrl(name: string): string {
@@ -138,6 +143,7 @@ const MASTER_ICONS: Record<string, string> = {
   "Krystilia": "Krystilia.png",
   "Nieve / Steve": "Nieve.png",
   "Duradel": "Duradel.png",
+  "Mortimer": "Mortimer.png",
 };
 
 const MASTER_DESCRIPTIONS: Record<string, string> = {
@@ -146,6 +152,7 @@ const MASTER_DESCRIPTIONS: Record<string, string> = {
   "Krystilia": "Wilderness-only master. Tasks give Larran's keys and increased points. PvP danger.",
   "Nieve / Steve": "High-level master in the Stronghold Slayer Cave. Best for efficient task grinding.",
   "Duradel": "Highest-level master in Shilo Village. Assigns the most rewarding and difficult tasks.",
+  "Mortimer": "Wyrmscraig Cavern. Choose 2 tasks (3 after 50 assignments); every task has superiors. Cannot Turael-skip. Skips cost 100 points. Requires 100 combat and 70 Slayer (or 99 Slayer).",
 };
 
 function loadBlocked(): BlockedMap {

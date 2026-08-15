@@ -10,6 +10,7 @@ import ItemTooltip from "../../components/ItemTooltip";
 import { Skeleton } from "../../components/Skeleton";
 import EmptyState from "../../components/EmptyState";
 import { useNavigation } from "../../lib/NavigationContext";
+import { openItemPage } from "../../lib/openItem";
 import { geInstasell, shopSaving } from "./shopSaving";
 
 type MembersFilter = "all" | "f2p" | "p2p";
@@ -417,7 +418,7 @@ export default function ShopHelper() {
                             <ItemTooltip itemName={item.name}>
                               <button
                                 type="button"
-                                onClick={() => navigate("market", { query: item.name })}
+                                onClick={() => openItemPage(navigate, item.name)}
                                 className="text-left hover:text-accent transition-colors font-medium"
                               >
                                 {item.name}

@@ -14,6 +14,7 @@ describe("feature registry", () => {
       "Combat",
       "Market",
       "Plan",
+      "Wiki",
       "Live",
     ]);
   });
@@ -37,7 +38,6 @@ describe("feature registry", () => {
       "world-map",
       "news",
       "gear-compare",
-      "loadout-finder",
       "raids",
       "flip-journal",
       "clue-helper",
@@ -53,6 +53,9 @@ describe("feature registry", () => {
     expect(SIDEBAR_FEATURES.some((f) => f.id === "bosses")).toBe(true);
     expect(SIDEBAR_FEATURES.some((f) => f.id === "money-making")).toBe(true);
     expect(SIDEBAR_FEATURES.some((f) => f.id === "skill-calc")).toBe(true);
+    expect(SIDEBAR_FEATURES.some((f) => f.id === "loadout-finder")).toBe(true);
+    expect(SIDEBAR_FEATURES.some((f) => f.id === "progress")).toBe(true);
+    expect(SIDEBAR_FEATURES.some((f) => f.id === "wiki")).toBe(true);
     // Focused rail: daily drivers only (Home + hubs).
     expect(SIDEBAR_FEATURES.length).toBeLessThanOrEqual(16);
   });

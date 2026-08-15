@@ -36,8 +36,10 @@ import AccountPrefillBanner from "../../components/AccountPrefillBanner";
 import { formatGp } from "../../lib/format";
 import FreshnessStrip from "../../components/FreshnessStrip";
 import { useNavigation } from "../../lib/NavigationContext";
+import { openItemPage } from "../../lib/openItem";
 import WikiImage from "../../components/WikiImage";
 import StructuredSection from "./StructuredSection";
+import WikiArticle from "../wiki-lookup/components/WikiArticle";
 import BossMetaCard from "./components/BossMetaCard";
 import BossActionIcon from "./components/BossActionIcon";
 import { BOSS_METADATA } from "../../lib/data/boss-metadata";
@@ -56,7 +58,6 @@ import {
 import { sectionContentClasses } from "../wiki-lookup/wikiLookupUtils";
 import {
   buildItemMaps,
-  computeDropCategoryCount,
   computeLootRows,
   computeLootTotals,
   computeTopDrops,
@@ -64,8 +65,8 @@ import {
   getBossLootTable,
   getBossTasks,
   getRaidLootFallback,
+  groupBossesByCategory,
   groupTasksByTier,
-  raidTopUniqueName,
 } from "./bossGuideSelectors";
 import { getMetaPacksForBoss } from "../../lib/data/boss-meta-packs";
 
@@ -117,6 +118,14 @@ export default function BossGuide({ hiscores }: Props) {
     );
   }, [selectedCategory, bossQuery]);
 
+  const bossGroups = useMemo(
+    () =>
+      selectedCategory === "All"
+        ? groupBossesByCategory(filteredBosses, BOSS_CATEGORIES)
+        : [{ category: selectedCategory, bosses: filteredBosses }],
+    [filteredBosses, selectedCategory]
+  );
+
   const bossKc = useMemo(
     () => getBossKc(hiscores, selectedBoss),
     [hiscores, selectedBoss]
@@ -143,23 +152,12 @@ export default function BossGuide({ hiscores }: Props) {
     [bossLootTable, dropCategories, itemMap, prices]
   );
 
-  // Top drop from raid fallback (for summary card)
-  const raidTopDrop = useMemo(
-    () => raidTopUniqueName(raidLootFallback),
-    [raidLootFallback]
-  );
-
   const lootRows = useMemo(
     () => computeLootRows(bossLootTable, prices, lootKillsPerHour),
     [bossLootTable, lootKillsPerHour, prices]
   );
 
   const lootTotals = useMemo(() => computeLootTotals(lootRows), [lootRows]);
-
-  const dropCategoryCount = useMemo(
-    () => computeDropCategoryCount(dropCategories, bossLootTable, selectedBoss),
-    [bossLootTable, dropCategories, selectedBoss]
-  );
 
   useEffect(() => {
     let cancelled = false;
@@ -291,7 +289,7 @@ export default function BossGuide({ hiscores }: Props) {
   // Initialize wiki tabbers after guide content renders
   useEffect(() => {
     if (!loading && guide && guideContentRef.current) {
-      initWikiInteractive(guideContentRef.current);
+      return initWikiInteractive(guideContentRef.current);
     }
   }, [loading, guide]);
 
@@ -530,43 +528,51 @@ export default function BossGuide({ hiscores }: Props) {
                 No bosses match “{bossQuery.trim()}”.
               </div>
             ) : null}
-            {filteredBosses.map((boss) => {
-              const active = selectedBoss?.name === boss.name;
-              return (
-                <button
-                  key={boss.name}
-                  type="button"
-                  data-boss-name={boss.name}
-                  onClick={() => void selectBoss(boss)}
-                  onMouseEnter={() => prefetchBossGuide(boss)}
-                  onFocus={() => prefetchBossGuide(boss)}
-                  className={`w-full rounded-xl border px-3 py-3 text-left transition ${
-                    active
-                      ? "border-accent/35 bg-accent/10"
-                      : "border-transparent bg-bg-primary/55 hover:border-border hover:bg-bg-primary/80"
-                  }`}
-                >
-                  <div className="flex items-start gap-3">
-                    <WikiImage
-                      src={bossIconSmall(boss.name)}
-                      alt=""
-                      className="h-10 w-10 rounded-lg object-contain"
-                      fallback={boss.name[0]}
-                    />
-                    <div className="min-w-0">
-                      <div className="line-clamp-2 text-sm font-medium text-text-primary">
-                        {boss.name}
-                      </div>
-                      <div className="mt-1 text-[11px] text-text-secondary">
-                        {boss.category}
-                        {boss.combatLevel ? ` · Combat ${boss.combatLevel}` : ""}
-                        {boss.hitpoints ? ` · ${boss.hitpoints} HP` : ""}
-                      </div>
-                    </div>
+            {bossGroups.map((group) => (
+              <div key={group.category} className="space-y-1">
+                {selectedCategory === "All" ? (
+                  <div className="px-2 pt-2 pb-1 text-[10px] uppercase tracking-[0.18em] text-text-secondary/40">
+                    {CATEGORY_LABELS[group.category] ?? group.category}
                   </div>
-                </button>
-              );
-            })}
+                ) : null}
+                {group.bosses.map((boss) => {
+                  const active = selectedBoss?.name === boss.name;
+                  return (
+                    <button
+                      key={boss.name}
+                      type="button"
+                      data-boss-name={boss.name}
+                      onClick={() => void selectBoss(boss)}
+                      onMouseEnter={() => prefetchBossGuide(boss)}
+                      onFocus={() => prefetchBossGuide(boss)}
+                      className={`w-full rounded-xl border px-3 py-2.5 text-left transition ${
+                        active
+                          ? "border-accent/35 bg-accent/10"
+                          : "border-transparent bg-bg-primary/55 hover:border-border hover:bg-bg-primary/80"
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <WikiImage
+                          src={bossIconSmall(boss.name)}
+                          alt=""
+                          className="h-9 w-9 rounded-lg object-contain"
+                          fallback={boss.name[0]}
+                        />
+                        <div className="min-w-0">
+                          <div className="line-clamp-2 text-sm font-medium text-text-primary">
+                            {boss.name}
+                          </div>
+                          <div className="mt-0.5 text-[11px] text-text-secondary">
+                            {boss.combatLevel ? `Combat ${boss.combatLevel}` : boss.location ?? boss.category}
+                            {boss.hitpoints ? ` · ${boss.hitpoints} HP` : ""}
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
           </div>
         </aside>
 
@@ -814,74 +820,6 @@ export default function BossGuide({ hiscores }: Props) {
                   </button>
                 ))}
               </div>
-
-              {/* Metric strip — desktop/tablet only; mobile skips straight to guide. */}
-              <div className="mt-4 hidden gap-2 overflow-x-auto pb-1 sidebar-scroll sm:grid sm:grid-cols-2 sm:overflow-visible xl:grid-cols-4 sm:gap-3">
-                <div className="min-w-[9.5rem] shrink-0 rounded-xl border border-border-subtle bg-bg-tertiary px-3 py-2.5 sm:min-w-0 sm:px-4 sm:py-3">
-                  <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
-                    Sections
-                  </div>
-                  <div className="mt-0.5 text-base font-semibold text-text-primary sm:text-lg">
-                    {guide?.sections.length ?? 0}
-                  </div>
-                  <div className="mt-0.5 hidden text-xs text-text-secondary sm:block">
-                    Strategy blocks in this workspace.
-                  </div>
-                </div>
-                <div className="min-w-[9.5rem] shrink-0 rounded-xl border border-border-subtle bg-bg-tertiary px-3 py-2.5 sm:min-w-0 sm:px-4 sm:py-3">
-                  <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
-                    Drop groups
-                  </div>
-                  <div className="mt-0.5 text-base font-semibold text-text-primary sm:text-lg">
-                    {dropCategoryCount ?? "\u2014"}
-                  </div>
-                  <div className="mt-0.5 hidden text-xs text-text-secondary sm:block">
-                    {dropCategories.length > 0
-                      ? "From the OSRS Wiki."
-                      : bossLootTable
-                        ? "Curated RuneWise data."
-                        : dropCategoryCount != null
-                          ? "Raid loot groups."
-                          : "No loot groups yet."}
-                  </div>
-                </div>
-                <div className="min-w-[9.5rem] shrink-0 rounded-xl border border-border-subtle bg-bg-tertiary px-3 py-2.5 sm:min-w-0 sm:px-4 sm:py-3">
-                  <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
-                    Tasks
-                  </div>
-                  <div className="mt-0.5 text-base font-semibold text-text-primary sm:text-lg">
-                    {bossTasks.length}
-                  </div>
-                  <div className="mt-0.5 hidden text-xs text-text-secondary sm:block">
-                    Boss-linked combat tasks.
-                  </div>
-                </div>
-                <div className="min-w-[9.5rem] shrink-0 rounded-xl border border-border-subtle bg-bg-tertiary px-3 py-2.5 sm:min-w-0 sm:px-4 sm:py-3">
-                  <div className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/45">
-                    Top drop
-                  </div>
-                  {topDrops[0] ? (
-                    <>
-                      <div className="mt-0.5 truncate text-sm font-semibold text-text-primary">
-                        {topDrops[0].drop.name}
-                      </div>
-                      <div className="mt-0.5 text-xs text-success">
-                        {topDrops[0].gePrice != null
-                          ? formatGp(topDrops[0].gePrice)
-                          : topDrops[0].drop.price || "\u2014"}
-                      </div>
-                    </>
-                  ) : raidTopDrop ? (
-                    <div className="mt-0.5 truncate text-sm font-semibold text-text-primary">
-                      {raidTopDrop}
-                    </div>
-                  ) : (
-                    <div className="mt-0.5 text-base font-semibold text-text-primary sm:text-lg">
-                      {"\u2014"}
-                    </div>
-                  )}
-                </div>
-              </div>
             </section>
           ) : null}
 
@@ -910,7 +848,34 @@ export default function BossGuide({ hiscores }: Props) {
             />
           ) : null}
 
-          {selectedBoss && !loading && activeTab === "guide" && !guideError && guide && guide.sections.length > 0 ? (
+          {selectedBoss && !loading && activeTab === "guide" && !guideError && guide?.article ? (
+            <WikiArticle
+                variant="embedded"
+                document={guide.article}
+                contentRef={guideContentRef}
+                onContentClick={handleGuideClick}
+                enhanceSection={(title, html) => {
+                  const lower = title.toLowerCase();
+                  if (lower.includes("inventory")) return null;
+                  if (
+                    lower.includes("suggested skills") ||
+                    lower.includes("recommended skills") ||
+                    lower.includes("requirements") ||
+                    lower.includes("equipment") ||
+                    lower.includes("gear setup")
+                  ) {
+                    return (
+                      <StructuredSection
+                        title={title}
+                        html={html}
+                        bossSlug={normalizeBossSlug(selectedBoss.name)}
+                      />
+                    );
+                  }
+                  return null;
+                }}
+              />
+          ) : selectedBoss && !loading && activeTab === "guide" && !guideError && guide && guide.sections.length > 0 ? (
             <div>
               {BOSS_METADATA[selectedBoss.name] && (
                 <div className="mb-4 hidden sm:block">
@@ -1201,10 +1166,10 @@ export default function BossGuide({ hiscores }: Props) {
             </div>
           ) : null}
 
-          {selectedBoss && !loading && activeTab === "guide" && guide && guide.sections.length === 0 ? (
+          {selectedBoss && !loading && activeTab === "guide" && guide && !guide.article && guide.sections.length === 0 ? (
             <EmptyState
               title="No guide content available"
-              description="No structured strategy sections were found for this boss. Try the wiki page for the full source."
+              description="No strategy page was found for this boss. Try the wiki for the full source."
               action={{ label: "Open Wiki", onClick: () => openExternal(`https://oldschool.runescape.wiki/w/${selectedBoss.wikiPage}`) }}
             />
           ) : null}
@@ -1307,7 +1272,7 @@ export default function BossGuide({ hiscores }: Props) {
                                 <td className="px-4 py-2">
                                   <button
                                     type="button"
-                                    onClick={() => navigate("market", { query: row.itemName })}
+                                    onClick={() => openItemPage(navigate, row.itemName)}
                                     className="flex items-center gap-2 text-left text-text-primary transition hover:text-accent"
                                   >
                                     <WikiImage
@@ -1343,7 +1308,7 @@ export default function BossGuide({ hiscores }: Props) {
                         <button
                           key={`top-drop-${drop.name}`}
                           type="button"
-                          onClick={() => navigate("market", { query: drop.name })}
+                          onClick={() => openItemPage(navigate, drop.name)}
                           className="rounded-xl border border-border/50 bg-bg-primary/45 p-3 text-left transition hover:bg-bg-primary/70 hover:border-accent/30"
                         >
                           <div className="flex items-center gap-3">
@@ -1393,7 +1358,7 @@ export default function BossGuide({ hiscores }: Props) {
                                 <td className="px-4 py-2">
                                   <button
                                     type="button"
-                                    onClick={() => navigate("market", { query: drop.name })}
+                                    onClick={() => openItemPage(navigate, drop.name)}
                                     className="flex items-center gap-2 text-left text-text-primary transition hover:text-accent"
                                   >
                                     <WikiImage
@@ -1452,7 +1417,7 @@ export default function BossGuide({ hiscores }: Props) {
                           <td className="px-4 py-2">
                             <button
                               type="button"
-                              onClick={() => navigate("market", { query: drop.item })}
+                              onClick={() => openItemPage(navigate, drop.item)}
                               className="flex items-center gap-2 text-left text-text-primary transition hover:text-accent"
                             >
                               <WikiImage
@@ -1497,7 +1462,7 @@ export default function BossGuide({ hiscores }: Props) {
                                 <td className="px-4 py-2">
                                   <button
                                     type="button"
-                                    onClick={() => navigate("market", { query: drop.name })}
+                                    onClick={() => openItemPage(navigate, drop.name)}
                                     className="flex items-center gap-2 text-left text-text-primary transition hover:text-accent"
                                   >
                                     <WikiImage src={itemIcon(drop.name)} alt="" className="h-5 w-5 shrink-0" fallback={drop.name[0]} />

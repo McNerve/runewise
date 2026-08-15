@@ -228,3 +228,27 @@ export function buildItemMaps(
   }
   return { itemMap, iconMap };
 }
+
+/** Keep directory order; emit category groups for the All view. */
+export function groupBossesByCategory(
+  bosses: BossInfo[],
+  categoryOrder: readonly string[]
+): Array<{ category: string; bosses: BossInfo[] }> {
+  const buckets = new Map<string, BossInfo[]>();
+  for (const boss of bosses) {
+    const list = buckets.get(boss.category) ?? [];
+    list.push(boss);
+    buckets.set(boss.category, list);
+  }
+  const groups: Array<{ category: string; bosses: BossInfo[] }> = [];
+  for (const category of categoryOrder) {
+    const list = buckets.get(category);
+    if (list?.length) groups.push({ category, bosses: list });
+  }
+  for (const [category, list] of buckets) {
+    if (!categoryOrder.includes(category) && list.length) {
+      groups.push({ category, bosses: list });
+    }
+  }
+  return groups;
+}

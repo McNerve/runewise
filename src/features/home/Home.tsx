@@ -4,6 +4,7 @@ import type { HiscoreData, IronmanType } from "../../lib/api/hiscores";
 import type { ItemPrice } from "../../lib/api/ge";
 import { NAV_ICONS, WIKI_IMG } from "../../lib/sprites";
 import { getFeatureAccent } from "../../lib/featureAccent";
+import { FEATURE_FAMILIES, getFeature } from "../../lib/features";
 import { useNavigation, type View } from "../../lib/NavigationContext";
 import WikiImage from "../../components/WikiImage";
 import ShellIcon from "../../components/ShellIcon";
@@ -252,6 +253,14 @@ export default function Home({ hiscores }: HomeProps) {
     () => resolveToolGrid(TOOL_POOL, pinnedTools, toolFrequency),
     [pinnedTools, toolFrequency],
   );
+  const toolGroups = useMemo(() => {
+    return FEATURE_FAMILIES.filter((family) => family !== "Home")
+      .map((family) => ({
+        family,
+        items: toolGrid.filter((tool) => getFeature(tool.id).family === family),
+      }))
+      .filter((group) => group.items.length > 0);
+  }, [toolGrid]);
   const { activeTimers, liveStarCount } = useLiveNowData();
   const hasLiveData = activeTimers > 0 || liveStarCount > 0;
   const savedRsn = hiscores?.rsn ?? "";
@@ -457,55 +466,61 @@ export default function Home({ hiscores }: HomeProps) {
           )}
 
           {/* Tool grid */}
-          <section>
-            <div className="flex items-baseline justify-between mb-2.5">
+          <section className="space-y-4">
+            <div className="flex items-baseline justify-between">
               <h3 className="section-kicker">Tools</h3>
               <span className="text-[10px] text-text-tertiary">Right-click to pin</span>
             </div>
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-              {toolGrid.map((tool, i) => {
-                const accent = getFeatureAccent(tool.id);
-                return (
-                  <motion.button
-                    key={tool.id}
-                    type="button"
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.02, duration: 0.15 }}
-                    onClick={() => navigate(tool.id)}
-                    onContextMenu={(e) => {
-                      e.preventDefault();
-                      handleTogglePin(tool.id);
-                    }}
-                    aria-label={`${tool.label}${tool.pinned ? " (pinned)" : ""}`}
-                    title={`Open ${tool.label}${tool.pinned ? " · pinned" : " · right-click to pin"}`}
-                    className={`home-tile relative flex flex-col items-center gap-1.5 rounded-xl border bg-bg-tertiary/40 px-2 py-3 ${
-                      tool.pinned ? "border-accent/40 bg-accent/5" : "border-border/40"
-                    }`}
-                  >
-                    {tool.pinned && (
-                      <span
-                        aria-hidden
-                        title="Pinned"
-                        className="absolute top-1 right-1 text-accent"
+            {toolGroups.map((group) => (
+              <div key={group.family}>
+                <div className="mb-1.5 text-[10px] uppercase tracking-[0.16em] text-text-secondary/40">
+                  {group.family}
+                </div>
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                  {group.items.map((tool, i) => {
+                    const accent = getFeatureAccent(tool.id);
+                    return (
+                      <motion.button
+                        key={tool.id}
+                        type="button"
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.02, duration: 0.15 }}
+                        onClick={() => navigate(tool.id)}
+                        onContextMenu={(e) => {
+                          e.preventDefault();
+                          handleTogglePin(tool.id);
+                        }}
+                        aria-label={`${tool.label}${tool.pinned ? " (pinned)" : ""}`}
+                        title={`Open ${tool.label}${tool.pinned ? " · pinned" : " · right-click to pin"}`}
+                        className={`home-tile relative flex flex-col items-center gap-1.5 rounded-xl border bg-bg-tertiary/40 px-2 py-3 ${
+                          tool.pinned ? "border-accent/40 bg-accent/5" : "border-border/40"
+                        }`}
                       >
-                        <svg viewBox="0 0 16 16" className="h-3 w-3" fill="currentColor">
-                          <path d="M9.828.722a.5.5 0 0 1 .354.146l4.95 4.95a.5.5 0 0 1 0 .707c-.48.48-1.072.588-1.503.588a2.8 2.8 0 0 1-.51-.051l-3.16 3.16 .083 2.535a.5.5 0 0 1-.834.395L6.205 9.905l-3.89 3.89a.5.5 0 1 1-.708-.707l3.89-3.89L2.49 6.183a.5.5 0 0 1 .395-.834l2.535.083 3.16-3.16a2.78 2.78 0 0 1-.051-.51c0-.43.108-1.022.588-1.503a.5.5 0 0 1 .353-.146Z"/>
-                        </svg>
-                      </span>
-                    )}
-                    <span
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-lg"
-                      style={{ color: accent, background: `color-mix(in srgb, ${accent} 10%, transparent)` }}
-                    >
-                      {/* AppIcon glyphs always paint; wiki imgs often 404 as blank tiles. */}
-                      <AppIcon view={tool.id} className="h-3.5 w-3.5" />
-                    </span>
-                    <span className="text-[11px] font-medium text-text-secondary">{tool.label}</span>
-                  </motion.button>
-                );
-              })}
-            </div>
+                        {tool.pinned && (
+                          <span
+                            aria-hidden
+                            title="Pinned"
+                            className="absolute top-1 right-1 text-accent"
+                          >
+                            <svg viewBox="0 0 16 16" className="h-3 w-3" fill="currentColor">
+                              <path d="M9.828.722a.5.5 0 0 1 .354.146l4.95 4.95a.5.5 0 0 1 0 .707c-.48.48-1.072.588-1.503.588a2.8 2.8 0 0 1-.51-.051l-3.16 3.16 .083 2.535a.5.5 0 0 1-.834.395L6.205 9.905l-3.89 3.89a.5.5 0 1 1-.708-.707l3.89-3.89L2.49 6.183a.5.5 0 0 1 .395-.834l2.535.083 3.16-3.16a2.78 2.78 0 0 1-.051-.51c0-.43.108-1.022.588-1.503a.5.5 0 0 1 .353-.146Z"/>
+                            </svg>
+                          </span>
+                        )}
+                        <span
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-lg"
+                          style={{ color: accent, background: `color-mix(in srgb, ${accent} 10%, transparent)` }}
+                        >
+                          <AppIcon view={tool.id} className="h-3.5 w-3.5" />
+                        </span>
+                        <span className="text-[11px] font-medium text-text-secondary">{tool.label}</span>
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </section>
 
           {/* Recent */}

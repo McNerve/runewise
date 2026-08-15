@@ -10,6 +10,9 @@ import { itemIcon } from "../../lib/sprites";
 import ItemTooltip from "../../components/ItemTooltip";
 import AccountPrefillBanner from "../../components/AccountPrefillBanner";
 import { Button, Card, FilterPills, StatCard, StatGrid } from "../../components/primitives";
+import { formatTtk } from "../dps-calc/dpsVerdict";
+import { AccuracyMeter } from "../dps-calc/components/AccuracyMeter";
+import { loadoutVerdict } from "./loadoutVerdict";
 import {
   FINDER_TARGETS,
   COMMON_OWNED_CHIPS,
@@ -57,159 +60,72 @@ function styleBadgeClass(style: CombatStyle): string {
   return "text-accent bg-accent/10 border-accent/30";
 }
 
-function ResultRow({
-  rank,
-  row,
-  bestDps,
-  onOpen,
-  upgradePath,
-  leftover,
-  onApplyPath,
-}: {
-  rank: number;
-  row: RankedLoadout;
-  bestDps: number;
-  onOpen: () => void;
-  upgradePath?: LeftoverUpgrade[];
-  leftover?: number;
-  onApplyPath?: () => void;
-}) {
-  const pctOfBest = bestDps > 0 ? (row.dps / bestDps) * 100 : 0;
-  const slotEntries = Object.entries(row.gear).filter(([, item]) => item != null);
-  const lowAcc = row.accuracy > 0 && row.accuracy < 0.4;
-
+function StyleBadge({ style }: { style: CombatStyle }) {
   return (
-    <li className="rounded-xl border border-border-subtle bg-bg-primary/40 p-3 sm:p-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0 space-y-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-text-secondary/70 text-xs num tabular-nums w-5">#{rank}</span>
-            <h3 className="font-semibold text-sm sm:text-base truncate">{row.preset.name}</h3>
-            <span
-              className={`text-2xs uppercase tracking-wide px-1.5 py-0.5 rounded border ${styleBadgeClass(row.style)}`}
-            >
-              {row.style}
-            </span>
-            {lowAcc && (
-              <span className="text-2xs px-1.5 py-0.5 rounded border border-warning/40 bg-warning/10 text-warning">
-                Low accuracy
-              </span>
-            )}
-          </div>
-          {row.preset.description && (
-            <p className="text-xs text-text-secondary">{row.preset.description}</p>
-          )}
-          <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-text-secondary">
-            <span>
-              <span className="text-text-secondary/60">DPS </span>
-              <span className="num text-text-primary font-medium">{row.dps.toFixed(2)}</span>
-              {rank > 1 && bestDps > 0 && (
-                <span className="text-text-secondary/50"> ({pctOfBest.toFixed(0)}% of #1)</span>
-              )}
-            </span>
-            <span>
-              <span className="text-text-secondary/60">Max </span>
-              <span className="num">{row.maxHit}</span>
-            </span>
-            <span>
-              <span className="text-text-secondary/60">Acc </span>
-              <span className={`num ${lowAcc ? "text-warning" : ""}`}>
-                {(row.accuracy * 100).toFixed(1)}%
-              </span>
-            </span>
-            <span>
-              <span className="text-text-secondary/60">TTK </span>
-              <span className="num">{row.ttk > 0 ? `${row.ttk.toFixed(1)}s` : "—"}</span>
-            </span>
-            <span>
-              <span className="text-text-secondary/60">Cost </span>
-              <span className="num text-accent">
-                {row.totalCost > 0 ? formatGp(row.totalCost) : "—"}
-              </span>
-              {row.unpricedCount > 0 && row.totalCost > 0 && (
-                <span className="text-text-secondary/50"> (GE tradeables)</span>
-              )}
-              {row.unpricedCount > 0 && row.totalCost === 0 && (
-                <span className="text-text-secondary/50"> (untradeables)</span>
-              )}
-            </span>
-            {row.prayerName && row.prayerName !== "None" && (
-              <span>
-                <span className="text-text-secondary/60">Prayer </span>
-                <span className="text-text-primary">{row.prayerName}</span>
-              </span>
-            )}
-            {row.spellName && (
-              <span>
-                <span className="text-text-secondary/60">Spell </span>
-                <span className="text-text-primary">{row.spellName}</span>
-              </span>
-            )}
-          </div>
-          {lowAcc && (
-            <p className="text-2xs text-warning/90">
-              Levels or better gear will help more than raising budget alone.
-            </p>
-          )}
+    <span className={`text-2xs uppercase tracking-wide px-1.5 py-0.5 rounded border ${styleBadgeClass(style)}`}>
+      {style}
+    </span>
+  );
+}
+
+function GearStrip({ row }: { row: RankedLoadout }) {
+  const slots = Object.entries(row.gear).filter(([, item]) => item != null);
+  if (slots.length === 0) return null;
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {slots.map(([slot, item]) =>
+        item ? (
+          <ItemTooltip key={slot} itemName={item.name}>
+            <img
+              src={itemIcon(item.name)}
+              alt={item.name}
+              title={`${slot}: ${item.name}`}
+              className="w-7 h-7 rounded border border-border-subtle bg-bg-tertiary object-contain"
+            />
+          </ItemTooltip>
+        ) : null
+      )}
+    </div>
+  );
+}
+
+function UpgradePath({
+  path,
+  leftover,
+  onApply,
+}: {
+  path: LeftoverUpgrade[];
+  leftover: number;
+  onApply?: () => void;
+}) {
+  if (path.length === 0 || leftover <= 0) return null;
+  return (
+    <div className="rounded-lg border border-accent/20 bg-accent/5 px-2.5 py-2 text-xs space-y-1.5">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="text-[10px] uppercase tracking-wide text-accent/80">
+          Upgrade path under leftover {formatGp(leftover)}
         </div>
-        <Button variant="primary" size="sm" onClick={onOpen}>
-          Open in DPS
-        </Button>
+        {onApply && (
+          <button
+            type="button"
+            onClick={onApply}
+            className="text-[10px] font-medium text-accent hover:text-accent-hover"
+          >
+            Open path in DPS →
+          </button>
+        )}
       </div>
-
-      {slotEntries.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          {slotEntries.map(([slot, item]) =>
-            item ? (
-              <ItemTooltip key={slot} itemName={item.name}>
-                <img
-                  src={itemIcon(item.name)}
-                  alt={item.name}
-                  title={`${slot}: ${item.name}`}
-                  className="w-7 h-7 rounded border border-border-subtle bg-bg-tertiary object-contain"
-                />
-              </ItemTooltip>
-            ) : null
-          )}
+      {path.map((u, i) => (
+        <div key={`${u.item.name}-${i}`} className="flex flex-wrap items-center gap-2 text-text-secondary">
+          <span className="text-text-secondary/50 num w-3">{i + 1}.</span>
+          <img src={itemIcon(u.item.name)} alt="" className="w-5 h-5 object-contain" />
+          <span className="text-text-primary font-medium">{u.item.name}</span>
+          <span className="text-text-secondary/60">({u.slot})</span>
+          <span className="num text-accent">{formatGp(u.price)}</span>
+          <span className="text-success">+{u.dpsGain.toFixed(2)} DPS</span>
         </div>
-      )}
-
-      {row.missingItems.length > 0 && (
-        <p className="mt-2 text-2xs text-warning/90">
-          Missing wiki match: {row.missingItems.slice(0, 4).join(", ")}
-          {row.missingItems.length > 4 ? "…" : ""}
-        </p>
-      )}
-
-      {upgradePath && upgradePath.length > 0 && leftover != null && leftover > 0 && (
-        <div className="mt-3 rounded-lg border border-accent/20 bg-accent/5 px-2.5 py-2 text-xs space-y-1.5">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="text-[10px] uppercase tracking-wide text-accent/80">
-              Upgrade path under leftover {formatGp(leftover)}
-            </div>
-            {onApplyPath && (
-              <button
-                type="button"
-                onClick={onApplyPath}
-                className="text-[10px] font-medium text-accent hover:text-accent-hover"
-              >
-                Open path in DPS →
-              </button>
-            )}
-          </div>
-          {upgradePath.map((u, i) => (
-            <div key={`${u.item.name}-${i}`} className="flex flex-wrap items-center gap-2 text-text-secondary">
-              <span className="text-text-secondary/50 num w-3">{i + 1}.</span>
-              <img src={itemIcon(u.item.name)} alt="" className="w-5 h-5 object-contain" />
-              <span className="text-text-primary font-medium">{u.item.name}</span>
-              <span className="text-text-secondary/60">({u.slot})</span>
-              <span className="num text-accent">{formatGp(u.price)}</span>
-              <span className="text-success">+{u.dpsGain.toFixed(2)} DPS</span>
-            </div>
-          ))}
-        </div>
-      )}
-    </li>
+      ))}
+    </div>
   );
 }
 
@@ -435,22 +351,46 @@ export default function LoadoutFinder({ hiscores }: Props) {
     navigate("dps-calc", params);
   };
 
+  const pick = results[0] ?? null;
+  const alts = results.slice(1);
+  const leftover = pick ? leftoverByPreset.get(pick.preset.name) : undefined;
+  const verdictLine = pick
+    ? loadoutVerdict({
+        pick: {
+          name: pick.preset.name,
+          style: pick.style,
+          dps: pick.dps,
+          ttk: pick.ttk,
+          accuracy: pick.accuracy,
+          cost: pick.totalCost,
+        },
+        others: alts.map((row) => ({
+          name: row.preset.name,
+          style: row.style,
+          dps: row.dps,
+        })),
+        targetName: target.name === "Custom / Dummy" ? null : target.name,
+      })
+    : null;
+
   return (
-    <div className="max-w-3xl space-y-4">
+    <div className="max-w-5xl">
       <AccountPrefillBanner
         hasHiscores={Boolean(hiscores)}
         context="Combat levels from your hiscores for accurate DPS ranking"
       />
 
-      <div>
+      <div className="mb-4">
         <h2 className="text-h3 font-semibold">Budget Loadout Finder</h2>
         <p className="text-sm text-text-secondary mt-1">
-          Pick a monster and budget — rank full gear presets by DPS with live GE prices.
+          Monster + budget → one setup to wear. Live GE prices, your levels.
         </p>
         <p className="text-xs text-text-secondary/80 mt-1">{levelSummary}</p>
       </div>
 
-      <Card kicker="Inputs" elevation="hero">
+      <div className="flex flex-col-reverse lg:grid lg:grid-cols-[3fr_2fr] gap-6 items-start">
+      <div className="space-y-4">
+      <Card kicker="Inputs">
         <div className="space-y-4 p-1">
           <div>
             <label className="text-2xs uppercase tracking-wide text-text-secondary/80 block mb-1.5">
@@ -656,75 +596,181 @@ export default function LoadoutFinder({ hiscores }: Props) {
         </div>
       </Card>
 
-      {!loading && results.length > 0 && (
-        <StatGrid columns={3}>
-          <StatCard label="Best DPS" value={bestDps.toFixed(2)} />
-          <StatCard
-            label="Best cost"
-            value={results[0]!.totalCost > 0 ? formatGp(results[0]!.totalCost) : "—"}
-          />
-          <StatCard label="Setups" value={String(results.length)} />
-        </StatGrid>
-      )}
+      <p className="text-2xs text-text-secondary/70 leading-relaxed">
+        Combinatorial BiS under budget, then curated presets as backups. Missing GE prices are
+        skipped on a capped budget — mark them owned or set Any. Presets still assume fire cape /
+        torso / defenders. Open the pick in DPS to tweak prayers and modifiers.
+      </p>
+      </div>
 
-      <Card
-        kicker="Ranked setups"
-        action={
-          loading ? (
-            <span className="text-xs text-text-secondary">Loading gear & prices…</span>
-          ) : (
-            <span className="text-xs text-text-secondary">
-              vs {target.name}
-              {budget > 0 ? ` · ≤ ${formatGp(budget)}` : " · no budget cap"}
-            </span>
-          )
-        }
-      >
+      <div className="lg:sticky lg:top-4 lg:self-start space-y-4">
         {hasEquipError && (
-          <p className="text-sm text-danger p-2">Could not load equipment data. Try again later.</p>
+          <Card kicker="Pick">
+            <p className="text-sm text-danger">Could not load equipment data. Try again later.</p>
+          </Card>
         )}
         {loading && !hasEquipError && (
-          <div className="space-y-2 py-2">
-            <div className="animate-pulse bg-bg-tertiary/50 h-16 rounded-xl" />
-            <div className="animate-pulse bg-bg-tertiary/50 h-16 rounded-xl" />
-            <div className="animate-pulse bg-bg-tertiary/50 h-16 rounded-xl" />
-          </div>
+          <Card kicker="Pick" elevation="hero">
+            <div className="space-y-3 py-1">
+              <div className="animate-pulse bg-bg-tertiary/50 h-16 rounded-xl" />
+              <div className="animate-pulse bg-bg-tertiary/50 h-10 rounded-xl" />
+              <div className="animate-pulse bg-bg-tertiary/50 h-24 rounded-xl" />
+            </div>
+          </Card>
         )}
-        {!loading && !hasEquipError && results.length === 0 && (
-          <p className="text-sm text-text-secondary py-4 text-center">
-            No presets fit this budget and style. Raise the budget or switch style.
-          </p>
+        {!loading && !hasEquipError && !pick && (
+          <Card kicker="Pick">
+            <p className="text-sm text-text-secondary py-2">
+              No setup fits this budget and style. Raise the budget or switch style.
+            </p>
+          </Card>
         )}
-        {!loading && results.length > 0 && (
-          <ol className="space-y-2 list-none p-0 m-0">
-            {results.map((row, i) => {
-              const lo = leftoverByPreset.get(row.preset.name);
-              return (
-                <ResultRow
-                  key={row.preset.name}
-                  rank={i + 1}
-                  row={row}
-                  bestDps={bestDps}
-                  onOpen={() => openInDps(row)}
-                  upgradePath={lo?.path}
-                  leftover={lo?.leftover}
-                  onApplyPath={
-                    lo?.path?.length
-                      ? () => openPathInDps(row, lo.path)
+        {!loading && pick && verdictLine && (
+          <Card
+            elevation="hero"
+            kicker={target.name}
+            action={
+              <span className="text-xs text-text-secondary">
+                {budget > 0 ? `≤ ${formatGp(budget)}` : "no cap"}
+              </span>
+            }
+          >
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-2 min-w-0">
+                  <h3 className="font-semibold text-sm sm:text-base truncate">{pick.preset.name}</h3>
+                  <StyleBadge style={pick.style} />
+                </div>
+                <Button variant="primary" size="sm" onClick={() => openInDps(pick)}>
+                  Open in DPS
+                </Button>
+              </div>
+
+              <div className="flex items-end justify-between gap-4 border-b border-border-subtle pb-4">
+                <div>
+                  <div className="hero-metric text-accent-bright">{pick.dps.toFixed(2)}</div>
+                  <div className="section-kicker mt-1">damage / second</div>
+                </div>
+                <div className="text-right">
+                  <div className="num text-h3 font-semibold text-text-primary">
+                    {formatTtk(pick.ttk)}
+                  </div>
+                  <div className="section-kicker">time to kill</div>
+                </div>
+              </div>
+
+              <p className="text-sm leading-6 text-text-secondary">{verdictLine}</p>
+
+              <AccuracyMeter accuracy={pick.accuracy} />
+
+              <StatGrid columns={2}>
+                <StatCard label="Max Hit" value={pick.maxHit} />
+                <StatCard
+                  label="Cost"
+                  value={
+                    pick.totalCost > 0
+                      ? formatGp(pick.totalCost)
+                      : pick.unpricedCount > 0
+                        ? "Unpriced"
+                        : "Free"
+                  }
+                  suffix={
+                    pick.totalCost > 0 && pick.unpricedCount > 0 ? "GE tradeables" : undefined
+                  }
+                />
+              </StatGrid>
+
+              {(pick.prayerName && pick.prayerName !== "None") || pick.spellName ? (
+                <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-text-secondary">
+                  {pick.prayerName && pick.prayerName !== "None" && (
+                    <span>
+                      <span className="text-text-secondary/60">Prayer </span>
+                      <span className="text-text-primary">{pick.prayerName}</span>
+                    </span>
+                  )}
+                  {pick.spellName && (
+                    <span>
+                      <span className="text-text-secondary/60">Spell </span>
+                      <span className="text-text-primary">{pick.spellName}</span>
+                    </span>
+                  )}
+                </div>
+              ) : null}
+
+              <GearStrip row={pick} />
+
+              {pick.missingItems.length > 0 && (
+                <p className="text-2xs text-warning/90">
+                  Missing wiki match: {pick.missingItems.slice(0, 4).join(", ")}
+                  {pick.missingItems.length > 4 ? "…" : ""}
+                </p>
+              )}
+
+              {leftover && (
+                <UpgradePath
+                  path={leftover.path}
+                  leftover={leftover.leftover}
+                  onApply={
+                    leftover.path.length > 0
+                      ? () => openPathInDps(pick, leftover.path)
                       : undefined
                   }
                 />
-              );
-            })}
-          </ol>
+              )}
+            </div>
+          </Card>
         )}
-      </Card>
 
-      <p className="text-2xs text-text-secondary/70 leading-relaxed">
-        Ranks curated gear presets (not a full combinatorial search). Untradeables (torso, fire cape,
-        defenders, etc.) are treated as free. Open a setup in the DPS calculator to tweak gear,
-        prayers, and modifiers.
-      </p>
+        {!loading && alts.length > 0 && (
+          <Card kicker="Also ranked">
+            <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border/40 text-xs text-text-secondary">
+                  <th className="text-left px-1 py-1.5 font-medium">Setup</th>
+                  <th className="text-right px-1 py-1.5 font-medium">DPS</th>
+                  <th className="text-right px-1 py-1.5 font-medium">Δ</th>
+                  <th className="text-right px-1 py-1.5 font-medium">Cost</th>
+                  <th className="px-1 py-1.5" />
+                </tr>
+              </thead>
+              <tbody>
+                {alts.map((row) => {
+                  const delta = bestDps > 0 ? (row.dps / bestDps - 1) * 100 : 0;
+                  return (
+                    <tr key={row.preset.name} className="border-b border-border/20 last:border-0">
+                      <td className="px-1 py-1.5">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="font-medium">{row.preset.name}</span>
+                          <StyleBadge style={row.style} />
+                        </div>
+                      </td>
+                      <td className="px-1 py-1.5 text-right num text-accent">{row.dps.toFixed(2)}</td>
+                      <td className="px-1 py-1.5 text-right num text-xs text-text-secondary">
+                        {delta > -0.5 ? "tied" : `${delta.toFixed(0)}%`}
+                      </td>
+                      <td className="px-1 py-1.5 text-right num text-text-secondary">
+                        {row.totalCost > 0 ? formatGp(row.totalCost) : "—"}
+                      </td>
+                      <td className="px-1 py-1.5 text-right">
+                        <Button
+                          size="xs"
+                          variant="ghost"
+                          onClick={() => openInDps(row)}
+                        >
+                          Open
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            </div>
+          </Card>
+        )}
+      </div>
+      </div>
     </div>
   );
 }

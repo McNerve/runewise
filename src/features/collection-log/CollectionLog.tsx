@@ -10,6 +10,7 @@ import {
 } from "../../lib/api/temple";
 import { clearCacheKey } from "../../lib/api/cache";
 import { useNavigation } from "../../lib/NavigationContext";
+import { openItemPage } from "../../lib/openItem";
 import FreshnessStrip from "../../components/FreshnessStrip";
 import { loadJSON, saveJSON } from "../../lib/localStorage";
 import { COLLECTION_CATEGORIES } from "./data/slots";
@@ -406,7 +407,7 @@ function TempleView({ data }: { data: TempleCollectionLog }) {
                   return (
                     <div
                       key={`${item.id}-${i}`}
-                      onClick={() => navigate("market", { query: name, select: "1" })}
+                      onClick={() => openItemPage(navigate, name)}
                       className={`group flex flex-col items-center gap-1 p-2 rounded-lg transition-all cursor-pointer ${
                         isObtained
                           ? "bg-success/6 hover:bg-success/12 hover:scale-105"
@@ -597,9 +598,9 @@ function ManualClogView({ rsn }: { rsn: string }) {
               onClick={() => toggle(name)}
               onContextMenu={(e) => {
                 e.preventDefault();
-                navigate("market", { query: name, select: "1" });
+                openItemPage(navigate, name);
               }}
-              title={`${name} — click to toggle, right-click to open market`}
+              title={`${name} — click to toggle, right-click to open wiki`}
               className={`group flex flex-col items-center gap-1 p-2 rounded-lg transition-all ${
                 has
                   ? "bg-success/10 border border-success/25"

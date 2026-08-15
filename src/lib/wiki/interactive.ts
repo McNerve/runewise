@@ -1,9 +1,11 @@
 /**
  * Shared imperative helpers for wiki HTML content:
- * tabbers, image tooltips, and click-to-zoom lightbox.
+ * tabbers, image tooltips, hover cards, and click-to-zoom lightbox.
  *
  * Used by both BossGuide and WikiLookup.
  */
+import { initWikiHoverCards } from "./hoverCard";
+import { itemWikiHash } from "../openItem";
 
 export function initWikiTabbers(container: HTMLElement) {
   container.querySelectorAll(".tabber").forEach((tabber) => {
@@ -59,6 +61,8 @@ export function initWikiTabbers(container: HTMLElement) {
 export function initTooltips(container: HTMLElement) {
   container.querySelectorAll("img").forEach((img) => {
     if (img.getAttribute("data-tooltip-init")) return;
+    // Links already get the wiki hover card — don't stack an alt-label on top.
+    if (img.closest("a[data-wiki-page]")) return;
     img.setAttribute("data-tooltip-init", "1");
 
     const label =
@@ -195,8 +199,8 @@ export function initAnchorScroll(container: HTMLElement, pageSlug = "") {
 }
 
 /**
- * Wire item names in wiki drop/comparison tables to navigate into the Market
- * item workspace on click, with a hover hint. The wiki uses two common
+ * Wire item names in wiki drop/comparison tables to open the in-app wiki
+ * article (infobox + GE) on click, with a hover hint. The wiki uses two common
  * templates:
  *   - Drop tables: `<td class="item-col">Item name</td>` (plain text cell)
  *   - Inline plinkt: `<span class="plinkt-template"><img/><a>Item name</a></span>`
@@ -205,7 +209,7 @@ export function initAnchorScroll(container: HTMLElement, pageSlug = "") {
  * hover interactivity without mutating the HTML structure.
  */
 function openItemInMarket(name: string) {
-  const hash = `#items?search=${encodeURIComponent(name)}&select=1`;
+  const hash = itemWikiHash(name);
   if (window.location.hash === hash) {
     window.dispatchEvent(new HashChangeEvent("hashchange"));
   } else {
@@ -228,7 +232,7 @@ export function initItemTextLinks(container: HTMLElement) {
     }
     const el = cell as HTMLElement;
     el.style.cursor = "pointer";
-    el.setAttribute("title", `Open ${text} in Market`);
+    el.setAttribute("title", `Open ${text} in Wiki`);
     el.classList.add("item-col-interactive");
     el.addEventListener("click", (ev) => {
       ev.stopPropagation();
@@ -242,7 +246,7 @@ export function initItemTextLinks(container: HTMLElement) {
     a.setAttribute("data-item-link-init", "1");
     const text = (a.textContent ?? "").trim();
     if (!text || text.length < 2) return;
-    (a as HTMLAnchorElement).setAttribute("title", `Open ${text} in Market`);
+    (a as HTMLAnchorElement).setAttribute("title", `Open ${text} in Wiki`);
     a.addEventListener("click", (ev) => {
       ev.preventDefault();
       ev.stopPropagation();
@@ -262,7 +266,7 @@ export function initItemTextLinks(container: HTMLElement) {
       if (!text || text.length < 2) return;
       const el = span as HTMLElement;
       el.style.cursor = "pointer";
-      el.setAttribute("title", `Open ${text} in Market`);
+      el.setAttribute("title", `Open ${text} in Wiki`);
       el.addEventListener("click", (ev) => {
         ev.stopPropagation();
         openItemInMarket(text);
@@ -344,11 +348,12 @@ export function initWikiTabsExclusive(container: HTMLElement) {
   });
 }
 
-export function initWikiInteractive(container: HTMLElement, pageSlug = "") {
+export function initWikiInteractive(container: HTMLElement, pageSlug = ""): () => void {
   initWikiTabbers(container);
   initWikiTabsExclusive(container);
   initTooltips(container);
   initItemTextLinks(container);
   initAnchorScroll(container, pageSlug);
   initSortableTables(container);
+  return initWikiHoverCards(container);
 }
