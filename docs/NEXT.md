@@ -4,6 +4,9 @@ After **wiki-mirror** (infobox/hatnotes/article body + Mad Angel + IA).
 
 ## Shipped recently
 
+### 2.5.20
+- Wiki item icons no longer show a native `?` tooltip
+
 ### 2.5.19
 - Wiki lookup is a wiki mirror: infobox HTML, hatnotes, combat stats open, stay-on-page
 - Boss Strategy tab renders the `/Strategies` article (raid empty-state gone)
