@@ -2,6 +2,7 @@
  * Merge curated FINDER_TARGETS with live wiki monster multi-def stats.
  */
 import type { WikiMonster } from "../../lib/api/monsters";
+import { resolveWikiMonster } from "../../lib/wikiMonsterMatch";
 import type { LoadoutTarget } from "./budgetLoadoutFinder";
 
 /** Convert a wiki NPC row into a LoadoutTarget. */
@@ -10,6 +11,8 @@ export function wikiMonsterToTarget(m: WikiMonster): LoadoutTarget {
   const defBonus = Math.max(m.defStab, m.defSlash, m.defCrush, 0);
   return {
     name: label,
+    wikiName: m.name,
+    version: m.version,
     defLevel: m.defenceLevel || 1,
     defBonus,
     defStab: m.defStab,
@@ -27,34 +30,24 @@ export function findWikiMonster(
   monsters: WikiMonster[],
   name: string
 ): WikiMonster | null {
-  const q = name.toLowerCase().trim();
+  const exact = resolveWikiMonster(monsters, name);
+  if (exact) return exact;
+
+  const q = name.replace(/\s*\([^)]*\)\s*$/, "").trim().toLowerCase();
   if (!q || monsters.length === 0) return null;
 
-  // Exact name match (prefer null version / first)
-  const exact = monsters.filter((m) => m.name.toLowerCase() === q);
-  if (exact.length === 1) return exact[0]!;
-  if (exact.length > 1) {
-    // Prefer base form (no version) or highest HP
-    return (
-      exact.find((m) => !m.version) ??
-      [...exact].sort((a, b) => b.hitpoints - a.hitpoints)[0]!
-    );
-  }
-
-  // Name starts with query / query starts with name
   const starts = monsters.filter(
     (m) =>
       m.name.toLowerCase().startsWith(q) ||
       q.startsWith(m.name.toLowerCase())
   );
   if (starts.length > 0) {
-    return [...starts].sort((a, b) => b.hitpoints - a.hitpoints)[0]!;
+    return resolveWikiMonster(starts, starts[0]!.name);
   }
 
-  // Substring
   const sub = monsters.filter((m) => m.name.toLowerCase().includes(q));
   if (sub.length > 0) {
-    return [...sub].sort((a, b) => b.hitpoints - a.hitpoints)[0]!;
+    return resolveWikiMonster(sub, sub[0]!.name);
   }
   return null;
 }
@@ -74,6 +67,8 @@ export function enrichTargetFromWiki(
   if (!m) return base;
   return {
     ...base,
+    wikiName: m.name,
+    version: m.version,
     defLevel: m.defenceLevel || base.defLevel,
     defStab: m.defStab,
     defSlash: m.defSlash,

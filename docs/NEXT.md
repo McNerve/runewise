@@ -12,6 +12,7 @@ After **wiki-mirror** (infobox/hatnotes/article body + Mad Angel + IA).
 - DPS results as a verdict (hero metric + sentence; mobile numbers-first)
 - Loadout Finder as a pick (wear this; alternatives as a table)
 - Unpriced items no longer count as 0 gp on a capped budget
+- Open in DPS matches the finder monster version (Vorkath post-quest vs DS2)
 
 ### 2.5.18
 - Wiki + Boss Guides full UX overhaul (links, raid trees, inventory tabs, mobile, search, TOC)

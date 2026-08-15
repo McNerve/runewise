@@ -22,6 +22,7 @@ import { lookupMonsterMeta } from "../../../lib/data/monster-attributes";
 import { PRAYERS, type Prayer } from "../../../lib/data/prayers";
 import { MONSTERS } from "../../../lib/data/monsters";
 import { fetchAllMonsters, type WikiMonster } from "../../../lib/api/monsters";
+import { parseMonsterRef, resolveWikiMonster } from "../../../lib/wikiMonsterMatch";
 import { fetchAllEquipment } from "../../../lib/api/equipment";
 import { type HiscoreData, getSkillLevel as getHiscoreSkillLevel } from "../../../lib/api/hiscores";
 import { type WikiEquipment, type EquipmentSlot } from "../../../lib/api/equipment";
@@ -362,16 +363,12 @@ export function useDpsState({ hiscores }: Props) {
   // specific phase (e.g. Verzik P2) directly.
   useEffect(() => {
     if (!params.monster || wikiMonsters.length === 0) return;
-    const byName = wikiMonsters.filter(
-      (m) => m.name.toLowerCase() === params.monster?.toLowerCase()
-    );
-    const match = params.version
-      ? byName.find((m) => m.version?.toLowerCase() === params.version?.toLowerCase()) ?? byName[0]
-      : byName[0];
+    const match = resolveWikiMonster(wikiMonsters, params.monster, params.version);
     if (match) setSelectedMonster(match);
     else {
+      const { name: staticName } = parseMonsterRef(params.monster);
       const staticMatch = MONSTERS.find(
-        (m) => m.name.toLowerCase() === params.monster?.toLowerCase()
+        (m) => m.name.toLowerCase() === staticName.toLowerCase()
       );
       if (staticMatch && staticMatch.name !== "Custom target") {
         setSelectedMonster({

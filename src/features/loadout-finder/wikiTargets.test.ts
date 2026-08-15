@@ -45,6 +45,8 @@ describe("wikiMonsterToTarget", () => {
       mon({ name: "Vorkath", version: "Post-quest", defStab: 26, defSlash: 108, hitpoints: 750 })
     );
     expect(t.name).toBe("Vorkath (Post-quest)");
+    expect(t.wikiName).toBe("Vorkath");
+    expect(t.version).toBe("Post-quest");
     expect(t.defStab).toBe(26);
     expect(t.defSlash).toBe(108);
     expect(t.hp).toBe(750);
@@ -53,7 +55,8 @@ describe("wikiMonsterToTarget", () => {
 
 describe("findWikiMonster", () => {
   const list = [
-    mon({ name: "Vorkath", defStab: 26, hitpoints: 750 }),
+    mon({ name: "Vorkath", version: "Dragon Slayer II", defStab: 26, hitpoints: 460 }),
+    mon({ name: "Vorkath", version: "Post-quest", defStab: 26, hitpoints: 750 }),
     mon({ name: "Cerberus", defCrush: 50, hitpoints: 600 }),
     mon({ name: "Great Olm", version: "Left claw", hitpoints: 100 }),
     mon({ name: "Great Olm", version: null, hitpoints: 500 }),
@@ -61,6 +64,7 @@ describe("findWikiMonster", () => {
 
   it("finds exact and prefers higher HP / no version", () => {
     expect(findWikiMonster(list, "Vorkath")?.hitpoints).toBe(750);
+    expect(findWikiMonster(list, "Vorkath (Dragon Slayer II)")?.hitpoints).toBe(460);
     expect(findWikiMonster(list, "great olm")?.version).toBeNull();
   });
 });

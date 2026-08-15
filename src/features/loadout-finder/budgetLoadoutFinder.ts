@@ -27,6 +27,10 @@ import { resolveMagicSpell } from "./magicSpellBiS";
 
 export interface LoadoutTarget {
   name: string;
+  /** Wiki NPC name without a version suffix. Used for DPS deep-links. */
+  wikiName?: string;
+  /** Wiki `page_name_sub` (e.g. Post-quest). */
+  version?: string | null;
   defLevel: number;
   /**
    * Fallback single defence bonus when per-style values are omitted.
