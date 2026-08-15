@@ -115,6 +115,13 @@ export function resolveWikiPageFromHref(href: string): string | null {
   }
 }
 
+/** Wiki uses alt/title "?" on item icons. Don't surface that as a tooltip. */
+export function isPlaceholderLabel(value: string | null | undefined): boolean {
+  if (value == null) return true;
+  const trimmed = value.trim();
+  return trimmed.length === 0 || trimmed === "?" || trimmed === "×";
+}
+
 export function buildWikiAppHref(page: string): string {
   const params = new URLSearchParams({ page, query: page });
   return `#wiki?${params.toString()}`;
@@ -155,6 +162,9 @@ export function normalizeImages(root: Element): void {
     img.removeAttribute("data-file-height");
     img.setAttribute("loading", "lazy");
 
+    if (isPlaceholderLabel(img.getAttribute("alt"))) img.removeAttribute("alt");
+    if (isPlaceholderLabel(img.getAttribute("title"))) img.removeAttribute("title");
+
     // Hide images with no usable src — avoids gray-void cells in tables.
     // A src is "unresolved" when it's empty, a data URI placeholder, or still
     // a relative path that didn't match any rewrite rule above.
@@ -175,6 +185,7 @@ export function normalizeImages(root: Element): void {
 export function normalizeLinks(root: Element): void {
   root.querySelectorAll("a").forEach((link) => {
     link.removeAttribute("data-wiki-page");
+    if (isPlaceholderLabel(link.getAttribute("title"))) link.removeAttribute("title");
     const href = link.getAttribute("href") ?? "";
     const internalPage = resolveWikiPageFromHref(href);
 

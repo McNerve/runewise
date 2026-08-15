@@ -4,6 +4,7 @@ import {
   wrapTablesForScroll,
   normalizeLinks,
   transformTabbers,
+  isPlaceholderLabel,
 } from "./helpers";
 
 function makeRoot(html: string): Element {
@@ -68,6 +69,20 @@ describe("normalizeImages", () => {
     expect(root.querySelector("img")!.getAttribute("loading")).toBe("lazy");
   });
 
+  it("strips wiki placeholder alt and title so native tooltips stay quiet", () => {
+    const root = makeRoot(`<img src="/images/Dragon_scimitar.png" alt="?" title="?">`);
+    normalizeImages(root);
+    const img = root.querySelector("img")!;
+    expect(img.getAttribute("alt")).toBeNull();
+    expect(img.getAttribute("title")).toBeNull();
+  });
+
+  it("keeps a real alt label", () => {
+    const root = makeRoot(`<img src="/images/item.png" alt="Dragon scimitar">`);
+    normalizeImages(root);
+    expect(root.querySelector("img")!.getAttribute("alt")).toBe("Dragon scimitar");
+  });
+
   it("does not modify already-absolute https src", () => {
     const root = makeRoot(`<img src="https://oldschool.runescape.wiki/images/item.png">`);
     normalizeImages(root);
@@ -130,6 +145,22 @@ describe("normalizeLinks", () => {
     expect(a.getAttribute("data-wiki-page")).toBe("Abyssal demon");
     expect(a.getAttribute("href")).toContain("#wiki?");
     expect(a.getAttribute("target")).toBeNull();
+  });
+
+  it("strips placeholder title on wiki links", () => {
+    const root = makeRoot(`<a href="/w/Abyssal_demon" title="?">abyssal demons</a>`);
+    normalizeLinks(root);
+    expect(root.querySelector("a")!.getAttribute("title")).toBeNull();
+  });
+});
+
+describe("isPlaceholderLabel", () => {
+  it("treats empty, question mark, and multiply sign as junk", () => {
+    expect(isPlaceholderLabel("?")).toBe(true);
+    expect(isPlaceholderLabel("  ?  ")).toBe(true);
+    expect(isPlaceholderLabel("×")).toBe(true);
+    expect(isPlaceholderLabel("")).toBe(true);
+    expect(isPlaceholderLabel("Dragon scimitar")).toBe(false);
   });
 });
 
