@@ -4,6 +4,8 @@ All notable changes to RuneWise are documented here. Versions follow [Semantic V
 
 ## [Unreleased]
 
+## [2.5.19] - 2026-08-15
+
 ### Fixes
 
 - **Open in DPS** picks the same monster version the Loadout Finder scored (post-quest Vorkath, not DS2).
