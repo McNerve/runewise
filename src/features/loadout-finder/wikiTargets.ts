@@ -3,7 +3,7 @@
  */
 import type { WikiMonster } from "../../lib/api/monsters";
 import { resolveWikiMonster } from "../../lib/wikiMonsterMatch";
-import type { LoadoutTarget } from "./budgetLoadoutFinder";
+import { FINDER_TARGETS, type LoadoutTarget } from "./budgetLoadoutFinder";
 
 /** Convert a wiki NPC row into a LoadoutTarget. */
 export function wikiMonsterToTarget(m: WikiMonster): LoadoutTarget {
@@ -116,4 +116,28 @@ export function buildFinderTargetList(
   const custom = enriched.filter((t) => t.name === "Custom / Dummy");
   const rest = enriched.filter((t) => t.name !== "Custom / Dummy");
   return [...rest, ...extras, ...custom];
+}
+
+/** Resolve the selected target without depending on the search box list. */
+export function resolveSelectedTarget(
+  targetName: string,
+  monsters: WikiMonster[] | null | undefined,
+  custom?: { defLevel: number; defBonus: number; hp: number }
+): LoadoutTarget {
+  if (targetName === "Custom / Dummy") {
+    const dummy = FINDER_TARGETS.find((t) => t.name === "Custom / Dummy")!;
+    return {
+      ...dummy,
+      defLevel: custom?.defLevel ?? dummy.defLevel,
+      defBonus: custom?.defBonus ?? dummy.defBonus,
+      hp: custom?.hp ?? dummy.hp,
+    };
+  }
+  const curated = FINDER_TARGETS.find((t) => t.name === targetName);
+  if (curated) return enrichTargetFromWiki(curated, monsters);
+  if (monsters?.length) {
+    const hit = findWikiMonster(monsters, targetName);
+    if (hit) return wikiMonsterToTarget(hit);
+  }
+  return enrichTargetFromWiki(FINDER_TARGETS[0]!, monsters);
 }

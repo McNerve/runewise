@@ -5,6 +5,7 @@ import {
   findWikiMonster,
   enrichTargetFromWiki,
   buildFinderTargetList,
+  resolveSelectedTarget,
 } from "./wikiTargets";
 import type { LoadoutTarget } from "./budgetLoadoutFinder";
 
@@ -102,5 +103,27 @@ describe("buildFinderTargetList", () => {
     const list = buildFinderTargetList(curated, monsters, "zul");
     expect(list.some((t) => t.name.includes("Zulrah"))).toBe(true);
     expect(list[list.length - 1]?.name).toBe("Custom / Dummy");
+  });
+});
+
+describe("resolveSelectedTarget", () => {
+  it("keeps curated Vorkath even when search extras exist", () => {
+    const monsters = [
+      mon({ name: "Vorkath", version: "Dragon Slayer II", hitpoints: 460 }),
+      mon({ name: "Vorkath", version: "Post-quest", hitpoints: 750 }),
+      mon({ name: "Zulrah", hitpoints: 500 }),
+    ];
+    const t = resolveSelectedTarget("Vorkath", monsters);
+    expect(t.hp).toBe(750);
+    expect(t.wikiName).toBe("Vorkath");
+  });
+
+  it("resolves a versioned search pick by display name", () => {
+    const t = resolveSelectedTarget("Vorkath (Dragon Slayer II)", [
+      mon({ name: "Vorkath", version: "Dragon Slayer II", hitpoints: 460 }),
+      mon({ name: "Vorkath", version: "Post-quest", hitpoints: 750 }),
+    ]);
+    expect(t.hp).toBe(460);
+    expect(t.version).toBe("Dragon Slayer II");
   });
 });
