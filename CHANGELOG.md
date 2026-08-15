@@ -4,6 +4,8 @@ All notable changes to RuneWise are documented here. Versions follow [Semantic V
 
 ## [Unreleased]
 
+## [2.5.20] - 2026-08-15
+
 ### Fixes
 
 - Wiki item icons no longer show a native `?` tooltip — wiki placeholder alt/title stripped.
