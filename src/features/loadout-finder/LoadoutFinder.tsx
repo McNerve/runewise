@@ -28,6 +28,7 @@ import {
 import { optimizeAllStyles } from "./budgetOptimize";
 import { parseBudgetInput } from "./parseBudget";
 import { parseOwnedInventory } from "./parseOwnedInventory";
+import { normalizeMonsterVersion, parseMonsterRef } from "../../lib/wikiMonsterMatch";
 import { buildFinderTargetList, enrichTargetFromWiki } from "./wikiTargets";
 import type { CombatStyle } from "../dps-calc/dpsTypes";
 
@@ -302,7 +303,12 @@ export default function LoadoutFinder({ hiscores }: Props) {
       preset: row.preset.name,
       style: row.style,
     };
-    if (target.name !== "Custom / Dummy") params.monster = target.name;
+    if (target.name !== "Custom / Dummy") {
+      const ref = parseMonsterRef(target.name);
+      params.monster = target.wikiName ?? ref.name;
+      const version = normalizeMonsterVersion(params.monster, target.version ?? ref.version);
+      if (version) params.version = version;
+    }
     if (path[0]) {
       params.upgradeItem = path[0].item.name;
       params.upgradeSlot = path[0].slot;
@@ -346,7 +352,10 @@ export default function LoadoutFinder({ hiscores }: Props) {
     }
     if (row.prayerName) params.prayer = row.prayerName;
     if (target.name !== "Custom / Dummy") {
-      params.monster = target.name;
+      const ref = parseMonsterRef(target.name);
+      params.monster = target.wikiName ?? ref.name;
+      const version = normalizeMonsterVersion(params.monster, target.version ?? ref.version);
+      if (version) params.version = version;
     }
     navigate("dps-calc", params);
   };

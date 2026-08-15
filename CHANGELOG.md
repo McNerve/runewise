@@ -4,6 +4,10 @@ All notable changes to RuneWise are documented here. Versions follow [Semantic V
 
 ## [Unreleased]
 
+### Fixes
+
+- **Open in DPS** picks the same monster version the Loadout Finder scored (post-quest Vorkath, not DS2).
+
 ### Wiki mirror + Boss Guides
 
 - **Wiki is a wiki.** Articles keep the infobox HTML, hatnotes, combat stats, and heading grammar instead of flattening to a "Snapshot" card. Item/boss/quest clicks stay on the page; workspace jumps are explicit buttons.
